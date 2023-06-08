@@ -11,7 +11,8 @@ See results from initial runs in ``./script/results/``.
 - [x] Calibration Jupyter Notebook ``Calibration.ipynb`` 
 - [x] Calibration script ``script_Calibration.py`` 
 - [x] ``script_OnTheFlyGenerator_example.py`` 
-- [ ] ``script_TestCoherence.py`` is missing the``CoherenceDataGenerator`` class ???
+- [x] ``script_TestCoherence.py`` 
+- [ ] ``new_script_TestCoherence.py`` is missing the``CoherenceDataGenerator`` class ???
 - [x] ``SimpleFluctuationGenerator.py`` 
 
 ## Development Installation Instructions 
