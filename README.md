@@ -10,7 +10,7 @@ See results from initial runs in ``./script/results/``.
 
 - [x] Calibration Jupyter Notebook ``Calibration.ipynb`` 
 - [x] Calibration script ``script_Calibration.py`` 
-- [ ] ``script_OnTheFlyGenerator_example.py`` is missing ``tauNet_Custom.pkl``
+- [x] ``script_OnTheFlyGenerator_example.py`` 
 - [ ] ``script_TestCoherence.py`` is missing the``CoherenceDataGenerator`` class ???
 - [ ] ``SimpleFluctuationGenerator.py`` is missing ``fluctuation.vti``
 

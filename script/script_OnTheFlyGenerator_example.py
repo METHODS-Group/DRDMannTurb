@@ -17,6 +17,11 @@ from fracturbulence.WindGeneration.CovarianceKernels import VonKarmanCovariance,
 from fracturbulence.WindGeneration.NeuralNetCovariance import NNCovariance
 from fracturbulence.Calibration import CalibrationProblem
 
+from pathlib import Path 
+
+resdir = Path(__file__).parent / "results" 
+
+
 class GenerateWind:
 
     def __init__(self, friction_velocity, reference_height, grid_dimensions, grid_levels, seed=None, blend_num=10, **kwargs):
@@ -161,7 +166,9 @@ if __name__ == "__main__":
     grid_levels = np.array([5, 5, 5])
     seed = None #9000
 
-    path_to_parameters = '../data2/tauNet_Custom.pkl'
+    
+    #path_to_parameters = '../data2/tauNet_Custom.pkl'
+    path_to_parameters = resdir / "resultstauNet_Custom.pkl"
 
     wind = GenerateWind(friction_velocity, reference_height, grid_dimensions, grid_levels, seed, model='NN', path_to_parameters=path_to_parameters)
     #wind = GenerateWind(friction_velocity, reference_height, grid_dimensions, grid_levels, seed, model='NN', path_to_parameters=path_to_parameters)
@@ -202,7 +209,11 @@ if __name__ == "__main__":
 
     ###################
     ## Export to vtk
-    FileName = '../data2/WindField/OntheFlyWindField'
+    print("="*30)
+    FileName = str(resdir / "OntheFlyWindField")
+    print("SAVING ON THE FLY WIND FIELDS VTK TO " + f"{FileName}")
+
+    #FileName = '../data2/WindField/OntheFlyWindField'
     spacing = tuple(grid_dimensions/(2.0**grid_levels + 1))
 
     wind_field_vtk = tuple([np.copy(wind_field[...,i], order='C') for i in range(3)])
