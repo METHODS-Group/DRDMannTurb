@@ -220,3 +220,4 @@ if __name__ == "__main__":
 
     cellData = {'grid': np.zeros_like(wind_field[...,0]), 'wind': wind_field_vtk}
     imageToVTK(FileName, cellData = cellData, spacing=spacing)
+    
