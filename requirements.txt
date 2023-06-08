@@ -1,0 +1,6 @@
+torch
+scipy
+tqdm
+matplotlib
+pyevtk
+pyfftw

@@ -3,7 +3,7 @@ sys.path.append('../')
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 from math import *
-from source.OnePointSpectra import OnePointSpectra
+from fracturbulence.OnePointSpectra import OnePointSpectra
 import numpy as np
 from time import time
 import matplotlib.pyplot as plt
@@ -12,10 +12,10 @@ import sys
 import pickle
 from pyevtk.hl import imageToVTK
 
-from source.WindGeneration.GaussianRandomField import *
-from source.WindGeneration.CovarianceKernels import VonKarmanCovariance, MannCovariance
-from source.WindGeneration.NeuralNetCovariance import NNCovariance
-from source.Calibration import CalibrationProblem
+from fracturbulence.WindGeneration.GaussianRandomField import *
+from fracturbulence.WindGeneration.CovarianceKernels import VonKarmanCovariance, MannCovariance
+from fracturbulence.WindGeneration.NeuralNetCovariance import NNCovariance
+from fracturbulence.Calibration import CalibrationProblem
 
 class GenerateWind:
 

@@ -230,7 +230,7 @@ class Sampling_H2(Sampling_method_base):
             import os
             os.system("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/khristen/ThirdPartyCode/hlibpro-2.7.2/lib")
             os.system("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/khristen/ThirdPartyCode/hlibpro-2.7.2/aux/lib") 
-            from source.hlibpro.wrapper_Covariance import H2matrix
+            from fracturbulence.hlibpro.wrapper_Covariance import H2matrix
             self.M_H2 = H2matrix(position)
 
         elif lib in (METHOD_H2_h2tools, METHOD_H2):    
@@ -249,7 +249,7 @@ class Sampling_H2(Sampling_method_base):
             else:
                 anis_angle = Covariance.angle_anis
 
-            from source.Covariance.wrapper_Covariance import py_Matern_block_func
+            from fracturbulence.Covariance.wrapper_Covariance import py_Matern_block_func
             def block_func(row_data, rows, col_data, cols):
                 submatrix = sigma * py_Matern_block_func(row_data, rows, col_data, cols, nu_mod, corrlen * sqrt(nu_mod/nu), anis_angle, d) / N**(d/2)
                 return submatrix
@@ -297,8 +297,8 @@ class Sampling_ODE(Sampling_method_base):
         super().__init__(RandomField)
         L, Nd, d = self.L, self.Nd, self.ndim
 
-        from source.ODE_based.TransientPower import Problem, TransientPower
-        from source.CovarianceKernels import set_ShapeOperator
+        from fracturbulence.ODE_based.TransientPower import Problem, TransientPower
+        from fracturbulence.CovarianceKernels import set_ShapeOperator
 
         Covariance = RandomField.Covariance
         nu, corrlen = Covariance.nu, Covariance.corrlen
@@ -342,9 +342,9 @@ class Sampling_Rational(Sampling_method_base):
         super().__init__(RandomField)
         L, Nd, d = self.L, self.Nd, self.ndim
 
-        from source.RationalApproximation import RationalApproximation
-        from source.ODE_based.TransientPower import Problem
-        from source.CovarianceKernels import set_ShapeOperator
+        from fracturbulence.RationalApproximation import RationalApproximation
+        from fracturbulence.ODE_based.TransientPower import Problem
+        from fracturbulence.CovarianceKernels import set_ShapeOperator
 
         Covariance = RandomField.Covariance
         nu, corrlen = Covariance.nu, Covariance.corrlen

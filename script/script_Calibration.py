@@ -13,9 +13,9 @@ import pickle
 from math import log
 from torch.nn import parameter
 
-from source.common import *
-from source.Calibration import CalibrationProblem
-from source.DataGenerator import OnePointSpectraDataGenerator
+from fracturbulence.common import *
+from fracturbulence.Calibration import CalibrationProblem
+from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 
 # In[2]:
 ####################################
