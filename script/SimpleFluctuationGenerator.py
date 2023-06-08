@@ -5,6 +5,9 @@ import numpy as np
 import scipy.fft as fft
 from pyevtk.hl import imageToVTK
 
+from pathlib import Path 
+
+savedir = Path(__file__).parent / "results"
 
 """
 =============================================
@@ -79,7 +82,8 @@ fluctuation     = fft.irfftn(fluctuation_hat, norm="ortho")
 Export vtk
 =============================================
 """
-FileName = './workfolder/fluctuation'
+FileName = str(savedir / "fluctuation")
+#FileName = './workfolder/fluctuation'
 spacing  = list(domain_size/grid_shape) #[1/grid_shape.max()]*ndim
 cellData = {'fluctuation field': tuple(fluctuation)}
 imageToVTK(FileName, cellData = cellData, spacing=spacing)

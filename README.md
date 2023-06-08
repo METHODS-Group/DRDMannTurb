@@ -10,7 +10,7 @@ See results from initial runs in ``./script/results/``.
 
 - [x] Calibration Jupyter Notebook ``Calibration.ipynb`` 
 - [x] Calibration script ``script_Calibration.py`` 
-- [x] ``script_OnTheFlyGenerator_example.py`` 
+- [x] ``script_OnTheFlyGenerator_example.py`` ... this runs but the output results in a ``.vti`` which results in an empty visual, though 10 frames of data are loaded in successfully 
 - [ ] ``script_TestCoherence.py`` is missing the``CoherenceDataGenerator`` class ???
 - [ ] ``SimpleFluctuationGenerator.py`` is missing ``fluctuation.vti``
 
