@@ -12,10 +12,11 @@ See results from initial runs in ``./script/results/``.
 - [x] Calibration script ``script_Calibration.py`` 
 - [x] ``script_OnTheFlyGenerator_example.py`` ... this runs but the output results in a ``.vti`` which results in an empty visual, though 10 frames of data are loaded in successfully 
 - [ ] ``script_TestCoherence.py`` is missing the``CoherenceDataGenerator`` class ???
-- [ ] ``SimpleFluctuationGenerator.py`` is missing ``fluctuation.vti``
+- [x] ``SimpleFluctuationGenerator.py`` ... this runs but the output results in a ``.vti`` which results in an empty visual, though 10 frames of data are loaded in successfully 
 
 ## Development Installation Instructions 
 
 This package is provided as a locally ``pip``-installable package. It is recommended that Python 3.9 is used in your local environment. 
 
 A Conda spec-file is included, to install a functioning environment, run ``conda create --name ENV_NAME_HERE --file spec-file.txt``. Then run ``pip install -e .`` to load ``fracturbulence`` into your environment. 
+
