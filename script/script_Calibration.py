@@ -17,6 +17,10 @@ from fracturbulence.common import *
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 
+from pathlib import Path 
+
+savedir = Path(__file__).parent / "results" 
+
 # In[2]:
 ####################################
 ### Configuration
@@ -42,7 +46,8 @@ config = {
     'zref'              :   100, #m
     'domain'            :   np.logspace(-3, 0, 20), ### NOTE: Experiment 1: np.logspace(-1, 2, 20), Experiment 2: np.logspace(-2, 2, 40)
     'noisy_data'        :   0*3.e-1, ### level of the data noise  ### NOTE: Experiment 1: zero, Experiment 2: non-zero
-    'output_folder'     :   '/Users/gdeskos/work_in_progress/WindGenerator/data/',
+    'output_folder' : str(savedir),
+    #'output_folder'     :   '/Users/gdeskos/work_in_progress/WindGenerator/data/',
     'input_folder'     :   '/Users/gdeskos/work_in_progress/WindGenerator/script/'
 }
 pb = CalibrationProblem(**config)
@@ -130,7 +135,8 @@ plt.legend(fontsize=16)
 plt.xticks(fontsize=16)
 plt.yticks(fontsize=16)
 plt.grid(which='both')
-plt.savefig(config['output_folder']+'initial_Custom_guess.pdf',dpi=100)
+plt.savefig(savedir / "initial_custom_guess.png", dpi=100)
+#plt.savefig(config['output_folder']+'initial_Custom_guess.pdf',dpi=100)
 
 
 # In[ ]:
