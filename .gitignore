@@ -130,3 +130,9 @@ dmypy.json
 
 # Others
 **.vscode
+
+## Data/ Paraview Files
+
+*.png
+*.vti
+*.pvd
