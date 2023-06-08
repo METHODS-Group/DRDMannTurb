@@ -425,7 +425,10 @@ class CalibrationProblem:
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
         else:
-            self.fig.savefig(self.output_directory+'Final_solution.png',format='png',dpi=100)
+            print("="*30)
+            print("SAVING FINAL SOLUTION RESULTS TO " + f'{self.output_directory+"final_solution.png"}')
+            self.fig.savefig(self.output_directory+"final_solution.png", format='png', dpi=100)
+            #self.fig.savefig(self.output_directory+'Final_solution.png',format='png',dpi=100)
             plt.savefig(self.output_directory+'Final_solution.png',format='png',dpi=100)
 
 

@@ -6,9 +6,10 @@ Based on the code and theory from [this 2021](https://arxiv.org/pdf/2107.11046.p
 
 Not all scripts provided in the repository work, with the foremost reason being that data files were not provided. Here is a listing of which can be run and reasons for those that cannot be: 
 
+See results from initial runs in ``./script/results/``. 
 
 - [x] Calibration Jupyter Notebook ``Calibration.ipynb`` 
-- [ ] Calibration script ``script_Calibration.py`` is missing ``initial_Custom_guess.pdf``
+- [x] Calibration script ``script_Calibration.py`` 
 - [ ] ``script_OnTheFlyGenerator_example.py`` is missing ``tauNet_Custom.pkl``
 - [ ] ``script_TestCoherence.py`` is missing the``CoherenceDataGenerator`` class ???
 - [ ] ``SimpleFluctuationGenerator.py`` is missing ``fluctuation.vti``
