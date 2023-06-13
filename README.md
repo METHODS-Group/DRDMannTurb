@@ -4,7 +4,7 @@ Based on the code and theory from [this 2021](https://arxiv.org/pdf/2107.11046.p
 
 ## Status of Provided Scripts 
 
-Not all scripts provided in the repository work, with the foremost reason being that data files were not provided. Here is a listing of which can be run and reasons for those that cannot be: 
+Most provided scripts now work out of the box. Here is a listing of which can be run: 
 
 See results from initial runs in ``./script/results/``. 
 
@@ -12,7 +12,7 @@ See results from initial runs in ``./script/results/``.
 - [x] Calibration script ``script_Calibration.py`` 
 - [x] ``script_OnTheFlyGenerator_example.py`` 
 - [x] ``script_TestCoherence.py`` 
-- [ ] ``new_script_TestCoherence.py`` is missing the``CoherenceDataGenerator`` class ???
+- [ ] ``new_script_TestCoherence.py`` is missing the``CoherenceDataGenerator`` class ??? (replaced by old ``script_TestCoherence.py``)
 - [x] ``SimpleFluctuationGenerator.py`` 
 
 ## Development Installation Instructions 
