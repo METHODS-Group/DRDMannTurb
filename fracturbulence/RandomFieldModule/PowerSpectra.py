@@ -11,7 +11,7 @@ import scipy.fftpack as fft
 import matplotlib.pyplot as plt
 from scipy.special import hyp2f1
 
-from RandomFieldModule.utilities import Matern_kernel, GM_kernel, EP_kernel
+from fracturbulence.RandomFieldModule.utilities import Matern_kernel, GM_kernel, EP_kernel
 
 
 ###################################################################################################

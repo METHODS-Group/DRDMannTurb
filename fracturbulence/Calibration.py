@@ -343,7 +343,7 @@ class CalibrationProblem:
             clr=['red','blue','green','magenta']
             for i in range(self.vdim):
                 self.lines_SP_model[i], = self.ax[0].plot(
-                    k1, self.kF_model_vals[i], 'o-', color=clr[i],label=r'$F{0:d}$ model'.format(i+1))
+                    k1, self.kF_model_vals[i], color=clr[i],label=r'$F{0:d}$ model'.format(i+1)) #'o-'
             for i in range(self.vdim):
                 self.lines_SP_data[i],  = self.ax[0].plot(
                     k1, self.kF_data_vals[i], '--', color=clr[i], label=r'$F{0:d}$ data'.format(i+1))

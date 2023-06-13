@@ -12,7 +12,7 @@ import scipy.fftpack as fft
 import matplotlib.pyplot as plt
 
 
-from RandomFieldModule.utilities.ode_solve import FEM_coefficient_matrix_generator, Grid1D
+from fracturbulence.RandomFieldModule.utilities.ode_solve import FEM_coefficient_matrix_generator, Grid1D
 # from RandomFieldModule.Calibration.MannSpectraObjectiveFunction import MannEddyLifetime, StdEddyLifetime
 
 """

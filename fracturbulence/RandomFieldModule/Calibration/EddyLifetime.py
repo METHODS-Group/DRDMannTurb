@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
-from RandomFieldModule.utilities.ode_solve import FEM_coefficient_matrix_generator, Grid1D
+#from fracturbulence.RandomFieldModule.utilities.ode_solve import FEM_coefficient_matrix_generator, Grid1D
 import scipy.fftpack as fft
 import matplotlib.pyplot as plt
 
