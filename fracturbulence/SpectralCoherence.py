@@ -26,7 +26,6 @@ class SpectralCoherence(nn.Module):
         if self.type_EddyLifetime == 'tauNet':
             self.tauNet = tauNet(**kwargs)
 
-
     ###-------------------------------------------
 
     def init_parameters(self):
@@ -43,7 +42,6 @@ class SpectralCoherence(nn.Module):
         self.TimeScale   = torch.exp(self.logTimeScale)
         self.Magnitude   = torch.exp(self.logMagnitude)
         return self.LengthScale.item(), self.TimeScale.item(), self.Magnitude.item()
-
 
     ###-------------------------------------------
     
@@ -64,7 +62,6 @@ class SpectralCoherence(nn.Module):
         self.grid_k3 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
 
         self.meshgrid23 = torch.meshgrid(self.grid_k2, self.grid_k3)
-
 
     ###-------------------------------------------
     ### FORWARD MAP
@@ -94,7 +91,6 @@ class SpectralCoherence(nn.Module):
                 Chi[:,i,j] = torch.real(I / den)
         return Chi
 
-
     ###-------------------------------------------
     ### Auxilary methods
     ###-------------------------------------------  
@@ -102,7 +98,7 @@ class SpectralCoherence(nn.Module):
     @torch.jit.export
     def EddyLifetime(self, k=None):
         if k is None:
-            k = self.k 
+            k = self.k
         else:
             self.update_scales()
         kL = self.LengthScale * k.norm(dim=-1)

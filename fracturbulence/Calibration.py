@@ -3,14 +3,18 @@
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 import matplotlib.pyplot as plt
+import pathlib
+import numpy as np
 plt.rc('text',usetex=True)
 plt.rc('font',family='serif')
 from pylab import *
-import time
+import os
 
 from .common import MannEddyLifetime
 from .OnePointSpectra import OnePointSpectra
 from .SpectralCoherence import SpectralCoherence
+
+from typing import Dict, Any
 
 
 """
@@ -36,14 +40,14 @@ class LossFunc:
 
 """
 ==================================================================================================================
-Callibration problem class
+Calibration problem class
 ==================================================================================================================
 """
 
 
 class CalibrationProblem:
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Dict[str, Any]):
         self.input_size = kwargs.get('input_size', 3)
         self.hidden_layer_size = kwargs.get('hidden_layer_size', 0)
         self.init_with_noise = kwargs.get('init_with_noise', False)
@@ -118,6 +122,8 @@ class CalibrationProblem:
         return self.format_output(grad)
 
     def format_input(self, k1):
+        # TODO: it seems like these are not being hit. e.g. np call below
+        #   would error since numpy was not originally imported...
         if np.isscalar(k1):
             return torch.tensor([k1], dtype=torch.float64)
         else:
@@ -130,7 +136,7 @@ class CalibrationProblem:
     # Calibration method
     # -----------------------------------------
 
-    def calibrate(self, **kwargs):
+    def calibrate(self, **kwargs: Dict[str, Any]):
         print('\nCallibrating MannNet...')
 
         DataPoints, DataValues = kwargs.get('Data')
@@ -190,6 +196,9 @@ class CalibrationProblem:
         D = logk1.max() - logk1.min()
 
         def PenTerm(y):
+            """
+            TODO: are these embedded functions necessary?
+            """
             logy = torch.log(torch.abs(y))
             d2logy = torch.diff(torch.diff(logy, dim=-1)/h1, dim=-1)/h2
             f = torch.relu(d2logy).square()
@@ -198,6 +207,9 @@ class CalibrationProblem:
             return pen
 
         def RegTerm():
+            """
+            TODO: are these embedded functions necessary?
+            """
             reg = 0
             if self.OPS.type_EddyLifetime == 'tauNet':
                 theta_NN = parameters_to_vector(
@@ -206,6 +218,9 @@ class CalibrationProblem:
             return reg
 
         def loss_fn(model, target,weights):
+            """
+            TODO: are these embedded functions necessary?
+            """
             #y = torch.abs((model-target)).square()
             y = torch.log(torch.abs(model/target)).square()
             # y = ( (model-target)/(target) ).square()
@@ -294,7 +309,10 @@ class CalibrationProblem:
                               for param in self.OPS.parameters()]).detach().numpy()
         print('grad = ', self.grad)
 
-    def plot(self, **kwargs):
+    def plot(self, **kwargs:Dict[str, Any]):
+        """
+        Handles all plotting
+        """
         plt_dynamic = kwargs.get('plt_dynamic', False)
         if plt_dynamic:
             ion()
@@ -426,10 +444,11 @@ class CalibrationProblem:
             self.fig.canvas.flush_events()
         else:
             print("="*30)
-            print("SAVING FINAL SOLUTION RESULTS TO " + f'{self.output_directory+"final_solution.png"}')
-            self.fig.savefig(self.output_directory+"final_solution.png", format='png', dpi=100)
-            #self.fig.savefig(self.output_directory+'Final_solution.png',format='png',dpi=100)
-            plt.savefig(self.output_directory+'Final_solution.png',format='png',dpi=100)
+            # print("SAVING FINAL SOLUTION RESULTS TO " + f'{self.output_directory+"final_solution.png"}')
+            
+            self.fig.savefig(self.output_directory, format='png', dpi=100)
+            #self.fig.savefig(self.output_directory.resolve()+"final_solution.png", format='png', dpi=100)
+            # plt.savefig(self.output_directory.resolve()+'Final_solution.png',format='png',dpi=100)
 
 
 ############################################################################

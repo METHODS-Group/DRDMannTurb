@@ -104,7 +104,6 @@ class SimpleNN(nn.Module):
 
         # self.powers = torch.arange(1,4).detach()
 
-
     def forward(self, x):
         out = x.clone()
         # out = (out.unsqueeze(-1)**self.powers).flatten(start_dim=-2, end_dim=-1)

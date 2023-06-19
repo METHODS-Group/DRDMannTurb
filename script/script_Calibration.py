@@ -145,7 +145,7 @@ plt.savefig(savedir / "initial_custom_guess.png", dpi=100)
 ####################################
 ### Calibrate
 ####################################
-opt_params = pb.calibrate(Data=Data, **config)#, OptimizerClass=torch.optim.RMSprop)
+opt_params = pb.calibrate(Data=Data, **config) #, OptimizerClass=torch.optim.RMSprop)
 
 
 # In[ ]:
