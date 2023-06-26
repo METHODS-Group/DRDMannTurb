@@ -1,5 +1,5 @@
 from math import *
-import numpy as np
+# import numpy as np
 import torch
 
 
@@ -27,7 +27,7 @@ class OnePointSpectraDataGenerator:
             if kwargs.get('spectra_file') is not None:
                 print('Reading file' + kwargs.get('spectra_file') + '\n')
                 spectra_file=kwargs.get('spectra_file')
-                self.CustomData=np.genfromtxt(spectra_file,skip_header=1,delimiter=',')
+                # TODO: self.CustomData=torch.genfromtxt(spectra_file,skip_header=1,delimiter=',')
             else:
                 raise Exception('Custom spectra_file not found')
         else:
@@ -37,7 +37,7 @@ class OnePointSpectraDataGenerator:
             self.generate_Data(self.DataPoints)
 
     def generate_Data(self, DataPoints):
-        DataValues = np.zeros([len(DataPoints), 3, 3])
+        DataValues = torch.zeros([len(DataPoints), 3, 3])
         if self.data_type == 'Custom':
             DataValues[:,0,0]=self.CustomData[:,1]
             DataValues[:,1,1]=self.CustomData[:,2]
@@ -47,13 +47,15 @@ class OnePointSpectraDataGenerator:
             for i, Point in enumerate(DataPoints):
                 DataValues[i] = self.eval(*Point)
 
+        print(f"DataValues is on {DataValues.get_device()}")
+
         self.Data = ( DataPoints, DataValues )
         return self.Data
 
     def eval_VK(self, k1, z=1):
         C = 3.2
         L = 0.59
-        F = np.zeros([3,3])
+        F = torch.zeros([3,3])
         F[0,0] = 9/55  * C / (L**(-2) + k1**2) **(5/6)
         F[1,1] = 3/110 * C * (3*L**(-2) + 8*k1**2) / (L**(-2) + k1**2) **(11/6)
         F[2,2] = 3/110 * C * (3*L**(-2) + 8*k1**2) / (L**(-2) + k1**2) **(11/6)
@@ -62,7 +64,7 @@ class OnePointSpectraDataGenerator:
     def eval_Kaimal(self,k1,z=1):
         z=self.zref
         n = 1/(2*pi) * k1 * z
-        F = np.zeros([3,3])
+        F = torch.zeros([3,3])
         F[0,0] = 102 * n / (1 + 33*n)**(5/3)
         F[1,1] = 17  * n / (1 + 9.5*n)**(5/3)
         F[2,2] = 2.1 * n / (1 + 5.3*n**(5/3))
@@ -70,6 +72,6 @@ class OnePointSpectraDataGenerator:
         return F
 
     def eval_IEC(self, k1, z=1):
-        F = np.zeros([3,3])
+        F = torch.zeros([3,3])
         return F
 

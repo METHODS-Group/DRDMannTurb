@@ -26,4 +26,4 @@ A Conda spec-file is included, to install a functioning environment, run ``conda
 TODO: write a ``CalibrationLite`` class that subclasses from ``nn.Module`` that has bare minimum functionality that matches the current ``Calibration`` class 
 
 - [ ] Investigate unnecessary ``np`` calls and other CPU-only libraries that contribute to high VRAM volatility (averaging 25%) 
-- [ ] 
+- [ ] The ``MannEddyLifetime`` function requires a ``scipy.special`` call, which incurs a communication between CPU and GPU; this may require something like the (now defunct) [torch-Cephes library](https://github.com/deepmind/torch-cephes)...  

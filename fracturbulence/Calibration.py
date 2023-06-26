@@ -4,7 +4,7 @@ import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 import matplotlib.pyplot as plt
 import pathlib
-import numpy as np
+# import numpy as np
 plt.rc('text',usetex=True)
 plt.rc('font',family='serif')
 from pylab import *
@@ -20,7 +20,7 @@ from typing import Dict, Any
 """
 ==================================================================================================================
 Loss funtion for calibration
-==================================================================================================================
+=================================== ===============================================================================
 """
 
 
@@ -89,8 +89,7 @@ class CalibrationProblem:
         self.parameters = param_vec
 
     def initialize_parameters_with_noise(self):
-        noise = self.noise_magnitude * np.random.randn(*self.parameters.shape)
-        noise = torch.tensor(noise, dtype=torch.float64)
+        noise = torch.tensor(self.noise_magnitude * torch.randn(*self.parameters.shape), dtype=torch.float64)
         # self.update_parameters(noise**2)
         vector_to_parameters(noise.abs(), self.OPS.parameters())
         try:
@@ -124,13 +123,13 @@ class CalibrationProblem:
     def format_input(self, k1):
         # TODO: it seems like these are not being hit. e.g. np call below
         #   would error since numpy was not originally imported...
-        if np.isscalar(k1):
-            return torch.tensor([k1], dtype=torch.float64)
-        else:
-            return torch.tensor(k1, dtype=torch.float64)
+        # if k1.ndim == 0:
+        #     return torch.tensor([k1], dtype=torch.float64)
+        # else:
+        return torch.tensor(k1, dtype=torch.float64)
 
     def format_output(self, out):
-        return out.numpy()
+        return out.cpu().numpy()
 
     # -----------------------------------------
     # Calibration method
@@ -154,16 +153,17 @@ class CalibrationProblem:
             :, 0].squeeze()
 
         # create a single numpy.ndarray with numpy.array() and then convert to a porch tensor
-        single_data_array=np.array( [DataValues[:, i, i] for i in range(
-            3)] + [DataValues[:, 0, 2]])
-        self.kF_data_vals = torch.tensor(single_data_array, dtype=torch.float64)
+        # single_data_array=torch.tensor( [DataValues[:, i, i] for i in range(
+        #     3)] + [DataValues[:, 0, 2]])
+        # self.kF_data_vals = torch.tensor(single_data_array, dtype=torch.float64)
+        self.kF_data_vals = torch.cat((DataValues[:, 0, 0], DataValues[:, 1, 1], DataValues[:, 2, 2], DataValues[:, 0, 2]))
 
         k1_data_pts, y_data0 = self.k1_data_pts, self.kF_data_vals
         # self.x, self.y, self.y_data = k1_data_pts
 
         y = self.OPS(k1_data_pts)
         y_data = torch.zeros_like(y)
-        y_data[:4, ...] = y_data0
+        y_data[:4, ...] = y_data0.view(4, 20)
 
 
         ### The case with the coherence
@@ -258,19 +258,19 @@ class CalibrationProblem:
                 if alpha_pen:
                     pen = alpha_pen * PenTerm(y[self.curves[i:]])
                     self.loss = self.loss + pen
-                    print('pen = ', pen.item())
+                    # print('pen = ', pen.item())
                 if alpha_reg:
                     reg = alpha_reg * RegTerm()
                     self.loss = self.loss + reg
-                    print('reg = ', reg.item())
+                    # print('reg = ', reg.item())
                 self.loss.backward()
-                print('loss  = ', self.loss.item())
-                if hasattr(self.OPS, 'tauNet'):
-                    if hasattr(self.OPS.tauNet.Ra.nu, 'item'):
-                        print('-> nu = ', self.OPS.tauNet.Ra.nu.item())
-                self.kF_model_vals = y.clone().detach().numpy()
-                self.plot(**kwargs, plt_dynamic=True,
-                          model_vals=self.kF_model_vals)
+                # print('loss  = ', self.loss.item())
+                # if hasattr(self.OPS, 'tauNet'):
+                #     if hasattr(self.OPS.tauNet.Ra.nu, 'item'):
+                #         print('-> nu = ', self.OPS.tauNet.Ra.nu.item())
+                self.kF_model_vals = y.clone().detach()
+                # self.plot(**kwargs, plt_dynamic=True,
+                #           model_vals=self.kF_model_vals.cpu().detach().numpy() if torch.is_tensor(self.kF_model_vals) else self.kF_model_vals)
                 return self.loss
 
             for epoch in range(nepochs):
@@ -292,7 +292,7 @@ class CalibrationProblem:
         print('loss = {0}'.format(self.loss.item()))
         print('tol  = {0}'.format(tol))
         self.print_parameters()
-        self.plot(plt_dynamic=False)
+        # self.plot(plt_dynamic=False)
 
         return self.parameters
 
@@ -301,13 +301,15 @@ class CalibrationProblem:
     # ------------------------------------------------
 
     def print_parameters(self):
-        print(('Optimal NN parameters = [' + ', '.join(['{}'] *
-              len(self.parameters)) + ']\n').format(*self.parameters))
+        # print(('Optimal NN parameters = [' + ', '.join(['{}'] *
+        #       len(self.parameters)) + ']\n').format(*self.parameters))
+        pass
 
     def print_grad(self):
-        self.grad = torch.cat([param.grad.view(-1)
-                              for param in self.OPS.parameters()]).detach().numpy()
-        print('grad = ', self.grad)
+        # self.grad = torch.cat([param.grad.view(-1)
+        #                       for param in self.OPS.parameters()]).detach().numpy()
+        # print('grad = ', self.grad)
+        pass
 
     def plot(self, **kwargs:Dict[str, Any]):
         """
@@ -325,10 +327,10 @@ class CalibrationProblem:
             self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[
                 :, 0].squeeze()
             # create a single numpy.ndarray with numpy.array() and then convert to a porch tensor
-            single_data_array=np.array( [DataValues[:, i, i] for i in range(
-            3)] + [DataValues[:, 0, 2]])
-
-            self.kF_data_vals = torch.tensor(single_data_array, dtype=torch.float64)
+            # single_data_array=np.array( [DataValues[:, i, i] for i in range(
+            # 3)] + [DataValues[:, 0, 2]])
+            # self.kF_data_vals = torch.tensor(single_data_array, dtype=torch.float64)
+            self.kF_data_vals = torch.cat((DataValues[:, 0, 0], DataValues[:, 1, 1], DataValues[:, 2, 2], DataValues[:, 0, 2]))
 
         k1 = self.k1_data_pts
         k = torch.stack([0*k1, k1, 0*k1], dim=-1)
@@ -361,15 +363,18 @@ class CalibrationProblem:
             clr=['red','blue','green','magenta']
             for i in range(self.vdim):
                 self.lines_SP_model[i], = self.ax[0].plot(
-                    k1, self.kF_model_vals[i], color=clr[i],label=r'$F{0:d}$ model'.format(i+1)) #'o-'
+                    k1.cpu().detach().numpy(), self.kF_model_vals[i], color=clr[i],label=r'$F{0:d}$ model'.format(i+1)) #'o-'
+
+            print(f"k1.size: {k1.size()}   self.kF_data_vals: {self.kF_data_vals.size()}")
+
             for i in range(self.vdim):
                 self.lines_SP_data[i],  = self.ax[0].plot(
-                    k1, self.kF_data_vals[i], '--', color=clr[i], label=r'$F{0:d}$ data'.format(i+1))
+                    k1.cpu().detach().numpy(), self.kF_data_vals.view(4,20)[i].cpu().detach().numpy(), '--', color=clr[i], label=r'$F{0:d}$ data'.format(i+1))
             if 3 in self.curves:
                 self.lines_SP_model[self.vdim], = self.ax[0].plot(
-                    k1, -self.kF_model_vals[self.vdim], 'o-',color=clr[3], label=r'$-F_{13}$ model')
+                    k1.cpu().detach().numpy(), -self.kF_model_vals[self.vdim], 'o-',color=clr[3], label=r'$-F_{13}$ model')
                 self.lines_SP_data[self.vdim],  = self.ax[0].plot(
-                    k1, -self.kF_data_vals[self.vdim], '--',color=clr[3],label=r'$-F_{13}$ data')
+                    k1.cpu().detach().numpy(), -self.kF_data_vals.view(4,20)[self.vdim].cpu().detach().numpy(), '--',color=clr[3],label=r'$-F_{13}$ data')
             self.ax[0].legend()
             self.ax[0].set_xscale('log')
             self.ax[0].set_yscale('log')
@@ -381,28 +386,28 @@ class CalibrationProblem:
             if plt_tau:
                 # Subplot 2: Eddy Lifetime
                 self.ax[1].set_title('Eddy lifetime')
-                self.tau_model1 = self.OPS.EddyLifetime(k_1).detach().numpy()
-                self.tau_model2 = self.OPS.EddyLifetime(k_2).detach().numpy()
-                self.tau_model3 = self.OPS.EddyLifetime(k_3).detach().numpy()
-                self.tau_model4 = self.OPS.EddyLifetime(k_4).detach().numpy()
+                self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
+                self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
+                self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
+                self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
                 # self.tau_model1m= self.OPS.EddyLifetime(-k_1).detach().numpy()
                 # self.tau_model2m= self.OPS.EddyLifetime(-k_2).detach().numpy()
                 # self.tau_model3m= self.OPS.EddyLifetime(-k_3).detach().numpy()
                 self.tau_ref = 3.9 * \
-                    MannEddyLifetime(0.59 * k_gd).detach().numpy()
+                    MannEddyLifetime(0.59 * k_gd).cpu().detach().numpy()
                 self.lines_LT_model1, = self.ax[1].plot(
-                    k_gd, self.tau_model1, '-', label=r'$\tau_{model}(k_1)$')
+                    k_gd.cpu().detach().numpy(), self.tau_model1, '-', label=r'$\tau_{model}(k_1)$')
                 self.lines_LT_model2, = self.ax[1].plot(
-                    k_gd, self.tau_model2, '-', label=r'$\tau_{model}(k_2)$')
+                    k_gd.cpu().detach().numpy(), self.tau_model2, '-', label=r'$\tau_{model}(k_2)$')
                 self.lines_LT_model3, = self.ax[1].plot(
-                    k_gd, self.tau_model3, '-', label=r'$\tau_{model}(k_3)$')
+                    k_gd.cpu().detach().numpy(), self.tau_model3, '-', label=r'$\tau_{model}(k_3)$')
                 self.lines_LT_model4, = self.ax[1].plot(
-                    k_gd, self.tau_model4, '-', label=r'$\tau_{model}(k,k,k)$')
+                    k_gd.cpu().detach().numpy(), self.tau_model4, '-', label=r'$\tau_{model}(k,k,k)$')
                 # self.lines_LT_model1m, = self.ax[1].plot(k_gd, self.tau_model1m, '-', label=r'$\tau_{model}(-k_1)$')
                 # self.lines_LT_model2m, = self.ax[1].plot(k_gd, self.tau_model2m, '-', label=r'$\tau_{model}(-k_2)$')
                 # self.lines_LT_model3m, = self.ax[1].plot(k_gd, self.tau_model3m, '-', label=r'$\tau_{model}(-k_3)$')
                 self.lines_LT_ref,   = self.ax[1].plot(
-                    k_gd, self.tau_ref,  '--', label=r'$\tau_{ref}=$Mann')
+                    k_gd.cpu().detach().numpy(), self.tau_ref,  '--', label=r'$\tau_{ref}=$Mann')
                 self.ax[1].legend()
                 self.ax[1].set_xscale('log')
                 self.ax[1].set_yscale('log')
@@ -421,10 +426,10 @@ class CalibrationProblem:
         #self.ax[0].set_aspect(1)
 
         if plt_tau:
-            self.tau_model1 = self.OPS.EddyLifetime(k_1).detach().numpy()
-            self.tau_model2 = self.OPS.EddyLifetime(k_2).detach().numpy()
-            self.tau_model3 = self.OPS.EddyLifetime(k_3).detach().numpy()
-            self.tau_model4 = self.OPS.EddyLifetime(k_4).detach().numpy()
+            self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
+            self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
+            self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
+            self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
             # self.tau_model1m= self.OPS.EddyLifetime(-k_1).detach().numpy()
             # self.tau_model2m= self.OPS.EddyLifetime(-k_2).detach().numpy()
             # self.tau_model3m= self.OPS.EddyLifetime(-k_3).detach().numpy()

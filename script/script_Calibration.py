@@ -37,7 +37,7 @@ config = {
     'tol'               :   1.e-3, ### not important
     'lr'                :   1,     ### learning rate
     'penalty'           :   1.e-1,
-    'regularization'    :   1.e-5,
+    'regularization'    :   1.e-5       ,
     'nepochs'           :   2,
     'curves'            :   [0,1,2,3],
     'data_type'         :   'Custom', ### 'Kaimal', 'iso'
@@ -115,27 +115,27 @@ DataValues = Data[1]
 ### Just plot
 ####################################
 
-kF = pb.eval(k1_data_pts)
-plt.figure(1,figsize=(10,10))
-clr=['red','blue','green']
-for i in range(3):
-    plt.plot(k1_data_pts, kF[i], '-', color=clr[i], label=r'$F_{0:d}$ model'.format(i+1))
-    plt.plot(k1_data_pts, DataValues[:,i,i], '--',color=clr[i],label=r'$F_{0:d}$ data'.format(i+1) )#, label=r'$F_{0:d}$ data'.format(i+1))
-plt.plot(k1_data_pts, -kF[3], '-m', label=r'-$F_{13}$ model')
-plt.plot(k1_data_pts, -DataValues[:,0,2], '--m', label=r'$-F_{13}$ data')
-plt.xscale('log')
-plt.yscale('log')
-plt.xlabel(r'$k_1$',fontsize=22)
-plt.xlim(0.001,1)
-plt.ylim(0.001,10)
-
-
-plt.ylabel(r'$k_1 F(k_1)/u_\ast^2$',fontsize=22)
-plt.legend(fontsize=16)
-plt.xticks(fontsize=16)
-plt.yticks(fontsize=16)
-plt.grid(which='both')
-plt.savefig(savedir / "initial_custom_guess.png", dpi=100)
+# kF = pb.eval(k1_data_pts)
+# plt.figure(1,figsize=(10,10))
+# clr=['red','blue','green']
+# for i in range(3):
+#     plt.plot(k1_data_pts, kF[i], '-', color=clr[i], label=r'$F_{0:d}$ model'.format(i+1))
+#     plt.plot(k1_data_pts, DataValues[:,i,i], '--',color=clr[i],label=r'$F_{0:d}$ data'.format(i+1) )#, label=r'$F_{0:d}$ data'.format(i+1))
+# plt.plot(k1_data_pts, -kF[3], '-m', label=r'-$F_{13}$ model')
+# plt.plot(k1_data_pts, -DataValues[:,0,2], '--m', label=r'$-F_{13}$ data')
+# plt.xscale('log')
+# plt.yscale('log')
+# plt.xlabel(r'$k_1$',fontsize=22)
+# plt.xlim(0.001,1)
+# plt.ylim(0.001,10)
+# 
+# 
+# plt.ylabel(r'$k_1 F(k_1)/u_\ast^2$',fontsize=22)
+# plt.legend(fontsize=16)
+# plt.xticks(fontsize=16)
+# plt.yticks(fontsize=16)
+# plt.grid(which='both')
+# plt.savefig(savedir / "initial_custom_guess.png", dpi=100)
 #plt.savefig(config['output_folder']+'initial_Custom_guess.pdf',dpi=100)
 
 
@@ -154,12 +154,13 @@ opt_params = pb.calibrate(Data=Data, **config) #, OptimizerClass=torch.optim.RMS
  ####################################
 ### Export
 ####################################
-if 'opt_params' not in locals():
-    opt_params = pb.parameters
-filename = config['output_folder'] + config['type_EddyLifetime'] + '_' + config['data_type'] + '.pkl'
-with open(filename, 'wb') as file:
-    pickle.dump([config, opt_params, Data, pb.loss_history_total, pb.loss_history_epochs], file)
-filename2 = config['output_folder'] + 'Convergence.dat'
-with open(filename2, 'w') as fout:
-    for index in range(len(pb.loss_history_total)):
-        fout.write(str(pb.loss_history_total[index])+'\n')
+# if 'opt_params' not in locals():
+    # opt_params = pb.parameters
+# filename = config['output_folder'] + config['type_EddyLifetime'] + '_' + config['data_type'] + '.pkl'
+# with open(filename, 'wb') as file:
+    # pickle.dump([config, opt_params, Data, pb.loss_history_total, pb.loss_history_epochs], file)
+# filename2 = config['output_folder'] + 'Convergence.dat'
+# with open(filename2, 'w') as fout:
+    # for index in range(len(pb.loss_history_total)):
+        # fout.write(str(pb.loss_history_total[index])+'\n')
+# 
