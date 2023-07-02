@@ -14,17 +14,13 @@ import pickle
 from math import log
 from torch.nn import parameter
 
-from time import time
-
 from fracturbulence.common import *
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 
 from pathlib import Path
 
-# v2: torch.set_default_device('cuda:0')
-torch.set_default_tensor_type('torch.cuda.FloatTensor')
-savedir = Path().resolve() / "results"
+savedir = Path().resolve() / "results" 
 
 # %%
 ####################################
@@ -32,7 +28,7 @@ savedir = Path().resolve() / "results"
 ####################################
 
 config = {
-    'type_EddyLifetime' :   'tauNet', #'TwoThird', #'tauNet', # CALIBRATION : 'tauNet',  ### 'const', TwoThird', 'Mann', 'tauNet'
+    'type_EddyLifetime' :   'tauNet', # CALIBRATION : 'tauNet',  ### 'const', TwoThird', 'Mann', 'tauNet'
     'type_PowerSpectra' :   'RDT', ### 'RDT', 'zetaNet', 'C3Net', 'Corrector'
     'nlayers'           :   2,
     'hidden_layer_size' :   10,
@@ -43,20 +39,17 @@ config = {
     'lr'                :   1,     ### learning rate
     'penalty'           :   1, # CALIBRATION: 1.e-1,
     'regularization'    :   1.e-5,# CALIBRATION: 1.e-1,
-    'nepochs'           :   50,
+    'nepochs'           :   5,
     'curves'            :   [0,1,2,3],
     'data_type'         :   'Kaimal',  # CALIBRATION: 'Custom', ### 'Kaimal', 'SimiuScanlan', 'SimiuYeo', 'iso'
     'spectra_file'      :   'Spectra.dat',
     'Uref'              :   10, # m/s
     'zref'              :   1, #m
-    'domain'            :   torch.logspace(-1, 2, 20), #np.logspace(-4, 2, 40), ### NOTE: Experiment 1: np.logspace(-1, 2, 20), Experiment 2: np.logspace(-2, 2, 40)
+    'domain'            :   np.logspace(-1, 2, 20), #np.logspace(-4, 2, 40), ### NOTE: Experiment 1: np.logspace(-1, 2, 20), Experiment 2: np.logspace(-2, 2, 40)
     'noisy_data'        :   0.,#0*3.e-1, ### level of the data noise  ### NOTE: Experiment 1: zero, Experiment 2: non-zero
     'output_folder'     :   str(savedir), 
     'input_folder'     :   '/Users/gdeskos/work_in_progress/WindGenerator/script/'
 }
-
-start = time()
-
 pb = CalibrationProblem(**config)
 
 # %%
@@ -122,43 +115,43 @@ DataValues = Data[1]
 
 # %%
 IECtau=MannEddyLifetime(k1_data_pts*L)
-# plt.figure(1)
-# plt.loglog(k1_data_pts*L,IECtau,'k')
-# #plt.xlim(0.1,60)
-# plt.ylabel(r'$\tau(k)$ (aribitrary units)',fontsize=18)
-# plt.xlabel(r'$(kL)$',fontsize=18)
-# plt.show()
-# #plt.savefig('tau.png')
+plt.figure(1)
+plt.loglog(k1_data_pts*L,IECtau,'k')
+#plt.xlim(0.1,60)
+plt.ylabel(r'$\tau(k)$ (aribitrary units)',fontsize=18)
+plt.xlabel(r'$(kL)$',fontsize=18)
+plt.show()
+#plt.savefig('tau.png')
 
 # %%
 ####################################
 ### Just plot
 ####################################
-# plt.rc('text',usetex=True)
-# plt.rc('font',family='serif')
+plt.rc('text',usetex=True)
+plt.rc('font',family='serif')
 
 
 kF = pb.eval(k1_data_pts)
-# plt.figure(1,figsize=(10,10))
-# clr=['black','blue','red']
-# plt.figure(1)
-# for i in range(3):
-#     plt.plot(k1_data_pts, kF[i], '-', color=clr[i], label=r'$F_{0:d}$ model'.format(i+1))
-#     plt.plot(k1_data_pts, DataValues[:,i,i], '--',color=clr[i],label=r'$F_{0:d}$ data'.format(i+1) )#, label=r'$F_{0:d}$ data'.format(i+1))
-# plt.plot(k1_data_pts, -kF[3], '-m', label=r'-$F_{13}$ model')
-# plt.plot(k1_data_pts, -DataValues[:,0,2], '--m', label=r'$-F_{13}$ data')
-# plt.xscale('log')
-# plt.yscale('log')
-# plt.xlabel(r'$k_1$',fontsize=22)
-# #plt.xlim(0.01,2)
-# #plt.ylim(0.00001,0.1)
-# plt.ylabel(r'$k_1 F(k_1)/u_\ast^2$',fontsize=22)
-# plt.legend(loc='lower left',fontsize=16)
-# plt.xticks(fontsize=16)
-# plt.yticks(fontsize=16)
-# plt.grid(which='both')
-# plt.title("Initial Guess")
-# plt.show()
+plt.figure(1,figsize=(10,10))
+clr=['black','blue','red']
+plt.figure(1)
+for i in range(3):
+    plt.plot(k1_data_pts, kF[i], '-', color=clr[i], label=r'$F_{0:d}$ model'.format(i+1))
+    plt.plot(k1_data_pts, DataValues[:,i,i], '--',color=clr[i],label=r'$F_{0:d}$ data'.format(i+1) )#, label=r'$F_{0:d}$ data'.format(i+1))
+plt.plot(k1_data_pts, -kF[3], '-m', label=r'-$F_{13}$ model')
+plt.plot(k1_data_pts, -DataValues[:,0,2], '--m', label=r'$-F_{13}$ data')
+plt.xscale('log')
+plt.yscale('log')
+plt.xlabel(r'$k_1$',fontsize=22)
+#plt.xlim(0.01,2)
+#plt.ylim(0.00001,0.1)
+plt.ylabel(r'$k_1 F(k_1)/u_\ast^2$',fontsize=22)
+plt.legend(loc='lower left',fontsize=16)
+plt.xticks(fontsize=16)
+plt.yticks(fontsize=16)
+plt.grid(which='both')
+plt.title("Initial Guess")
+plt.show()
 
 
 #plt.savefig(config['output_folder']+'initial_guess.png',format='png',dpi=100)
@@ -168,8 +161,6 @@ opt_params = pb.calibrate(Data=Data, **config)#, OptimizerClass=torch.optim.RMSp
 # NOTE: THE FOLLOWING TOOK 14 MIN 44.2 SEC
 # Extrapolating, the full approx 125 epochs will take me about 40 minutes
 # VRAM usage is very low and volatile (consistently 600mb at 25%)
-
-print(f"Elapsed time : {time() - start}")
 
 # %%
 plt.figure()
@@ -187,10 +178,10 @@ plt.show()
 ####################################
 ### Export
 ####################################
-# if 'opt_params' not in locals():
-#     opt_params = pb.parameters
-# filename = config['output_folder'] + config['type_EddyLifetime'] + '_' + config['data_type'] + '.pkl'
-# with open(filename, 'wb') as file:
-#     pickle.dump([config, opt_params, Data, pb.loss_history_total, pb.loss_history_epochs], file)
+if 'opt_params' not in locals():
+    opt_params = pb.parameters
+filename = config['output_folder'] + config['type_EddyLifetime'] + '_' + config['data_type'] + '.pkl'
+with open(filename, 'wb') as file:
+    pickle.dump([config, opt_params, Data, pb.loss_history_total, pb.loss_history_epochs], file)
 
 

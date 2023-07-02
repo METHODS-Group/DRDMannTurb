@@ -4,7 +4,7 @@ import torch.nn as nn
 
 from .common import VKEnergySpectrum, MannEddyLifetime
 from .PowerSpectraRDT import PowerSpectraRDT
-from .tauNet import tauNet
+from .tauNet import tauNet, customNet
 
 """
 ==================================================================================================================
@@ -24,6 +24,8 @@ class OnePointSpectra(nn.Module):
 
         if self.type_EddyLifetime == 'tauNet':
             self.tauNet = tauNet(**kwargs)
+        elif self.type_EddyLifetime == 'customMLP': 
+            self.tauNet =  customNet(**kwargs)
 
     ###-------------------------------------------
 
@@ -99,6 +101,9 @@ class OnePointSpectra(nn.Module):
         elif self.type_EddyLifetime == 'tauNet':
             tau0 = self.InitialGuess_EddyLifetime(kL)
             tau  = tau0 + self.tauNet(k*self.LengthScale) # This takes a vector as input
+        elif self.type_EddyLifetime == 'customMLP': 
+            tau0 = self.InitialGuess_EddyLifetime(kL) 
+            tau = tau0 + self.tauNet(k * self.LengthScale)
         else:
             raise Exception('Wrong EddyLifetime model !')
         return self.TimeScale * tau
@@ -106,8 +111,12 @@ class OnePointSpectra(nn.Module):
 
     @torch.jit.export
     def InitialGuess_EddyLifetime(self, kL_norm): 
-        tau0 = MannEddyLifetime(kL_norm) 
+        # NOTE: zenodo initial guess suggests 0 as return here
+        #tau0 = MannEddyLifetime(kL_norm) 
+        #return tau0
+        tau0 = 0.
         return tau0
+
 
     ###------------------------------------------- 
 

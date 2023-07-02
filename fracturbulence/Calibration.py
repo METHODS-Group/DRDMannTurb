@@ -48,6 +48,10 @@ Calibration problem class
 class CalibrationProblem:
 
     def __init__(self, **kwargs: Dict[str, Any]):
+        # stringify the activation functions used; for manual bash only 
+        self.activfuncstr = str(kwargs.get('activations', ['relu', 'relu']))
+        print(self.activfuncstr)
+
         self.input_size = kwargs.get('input_size', 3)
         self.hidden_layer_size = kwargs.get('hidden_layer_size', 0)
         self.init_with_noise = kwargs.get('init_with_noise', False)
@@ -292,7 +296,7 @@ class CalibrationProblem:
         print('loss = {0}'.format(self.loss.item()))
         print('tol  = {0}'.format(tol))
         self.print_parameters()
-        # self.plot(plt_dynamic=False)
+        self.plot(plt_dynamic=False)
 
         return self.parameters
 
@@ -346,7 +350,7 @@ class CalibrationProblem:
 
         self.kF_model_vals = kwargs.get('model_vals', None)
         if self.kF_model_vals is None:
-            self.kF_model_vals = self.OPS(k1).detach().numpy()
+            self.kF_model_vals = self.OPS(k1).cpu().detach().numpy()
 
         if not hasattr(self, 'fig'):
             nrows = 1
@@ -415,8 +419,11 @@ class CalibrationProblem:
                 self.ax[1].set_ylabel(r'$\tau$')
                 self.ax[1].grid(which='both')
 
+                # plt.show()
+
+            # TODO clean up plotting things? 
             self.fig.canvas.draw()
-            self.fig.canvas.flush_events()
+            # self.fig.canvas.flush_events()
 
         for i in range(self.vdim):
             self.lines_SP_model[i].set_ydata(self.kF_model_vals[i])
@@ -441,6 +448,9 @@ class CalibrationProblem:
             # self.lines_LT_model2m.set_ydata(self.tau_model2m)
             # self.lines_LT_model3m.set_ydata(self.tau_model3m)
 
+
+            # plt.show()
+            
         if plt_dynamic:
             for ax in self.ax:
                 ax.relim()
@@ -449,11 +459,17 @@ class CalibrationProblem:
             self.fig.canvas.flush_events()
         else:
             print("="*30)
-            # print("SAVING FINAL SOLUTION RESULTS TO " + f'{self.output_directory+"final_solution.png"}')
+            print("SAVING FINAL SOLUTION RESULTS TO " + f'{self.output_directory+"/" + self.activfuncstr +"final_solution.png"}')
             
-            self.fig.savefig(self.output_directory, format='png', dpi=100)
-            #self.fig.savefig(self.output_directory.resolve()+"final_solution.png", format='png', dpi=100)
+            #self.fig.savefig(self.output_directory, format='png', dpi=100)
+            self.fig.savefig(self.output_directory+"/" + self.activfuncstr + "final_solution.png", format='png', dpi=100)
             # plt.savefig(self.output_directory.resolve()+'Final_solution.png',format='png',dpi=100)
+
+        # print("="*30)
+        # print("SAVING FINAL SOLUTION RESULTS TO " + f'{self.output_directory+"final_solution.png"}')
+            
+        #self.fig.savefig(self.output_directory, format='png', dpi=100)
+        # self.fig.savefig(self.output_directory.resolve()+"final_solution.png", format='png', dpi=100)
 
 
 ############################################################################

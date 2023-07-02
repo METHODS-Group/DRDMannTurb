@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 
-from .LearnableFunctions import Rational, SimpleNN
+from .LearnableFunctions import Rational, SimpleNN, CustomMLP
 
 """
 ==================================================================================================================
@@ -10,11 +10,22 @@ Learnable Eddy Liftime class
 ==================================================================================================================
 """
 
+class ResNetBlock(nn.Module): 
+    def __init__(self): 
+        super().__init__() 
+
+
+class tauResNet(nn.Module): 
+    def __init__(self) -> None:
+        super().__init__()
+
+
 class tauNet(nn.Module):
     def __init__(self, **kwargs):
         super(tauNet, self).__init__()        
         self.nlayers = kwargs.get('nlayers', 2)
         self.hidden_layer_size = kwargs.get('hidden_layer_size', 3)
+
         self.nModes            = kwargs.get('nModes', 10)
         self.fg_learn_nu       = kwargs.get('learn_nu', True)
 
@@ -47,3 +58,27 @@ class tauNet(nn.Module):
         # k_mod = self.T(k).norm(dim=-1)
         # tau   = self.Ra(k_mod)
         # return tau
+
+class customNet(nn.Module): 
+    def __init__(self, **kwargs): 
+        super().__init__() 
+
+        self.hlayers = kwargs.get('hlayers', [10, 10])
+        self.activations = kwargs.get('activations', [nn.ReLU(), nn.ReLU()])
+
+        self.nModes            = kwargs.get('nModes', 10)
+        self.fg_learn_nu       = kwargs.get('learn_nu', True)
+
+        self.NN = CustomMLP(hlayers=self.hlayers, activations=self.activations, inlayer=3, outlayer=3)
+        self.Ra = Rational(nModes=self.nModes, learn_nu=self.fg_learn_nu)
+
+        self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
+
+    def sym(self, f, k):
+        return 0.5*(f(k) + f(k*self.sign))
+
+    def forward(self, k):
+        k_mod = self.NN(k.abs()).norm(dim=-1)
+        tau   = self.Ra(k_mod)
+        return tau
+    
