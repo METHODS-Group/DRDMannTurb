@@ -188,8 +188,13 @@ class CalibrationProblem:
         ##############################
         # Optimization
         ##############################
-        optimizer = OptimizerClass(
-            self.OPS.parameters(), lr=lr, line_search_fn='strong_wolfe')
+        if OptimizerClass == torch.optim.LBFGS: 
+            optimizer = OptimizerClass(
+                self.OPS.parameters(), lr=lr, line_search_fn='strong_wolfe', max_iter=50, history_size=nepochs) 
+        else: 
+            optimizer = OptimizerClass(self.OPS.parameters(), lr=lr)
+
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
 
         softplus = torch.nn.Softplus()
         logk1 = torch.log(self.k1_data_pts).detach()
@@ -268,7 +273,7 @@ class CalibrationProblem:
                     self.loss = self.loss + reg
                     # print('reg = ', reg.item())
                 self.loss.backward()
-                # print('loss  = ', self.loss.item())
+                print('loss  = ', self.loss.item())
                 # if hasattr(self.OPS, 'tauNet'):
                 #     if hasattr(self.OPS.tauNet.Ra.nu, 'item'):
                 #         print('-> nu = ', self.OPS.tauNet.Ra.nu.item())
@@ -282,6 +287,7 @@ class CalibrationProblem:
                 print('-> Epoch {0:d}'.format(epoch))
                 print('=================================\n')
                 optimizer.step(closure)
+                scheduler.step(self.loss)
                 self.print_grad()
                 print('---------------------------------\n')
                 self.print_parameters()
@@ -423,7 +429,8 @@ class CalibrationProblem:
 
             # TODO clean up plotting things? 
             self.fig.canvas.draw()
-            # self.fig.canvas.flush_events()
+            # TODO: comment next out if to save 
+            self.fig.canvas.flush_events()
 
         for i in range(self.vdim):
             self.lines_SP_model[i].set_ydata(self.kF_model_vals[i])
@@ -458,15 +465,15 @@ class CalibrationProblem:
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
         else:
-            print("="*30)
-            print("SAVING FINAL SOLUTION RESULTS TO " + f'{self.output_directory+"/" + self.activfuncstr +"final_solution.png"}')
-            
-            #self.fig.savefig(self.output_directory, format='png', dpi=100)
-            self.fig.savefig(self.output_directory+"/" + self.activfuncstr + "final_solution.png", format='png', dpi=100)
+            pass
+            # TODO: uncomment next!
+            # print("="*30)
+            # print("SAVING FINAL SOLUTION RESULTS TO " + f'{self.output_directory+"/" + self.activfuncstr +"final_solution.png"}')
+
+            # self.fig.savefig(self.output_directory+"/" + self.activfuncstr + "final_solution.png", format='png', dpi=100)
+
             # plt.savefig(self.output_directory.resolve()+'Final_solution.png',format='png',dpi=100)
 
-        # print("="*30)
-        # print("SAVING FINAL SOLUTION RESULTS TO " + f'{self.output_directory+"final_solution.png"}')
             
         #self.fig.savefig(self.output_directory, format='png', dpi=100)
         # self.fig.savefig(self.output_directory.resolve()+"final_solution.png", format='png', dpi=100)

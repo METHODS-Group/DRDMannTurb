@@ -4,7 +4,7 @@ import torch.nn as nn
 
 from .common import VKEnergySpectrum, MannEddyLifetime
 from .PowerSpectraRDT import PowerSpectraRDT
-from .tauNet import tauNet, customNet
+from .tauNet import tauNet, customNet, tauResNet
 
 """
 ==================================================================================================================
@@ -26,6 +26,8 @@ class OnePointSpectra(nn.Module):
             self.tauNet = tauNet(**kwargs)
         elif self.type_EddyLifetime == 'customMLP': 
             self.tauNet =  customNet(**kwargs)
+        elif self.type_EddyLifetime == 'tauResNet': 
+            self.tauNet = tauResNet(**kwargs)
 
     ###-------------------------------------------
 
@@ -98,12 +100,14 @@ class OnePointSpectra(nn.Module):
             tau = MannEddyLifetime(kL)
         elif self.type_EddyLifetime == 'TwoThird':
             tau = kL**(-2/3)
-        elif self.type_EddyLifetime == 'tauNet':
+        elif self.type_EddyLifetime in ['tauNet', 'customMLP', 'tauResNet']:
             tau0 = self.InitialGuess_EddyLifetime(kL)
             tau  = tau0 + self.tauNet(k*self.LengthScale) # This takes a vector as input
-        elif self.type_EddyLifetime == 'customMLP': 
-            tau0 = self.InitialGuess_EddyLifetime(kL) 
-            tau = tau0 + self.tauNet(k * self.LengthScale)
+        #elif self.type_EddyLifetime == 'customMLP': 
+        #    tau0 = self.InitialGuess_EddyLifetime(kL) 
+        #    tau = tau0 + self.tauNet(k * self.LengthScale)
+        #elif self.type_EddyLifetime == 'tauResNet': 
+        #    tauResNet
         else:
             raise Exception('Wrong EddyLifetime model !')
         return self.TimeScale * tau
