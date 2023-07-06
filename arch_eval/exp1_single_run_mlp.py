@@ -1,5 +1,3 @@
-"""Conclusion: AdamW and RMSProp perform A LOT worse"""
-
 import sys
 sys.path.append('../')
 import os
@@ -35,16 +33,15 @@ torch.set_default_tensor_type('torch.cuda.FloatTensor')
 def driver(): 
     start = time()
 
-    activ_list = [nn.ELU(), nn.GELU()]
+    activ_list = [nn.GELU(), nn.GELU(), nn.GELU()]
 
     # for idx, activ_list in enumerate(list(product(consts.ACTIVATIONS, consts.ACTIVATIONS))): #[(nn.SELU(), nn.SELU())]: # zip(consts.ACTIVATIONS, consts.ACTIVATIONS)[0]: 
         # print(f"on activation function combination {idx} given by {activ_list}")
 
     config = consts_exp1.CONSTANTS_CONFIG
     config['activations'] = activ_list
-    config['nepochs'] = 250 
-    config['OptimizerClass'] = torch.optim.RMSprop
-    config['lr'] = 0.1
+    config['hlayers'] = [32]*4
+    config['nepochs'] = 100 
     pb = CalibrationProblem(**config)
     parameters = pb.parameters
     parameters[:3] = [log(consts_exp1.L), log(consts_exp1.Gamma), log(consts_exp1.sigma)] #All of these parameters are positive 

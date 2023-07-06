@@ -167,7 +167,8 @@ class CalibrationProblem:
 
         y = self.OPS(k1_data_pts)
         y_data = torch.zeros_like(y)
-        y_data[:4, ...] = y_data0.view(4, 20)
+        print(y_data0.shape)
+        y_data[:4, ...] = y_data0.view(4, y_data0.shape[0] // 4)
 
 
         ### The case with the coherence
@@ -194,7 +195,8 @@ class CalibrationProblem:
         else: 
             optimizer = OptimizerClass(self.OPS.parameters(), lr=lr)
 
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
+#        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
 
         softplus = torch.nn.Softplus()
         logk1 = torch.log(self.k1_data_pts).detach()
@@ -287,7 +289,9 @@ class CalibrationProblem:
                 print('-> Epoch {0:d}'.format(epoch))
                 print('=================================\n')
                 optimizer.step(closure)
-                scheduler.step(self.loss)
+                # TODO: refactor the scheduler things, plateau requires loss 
+                # scheduler.step(self.loss) #if scheduler
+                scheduler.step()
                 self.print_grad()
                 print('---------------------------------\n')
                 self.print_parameters()
@@ -376,15 +380,17 @@ class CalibrationProblem:
                     k1.cpu().detach().numpy(), self.kF_model_vals[i], color=clr[i],label=r'$F{0:d}$ model'.format(i+1)) #'o-'
 
             print(f"k1.size: {k1.size()}   self.kF_data_vals: {self.kF_data_vals.size()}")
+            
+            s = self.kF_data_vals.shape[0]
 
             for i in range(self.vdim):
                 self.lines_SP_data[i],  = self.ax[0].plot(
-                    k1.cpu().detach().numpy(), self.kF_data_vals.view(4,20)[i].cpu().detach().numpy(), '--', color=clr[i], label=r'$F{0:d}$ data'.format(i+1))
+                    k1.cpu().detach().numpy(), self.kF_data_vals.view(4,s//4)[i].cpu().detach().numpy(), '--', color=clr[i], label=r'$F{0:d}$ data'.format(i+1))
             if 3 in self.curves:
                 self.lines_SP_model[self.vdim], = self.ax[0].plot(
                     k1.cpu().detach().numpy(), -self.kF_model_vals[self.vdim], 'o-',color=clr[3], label=r'$-F_{13}$ model')
                 self.lines_SP_data[self.vdim],  = self.ax[0].plot(
-                    k1.cpu().detach().numpy(), -self.kF_data_vals.view(4,20)[self.vdim].cpu().detach().numpy(), '--',color=clr[3],label=r'$-F_{13}$ data')
+                    k1.cpu().detach().numpy(), -self.kF_data_vals.view(4,s//4)[self.vdim].cpu().detach().numpy(), '--',color=clr[3],label=r'$-F_{13}$ data')
             self.ax[0].legend()
             self.ax[0].set_xscale('log')
             self.ax[0].set_yscale('log')

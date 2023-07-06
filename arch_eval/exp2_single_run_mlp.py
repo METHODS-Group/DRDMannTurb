@@ -1,5 +1,3 @@
-"""Conclusion: AdamW and RMSProp perform A LOT worse"""
-
 import sys
 sys.path.append('../')
 import os
@@ -22,7 +20,7 @@ from fracturbulence.common import *
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 
-import arch_eval.consts_exp1 as consts_exp1
+import arch_eval.consts_exp2 as consts_exp
 
 from itertools import product
 
@@ -35,31 +33,41 @@ torch.set_default_tensor_type('torch.cuda.FloatTensor')
 def driver(): 
     start = time()
 
-    activ_list = [nn.ELU(), nn.GELU()]
 
     # for idx, activ_list in enumerate(list(product(consts.ACTIVATIONS, consts.ACTIVATIONS))): #[(nn.SELU(), nn.SELU())]: # zip(consts.ACTIVATIONS, consts.ACTIVATIONS)[0]: 
         # print(f"on activation function combination {idx} given by {activ_list}")
 
-    config = consts_exp1.CONSTANTS_CONFIG
-    config['activations'] = activ_list
-    config['nepochs'] = 250 
-    config['OptimizerClass'] = torch.optim.RMSprop
-    config['lr'] = 0.1
+    config = consts_exp.CONSTANTS_CONFIG
     pb = CalibrationProblem(**config)
     parameters = pb.parameters
-    parameters[:3] = [log(consts_exp1.L), log(consts_exp1.Gamma), log(consts_exp1.sigma)] #All of these parameters are positive 
+    parameters[:3] = [log(consts_exp.L), log(consts_exp.Gamma), log(consts_exp.sigma)] #All of these parameters are positive 
     #so we can train the NN for the log of these parameters. 
     pb.parameters = parameters[:len(pb.parameters)]
-    k1_data_pts = config['domain'] #np.logspace(-1, 2, 20)
+
+    k1_data_pts = config['domain'] #torch.logspace(-1, 2, 20)
+    spectra_file=config['spectra_file']
+    print('Reading file' + spectra_file + '\n')
+    CustomData=torch.tensor(np.genfromtxt(spectra_file,skip_header=1,delimiter=','))
+    f=CustomData[:,0]
+    k1_data_pts=2*torch.pi*f/consts_exp.Uref
+
+
     DataPoints  = [ (k1, 1) for k1 in k1_data_pts ]
     Data = OnePointSpectraDataGenerator(DataPoints=DataPoints, **config).Data
 
+    data_noise_magnitude = config['noisy_data']
+    if data_noise_magnitude:
+        Data[1][:] *= torch.exp(torch.tensor(np.random.normal(loc=0, scale=data_noise_magnitude, size=Data[1].shape)))
+
+
     DataValues = Data[1]
 
-    IECtau=MannEddyLifetime(k1_data_pts*consts_exp1.L)
+    IECtau=MannEddyLifetime(k1_data_pts*consts_exp.L)
     kF = pb.eval(k1_data_pts)
 
     opt_params = pb.calibrate(Data=Data, **config)#, OptimizerClass=torch.optim.RMSprop)
+
+    print(f"Elapsed time : {time() - start}")
 
     plt.figure()
 
@@ -78,7 +86,6 @@ def driver():
         # print(f"Successfully finished combination {activ_list}")
 
 
-    print(f"Elapsed time : {time() - start}")
 
 if __name__ == '__main__':  
     from time import time  

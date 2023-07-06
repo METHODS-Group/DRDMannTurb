@@ -20,7 +20,7 @@ from fracturbulence.common import *
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 
-import consts
+import arch_eval.consts_exp1 as consts_exp1
 
 from itertools import product
 
@@ -31,15 +31,15 @@ torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 
 def driver(): 
-    for idx, activ_list in enumerate(list(product(consts.ACTIVATIONS, consts.ACTIVATIONS))): #[(nn.SELU(), nn.SELU())]: # zip(consts.ACTIVATIONS, consts.ACTIVATIONS)[0]: 
+    for idx, activ_list in enumerate(list(product(consts_exp1.ACTIVATIONS, consts_exp1.ACTIVATIONS))): #[(nn.SELU(), nn.SELU())]: # zip(consts.ACTIVATIONS, consts.ACTIVATIONS)[0]: 
         print(f"on activation function combination {idx} given by {activ_list}")
 
-        config = consts.CONSTANTS_CONFIG
+        config = consts_exp1.CONSTANTS_CONFIG
         config['activations'] = activ_list
         pb = CalibrationProblem(**config)
 
         parameters = pb.parameters
-        parameters[:3] = [log(consts.L), log(consts.Gamma), log(consts.sigma)] #All of these parameters are positive 
+        parameters[:3] = [log(consts_exp1.L), log(consts_exp1.Gamma), log(consts_exp1.sigma)] #All of these parameters are positive 
         #so we can train the NN for the log of these parameters. 
         pb.parameters = parameters[:len(pb.parameters)]
 
@@ -49,7 +49,7 @@ def driver():
 
         DataValues = Data[1]
 
-        IECtau=MannEddyLifetime(k1_data_pts*consts.L)
+        IECtau=MannEddyLifetime(k1_data_pts*consts_exp1.L)
         kF = pb.eval(k1_data_pts)
 
         opt_params = pb.calibrate(Data=Data, **config)#, OptimizerClass=torch.optim.RMSprop)

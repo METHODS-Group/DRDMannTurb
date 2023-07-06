@@ -1,5 +1,5 @@
 from math import *
-# import numpy as np
+import numpy as np
 import torch
 
 
@@ -27,6 +27,7 @@ class OnePointSpectraDataGenerator:
             if kwargs.get('spectra_file') is not None:
                 print('Reading file' + kwargs.get('spectra_file') + '\n')
                 spectra_file=kwargs.get('spectra_file')
+                self.CustomData=torch.tensor(np.genfromtxt(spectra_file,skip_header=1,delimiter=','))
                 # TODO: self.CustomData=torch.genfromtxt(spectra_file,skip_header=1,delimiter=',')
             else:
                 raise Exception('Custom spectra_file not found')
