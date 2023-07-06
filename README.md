@@ -7,7 +7,7 @@ Based on the code and theory from [this 2021](https://arxiv.org/pdf/2107.11046.p
 ### Noisy Data (Experiment 2) 
 
 Using a 4-layer 32-neuron FC neural network with a CosineAnnealer, these are the results after 10 epochs, which have a minimum loss value of  
-``loss = 0.14850306846012104``, as compared to 100 epochs yielding ``loss = 0.14850306846012104`` before. 
+``loss = 0.14850306846012104``, as compared to 100 epochs yielding ``loss = 0.20783722970539706`` before. 
 ![image](https://github.com/mjachi/WindGenerator/assets/74629347/838b8767-28c8-46cd-b349-5e2925255462)
 
 
