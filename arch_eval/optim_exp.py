@@ -22,8 +22,7 @@ plt.rc('text',usetex=True)
 plt.rc('font',family='serif')
 
 
-
-def driver(): 
+def driver():
     start = time()
 
     activ_list = [nn.ELU(), nn.GELU()]

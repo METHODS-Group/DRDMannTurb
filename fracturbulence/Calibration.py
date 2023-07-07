@@ -135,8 +135,8 @@ class CalibrationProblem:
     # Calibration method
     # -----------------------------------------
 
-    def calibrate(self, **kwargs: Dict[str, Any]):
-        print("\nCallibrating MannNet...")
+    def calibrate(self, **kwargs):
+        print("\nCalibrating MannNet...")
 
         DataPoints, DataValues = kwargs.get("Data")
         OptimizerClass = kwargs.get("OptimizerClass", torch.optim.LBFGS)
@@ -180,7 +180,7 @@ class CalibrationProblem:
             DataPoints_coh, DataValues_coh = kwargs.get("Data_Coherence")
             k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts = DataPoints_coh
             k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts = torch.meshgrid(
-                k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts
+                k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts, indexing=None
             )
             y_coh = self.Coherence(k1_data_pts, Delta_y_data_pts, Delta_z_data_pts)
             y_coh_data = torch.zeros_like(y_coh)
@@ -309,7 +309,7 @@ class CalibrationProblem:
                 optimizer.step(closure)
                 # TODO: refactor the scheduler things, plateau requires loss
                 # scheduler.step(self.loss) #if scheduler
-                scheduler.step()
+                scheduler.step(self.loss)
                 self.print_grad()
                 print("---------------------------------\n")
                 self.print_parameters()
