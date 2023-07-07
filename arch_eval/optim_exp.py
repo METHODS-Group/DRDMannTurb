@@ -1,24 +1,15 @@
 """Conclusion: AdamW and RMSProp perform A LOT worse"""
 
-import sys
-
-sys.path.append('../')
 import os
-
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
-
-import matplotlib.pyplot as plt
-import numpy as np
-
-plt.rc('text',usetex=True)
-plt.rc('font',family='serif')
-
 import pickle
+import sys
 from itertools import product
 from math import log
 from pathlib import Path
 from time import time
 
+import matplotlib.pyplot as plt
+import numpy as np
 import torch.nn as nn
 from pylab import *
 from torch.nn import parameter
@@ -30,6 +21,11 @@ from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 
 # v2: torch.set_default_device('cuda:0')
 torch.set_default_tensor_type('torch.cuda.FloatTensor')
+sys.path.append('../')
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+plt.rc('text',usetex=True)
+plt.rc('font',family='serif')
+
 
 
 def driver(): 
