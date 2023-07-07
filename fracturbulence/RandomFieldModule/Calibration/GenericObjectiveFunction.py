@@ -1,17 +1,16 @@
+from collections.abc import Iterable
 from math import *
+from multiprocessing import Process
+from time import sleep, time
+
+import matplotlib.ticker
 import numpy as np
 import scipy.optimize
-from collections.abc import Iterable
 import torch
-from pylab import *
-from time import time, sleep
-from multiprocessing import Process
 from matplotlib.animation import FuncAnimation
-import matplotlib.ticker
-
+from pylab import *
 
 from .EddyLifetime import EddyLifetime
-
 
 ###################################################################################################
 #  Generic Objective function

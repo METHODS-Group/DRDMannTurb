@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 
-from .common import VKEnergySpectrum, MannEddyLifetime
+from .common import MannEddyLifetime, VKEnergySpectrum
 from .PowerSpectraRDT import PowerSpectraRDT
-from .tauNet import tauNet, customNet, tauResNet
+from .tauNet import customNet, tauNet, tauResNet
 
 """
 ==================================================================================================================

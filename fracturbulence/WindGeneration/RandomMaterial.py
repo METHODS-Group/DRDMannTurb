@@ -1,26 +1,27 @@
-import pyfftw
-from math import *
-import numpy as np
-from scipy.special import erfinv
-from scipy import misc
-from scipy.signal import convolve2d
-
+import csv
 # from scipy.special import kv as Kv
 # from itertools import product
-import os, sys, csv
-from time import time
+import os
+import sys
+from math import *
 from multiprocessing import Pool, Process
+from time import time
 
-# from joblib import Parallel, delayed
-from tqdm import tqdm
 import matplotlib.pyplot as plt
-
-# from pyevtk.hl import imageToVTK
-
+import numpy as np
+import pyfftw
 from RandomFieldModule.GaussianRandomField import GaussianRandomField
 from RandomFieldModule.utilities.common import *
 from RandomFieldModule.utilities.ErrorMessages import *
 from RandomFieldModule.utilities.Exports import exportVTK
+from scipy import misc
+from scipy.signal import convolve2d
+from scipy.special import erfinv
+# from joblib import Parallel, delayed
+from tqdm import tqdm
+
+# from pyevtk.hl import imageToVTK
+
 
 
 #######################################################################################################
@@ -146,12 +147,8 @@ class RandomMaterial:
         return self.GRF.test_Covariance(nsamples)
 
     def test_VolumeFraction(self, nsamples=1000):
-        from RandomMaterial.utilities import (
-            compute_ProbaDist,
-            fit_ProbaDist,
-            vf2tau,
-            tau2vf,
-        )
+        from RandomMaterial.utilities import (compute_ProbaDist, fit_ProbaDist,
+                                              tau2vf, vf2tau)
 
         data = []
         for isample in tqdm(range(nsamples)):
@@ -172,8 +169,8 @@ class RandomMaterial:
         return 0
 
     def test_TwoPointProbability(self, nsamples=1000):
-        from RandomMaterial.utilities import autocorrelation
         from RandomMaterial.reconstruction import RadialAverage
+        from RandomMaterial.utilities import autocorrelation
         from utilities.image_statistics import LevelSetGaussian as LSG
 
         C = np.zeros(self.Nd)

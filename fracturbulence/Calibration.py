@@ -1,19 +1,20 @@
+import pathlib
+
+import matplotlib.pyplot as plt
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
-import matplotlib.pyplot as plt
-import pathlib
 
 # import numpy as np
 plt.rc("text", usetex=True)
 plt.rc("font", family="serif")
-from pylab import *
 import os
+from typing import Any, Dict
+
+from pylab import *
 
 from .common import MannEddyLifetime
 from .OnePointSpectra import OnePointSpectra
 from .SpectralCoherence import SpectralCoherence
-
-from typing import Dict, Any
 
 
 class LossFunc:

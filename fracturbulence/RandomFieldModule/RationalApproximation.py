@@ -1,16 +1,15 @@
 from math import *
-import numpy as np
-from scipy.optimize import fsolve, minimize, fminbound, root
-from scipy.signal import residue
-import scipy
+from time import time
 
 # from scipy.special import kv as Kv
 # from scipy.special import jv as Jv
 # from scipy.special import iv as Iv
 # from scipy.special import gamma, genlaguerre
 import matplotlib.pyplot as plt
-from time import time
-
+import numpy as np
+import scipy
+from scipy.optimize import fminbound, fsolve, minimize, root
+from scipy.signal import residue
 
 ############################################
 

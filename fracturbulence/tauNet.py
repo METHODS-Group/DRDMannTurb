@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from .LearnableFunctions import Rational, SimpleNN, CustomMLP
+from .LearnableFunctions import CustomMLP, Rational, SimpleNN
 
 """
 ==================================================================================================================

@@ -5,19 +5,18 @@ sys.path.append(
 )
 sys.path.append("/home/khristen/Projects/Brendan/2019_inletgeneration/code/source")
 
+from collections.abc import Callable, Iterable
 from math import *
-from collections.abc import Iterable, Callable
+
+import matplotlib.pyplot as plt
 import numpy as np
+import scipy.fftpack as fft
 import torch
 import torch.nn as nn
-
+from pylab import *
+from scipy.special import hyp2f1
 # from rational_torch import Rational
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
-import scipy.fftpack as fft
-from scipy.special import hyp2f1
-import matplotlib.pyplot as plt
-from pylab import *
-
 
 # from fracturbulence.RandomFieldModule.utilities.ode_solve import FEM_coefficient_matrix_generator, Grid1D
 # from RandomFieldModule.Calibration.MannSpectraObjectiveFunction import MannEddyLifetime, StdEddyLifetime
@@ -1282,9 +1281,8 @@ if __name__ == "__main__":
     DataPoints = []
     for k1 in k1_data_pts:
         DataPoints.append((k1, 1))
-    from fracturbulence.RandomFieldModule.Calibration.DataGenerator import (
-        OnePointSpectraDataGenerator,
-    )
+    from fracturbulence.RandomFieldModule.Calibration.DataGenerator import \
+        OnePointSpectraDataGenerator
 
     Data = OnePointSpectraDataGenerator(DataPoints=DataPoints, **config).Data
     DataValues = Data[1]

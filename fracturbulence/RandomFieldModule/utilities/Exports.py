@@ -1,7 +1,8 @@
 # from math import min
 import numpy as np
-from pyevtk.hl import imageToVTK
 from imageio import imwrite
+from pyevtk.hl import imageToVTK
+
 from .ErrorMessages import *
 
 

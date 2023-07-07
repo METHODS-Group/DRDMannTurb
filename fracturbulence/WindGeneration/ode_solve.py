@@ -1,14 +1,13 @@
 import sys
-import numpy as np
-from scipy.linalg import solve_banded, solveh_banded, cholesky_banded
-from scipy.sparse import spdiags
-
 from math import *
-import scipy
-import numba
-
 # import numba_scipy
 from time import time
+
+import numba
+import numpy as np
+import scipy
+from scipy.linalg import cholesky_banded, solve_banded, solveh_banded
+from scipy.sparse import spdiags
 
 # import sys, petsc4py
 # petsc4py.init(sys.argv)

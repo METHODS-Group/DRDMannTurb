@@ -1,19 +1,19 @@
-import pyfftw
-from math import *
-import numpy as np
-from scipy.special import kv as Kv
-from scipy.linalg import sqrtm
 from itertools import product
+from math import *
 from time import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pyfftw
+import scipy.fftpack as fft
+from scipy.linalg import sqrtm
+from scipy.special import kv as Kv
 from tqdm import tqdm
 
-import scipy.fftpack as fft
-import matplotlib.pyplot as plt
-
 from . import CovarianceKernels
-from .utilities.common import FourierOfGaussian, SpacialCovariance, autocorrelation
 from .Sampling_Methods import *
-
+from .utilities.common import (FourierOfGaussian, SpacialCovariance,
+                               autocorrelation)
 
 #######################################################################################################
 # 	Gaussian Random Field generator class

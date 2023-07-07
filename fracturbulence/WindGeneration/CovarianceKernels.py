@@ -1,15 +1,13 @@
-from math import *
-import numpy as np
-from scipy.special import kv as Kv
-from scipy.special import hyp2f1
 from itertools import product
+from math import *
 from time import time
-from tqdm import tqdm
 
-import scipy.fftpack as fft
 import matplotlib.pyplot as plt
+import numpy as np
+import scipy.fftpack as fft
 from scipy.special import hyp2f1
-
+from scipy.special import kv as Kv
+from tqdm import tqdm
 
 #######################################################################################################
 # 	Generic Covariance class

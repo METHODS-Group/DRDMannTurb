@@ -1,28 +1,26 @@
+from collections.abc import Iterable
 from math import *
+from multiprocessing import Process
+from time import sleep, time
+
 import numpy as np
 import scipy.optimize
-from collections.abc import Iterable
 import torch
-from pylab import *
-from time import time, sleep
-from multiprocessing import Process
 from matplotlib.animation import FuncAnimation
+from pylab import *
 
+from fracturbulence.RandomFieldModule.PowerSpectra import (MannEddyLifetime,
+                                                           StdEddyLifetime)
+
+from .EddyLifetime import EddyLifetime
+from .Matrices import (DerivativeCovarianceMatrixGenerator,
+                       DerivativeStiffnessMatrixGenerator)
 
 # sys.path.append("/Users/bk/Work/Papers/Collaborations/2020_inletgeneration/code/source/")
 # sys.path.append("/home/bkeith/Work/Papers/2020_inletgeneration/code/source/")
 # sys.path.append("/home/khristen/Projects/Brendan/2019_inletgeneration/code/source")
 
 
-from .EddyLifetime import EddyLifetime
-from .Matrices import (
-    DerivativeStiffnessMatrixGenerator,
-    DerivativeCovarianceMatrixGenerator,
-)
-from fracturbulence.RandomFieldModule.PowerSpectra import (
-    StdEddyLifetime,
-    MannEddyLifetime,
-)
 
 
 ###################################################################################################

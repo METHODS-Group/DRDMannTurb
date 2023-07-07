@@ -1,19 +1,17 @@
+from collections.abc import Iterable
 from math import *
+from multiprocessing import Process
+from time import sleep, time
+
 import numpy as np
 import scipy.optimize
-from collections.abc import Iterable
 import torch
-from pylab import *
-from time import time, sleep
-from multiprocessing import Process
 from matplotlib.animation import FuncAnimation
+from pylab import *
 
 from .GenericObjectiveFunction import GenericObjectiveFunction
-from .Matrices import (
-    DerivativeStiffnessMatrixGenerator,
-    DerivativeCovarianceMatrixGenerator,
-)
-
+from .Matrices import (DerivativeCovarianceMatrixGenerator,
+                       DerivativeStiffnessMatrixGenerator)
 
 ###################################################################################################
 #   Rapid distortion one-point spectra

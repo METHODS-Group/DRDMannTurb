@@ -1,9 +1,8 @@
-from fracturbulence import tauNet
-
-import torch 
+import torch
+from torchview import draw_graph
 from torchviz import make_dot
 
-from torchview import draw_graph
+from fracturbulence import tauNet
 
 torch.set_default_tensor_type('torch.cuda.FloatTensor')
 

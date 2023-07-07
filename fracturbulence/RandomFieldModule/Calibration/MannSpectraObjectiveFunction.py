@@ -1,21 +1,22 @@
-from math import *
-import numpy as np
-import scipy.optimize
-from scipy.special import hyp2f1
 from collections.abc import Iterable
-from pylab import *
-from time import time, sleep
+from math import *
 from multiprocessing import Process
-from matplotlib.animation import FuncAnimation
-import scipy.fftpack as fft
+from time import sleep, time
 
+import numpy as np
+import scipy.fftpack as fft
+import scipy.optimize
+from matplotlib.animation import FuncAnimation
+from pylab import *
+from scipy.special import hyp2f1
+
+from .EddyLifetime2 import EddyLifetime
+from .GenericObjectiveFunction import GenericObjectiveFunction
 
 # sys.path.append("/Users/bk/Work/Papers/Collaborations/2020_inletgeneration/code/source/")
 # sys.path.append("/home/bkeith/Work/Papers/2020_inletgeneration/code/source/")
 # sys.path.append("/home/khristen/Projects/Brendan/2019_inletgeneration/code/source")
 
-from .EddyLifetime2 import EddyLifetime
-from .GenericObjectiveFunction import GenericObjectiveFunction
 
 # from RandomFieldModule.PowerSpectra import StdEddyLifetime, MannEddyLifetime, EnergySpectrum
 

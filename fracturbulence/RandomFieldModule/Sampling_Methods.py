@@ -1,22 +1,22 @@
-import os, sys
-from math import *
-import numpy as np
-import scipy.fftpack as fft
-from time import time
-from scipy.special import hyp2f1
-from collections.abc import Iterable, Callable
-from multiprocessing import Pool
-
+import os
+import sys
+from collections.abc import Callable, Iterable
+from copy import deepcopy
 # from pathos.multiprocessing import ProcessingPool as Pool
 # from multiprocessing import Process, Value, Array
 # from multiprocessing import Pool
 from functools import partial
-from copy import deepcopy
+from math import *
+from multiprocessing import Pool
+from time import time
 
+import numpy as np
+import scipy.fftpack as fft
+from scipy.special import hyp2f1
 
-from .utilities.common import FourierOfGaussian, SpacialCovariance, autocorrelation
+from .utilities.common import (FourierOfGaussian, SpacialCovariance,
+                               autocorrelation)
 from .utilities.fde_solve import fde_solve
-
 
 METHOD_DST = "dst"
 METHOD_DCT = "dct"
@@ -650,9 +650,9 @@ class Sampling_H2(Sampling_method_base):
             self.M_H2 = H2matrix(position)
 
         elif lib in (METHOD_H2_h2tools, METHOD_H2):
-            from h2tools import Problem, ClusterTree
-            from h2tools.mcbh import mcbh
+            from h2tools import ClusterTree, Problem
             from h2tools.collections import particles
+            from h2tools.mcbh import mcbh
 
             Covariance = RandomField.Covariance
             nu, corrlen = Covariance.nu, Covariance.corrlen
@@ -670,9 +670,8 @@ class Sampling_H2(Sampling_method_base):
             else:
                 anis_angle = Covariance.angle_anis
 
-            from fracturbulence.Covariance.wrapper_Covariance import (
-                py_Matern_block_func,
-            )
+            from fracturbulence.Covariance.wrapper_Covariance import \
+                py_Matern_block_func
 
             def block_func(row_data, rows, col_data, cols):
                 submatrix = (
@@ -736,8 +735,9 @@ class Sampling_ODE(Sampling_method_base):
         super().__init__(RandomField)
         L, Nd, d = self.L, self.Nd, self.ndim
 
-        from fracturbulence.ODE_based.TransientPower import Problem, TransientPower
         from fracturbulence.CovarianceKernels import set_ShapeOperator
+        from fracturbulence.ODE_based.TransientPower import (Problem,
+                                                             TransientPower)
 
         Covariance = RandomField.Covariance
         nu, corrlen = Covariance.nu, Covariance.corrlen
@@ -788,9 +788,9 @@ class Sampling_Rational(Sampling_method_base):
         super().__init__(RandomField)
         L, Nd, d = self.L, self.Nd, self.ndim
 
-        from fracturbulence.RationalApproximation import RationalApproximation
-        from fracturbulence.ODE_based.TransientPower import Problem
         from fracturbulence.CovarianceKernels import set_ShapeOperator
+        from fracturbulence.ODE_based.TransientPower import Problem
+        from fracturbulence.RationalApproximation import RationalApproximation
 
         Covariance = RandomField.Covariance
         nu, corrlen = Covariance.nu, Covariance.corrlen

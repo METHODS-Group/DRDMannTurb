@@ -1,32 +1,32 @@
 """Conclusion: AdamW and RMSProp perform A LOT worse"""
 
 import sys
+
 sys.path.append('../')
 import os
+
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
 plt.rc('text',usetex=True)
 plt.rc('font',family='serif')
 
-from pylab import *
 import pickle
+from itertools import product
 from math import log
-import torch.nn as nn
-from torch.nn import parameter
-
+from pathlib import Path
 from time import time
 
-from fracturbulence.common import *
-from fracturbulence.Calibration import CalibrationProblem
-from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
+import torch.nn as nn
+from pylab import *
+from torch.nn import parameter
 
 import arch_eval.consts_exp1 as consts_exp1
-
-from itertools import product
-
-from pathlib import Path
+from fracturbulence.Calibration import CalibrationProblem
+from fracturbulence.common import *
+from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 
 # v2: torch.set_default_device('cuda:0')
 torch.set_default_tensor_type('torch.cuda.FloatTensor')

@@ -1,6 +1,6 @@
 from math import *
-import numpy as np
 
+import numpy as np
 
 ####################################################################
 

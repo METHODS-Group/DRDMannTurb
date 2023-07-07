@@ -5,8 +5,7 @@ license: license.txt
 
 __all__ = ["Factory", "ImposeWindInletProcess"]
 
-from collections import namedtuple
-from collections import Mapping
+from collections import Mapping, namedtuple
 
 
 # from math import isclose
@@ -14,30 +13,20 @@ def isclose(a, b, rel_tol=1e-9, abs_tol=0.0):
     return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
 
-from math import floor
-from math import ceil
-from math import log
-
-import numpy as np
-from scipy.special import comb
-import matplotlib.pyplot as plt
-
-import h5py
-from pyevtk.hl import imageToVTK
-
-import KratosMultiphysics
-from KratosMultiphysics import TIME
-from KratosMultiphysics import DELTA_TIME
-from KratosMultiphysics import VELOCITY_X
-from KratosMultiphysics import VELOCITY_Y
-from KratosMultiphysics import VELOCITY_Z
-from KratosMultiphysics import Logger
-
+from math import ceil, floor, log
 from time import time
 
+import h5py
+import KratosMultiphysics
+import matplotlib.pyplot as plt
+import numpy as np
+from CovarianceKernels import MannCovariance, VonKarmanCovariance
 from GaussianRandomField import *
-from CovarianceKernels import VonKarmanCovariance, MannCovariance
 from GenerateWind import GenerateWind
+from KratosMultiphysics import (DELTA_TIME, TIME, VELOCITY_X, VELOCITY_Y,
+                                VELOCITY_Z, Logger)
+from pyevtk.hl import imageToVTK
+from scipy.special import comb
 
 ##DONE: added support for power law
 ##DONE: read all mean profile parameters from json file

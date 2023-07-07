@@ -1,13 +1,13 @@
-from math import *
-import numpy as np
-from time import time
-import matplotlib.pyplot as plt
-from tqdm import tqdm
 import sys
-from pyevtk.hl import imageToVTK
+from math import *
+from time import time
 
+import matplotlib.pyplot as plt
+import numpy as np
+from CovarianceKernels import MannCovariance, VonKarmanCovariance
 from GaussianRandomField import *
-from CovarianceKernels import VonKarmanCovariance, MannCovariance
+from pyevtk.hl import imageToVTK
+from tqdm import tqdm
 
 
 class GenerateWind:

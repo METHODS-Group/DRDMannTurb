@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from numpy import log
 
-from .common import VKEnergySpectrum, MannEddyLifetime
+from .common import MannEddyLifetime, VKEnergySpectrum
 from .PowerSpectraRDT import PowerSpectraRDT
 from .tauNet import tauNet
 

@@ -1,13 +1,13 @@
-from math import *
-from pylab import *
-import numpy as np
-import scipy.optimize
-import scipy.fftpack as fft
-from scipy.special import gamma
 import copy
+from math import *
 from time import time
-import matplotlib.pyplot as plt
 
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.fftpack as fft
+import scipy.optimize
+from pylab import *
+from scipy.special import gamma
 
 ###################################################################################################
 #  Inference of design parameters

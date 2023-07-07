@@ -1,12 +1,14 @@
-import numpy as np
-from collections.abc import Iterable
-from .ode_solve import ode_solve
-from ..RationalApproximation import compute_RationalApproximation_AAA
-from ..RationalApproximation import compute_RationalApproximation_AAA_new
-from time import time
-import os
 import multiprocessing as mp
+import os
+from collections.abc import Iterable
+from time import time
+
+import numpy as np
 from pathos.multiprocessing import ProcessingPool as Pool
+
+from ..RationalApproximation import (compute_RationalApproximation_AAA,
+                                     compute_RationalApproximation_AAA_new)
+from .ode_solve import ode_solve
 
 
 class fde_solve:

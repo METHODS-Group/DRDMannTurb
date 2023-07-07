@@ -5,16 +5,16 @@ sys.path.append(
 )
 sys.path.append("/home/khristen/Projects/Brendan/2019_inletgeneration/code/source")
 
+from collections.abc import Callable, Iterable
 from math import *
-from collections.abc import Iterable, Callable
+
+import matplotlib.pyplot as plt
 import numpy as np
+# from fracturbulence.RandomFieldModule.utilities.ode_solve import FEM_coefficient_matrix_generator, Grid1D
+import scipy.fftpack as fft
 import torch
 import torch.nn as nn
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
-
-# from fracturbulence.RandomFieldModule.utilities.ode_solve import FEM_coefficient_matrix_generator, Grid1D
-import scipy.fftpack as fft
-import matplotlib.pyplot as plt
 
 """
 
