@@ -20,7 +20,6 @@ Mann's Eddy Liftime (numpy only - no torch)
 ==================================================================================================================
 """
 
-
 def MannEddyLifetime(kL):
     print("!"*30 + "Called CPU again :(")
     x = kL.cpu().detach().numpy() if torch.is_tensor(kL) else kL

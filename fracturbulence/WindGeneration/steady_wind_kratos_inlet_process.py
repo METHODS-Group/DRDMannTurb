@@ -1,18 +1,15 @@
-"""An inlet boundary condition process for KratosMultiphysics
+'''An inlet boundary condition process for KratosMultiphysics
 
 license: license.txt
-"""
+'''
 
-__all__ = ["Factory", "ImposeWindInletProcess"]
+__all__ = ['Factory', 'ImposeWindInletProcess']
 
 from collections import namedtuple
 from collections import Mapping
-
-
-# from math import isclose
-def isclose(a, b, rel_tol=1e-9, abs_tol=0.0):
-    return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
-
+#from math import isclose
+def isclose(a, b, rel_tol=1e-9, abs_tol=0.):
+    return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
 from math import floor
 from math import ceil
@@ -41,8 +38,8 @@ from GenerateWind import GenerateWind
 ##DONE: read all mean profile parameters from json file
 ##DONE: can choose between power law and logarithmic profile
 
-
 class Parameters(Mapping):
+
     def __init__(self, kratos_parameters):
         self._kratos_parameters = kratos_parameters
 
@@ -64,36 +61,32 @@ class Parameters(Mapping):
     def __len__(self):
         return self._kratos_parameters.size()
 
-
+        
 def Factory(settings, Model):
-    return ImposeWindInletProcess(Model, Parameters(settings["Parameters"]))
-
+    return ImposeWindInletProcess(Model, Parameters(settings['Parameters']))
 
 class LogMeanProfile:
+
     def __init__(self, friction_velocity, roughness_height, bulk_wind_speed, dim):
+
         self.friction_velocity = friction_velocity
         self.roughness_height = roughness_height
         self.bulk_wind_speed = bulk_wind_speed
         self.dim = dim
-
-    def get_height(self, node):
-        if self.dim == 2:
+    
+    def get_height(self,node):
+        if self.dim == 2: 
             height = node.Y
-        elif self.dim == 3:
+        elif self.dim == 3: 
             height = node.Z
         return height
-
+            
     def wind_speed(self, node):
-        return (
-            self.friction_velocity
-            / 0.41
-            * log(
-                (self.get_height(node) + self.roughness_height) / self.roughness_height
-            )
-        )
-
+        return (self.friction_velocity / 0.41
+                * log((self.get_height(node) + self.roughness_height) / self.roughness_height))
 
 class ImposeWindInletProcess:
+
     @property
     def inlet_nodes(self):
         return self.model_part.Nodes
@@ -104,15 +97,16 @@ class ImposeWindInletProcess:
         self.model_part = Model[self.inlet_model_part_name]
         self.mean_profile = self.CreateMeanProfile()
 
+
     def ExecuteInitialize(self):
         for node in self.inlet_nodes:
-            for var in [VELOCITY_X, VELOCITY_Y, VELOCITY_Z]:
+            for var in [VELOCITY_X,VELOCITY_Y,VELOCITY_Z]:
                 node.Fix(var)
-
+        
     def ExecuteInitializeSolutionStep(self):
         self.AssignVelocity()
         self.ApplyRamp()
-
+        
     def CreateMeanProfile(self, dim=3):
         reference_height = self.reference_height
         # lz = self.lz
@@ -120,15 +114,11 @@ class ImposeWindInletProcess:
         roughness_height = self.roughness_height
         self.bulk_wind_speed = umean
         # self.bulk_wind_speed = umean * (log(lz/roughness_height) - 1.0) / log(reference_height/roughness_height)
-        self.friction_velocity = (
-            umean * 0.41 / log((reference_height + roughness_height) / roughness_height)
-        )
-        return LogMeanProfile(
-            self.friction_velocity, roughness_height, self.bulk_wind_speed, dim
-        )
+        self.friction_velocity = umean * 0.41 / log((reference_height + roughness_height) / roughness_height)
+        return LogMeanProfile(self.friction_velocity, roughness_height, self.bulk_wind_speed, dim)
 
     def AssignVelocity(self):
-        for var in [VELOCITY_X, VELOCITY_Y, VELOCITY_Z]:
+        for var in [VELOCITY_X,VELOCITY_Y,VELOCITY_Z]:
             if var == VELOCITY_X:
                 for node in self.inlet_nodes:
                     vel = self.mean_profile.wind_speed(node)
@@ -143,22 +133,22 @@ class ImposeWindInletProcess:
         if time < self.ramp_time:
             scal = time / self.ramp_time
             for node in self.inlet_nodes:
-                for var in [VELOCITY_X, VELOCITY_Y, VELOCITY_Z]:
+                for var in [VELOCITY_X,VELOCITY_Y,VELOCITY_Z]:
                     vel = node.GetSolutionStepValue(var)
                     node.SetSolutionStepValue(var, scal * vel)
-
+    
     def Check(self):
         pass
 
     def ExecuteBeforeSolutionLoop(self):
         pass
-
+    
     def ExecuteFinalizeSolutionStep(self):
         pass
-
+    
     def ExecuteBeforeOutputStep(self):
         pass
-
+    
     def ExecuteAfterOutputStep(self):
         pass
 

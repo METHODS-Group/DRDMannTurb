@@ -1,14 +1,15 @@
+
 from time import time
 
 
 class Chrono(object):
+
     def __init__(self, keys):
         self.keys = keys
         self.Start = {}
         self.TotalTime = {}
-        for key in keys:
-            self.TotalTime[key] = 0
-
+        for key in keys: self.TotalTime[key] = 0
+    
     def start(self, key):
         self.Start[key] = time()
 
@@ -23,12 +24,9 @@ class Chrono(object):
         if normalize is None:
             print("(total time) {0:9s}: {1:.3E} s".format(key, self.TotalTime[key]))
         else:
-            print(
-                "(time/iter) {0:9s}: {1:.3E} s".format(
-                    key, self.TotalTime[key] / normalize
-                )
-            )
+            print("(time/iter) {0:9s}: {1:.3E} s".format(key, self.TotalTime[key]/normalize))
+
 
     def show_all(self, normalize=None):
-        for key in self.keys:
-            self.show(key, normalize=normalize)
+        for key in self.keys: self.show(key, normalize=normalize)
+
