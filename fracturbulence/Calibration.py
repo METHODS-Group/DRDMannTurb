@@ -121,11 +121,6 @@ class CalibrationProblem:
         return self.format_output(grad)
 
     def format_input(self, k1):
-        # TODO: it seems like these are not being hit. e.g. np call below
-        #   would error since numpy was not originally imported...
-        # if k1.ndim == 0:
-        #     return torch.tensor([k1], dtype=torch.float64)
-        # else:
         return torch.tensor(k1, dtype=torch.float64)
 
     def format_output(self, out):

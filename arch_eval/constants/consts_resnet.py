@@ -11,24 +11,23 @@ savedir = Path(__file__).parent / "results" / "resnet"
 
 
 CONSTANTS_CONFIG = { 
-    'type_EddyLifetime' :  'tauResNet', #'customMLP', # CALIBRATION : 'tauNet',  ### 'const', TwoThird', 'Mann', 'customMLP', 'tauNet'
-    'type_PowerSpectra' :   'RDT', ### 'RDT', 'zetaNet', 'C3Net', 'Corrector'
-    'learn_nu'          :   False, ### NOTE: Experiment 1: False, Experiment 2: True
+    'type_EddyLifetime' :  'tauResNet',  # 'customMLP', # CALIBRATION : 'tauNet',  ### 'const', TwoThird', 'Mann', 'customMLP', 'tauNet'
+    'type_PowerSpectra' :   'RDT',  # 'RDT', 'zetaNet', 'C3Net', 'Corrector'
+    'learn_nu'          :   False,  # NOTE: Experiment 1: False, Experiment 2: True
     'plt_tau'           :   True,
-    'tol'               :   1.e-9, ### not important
-    'lr'                :   1,     ### learning rate
-    'penalty'           :   1, # CALIBRATION: 1.e-1,
-    'regularization'    :   1.e-5,# CALIBRATION: 1.e-1,
+    'tol'               :   1.e-9,  # not important
+    'lr'                :   1,  # learning rate
+    'penalty'           :   1,  # CALIBRATION: 1.e-1,
+    'regularization'    :   1.e-5,  # CALIBRATION: 1.e-1,
     'nepochs'           :   100,
-    'curves'            :   [0,1,2,3],
+    'curves'            :   [0, 1, 2, 3],
     'data_type'         :   'Kaimal',  # CALIBRATION: 'Custom', ### 'Kaimal', 'SimiuScanlan', 'SimiuYeo', 'iso'
-    'spectra_file'      :   'Spectra.dat',
-    'Uref'              :   10, # m/s NO TOUCHIE
-    'zref'              :   1, #m NO TOUCHIE
-    'domain'            :   torch.logspace(-1, 2, 20), #np.logspace(-4, 2, 40), ### NOTE: Experiment 1: np.logspace(-1, 2, 20), Experiment 2: np.logspace(-2, 2, 40)
-    'noisy_data'        :   0.,#0*3.e-1, ### level of the data noise  ### NOTE: Experiment 1: zero, Experiment 2: non-zero
-    'output_folder'     :   str(savedir), 
-    'input_folder'     :   '/Users/gdeskos/work_in_progress/WindGenerator/script/'
+    'spectra_file'       :   'Spectra.dat',
+    'Uref'              :   10,  # m/s NO TOUCHIE
+    'zref'              :   1,  # m NO TOUCHIE
+    'domain'            :   torch.logspace(-1, 2, 20),  # np.logspace(-4, 2, 40), ### NOTE: Experiment 1: np.logspace(-1, 2, 20), Experiment 2: np.logspace(-2, 2, 40)
+    'noisy_data'        :   0.,  # 0*3.e-1, ### level of the data noise  ### NOTE: Experiment 1: zero, Experiment 2: non-zero
+    'output_folder'     :   str(savedir),
 }
 
 zref=CONSTANTS_CONFIG['zref']  # Hub height in meters

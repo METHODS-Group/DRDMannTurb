@@ -19,17 +19,16 @@ CONSTANTS_CONFIG = {
     'tol'               :   1.e-9,  # not important
     'lr'                :   1,  # learning rate
     'penalty'           :   1,  # CALIBRATION: 1.e-1,
-    'regularization'    :   1.e-2,  # CALIBRATION: 1.e-1,
+    'regularization'    :   1.e-5,  # CALIBRATION: 1.e-1,
     'nepochs'           :   10,
     'curves'            :   [0, 1, 2, 3],
-    'data_type'         :   'Custom',  # CALIBRATION: 'Custom', ### 'Kaimal', 'SimiuScanlan', 'SimiuYeo', 'iso'
+    'data_type'         :   'Kaimal',  # CALIBRATION: 'Custom', ### 'Kaimal', 'SimiuScanlan', 'SimiuYeo', 'iso'
     'spectra_file'       :   'Spectra.dat',
     'Uref'              :   10,  # m/s
     'zref'              :   1,
-    'domain'            :   torch.logspace(-1, 2, 20),  # np.logspace(-4, 2, 40), ### NOTE: Experiment 1: np.logspace(-1, 2, 20), Experiment 2: np.logspace(-2, 2, 40)
+    'domain'            :   torch.logspace(-2, 2, 40),  # np.logspace(-4, 2, 40), ### NOTE: Experiment 1: np.logspace(-1, 2, 20), Experiment 2: np.logspace(-2, 2, 40)
     'noisy_data'        :   7.e-2,  # 0*3.e-1, ### level of the data noise  ### NOTE: Experiment 1: zero, Experiment 2: non-zero
     'output_folder'     :   str(savedir),
-    # 'input_folder'      :   '/Users/gdeskos/work_in_progress/WindGenerator/script/'
 }
 
 zref = CONSTANTS_CONFIG['zref']  # Hub height in meters
