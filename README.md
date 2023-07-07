@@ -2,6 +2,15 @@
 
 Based on the code and theory from [this 2021](https://arxiv.org/pdf/2107.11046.pdf) publication. 
 
+## Baselines
+
+### Noisy Data (Experiment 2) 
+
+Using a 4-layer 32-neuron FC neural network with a CosineAnnealer, these are the results after 10 epochs, which have a minimum loss value of  
+``loss = 0.14850306846012104``, as compared to 100 epochs yielding ``loss = 0.20783722970539706`` before. 
+![image](https://github.com/mjachi/WindGenerator/assets/74629347/838b8767-28c8-46cd-b349-5e2925255462)
+
+
 ## Status of Provided Scripts 
 
 Most provided scripts now work out of the box. Here is a listing of which can be run: 
@@ -21,9 +30,3 @@ This package is provided as a locally ``pip``-installable package. It is recomme
 
 A Conda spec-file is included, to install a functioning environment, run ``conda create --name ENV_NAME_HERE --file spec-file.txt``. Then run ``pip install -e .`` to load ``fracturbulence`` into your environment. 
 
-## Optimization  
-
-TODO: write a ``CalibrationLite`` class that subclasses from ``nn.Module`` that has bare minimum functionality that matches the current ``Calibration`` class 
-
-- [ ] Investigate unnecessary ``np`` calls and other CPU-only libraries that contribute to high VRAM volatility (averaging 25%) 
-- [ ] The ``MannEddyLifetime`` function requires a ``scipy.special`` call, which incurs a communication between CPU and GPU; this may require something like the (now defunct) [torch-Cephes library](https://github.com/deepmind/torch-cephes)...  

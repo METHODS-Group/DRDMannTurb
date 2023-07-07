@@ -168,7 +168,8 @@ class CalibrationProblem:
 
         y = self.OPS(k1_data_pts)
         y_data = torch.zeros_like(y)
-        y_data[:4, ...] = y_data0.view(4, 20)
+        print(y_data0.shape)
+        y_data[:4, ...] = y_data0.view(4, y_data0.shape[0] // 4)
 
         ### The case with the coherence
         ### formatting the data
@@ -204,6 +205,8 @@ class CalibrationProblem:
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer, mode="min", factor=0.5, patience=2
         )
+        # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
+        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
 
         softplus = torch.nn.Softplus()
         logk1 = torch.log(self.k1_data_pts).detach()
@@ -303,7 +306,9 @@ class CalibrationProblem:
                 print("-> Epoch {0:d}".format(epoch))
                 print("=================================\n")
                 optimizer.step(closure)
-                scheduler.step(self.loss)
+                # TODO: refactor the scheduler things, plateau requires loss 
+                # scheduler.step(self.loss) #if scheduler
+                scheduler.step()
                 self.print_grad()
                 print("---------------------------------\n")
                 self.print_parameters()
