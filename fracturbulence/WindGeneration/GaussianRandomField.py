@@ -1,38 +1,52 @@
-
-import pyfftw
-from math import *
-import numpy as np
-from scipy.special import kv as Kv
-from scipy.linalg import sqrtm
 from itertools import product
+from math import *
 from time import time
-from tqdm import tqdm
 
-import scipy.fftpack as fft
 import matplotlib.pyplot as plt
+import numpy as np
+import pyfftw
+import scipy.fftpack as fft
+from scipy.linalg import sqrtm
+from scipy.special import kv as Kv
+from tqdm import tqdm
 
 # import CovarianceKernels
 from .Sampling_Methods import *
 
+#######################################################################################################
+# 	Gaussian Random Field generator class
+#######################################################################################################
 
-#######################################################################################################
-#	Gaussian Random Field generator class
-#######################################################################################################
 
 class GaussianRandomField:
-
-    def __init__(self, grid_level, grid_shape=None, grid_dimensions=[1.0,1.0,1.0], ndim=2, window_margin=0, sampling_method='fft', verbose=0, **kwargs):
+    def __init__(
+        self,
+        grid_level,
+        grid_shape=None,
+        grid_dimensions=[1.0, 1.0, 1.0],
+        ndim=2,
+        window_margin=0,
+        sampling_method="fft",
+        verbose=0,
+        **kwargs
+    ):
         self.verbose = verbose
-        self.ndim = ndim     # dimension 2D or 3D
+        self.ndim = ndim  # dimension 2D or 3D
         self.all_axes = np.arange(self.ndim)
 
         if np.isscalar(grid_level):
             if not np.isscalar(grid_shape):
-                print('grid_level and grid_shape must have the same dimensions')
-            h = 1/2**grid_level
-            self.grid_shape = np.array([grid_shape]*ndim)
+                print("grid_level and grid_shape must have the same dimensions")
+            h = 1 / 2**grid_level
+            self.grid_shape = np.array([grid_shape] * ndim)
         else:
-            h = np.array([grid_dimensions[0]/(2**grid_level[0]+1),grid_dimensions[1]/(2**grid_level[1]+1),grid_dimensions[2]/(2**grid_level[2]+1)])
+            h = np.array(
+                [
+                    grid_dimensions[0] / (2 ** grid_level[0] + 1),
+                    grid_dimensions[1] / (2 ** grid_level[1] + 1),
+                    grid_dimensions[2] / (2 ** grid_level[2] + 1),
+                ]
+            )
             self.grid_shape = np.array(grid_shape[:ndim])
         self.L = h * self.grid_shape
 
@@ -40,25 +54,26 @@ class GaussianRandomField:
         N_margin = 0
         self.ext_grid_shape = self.grid_shape
         self.nvoxels = self.ext_grid_shape.prod()
-        self.DomainSlice = tuple([slice(N_margin, N_margin + self.grid_shape[j]) for j in range(self.ndim)])
+        self.DomainSlice = tuple(
+            [slice(N_margin, N_margin + self.grid_shape[j]) for j in range(self.ndim)]
+        )
 
         ### Covariance
-        self.Covariance = kwargs['Covariance']
+        self.Covariance = kwargs["Covariance"]
 
         ### Sampling method
         t = time()
         self.setSamplingMethod(sampling_method, **kwargs)
         if self.verbose:
-            print('Init method {0:s}, time {1}'.format(self.method, time()-t))
+            print("Init method {0:s}, time {1}".format(self.method, time() - t))
 
         # Pseudo-random number generator
         self.prng = np.random.RandomState()
         self.noise_std = np.sqrt(np.prod(h))
 
-
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #   Initialize sampling method
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
 
     def setSamplingMethod(self, method, **kwargs):
         self.method = method
@@ -89,17 +104,18 @@ class GaussianRandomField:
 
         elif method in (METHOD_RAT,):
             self.Correlate = Sampling_Rational(self, **kwargs)
-        
+
         elif method == METHOD_VF_RAT_HALFSPACE_RAPID_DISTORTION:
-            self.Correlate = Sampling_Rational_Rapid_Distortion_Wind_Blocking(self, **kwargs)
-            
+            self.Correlate = Sampling_Rational_Rapid_Distortion_Wind_Blocking(
+                self, **kwargs
+            )
+
         else:
             raise Exception('Unknown sampling method "{0}".'.format(method))
 
-
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #   Sample a realization
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
 
     ### Reseed pseudo-random number generator
     def reseed(self, seed=None):
@@ -119,7 +135,6 @@ class GaussianRandomField:
 
     ### Sample GRF
     def sample(self, noise=None):
-
         if noise is None:
             noise = self.sample_noise()
 
@@ -127,26 +142,25 @@ class GaussianRandomField:
 
         t0 = time()
         field = self.Correlate(noise)
-        if self.verbose>=2: print('Convolution time: ', time() - t0)
+        if self.verbose >= 2:
+            print("Convolution time: ", time() - t0)
 
         return field
 
 
 #######################################################################################################
-#	Gaussian Random Vector Field generator class
+# 	Gaussian Random Vector Field generator class
 #######################################################################################################
 
+
 class VectorGaussianRandomField(GaussianRandomField):
-
     def __init__(self, vdim=3, **kwargs):
-
         super().__init__(**kwargs)
         self.vdim = vdim
-        self.DomainSlice = tuple(list(self.DomainSlice) + [slice(None,None,None)])
+        self.DomainSlice = tuple(list(self.DomainSlice) + [slice(None, None, None)])
 
         ### Sampling method
         self.Correlate.DomainSlice = self.DomainSlice
-
 
     # ### Sample noise
     # def sample_noise(self, grid_shape=None):
@@ -155,7 +169,7 @@ class VectorGaussianRandomField(GaussianRandomField):
     #         noise = np.stack([self.prng.normal(0, 1, self.ext_grid_shape) for _ in range(self.vdim)], axis=-1)
     #     else:
     #         noise = np.stack([self.prng.normal(0, 1, grid_shape) for _ in range(self.vdim)], axis=-1)
-        
+
     #     noise *= self.noise_std
 
     #     # noise = np.stack([self.prng.normal(0, 1, self.ext_grid_shape) for _ in range(self.vdim)], axis=-1)

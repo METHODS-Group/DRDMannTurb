@@ -1,36 +1,30 @@
-import sys
-sys.path.append('../')
 import os
+import sys
+from math import log
+from time import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+from pylab import *
+
+import arch_eval.constants.consts_exp2 as consts_exp
+from fracturbulence.Calibration import CalibrationProblem
+from fracturbulence.common import *
+from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
+
+sys.path.append('../')
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-import numpy as np
-import matplotlib.pyplot as plt
 plt.rc('text',usetex=True)
 plt.rc('font',family='serif')
 
-from pylab import *
-import pickle
-from math import log
-import torch.nn as nn
-from torch.nn import parameter
-
-from time import time
-
-from fracturbulence.common import *
-from fracturbulence.Calibration import CalibrationProblem
-from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
-
-import arch_eval.consts_exp2 as consts_exp
-
-from itertools import product
-
-from pathlib import Path
-
 # v2: torch.set_default_device('cuda:0')
-torch.set_default_tensor_type('torch.cuda.FloatTensor')
+if torch.cuda.is_available():
+    torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 
-def driver(): 
+def driver():
     start = time()
 
 

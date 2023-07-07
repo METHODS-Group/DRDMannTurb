@@ -1,13 +1,13 @@
-import torch 
-import torch.nn as nn 
+from math import log
+from pathlib import Path
 
-torch.set_default_tensor_type('torch.cuda.FloatTensor')
+import torch
+import torch.nn as nn
 
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 
-from math import log
-
-from pathlib import Path 
+if torch.cuda.is_available():
+    torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 savedir = Path(__file__).parent / "results"
 

@@ -1,22 +1,23 @@
-
-from math import *
-from pylab import *
-import numpy as np
-import scipy.optimize
-import scipy.fftpack as fft
-from scipy.special import gamma
 import copy
+from math import *
 from time import time
-import matplotlib.pyplot as plt 
 
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.fftpack as fft
+import scipy.optimize
+from pylab import *
+from scipy.special import gamma
 
 ###################################################################################################
 #  Inference of design parameters
 ###################################################################################################
 
-class ModelParametersInference:
 
-    def __init__(self, ModelDescriptor, loc, Data, weights=None, jac=False, verbose=False):
+class ModelParametersInference:
+    def __init__(
+        self, ModelDescriptor, loc, Data, weights=None, jac=False, verbose=False
+    ):
         self.verbose = verbose
 
         self.Model = ModelDescriptor
@@ -24,9 +25,8 @@ class ModelParametersInference:
         self.Data = Data
         self.weights = weights
         self.jac = jac
-        
-        # self.ModelParameters = self.infer()
 
+        # self.ModelParameters = self.infer()
 
     ### Objective function
     def Objective(self, p):
@@ -41,7 +41,7 @@ class ModelParametersInference:
         # misfit = misfit[0 ,:,:]
         if self.weights:
             misfit *= np.sqrt(self.weights)
-        J = 0.5*np.sum(misfit**2)
+        J = 0.5 * np.sum(misfit**2)
 
         # if (self.Model.ExpansionType is 'Exp') and self.Model.Expansion.nTerms==1:
         #     E = self.Model.Expansion
@@ -58,17 +58,23 @@ class ModelParametersInference:
 
         self.iter += 1
         if self.verbose:
-            print('\nFunction call {0:d}: residuum = {1}'.format(self.iter, J))
-            print('parameters = {0}'.format(p))
+            print("\nFunction call {0:d}: residuum = {1}".format(self.iter, J))
+            print("parameters = {0}".format(p))
 
         if not self.jac:
             return J
         else:
-            misfit = misfit.flatten() 
-            grad_model = grad_model.reshape([-1,self.Model.nPar])
+            misfit = misfit.flatten()
+            grad_model = grad_model.reshape([-1, self.Model.nPar])
             JacJ = misfit @ grad_model
-            if (self.Model.ExpansionType is 'Exp') and self.Model.Expansion.nTerms==1:
-                extraJacJ = g * E.c[0]/E.d[0] * np.array([ 1, -E.c[0]*(1/(2*E.d[0]) + 1), 0 ]) * np.exp(-2*E.d[0])
+            if (self.Model.ExpansionType is "Exp") and self.Model.Expansion.nTerms == 1:
+                extraJacJ = (
+                    g
+                    * E.c[0]
+                    / E.d[0]
+                    * np.array([1, -E.c[0] * (1 / (2 * E.d[0]) + 1), 0])
+                    * np.exp(-2 * E.d[0])
+                )
                 JacJ += extraJacJ
             # self.jac = False
             # func = lambda p: self.Model(p, self.loc)[0]
@@ -77,31 +83,25 @@ class ModelParametersInference:
             # print('JAC ERR: ', np.linalg.norm(JacAppx-JacJ) )
             return J, JacJ
 
-
     ### Estimator
     def infer(self, p_ini=None, **kwargs):
         if p_ini is None:
-            p_ini = kwargs.get('init_guess', self.Model.default_parameters())
-        tol = kwargs.get('tol', 1.e-3)
-        self.jac = kwargs.get('jac', self.jac)
+            p_ini = kwargs.get("init_guess", self.Model.default_parameters())
+        tol = kwargs.get("tol", 1.0e-3)
+        self.jac = kwargs.get("jac", self.jac)
         J = lambda p: self.Objective(p)
         self.iter = 0
-        result = scipy.optimize.minimize(J, p_ini,jac=self.jac,tol=tol,options={'disp': self.verbose})
+        result = scipy.optimize.minimize(
+            J, p_ini, jac=self.jac, tol=tol, options={"disp": self.verbose}
+        )
         p_opt = result.x
         return p_opt
-
-
-
-
-
-
 
 
 ###################################################################################################
 ###################################################################################################
 
 if __name__ == "__main__":
-
-    '''TEST by method of manufactured solutions'''
+    """TEST by method of manufactured solutions"""
 
     pass
