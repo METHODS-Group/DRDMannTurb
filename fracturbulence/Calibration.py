@@ -306,7 +306,7 @@ class CalibrationProblem:
                 print("-> Epoch {0:d}".format(epoch))
                 print("=================================\n")
                 optimizer.step(closure)
-                # TODO: refactor the scheduler things, plateau requires loss 
+                # TODO: refactor the scheduler things, plateau requires loss
                 # scheduler.step(self.loss) #if scheduler
                 scheduler.step()
                 self.print_grad()
