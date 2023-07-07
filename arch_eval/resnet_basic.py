@@ -1,24 +1,18 @@
 import os
-import pickle
 import sys
-from itertools import product
 from math import log
-from pathlib import Path
 from time import time
 
-import consts_resnet
+import arch_eval.constants.consts_resnet as consts_resnet
 import matplotlib.pyplot as plt
-import numpy as np
-import torch.nn as nn
-from pylab import *
-from torch.nn import parameter
 
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import *
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 
 # v2: torch.set_default_device('cuda:0')
-torch.set_default_tensor_type('torch.cuda.FloatTensor')
+if torch.cuda.is_avialable():
+    torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 sys.path.append('../')
 os.environ['KMP_DUPLICATE_LIB_OK']='True'

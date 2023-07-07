@@ -6,7 +6,9 @@ import torch.nn as nn
 
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 
-torch.set_default_tensor_type('torch.cuda.FloatTensor')
+if torch.cuda.is_available():
+    torch.set_default_tensor_type('torch.cuda.FloatTensor')
+
 savedir = Path(__file__).parent / "results" / "resnet"
 
 
@@ -31,8 +33,8 @@ CONSTANTS_CONFIG = {
     'input_folder'     :   '/Users/gdeskos/work_in_progress/WindGenerator/script/'
 }
 
-zref=CONSTANTS_CONFIG['zref']; # Hub height in meters
-Uref=CONSTANTS_CONFIG['Uref']; # Average Hub height velocity in m/s
+zref=CONSTANTS_CONFIG['zref']  # Hub height in meters
+Uref=CONSTANTS_CONFIG['Uref']  # Average Hub height velocity in m/s
 Iref = 0.14
 sigma1=Iref*(0.75*Uref+5.6)
 Lambda1=42; # Longitudinal turbulence scale parameter at hub height
@@ -40,7 +42,7 @@ Lambda1=42; # Longitudinal turbulence scale parameter at hub height
 z0=0.01
 ustar=0.41*Uref/log(zref/z0)
 
-# NOTE: values taken from experiment1 in the paper 
-L = 0.59 
-Gamma = 3.9 
-sigma = 3.2 
+# NOTE: values taken from experiment1 in the paper
+L = 0.59
+Gamma = 3.9
+sigma = 3.2

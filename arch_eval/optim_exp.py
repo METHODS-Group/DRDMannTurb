@@ -1,20 +1,15 @@
 """Conclusion: AdamW and RMSProp perform A LOT worse"""
 
 import os
-import pickle
 import sys
-from itertools import product
 from math import log
-from pathlib import Path
 from time import time
 
 import matplotlib.pyplot as plt
-import numpy as np
 import torch.nn as nn
 from pylab import *
-from torch.nn import parameter
 
-import arch_eval.consts_exp1 as consts_exp1
+import arch_eval.constants.consts_exp1 as consts_exp1
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import *
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator

@@ -1,24 +1,21 @@
 import os
-import pickle
 import sys
-from itertools import product
 from math import log
-from pathlib import Path
 from time import time
 
-import consts
+import arch_eval.constants.consts as consts
 import matplotlib.pyplot as plt
-import numpy as np
 import torch.nn as nn
+import torch
 from pylab import *
-from torch.nn import parameter
 
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import *
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 
 # v2: torch.set_default_device('cuda:0')
-torch.set_default_tensor_type('torch.cuda.FloatTensor')
+if torch.cuda.is_available():
+    torch.set_default_tensor_type('torch.cuda.FloatTensor')
 sys.path.append('../')
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -26,7 +23,7 @@ plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
 
-def driver(): 
+def driver():
     start = time()
 
     activ_list = [nn.GELU(), nn.GELU(), nn.GELU()]
@@ -73,8 +70,6 @@ def driver():
 
     print(f"Elapsed time : {time() - start}")
 
-if __name__ == '__main__':  
-    from time import time  
+if __name__ == '__main__':
 
-
-    driver() 
+    driver()
