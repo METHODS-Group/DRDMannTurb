@@ -1,7 +1,6 @@
 import os
 import sys
 from collections.abc import Callable, Iterable
-from copy import deepcopy
 
 # from pathos.multiprocessing import ProcessingPool as Pool
 # from multiprocessing import Process, Value, Array

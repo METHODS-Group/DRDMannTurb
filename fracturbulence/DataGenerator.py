@@ -21,10 +21,8 @@ class OnePointSpectraDataGenerator:
 
         if self.data_type == "VK":
             self.eval = self.eval_VK
-
         elif self.data_type == "Kaimal":
             self.eval = self.eval_Kaimal
-
         elif self.data_type == "IEC":
             self.eval = self.eval_IEC
         elif self.data_type == "Custom":
@@ -35,7 +33,6 @@ class OnePointSpectraDataGenerator:
                     np.genfromtxt(spectra_file, skip_header=1, delimiter=",")
                 )
                 # TODO: self.CustomData=torch.genfromtxt(spectra_file,skip_header=1,delimiter=',')
-
             else:
                 raise Exception("Custom spectra_file not found")
         else:

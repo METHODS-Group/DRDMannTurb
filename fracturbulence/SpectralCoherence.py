@@ -1,7 +1,3 @@
-"""
-Spectral Coherence
-"""
-
 import torch
 import torch.nn as nn
 from numpy import log
@@ -10,19 +6,15 @@ from .common import MannEddyLifetime, VKEnergySpectrum
 from .PowerSpectraRDT import PowerSpectraRDT
 from .tauNet import tauNet
 
+"""
+==================================================================================================================
+Spectral Coherence class
+==================================================================================================================
+"""
+
 
 class SpectralCoherence(nn.Module):
-    """Spectral Coherence
-    Subclasses torch Module
-    """
-
     def __init__(self, **kwargs):
-        """
-        kwargs include only
-        - type_EddyLifetime
-        - type_PowerSpectra
-        """
-
         super(SpectralCoherence, self).__init__()
 
         self.type_EddyLifetime = kwargs.get("type_EddyLifetime", "TwoThird")
@@ -33,6 +25,8 @@ class SpectralCoherence(nn.Module):
 
         if self.type_EddyLifetime == "tauNet":
             self.tauNet = tauNet(**kwargs)
+
+    ###-------------------------------------------
 
     def init_parameters(self):
         LengthScale = 0.7 * 42
@@ -168,9 +162,6 @@ class SpectralCoherence(nn.Module):
     ### Divergence
     @torch.jit.export
     def get_div(self, Phi):
-        """
-        Computes the divergence of Phi?
-        """
         k1, k2, k3 = self.freq
         Phi11, Phi22, Phi33, Phi13, Phi12, Phi23 = Phi
         div = torch.stack(

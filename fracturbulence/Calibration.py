@@ -16,12 +16,14 @@ from .common import MannEddyLifetime
 from .OnePointSpectra import OnePointSpectra
 from .SpectralCoherence import SpectralCoherence
 
+"""
+==================================================================================================================
+Loss funtion for calibration
+==================================================================================================================
+"""
+
 
 class LossFunc:
-    """
-    Loss function for calibration
-    """
-
     def __init__(self, **kwargs):
         pass
 
@@ -34,11 +36,14 @@ class LossFunc:
         return loss
 
 
-class CalibrationProblem:
-    """
-    Calibration problem class
-    """
+"""
+==================================================================================================================
+Calibration problem class
+==================================================================================================================
+"""
 
+
+class CalibrationProblem:
     def __init__(self, **kwargs: Dict[str, Any]):
         # stringify the activation functions used; for manual bash only
         self.activfuncstr = str(kwargs.get("activations", ["relu", "relu"]))
@@ -144,6 +149,8 @@ class CalibrationProblem:
         alpha_pen = kwargs.get("penalty", 0)
         alpha_reg = kwargs.get("regularization", 0)
 
+        beta_pen = kwargs.get("beta_penalty", 0.0)
+
         self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
 
         # create a single numpy.ndarray with numpy.array() and then convert to a porch tensor
@@ -184,6 +191,7 @@ class CalibrationProblem:
         self.loss_fn = LossFunc()
         # self.loss_fn = torch.nn.MSELoss(reduction='mean')
 
+        wolfe_iter = kwargs.get("wolfe_iter", 10)
         ##############################
         # Optimization
         ##############################
@@ -192,17 +200,14 @@ class CalibrationProblem:
                 self.OPS.parameters(),
                 lr=lr,
                 line_search_fn="strong_wolfe",
-                max_iter=50,
+                max_iter=wolfe_iter,
                 history_size=nepochs,
             )
         else:
             optimizer = OptimizerClass(self.OPS.parameters(), lr=lr)
 
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode="min", factor=0.5, patience=2
-        )
-        # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
-        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
+        #        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=nepochs)
 
         softplus = torch.nn.Softplus()
         logk1 = torch.log(self.k1_data_pts).detach()
@@ -218,7 +223,21 @@ class CalibrationProblem:
             """
             logy = torch.log(torch.abs(y))
             d2logy = torch.diff(torch.diff(logy, dim=-1) / h1, dim=-1) / h2
+            # f = torch.nn.GELU()(d2logy) ** 2
             f = torch.relu(d2logy).square()
+            # pen = torch.sum( f * h2 ) / D
+            pen = torch.mean(f)
+            return pen
+
+        def PenTerm1stO(y):
+            """
+            TODO: are these embedded functions necessary?
+            """
+            logy = torch.log(torch.abs(y))
+            d1logy = torch.diff(logy, dim=-1) / h1
+            # d2logy = torch.diff(torch.diff(logy, dim=-1)/h1, dim=-1)/h2
+            # f = torch.nn.GELU()(d1logy) ** 2
+            f = torch.relu(d1logy).square()
             # pen = torch.sum( f * h2 ) / D
             pen = torch.mean(f)
             return pen
@@ -280,6 +299,7 @@ class CalibrationProblem:
                 self.loss_only = 1.0 * self.loss.item()
                 self.loss_history_total.append(self.loss_only)
                 if alpha_pen:
+                    # adds 2nd order penalty term
                     pen = alpha_pen * PenTerm(y[self.curves[i:]])
                     self.loss = self.loss + pen
                     # print('pen = ', pen.item())
@@ -287,6 +307,10 @@ class CalibrationProblem:
                     reg = alpha_reg * RegTerm()
                     self.loss = self.loss + reg
                     # print('reg = ', reg.item())
+                if beta_pen:
+                    # adds 1st order penalty term
+                    pen = beta_pen * PenTerm1stO(y[self.curves[i:]])
+                    self.loss += pen
                 self.loss.backward()
                 print("loss  = ", self.loss.item())
                 # if hasattr(self.OPS, 'tauNet'):
@@ -409,10 +433,12 @@ class CalibrationProblem:
                 f"k1.size: {k1.size()}   self.kF_data_vals: {self.kF_data_vals.size()}"
             )
 
+            s = self.kF_data_vals.shape[0]
+
             for i in range(self.vdim):
                 (self.lines_SP_data[i],) = self.ax[0].plot(
                     k1.cpu().detach().numpy(),
-                    self.kF_data_vals.view(4, 20)[i].cpu().detach().numpy(),
+                    self.kF_data_vals.view(4, s // 4)[i].cpu().detach().numpy(),
                     "--",
                     color=clr[i],
                     label=r"$F{0:d}$ data".format(i + 1),
@@ -427,7 +453,10 @@ class CalibrationProblem:
                 )
                 (self.lines_SP_data[self.vdim],) = self.ax[0].plot(
                     k1.cpu().detach().numpy(),
-                    -self.kF_data_vals.view(4, 20)[self.vdim].cpu().detach().numpy(),
+                    -self.kF_data_vals.view(4, s // 4)[self.vdim]
+                    .cpu()
+                    .detach()
+                    .numpy(),
                     "--",
                     color=clr[3],
                     label=r"$-F_{13}$ data",
