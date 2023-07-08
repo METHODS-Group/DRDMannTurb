@@ -323,7 +323,7 @@ class CalibrationProblem:
 
             for epoch in range(nepochs):
                 print("\n=================================")
-                print("-> Epoch {0:d}".format(epoch))
+                print("{Calibration.py -- calibrate}-> Epoch {0:d}".format(epoch))
                 print("=================================\n")
                 optimizer.step(closure)
                 # TODO: refactor the scheduler things, plateau requires loss
@@ -338,7 +338,7 @@ class CalibrationProblem:
                     break
 
         print("\n=================================")
-        print("Calibration terminated.")
+        print("{Calibration.py -- calibrate} Calibration terminated.")
         print("=================================\n")
         print("loss = {0}".format(self.loss.item()))
         print("tol  = {0}".format(tol))

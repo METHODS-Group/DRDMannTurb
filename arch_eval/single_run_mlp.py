@@ -3,12 +3,12 @@ import sys
 from math import log
 from time import time
 
-import arch_eval.constants.consts as consts
 import matplotlib.pyplot as plt
-import torch.nn as nn
 import torch
+import torch.nn as nn
 from pylab import *
 
+import arch_eval.constants.consts as consts
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import *
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
