@@ -17,17 +17,17 @@ from math import log
 from pathlib import Path
 from time import time
 
-import torch
 import torch.nn as nn
+from pylab import *
+from torch.nn import parameter
 
-import arch_eval.consts_exp1 as consts_exp1
+import arch_eval.constants.consts_exp1 as consts_exp1
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import *
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 
 # v2: torch.set_default_device('cuda:0')
-if torch.cuda.is_available():
-    torch.set_default_tensor_type('torch.cuda.FloatTensor')
+torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 
 def driver(): 
@@ -36,9 +36,8 @@ def driver():
     # activ_list = [nn.GELU(), nn.GELU(), nn.GELU(), nn.GELU()]
     activ_list = [nn.ReLU(), nn.ReLU(), nn.ReLU(), nn.ReLU()]
 
-
     # for idx, activ_list in enumerate(list(product(consts.ACTIVATIONS, consts.ACTIVATIONS))): #[(nn.SELU(), nn.SELU())]: # zip(consts.ACTIVATIONS, consts.ACTIVATIONS)[0]: 
-        # print(f"on activation function combination {idx} given by {activ_list}")
+    #     print(f"on activation function combination {idx} given by {activ_list}")
 
     config = consts_exp1.CONSTANTS_CONFIG
     config['activations'] = activ_list
@@ -48,7 +47,7 @@ def driver():
     pb = CalibrationProblem(**config)
     parameters = pb.parameters
     parameters[:3] = [log(consts_exp1.L), log(consts_exp1.Gamma), log(consts_exp1.sigma)] #All of these parameters are positive 
-    #so we can train the NN for the log of these parameters. 
+    # so we can train the NN for the log of these parameters. 
     pb.parameters = parameters[:len(pb.parameters)]
     k1_data_pts = config['domain'] #np.logspace(-1, 2, 20)
     DataPoints  = [ (k1, 1) for k1 in k1_data_pts ]

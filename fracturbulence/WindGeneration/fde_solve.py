@@ -5,10 +5,8 @@ from time import time
 
 import numpy as np
 from ode_solve import ode_solve
-from RationalApproximation import (
-    compute_RationalApproximation_AAA,
-    compute_RationalApproximation_AAA_new,
-)
+from RationalApproximation import (compute_RationalApproximation_AAA,
+                                   compute_RationalApproximation_AAA_new)
 
 
 class fde_solve:
