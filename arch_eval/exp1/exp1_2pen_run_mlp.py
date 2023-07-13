@@ -30,15 +30,11 @@ if torch.cuda.is_available():
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 
-def driver(): 
+def driver():
     start = time()
 
     # activ_list = [nn.GELU(), nn.GELU(), nn.GELU(), nn.GELU()]
     activ_list = [nn.ReLU(), nn.ReLU(), nn.ReLU(), nn.ReLU()]
-
-
-    # for idx, activ_list in enumerate(list(product(consts.ACTIVATIONS, consts.ACTIVATIONS))): #[(nn.SELU(), nn.SELU())]: # zip(consts.ACTIVATIONS, consts.ACTIVATIONS)[0]: 
-        # print(f"on activation function combination {idx} given by {activ_list}")
 
     config = consts_exp1.CONSTANTS_CONFIG
     config['activations'] = activ_list

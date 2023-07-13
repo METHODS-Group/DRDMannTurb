@@ -125,10 +125,27 @@ class CalibrationProblem:
         grad = torch.cat([param.grad.view(-1) for param in self.OPS.parameters()])
         return self.format_output(grad)
 
-    def format_input(self, k1):
-        return torch.tensor(k1, dtype=torch.float64)
+    def format_input(self, k1: torch.Tensor):
+        """Wrapper around clone and cast k1 to torch.float64
+
+        Parameters
+        ----------
+        k1 : torch.Tensor
+            Tensor to be formatted
+
+        Returns
+        -------
+        torch.Tensor
+            Tensor of float64
+        """
+        formatted_k1 = k1.clone().detach()
+        formatted_k1.requires_grad = k1.requires_grad
+
+        return formatted_k1.to(torch.float64)
 
     def format_output(self, out):
+        
+        print("[format_output] -- HERE!")
         return out.cpu().numpy()
 
     # -----------------------------------------
@@ -323,7 +340,7 @@ class CalibrationProblem:
 
             for epoch in range(nepochs):
                 print("\n=================================")
-                print("{Calibration.py -- calibrate}-> Epoch {0:d}".format(epoch))
+                print("[Calibration.py -- calibrate]-> Epoch {0:d}".format(epoch))
                 print("=================================\n")
                 optimizer.step(closure)
                 # TODO: refactor the scheduler things, plateau requires loss
