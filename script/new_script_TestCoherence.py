@@ -1,19 +1,19 @@
 
-import numpy as np
-import matplotlib.pyplot as plt
-from pylab import *
 import pickle
+import sys
 from math import log, log10
-import torch
 
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+from pylab import *
 from torch.nn import parameter
 
-import sys
 sys.path.append('./')
-from fracturbulence.SpectralCoherence import SpectralCoherence
-from fracturbulence.DataGenerator import OnePointSpectraDataGenerator, CoherenceDataGenerator
 from fracturbulence.Calibration import CalibrationProblem
-
+from fracturbulence.DataGenerator import (CoherenceDataGenerator,
+                                          OnePointSpectraDataGenerator)
+from fracturbulence.SpectralCoherence import SpectralCoherence
 
 ####################################
 ### Configuration

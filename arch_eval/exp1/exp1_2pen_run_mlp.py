@@ -1,78 +1,61 @@
 import sys
+
 sys.path.append('../')
 import os
+
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
 plt.rc('text',usetex=True)
 plt.rc('font',family='serif')
 
-from pylab import *
 import pickle
+from itertools import product
 from math import log
-import torch.nn as nn
-from torch.nn import parameter
-
+from pathlib import Path
 from time import time
 
-from fracturbulence.common import *
+import torch
+import torch.nn as nn
+
+import arch_eval.consts_exp1 as consts_exp1
 from fracturbulence.Calibration import CalibrationProblem
+from fracturbulence.common import *
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 
-import arch_eval.consts_exp2 as consts_exp
-
-from itertools import product
-
-from pathlib import Path
-
 # v2: torch.set_default_device('cuda:0')
-torch.set_default_tensor_type('torch.cuda.FloatTensor')
+if torch.cuda.is_available():
+    torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 
-def driver(): 
+def driver():
     start = time()
 
-    activ_list = [nn.GELU(), nn.GELU(), nn.GELU(), nn.GELU()]
+    # activ_list = [nn.GELU(), nn.GELU(), nn.GELU(), nn.GELU()]
+    activ_list = [nn.ReLU(), nn.ReLU(), nn.ReLU(), nn.ReLU()]
 
-    # activ_list = [nn.ReLU(), nn.ReLU(), nn.ReLU(), nn.ReLU()]
-
-    config = consts_exp.CONSTANTS_CONFIG
+    config = consts_exp1.CONSTANTS_CONFIG
     config['activations'] = activ_list
-    config['hlayers'] = [16]*4
-    config['nepochs'] = 25 
-    config['beta_penalty'] = 2e-2 # don't put this to 1e-2 -- nan's out 
-
+    config['hlayers'] = [32]*4
+    config['nepochs'] = 10 
+    config['beta_penalty'] = 3e-2
     pb = CalibrationProblem(**config)
     parameters = pb.parameters
-    parameters[:3] = [log(consts_exp.L), log(consts_exp.Gamma), log(consts_exp.sigma)] #All of these parameters are positive 
+    parameters[:3] = [log(consts_exp1.L), log(consts_exp1.Gamma), log(consts_exp1.sigma)] #All of these parameters are positive 
     #so we can train the NN for the log of these parameters. 
     pb.parameters = parameters[:len(pb.parameters)]
-
-    k1_data_pts = config['domain'] #torch.logspace(-1, 2, 20)
-    spectra_file=config['spectra_file']
-    print('Reading file' + spectra_file + '\n')
-    CustomData=torch.tensor(np.genfromtxt(spectra_file,skip_header=1,delimiter=','))
-    f=CustomData[:,0]
-    k1_data_pts=2*torch.pi*f/consts_exp.Uref
-
-
+    k1_data_pts = config['domain'] #np.logspace(-1, 2, 20)
     DataPoints  = [ (k1, 1) for k1 in k1_data_pts ]
     Data = OnePointSpectraDataGenerator(DataPoints=DataPoints, **config).Data
 
-    data_noise_magnitude = config['noisy_data']
-    if data_noise_magnitude:
-        Data[1][:] *= torch.exp(torch.tensor(np.random.normal(loc=0, scale=data_noise_magnitude, size=Data[1].shape)))
-
-
     DataValues = Data[1]
 
-    IECtau=MannEddyLifetime(k1_data_pts*consts_exp.L)
+    IECtau=MannEddyLifetime(k1_data_pts*consts_exp1.L)
     kF = pb.eval(k1_data_pts)
 
     opt_params = pb.calibrate(Data=Data, **config)#, OptimizerClass=torch.optim.RMSprop)
-
-    print(f"Elapsed time : {time() - start}")
 
     plt.figure()
 
@@ -91,6 +74,7 @@ def driver():
         # print(f"Successfully finished combination {activ_list}")
 
 
+    print(f"Elapsed time : {time() - start}")
 
 if __name__ == '__main__':  
     from time import time  

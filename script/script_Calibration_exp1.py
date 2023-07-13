@@ -1,24 +1,27 @@
 # %%
 import sys
+
 sys.path.append('../')
 import os
+
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
 plt.rc('text',usetex=True)
 plt.rc('font',family='serif')
 
-from pylab import *
 import pickle
 from math import log
+from pathlib import Path
+
+from pylab import *
 from torch.nn import parameter
 
-from fracturbulence.common import *
 from fracturbulence.Calibration import CalibrationProblem
+from fracturbulence.common import *
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
-
-from pathlib import Path
 
 savedir = Path().resolve() / "results" 
 

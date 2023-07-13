@@ -9,16 +9,12 @@ import torch
 from matplotlib.animation import FuncAnimation
 from pylab import *
 
-from fracturbulence.RandomFieldModule.PowerSpectra import (
-    MannEddyLifetime,
-    StdEddyLifetime,
-)
+from fracturbulence.RandomFieldModule.PowerSpectra import (MannEddyLifetime,
+                                                           StdEddyLifetime)
 
 from .EddyLifetime import EddyLifetime
-from .Matrices import (
-    DerivativeCovarianceMatrixGenerator,
-    DerivativeStiffnessMatrixGenerator,
-)
+from .Matrices import (DerivativeCovarianceMatrixGenerator,
+                       DerivativeStiffnessMatrixGenerator)
 
 # sys.path.append("/Users/bk/Work/Papers/Collaborations/2020_inletgeneration/code/source/")
 # sys.path.append("/home/bkeith/Work/Papers/2020_inletgeneration/code/source/")

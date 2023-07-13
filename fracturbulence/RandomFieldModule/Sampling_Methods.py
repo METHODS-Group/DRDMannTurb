@@ -1,7 +1,6 @@
 import os
 import sys
 from collections.abc import Callable, Iterable
-
 # from pathos.multiprocessing import ProcessingPool as Pool
 # from multiprocessing import Process, Value, Array
 # from multiprocessing import Pool
@@ -14,7 +13,8 @@ import numpy as np
 import scipy.fftpack as fft
 from scipy.special import hyp2f1
 
-from .utilities.common import FourierOfGaussian, SpacialCovariance, autocorrelation
+from .utilities.common import (FourierOfGaussian, SpacialCovariance,
+                               autocorrelation)
 from .utilities.fde_solve import fde_solve
 
 METHOD_DST = "dst"
@@ -669,9 +669,8 @@ class Sampling_H2(Sampling_method_base):
             else:
                 anis_angle = Covariance.angle_anis
 
-            from fracturbulence.Covariance.wrapper_Covariance import (
-                py_Matern_block_func,
-            )
+            from fracturbulence.Covariance.wrapper_Covariance import \
+                py_Matern_block_func
 
             def block_func(row_data, rows, col_data, cols):
                 submatrix = (
@@ -736,7 +735,8 @@ class Sampling_ODE(Sampling_method_base):
         L, Nd, d = self.L, self.Nd, self.ndim
 
         from fracturbulence.CovarianceKernels import set_ShapeOperator
-        from fracturbulence.ODE_based.TransientPower import Problem, TransientPower
+        from fracturbulence.ODE_based.TransientPower import (Problem,
+                                                             TransientPower)
 
         Covariance = RandomField.Covariance
         nu, corrlen = Covariance.nu, Covariance.corrlen

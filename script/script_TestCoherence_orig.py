@@ -1,17 +1,18 @@
 ### NOTE: this is the original coherence test from the zenodo rather than the edited version in Yorgos' code ### 
 
-import numpy as np
-import matplotlib.pyplot as plt
-from pylab import *
 import pickle
+import sys
 from math import log, log10
-import torch
 
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+from pylab import *
 from torch.nn import parameter
 
-import sys
 sys.path.append('./')
 from fracturbulence.SpectralCoherence import SpectralCoherence
+
 #from source.SpectralCoherence import SpectralCoherence
 
 

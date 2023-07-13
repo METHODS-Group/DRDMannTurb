@@ -1,7 +1,7 @@
 """Generating ONNX ports of existing nn.Module classes"""
 # SCRAP THIS FOR NOW 
 
-import torch  
+import torch
 import torch.onnx
 
 from fracturbulence import OnePointSpectra

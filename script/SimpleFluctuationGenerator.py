@@ -1,11 +1,11 @@
 
 from math import pi
-from matplotlib.pyplot import axis
+from pathlib import Path
+
 import numpy as np
 import scipy.fft as fft
+from matplotlib.pyplot import axis
 from pyevtk.hl import imageToVTK
-
-from pathlib import Path 
 
 savedir = Path(__file__).parent / "results"
 
