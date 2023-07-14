@@ -144,7 +144,7 @@ class CalibrationProblem:
         return formatted_k1.to(torch.float64)
 
     def format_output(self, out):
-        
+
         print("[format_output] -- HERE!")
         return out.cpu().numpy()
 
@@ -208,7 +208,7 @@ class CalibrationProblem:
         self.loss_fn = LossFunc()
         # self.loss_fn = torch.nn.MSELoss(reduction='mean')
 
-        wolfe_iter = kwargs.get("wolfe_iter", 10)
+        wolfe_iter = kwargs.get("wolfe_iter", 20)
         ##############################
         # Optimization
         ##############################
