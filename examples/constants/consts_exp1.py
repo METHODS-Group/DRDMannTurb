@@ -4,14 +4,10 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
-from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
-
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
 savedir = Path(__file__).parent / "results"
-
-ACTIVATIONS = [nn.ELU(), nn.ReLU(), nn.GELU(), nn.CELU(), nn.LeakyReLU(), nn.SELU()]
 
 CONSTANTS_CONFIG = {
     "type_EddyLifetime": "customMLP",  # CALIBRATION : 'tauNet',  ### 'const', TwoThird', 'Mann', 'customMLP', 'tauNet'
