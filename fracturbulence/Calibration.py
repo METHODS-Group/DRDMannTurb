@@ -144,7 +144,6 @@ class CalibrationProblem:
         return formatted_k1.to(torch.float64)
 
     def format_output(self, out):
-
         print("[format_output] -- HERE!")
         return out.cpu().numpy()
 
