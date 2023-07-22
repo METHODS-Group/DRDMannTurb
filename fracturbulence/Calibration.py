@@ -159,11 +159,12 @@ class CalibrationProblem:
         lr = kwargs.get("lr", 1e-1)
         tol = kwargs.get("tol", 1e-3)
         nepochs = kwargs.get("nepochs", 100)
+        self.plot_loss_optim = kwargs.get("plot_loss_wolfe", False)
         show = kwargs.get("show", False)
         self.curves = kwargs.get("curves", [0, 1, 2, 3])
 
-        alpha_pen = kwargs.get("penalty", 0)
-        alpha_reg = kwargs.get("regularization", 0)
+        alpha_pen = kwargs.get("penalty", 0.0)
+        alpha_reg = kwargs.get("regularization", 0.0)
 
         beta_pen = kwargs.get("beta_penalty", 0.0)
 
@@ -286,13 +287,29 @@ class CalibrationProblem:
         w = torch.abs(y) / torch.sum(torch.abs(y[:, 0]))
         self.loss = self.loss_fn(y[self.curves], y_data[self.curves], w[self.curves])
 
+        # TODO: these should all be torch tensors;
+        # epochs & wolfe iters are known at this point
         self.loss_history_total = []
         self.loss_history_epochs = []
+        self.loss_reg = []
+        # TODO: in loss func refactor,
+        # loss_history_total seems to store MSE?
+        # this should rather be stored in loss_mse while
+        # loss_history_total holds the total loss from
+        # all terms
+        self.loss_mse = []
+        self.loss_2ndOpen = []
+        self.loss_1stOpen = []
 
         print("Initial loss: ", self.loss.item())
         self.loss_history_total.append(self.loss.item())
         self.loss_history_epochs.append(self.loss.item())
+        # TODO make sure this doesn't do anything when not using tauNet
+        self.loss_reg.append(alpha_reg * RegTerm().item())
+        self.loss_2ndOpen.append(alpha_pen * PenTerm(y).item())
+        self.loss_1stOpen.append(beta_pen * PenTerm1stO(y).item())
 
+        # TODO: why is this i needed? just takes all curves?
         for i in (0,):  # range(len(self.curves),0,-1):
 
             def closure():
@@ -317,15 +334,18 @@ class CalibrationProblem:
                 if alpha_pen:
                     # adds 2nd order penalty term
                     pen = alpha_pen * PenTerm(y[self.curves[i:]])
+                    self.loss_2ndOpen.append(pen.item())
                     self.loss = self.loss + pen
                     # print('pen = ', pen.item())
                 if alpha_reg:
                     reg = alpha_reg * RegTerm()
+                    self.loss_reg.append(reg.item())
                     self.loss = self.loss + reg
                     # print('reg = ', reg.item())
                 if beta_pen:
                     # adds 1st order penalty term
                     pen = beta_pen * PenTerm1stO(y[self.curves[i:]])
+                    self.loss_1stOpen.append(pen.item())
                     self.loss += pen
                 self.loss.backward()
                 print("loss  = ", self.loss.item())
@@ -361,6 +381,12 @@ class CalibrationProblem:
         self.print_parameters()
         self.plot(plt_dynamic=False)
 
+        # TODO: this should change depending on chosen optimizer;
+        # wolfe iterations are only present for LBFGS --
+        # split into separate methods
+        if self.plot_loss_optim:
+            self.plot_loss_wolfe(beta_pen)
+
         return self.parameters
 
     # ------------------------------------------------
@@ -377,6 +403,24 @@ class CalibrationProblem:
         #                       for param in self.OPS.parameters()]).detach().numpy()
         # print('grad = ', self.grad)
         pass
+
+    def plot_loss_wolfe(self, beta_pen):
+        plt.figure()
+        plt.plot(self.loss_2ndOpen, label="1st Order Penalty")
+        plt.plot(self.loss_reg, label="Regularization")
+        plt.plot(self.loss_history_total, label="MSE")
+
+        if beta_pen != 0.0:
+            plt.plot(self.loss_1stOpen, label="2nd Order Penalty")
+
+        plt.title("Loss Term Values")
+
+        plt.ylabel("Value")
+        plt.xlabel("Wolfe Search Iterations")
+        plt.yscale("log")
+        plt.legend()
+        plt.grid("true")
+        plt.show()
 
     def plot(self, **kwargs: Dict[str, Any]):
         """
