@@ -99,7 +99,7 @@ def export_into_spectra(
     v: np.ndarray,
     w: np.ndarray,
     uw: np.ndarray,
-    filename: Optional[str] = "Spectra_exp",
+    filename: str = "Spectra_exp",
 ) -> None:
     """
     Takes the inputs, which should each be interpreted as columns to be
@@ -119,7 +119,7 @@ def export_into_spectra(
         UW
     filename : str, optional
         The filename to write out to, by default "Spectra_exp"
-    """    
+    """
     contents = (np.vstack((x, u, v, w, uw))).transpose()
 
     filename = filename + ".dat"
@@ -228,7 +228,7 @@ def driver_interp(plot_interp: bool):
         plt.legend()
         plt.show()
 
-    return x_interp, interp_u, interp_v, interp_w, interp_uw
+    return np.power(10, x_interp), interp_u, interp_v, interp_w, interp_uw
 
 
 def driver(x_interp, plot_result=False):
@@ -253,8 +253,19 @@ def driver(x_interp, plot_result=False):
     pb.parameters = parameters[:len(pb.parameters)]
 
     k1_data_pts = CONSTANTS_CONFIG["domain"]
+    spectra_file = CONSTANTS_CONFIG['spectra_file']
+    print("READING FILE " + spectra_file + "\n")
+    CustomData = torch.from_numpy(np.genfromtxt(spectra_file, delimiter=","))
+    print(3 * "\n")
+    print(CustomData)
+    print(3 * "\n")   
+    input()
+
+    f = CustomData[:, 0]
+
+
     DataPoints = [(k1, 1) for k1 in k1_data_pts]
-    Data = OnePointSpectraDataGenerator(DataPoints=DataPoints, k1_data_points=DataPoints, **CONSTANTS_CONFIG).CustomData
+    Data = OnePointSpectraDataGenerator(DataPoints=DataPoints, **CONSTANTS_CONFIG).Data
 
     DataValues = Data[1]
 
