@@ -170,7 +170,7 @@ class CalibrationProblem:
 
         self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
 
-        # create a single numpy.ndarray with numpy.array() and then convert to a porch tensor
+        # create a single numpy.ndarray with numpy.array() and then convert to a torch tensor
         # single_data_array=torch.tensor( [DataValues[:, i, i] for i in range(
         #     3)] + [DataValues[:, 0, 2]])
         # self.kF_data_vals = torch.tensor(single_data_array, dtype=torch.float64)
@@ -199,7 +199,7 @@ class CalibrationProblem:
             DataPoints_coh, DataValues_coh = kwargs.get("Data_Coherence")
             k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts = DataPoints_coh
             k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts = torch.meshgrid(
-                k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts, indexing=None
+                k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts, indexing='ij'
             )
             y_coh = self.Coherence(k1_data_pts, Delta_y_data_pts, Delta_z_data_pts)
             y_coh_data = torch.zeros_like(y_coh)

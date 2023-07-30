@@ -1,15 +1,10 @@
 import sys
 
-sys.path.append('../')
 import os
 
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 import matplotlib.pyplot as plt
 import numpy as np
-
-plt.rc('text',usetex=True)
-plt.rc('font',family='serif')
 
 import pickle
 from itertools import product
@@ -26,6 +21,12 @@ from fracturbulence.common import *
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 
 # v2: torch.set_default_device('cuda:0')
+
+sys.path.append('../')
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+plt.rc('text',usetex=True)
+plt.rc('font',family='serif')
+
 if torch.cuda.is_available():
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
 

@@ -14,7 +14,7 @@ from fracturbulence.common import *
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 
 # v2: torch.set_default_device('cuda:0')
-if torch.cuda.is_available:
+if torch.cuda.is_available():
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 sys.path.append('../')
@@ -24,7 +24,7 @@ plt.rc('font',family='serif')
 
 
 
-def driver(): 
+def driver():
     for idx, activ_list in enumerate(list(product(consts_exp1.ACTIVATIONS, consts_exp1.ACTIVATIONS))): #[(nn.SELU(), nn.SELU())]: # zip(consts.ACTIVATIONS, consts.ACTIVATIONS)[0]: 
         print(f"on activation function combination {idx} given by {activ_list}")
 

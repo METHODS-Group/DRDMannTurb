@@ -32,7 +32,7 @@ class OnePointSpectraDataGenerator:
             self.eval = self.eval_IEC
         elif self.data_type == "Custom":
             if kwargs.get("spectra_file") is not None:
-                print("Reading file" + kwargs.get("spectra_file") + "\n")
+                print("Reading file " + kwargs.get("spectra_file") + "\n")
                 spectra_file = kwargs.get("spectra_file")
                 self.CustomData = torch.tensor(
                     np.genfromtxt(spectra_file, skip_header=1, delimiter=",")
@@ -41,7 +41,7 @@ class OnePointSpectraDataGenerator:
                 raise Exception("Custom spectra_file not found")
         elif self.data_type == "Auto":
             if kwargs.get("spectra_file") is not None:
-                print("Reading file" + kwargs.get("spectra_file") + "\n")
+                print("Reading file " + kwargs.get("spectra_file") + "\n")
                 spectra_file = kwargs.get("spectra_file")
 
                 if self.k1 is not None:
@@ -137,7 +137,7 @@ class OnePointSpectraDataGenerator:
         else:
             raise Exception("No data type was provided")
 
-        if self.DataPoints is not None and self.data_type is not "Auto":
+        if self.DataPoints is not None and self.data_type == "Auto":
             self.generate_Data(self.DataPoints)
 
     def compute_Fit(self, DataPoints, k1_data_points):
