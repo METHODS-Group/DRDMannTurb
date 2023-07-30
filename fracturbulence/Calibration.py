@@ -199,7 +199,7 @@ class CalibrationProblem:
             DataPoints_coh, DataValues_coh = kwargs.get("Data_Coherence")
             k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts = DataPoints_coh
             k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts = torch.meshgrid(
-                k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts, indexing='ij'
+                k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts, indexing="ij"
             )
             y_coh = self.Coherence(k1_data_pts, Delta_y_data_pts, Delta_z_data_pts)
             y_coh_data = torch.zeros_like(y_coh)
@@ -305,9 +305,9 @@ class CalibrationProblem:
         self.loss_history_total.append(self.loss.item())
         self.loss_history_epochs.append(self.loss.item())
         # TODO make sure this doesn't do anything when not using tauNet
-        self.loss_reg.append(alpha_reg * RegTerm().item())
-        self.loss_2ndOpen.append(alpha_pen * PenTerm(y).item())
-        self.loss_1stOpen.append(beta_pen * PenTerm1stO(y).item())
+        # self.loss_reg.append(alpha_reg * RegTerm().item())
+        # self.loss_2ndOpen.append(alpha_pen * PenTerm(y).item())
+        # self.loss_1stOpen.append(beta_pen * PenTerm1stO(y).item())
 
         # TODO: why is this i needed? just takes all curves?
         for i in (0,):  # range(len(self.curves),0,-1):
@@ -334,18 +334,18 @@ class CalibrationProblem:
                 if alpha_pen:
                     # adds 2nd order penalty term
                     pen = alpha_pen * PenTerm(y[self.curves[i:]])
-                    self.loss_2ndOpen.append(pen.item())
+                    # self.loss_2ndOpen.append(pen.item())
                     self.loss = self.loss + pen
                     # print('pen = ', pen.item())
                 if alpha_reg:
                     reg = alpha_reg * RegTerm()
-                    self.loss_reg.append(reg.item())
+                    # self.loss_reg.append(reg.item())
                     self.loss = self.loss + reg
                     # print('reg = ', reg.item())
                 if beta_pen:
                     # adds 1st order penalty term
                     pen = beta_pen * PenTerm1stO(y[self.curves[i:]])
-                    self.loss_1stOpen.append(pen.item())
+                    # self.loss_1stOpen.append(pen.item())
                     self.loss += pen
                 self.loss.backward()
                 print("loss  = ", self.loss.item())

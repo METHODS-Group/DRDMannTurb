@@ -137,7 +137,7 @@ class OnePointSpectraDataGenerator:
         else:
             raise Exception("No data type was provided")
 
-        if self.DataPoints is not None and self.data_type == "Auto":
+        if self.DataPoints is not None and self.data_type != "Auto":
             self.generate_Data(self.DataPoints)
 
     def compute_Fit(self, DataPoints, k1_data_points):
