@@ -15,12 +15,12 @@ ACTIVATIONS = [nn.ELU(), nn.ReLU(), nn.GELU(), nn.CELU(), nn.LeakyReLU(), nn.SEL
 
 CONSTANTS_CONFIG = {
     "type_EddyLifetime": "customMLP",  # CALIBRATION : 'tauNet',  ### 'const', TwoThird', 'Mann', 'customMLP', 'tauNet'
-    "type_PowerSpectra": "RDT",  ### 'RDT', 'zetaNet', 'C3Net', 'Corrector'
-    "learn_nu": False,  ### NOTE: Experiment 1: False, Experiment 2: True
+    "type_PowerSpectra": "RDT",  # 'RDT', 'zetaNet', 'C3Net', 'Corrector'
+    "learn_nu": False,  # NOTE: Experiment 1: False, Experiment 2: True
     "plt_tau": True,
     "hlayers": [10, 10],  # ONLY NEEDED FOR CUSTOMNET OR RESNET
-    "tol": 1.0e-9,  ### not important
-    "lr": 1,  ### learning rate
+    "tol": 1.0e-9,  # not important
+    "lr": 1,  # learning rate
     "penalty": 1,  # CALIBRATION: 1.e-1,
     "regularization": 1.0e-5,  # CALIBRATION: 1.e-1,
     "nepochs": 10,
@@ -31,8 +31,8 @@ CONSTANTS_CONFIG = {
     "zref": 1,  # m
     "domain": torch.logspace(
         -1, 2, 20
-    ),  # np.logspace(-4, 2, 40), ### NOTE: Experiment 1: np.logspace(-1, 2, 20), Experiment 2: np.logspace(-2, 2, 40)
-    "noisy_data": 0.0,  # 0*3.e-1, ### level of the data noise  ### NOTE: Experiment 1: zero, Experiment 2: non-zero
+    ),  # np.logspace(-4, 2, 40), # NOTE: Experiment 1: np.logspace(-1, 2, 20), Experiment 2: np.logspace(-2, 2, 40)
+    "noisy_data": 0.0,  # 0*3.e-1, # level of the data noise  ### NOTE: Experiment 1: zero, Experiment 2: non-zero
     "output_folder": str(savedir),
     "input_folder": "/Users/gdeskos/work_in_progress/WindGenerator/script/",
 }

@@ -4,6 +4,7 @@ from math import log
 from time import time
 
 import matplotlib.pyplot as plt
+import torch
 import torch.nn as nn
 
 import arch_eval.constants.consts_exp1 as consts_exp1
@@ -25,9 +26,6 @@ def driver():
     start = time()
 
     activ_list = [nn.GELU(), nn.GELU(), nn.GELU()]
-
-    # for idx, activ_list in enumerate(list(product(consts.ACTIVATIONS, consts.ACTIVATIONS))): #[(nn.SELU(), nn.SELU())]: # zip(consts.ACTIVATIONS, consts.ACTIVATIONS)[0]: 
-        # print(f"on activation function combination {idx} given by {activ_list}")
 
     config = consts_exp1.CONSTANTS_CONFIG
     config['activations'] = activ_list
