@@ -41,7 +41,7 @@ CONSTANTS_CONFIG = {
     "curves": [0, 1, 2, 3],
     "data_type": "Kaimal",
     # "spectra_file": "constants/Spectra.dat",
-    "spectra_file": "Spectra_exp.dat",
+    "spectra_file": "data/Spectra_interp.dat",
     # "Uref": 10,
     "Uref": 21,
     "zref": 1,
@@ -265,7 +265,7 @@ def driver(plot_result: bool) -> None:
     ----------
     plot_result : bool
         If true, plots results
-    """    
+    """
     config = CONSTANTS_CONFIG
     config["activations"] = [nn.ReLU(), nn.ReLU(), nn.ReLU()]
     config["hlayers"] = [32] * 4
@@ -275,7 +275,7 @@ def driver(plot_result: bool) -> None:
     parameters[:3] = [np.log(L), np.log(GAMMA), np.log(SIGMA)]
 
     pb.parameters = parameters[: len(pb.parameters)]
-    k1_data_pts = config["domain"]
+    k1_data_pts = (config["domain"])
     DataPoints = [(k1, 1) for k1 in k1_data_pts]
     Data = OnePointSpectraDataGenerator(DataPoints=DataPoints, **config).Data
 
@@ -328,7 +328,7 @@ if __name__ == "__main__":
         print("Will plot result")
 
     x_interp, interp_u, interp_v, interp_w, interp_uw = interpolate(args.plot_interp)
-    
+
     # NOTE: update the config to the problem from above
     CONSTANTS_CONFIG['domain'] = torch.from_numpy(x_interp)
 

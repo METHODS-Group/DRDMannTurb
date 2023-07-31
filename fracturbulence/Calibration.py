@@ -143,8 +143,20 @@ class CalibrationProblem:
 
         return formatted_k1.to(torch.float64)
 
-    def format_output(self, out):
-        print("[format_output] -- HERE!")
+    def format_output(self, out: torch.Tensor) -> np.ndarray:
+        """
+        Wrapper around `out.cpu().numpy()`
+
+        Parameters
+        ----------
+        out : torch.Tensor
+            Tensor to be brought to CPU and
+
+        Returns
+        -------
+        np.ndarray
+            The tensor converted to numpy
+        """
         return out.cpu().numpy()
 
     # -----------------------------------------
@@ -376,8 +388,8 @@ class CalibrationProblem:
         print("\n=================================")
         print("{Calibration.py -- calibrate} Calibration terminated.")
         print("=================================\n")
-        print("loss = {0}".format(self.loss.item()))
-        print("tol  = {0}".format(tol))
+        print(f"loss = {self.loss.item()}")
+        print(f"tol  = {tol}")
         self.print_parameters()
         self.plot(plt_dynamic=False)
 

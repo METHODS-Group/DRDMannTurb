@@ -10,6 +10,7 @@ import torch.nn as nn
 import arch_eval.constants.consts_exp1 as consts_exp1
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
+from fracturbulence.common import MannEddyLifetime
 
 sys.path.append('../')
 
@@ -66,8 +67,8 @@ def driver():
 
     print(f"Elapsed time : {time() - start}")
 
-if __name__ == '__main__':  
-    from time import time  
+if __name__ == '__main__':
+    from time import time
 
 
-    driver() 
+    driver()
