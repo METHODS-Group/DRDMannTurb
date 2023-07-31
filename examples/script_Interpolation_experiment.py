@@ -45,7 +45,9 @@ CONSTANTS_CONFIG = {
     # "Uref": 10,
     "Uref": 21,
     "zref": 1,
-    "domain": torch.logspace(-1, 2, 20),  # NOTE: This gets updated in the script portion
+    "domain": torch.logspace(
+        -1, 2, 20
+    ),  # NOTE: This gets updated in the script portion
     "noisy_data": 0.0,
     "output_folder": str(savedir),
 }
@@ -275,7 +277,7 @@ def driver(plot_result: bool) -> None:
     parameters[:3] = [np.log(L), np.log(GAMMA), np.log(SIGMA)]
 
     pb.parameters = parameters[: len(pb.parameters)]
-    k1_data_pts = (config["domain"])
+    k1_data_pts = config["domain"]
     DataPoints = [(k1, 1) for k1 in k1_data_pts]
     Data = OnePointSpectraDataGenerator(DataPoints=DataPoints, **config).Data
 
@@ -330,6 +332,6 @@ if __name__ == "__main__":
     x_interp, interp_u, interp_v, interp_w, interp_uw = interpolate(args.plot_interp)
 
     # NOTE: update the config to the problem from above
-    CONSTANTS_CONFIG['domain'] = torch.from_numpy(x_interp)
+    CONSTANTS_CONFIG["domain"] = torch.from_numpy(x_interp)
 
     driver(args.plot_result)

@@ -285,8 +285,9 @@ class Sampling_H2(Sampling_method_base):
             else:
                 anis_angle = Covariance.angle_anis
 
-            from fracturbulence.Covariance.wrapper_Covariance import \
-                py_Matern_block_func
+            from fracturbulence.Covariance.wrapper_Covariance import (
+                py_Matern_block_func,
+            )
 
             def block_func(row_data, rows, col_data, cols):
                 submatrix = (
@@ -351,8 +352,7 @@ class Sampling_ODE(Sampling_method_base):
         L, Nd, d = self.L, self.Nd, self.ndim
 
         from fracturbulence.CovarianceKernels import set_ShapeOperator
-        from fracturbulence.ODE_based.TransientPower import (Problem,
-                                                             TransientPower)
+        from fracturbulence.ODE_based.TransientPower import Problem, TransientPower
 
         Covariance = RandomField.Covariance
         nu, corrlen = Covariance.nu, Covariance.corrlen

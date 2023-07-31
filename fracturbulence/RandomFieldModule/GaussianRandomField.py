@@ -12,8 +12,7 @@ from tqdm import tqdm
 
 from . import CovarianceKernels
 from .Sampling_Methods import *
-from .utilities.common import (FourierOfGaussian, SpacialCovariance,
-                               autocorrelation)
+from .utilities.common import FourierOfGaussian, SpacialCovariance, autocorrelation
 
 #######################################################################################################
 # 	Gaussian Random Field generator class

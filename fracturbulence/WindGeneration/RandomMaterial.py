@@ -1,4 +1,5 @@
 import csv
+
 # from scipy.special import kv as Kv
 # from itertools import product
 import os
@@ -17,6 +18,7 @@ from RandomFieldModule.utilities.Exports import exportVTK
 from scipy import misc
 from scipy.signal import convolve2d
 from scipy.special import erfinv
+
 # from joblib import Parallel, delayed
 # from joblib import Parallel, delayed
 from tqdm import tqdm
@@ -150,8 +152,12 @@ class RandomMaterial:
         return self.GRF.test_Covariance(nsamples)
 
     def test_VolumeFraction(self, nsamples=1000):
-        from RandomMaterial.utilities import (compute_ProbaDist, fit_ProbaDist,
-                                              tau2vf, vf2tau)
+        from RandomMaterial.utilities import (
+            compute_ProbaDist,
+            fit_ProbaDist,
+            tau2vf,
+            vf2tau,
+        )
 
         data = []
         for isample in tqdm(range(nsamples)):

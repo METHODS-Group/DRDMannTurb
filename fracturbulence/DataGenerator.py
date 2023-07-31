@@ -191,7 +191,6 @@ class OnePointSpectraDataGenerator:
         return F
 
     def eval_auto(self, k1, z=1):
-
         pass
 
     def eval_IEC(self, k1, z=1):

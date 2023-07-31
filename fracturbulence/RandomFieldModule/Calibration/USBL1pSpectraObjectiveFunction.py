@@ -10,8 +10,10 @@ from matplotlib.animation import FuncAnimation
 from pylab import *
 
 from .GenericObjectiveFunction import GenericObjectiveFunction
-from .Matrices import (DerivativeCovarianceMatrixGenerator,
-                       DerivativeStiffnessMatrixGenerator)
+from .Matrices import (
+    DerivativeCovarianceMatrixGenerator,
+    DerivativeStiffnessMatrixGenerator,
+)
 
 ###################################################################################################
 #   Rapid distortion one-point spectra

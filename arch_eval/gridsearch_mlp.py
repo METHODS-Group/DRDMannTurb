@@ -46,7 +46,7 @@ def run_network(x: np.ndarray, *_):
 
     config["activations"] = activ_list
     config["hlayers"] = [32] * 4
-    
+
     # TODO -- CHANGE BELOW BACK TO 10
     config["nepochs"] = 1
 
@@ -141,12 +141,7 @@ def driver(x: np.ndarray):
 if __name__ == "__main__":
     """Driving code."""
     print("{GRIDSEARCH} -- beginning")
-    x_min = brute(
-        run_network,
-        (slice(0, 1), slice(0, 1), slice(0, 1.0)),
-        None,
-        Ns=8
-    )
+    x_min = brute(run_network, (slice(0, 1), slice(0, 1), slice(0, 1.0)), None, Ns=8)
 
     print("{Completed}")
 
