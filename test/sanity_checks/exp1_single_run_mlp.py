@@ -14,7 +14,7 @@ from fracturbulence.common import MannEddyLifetime
 
 sys.path.append("../")
 
-plt.rc("text", usetex=True)
+# plt.rc("text", usetex=True)
 plt.rc("font", family="serif")
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
