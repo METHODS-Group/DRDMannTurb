@@ -39,11 +39,10 @@ CONSTANTS_CONFIG = {
     "nepochs": 2,
     "curves": [0, 1, 2, 3],
     "data_type": "Auto",
-    # "spectra_file": "constants/Spectra.dat",
     "spectra_file": "data/Spectra_interp.dat",
-    # "Uref": 10,
     "Uref": 21,
-    "zref": 1,
+    # "zref": 1,
+    "zref": 80,
     "domain": torch.logspace(
         -1, 2, 20
     ),  # NOTE: This gets updated in the script portion
@@ -66,7 +65,8 @@ ustar = 0.41 * Uref / np.log(zref / z0)
 
 L = 70
 GAMMA = 3.7
-SIGMA = 3.2
+SIGMA = 0.04
+# SIGMA = 3.2
 # UREF = 21
 
 """
@@ -97,16 +97,16 @@ def extract_x_spectra(filepath: Path) -> tuple[np.ndarray, np.ndarray]:
             spectra.append(float(row[1]))
 
     # return np.log10(np.array(x)), np.array(spectra)
-    return np.array(x), np.array(spectra)
+    return np.log10(np.array(x)), np.array(spectra)
 
 
-def export_into_spectra(
+def export_interpolation(
     x: np.ndarray,
     u: np.ndarray,
     v: np.ndarray,
     w: np.ndarray,
     uw: np.ndarray,
-    filename: str = "Spectra_exp",
+    filename: str = "Spectra_interp",
 ) -> None:
     """
     Takes the inputs, which should each be interpreted as columns to be
@@ -134,6 +134,8 @@ def export_into_spectra(
     with open(filename, "w") as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerows(contents)
+
+    print("Wrote file...")
 
 
 def interp_spectra(
@@ -258,14 +260,14 @@ Define the driving functions
 """
 
 
-def driver(plot_result: bool) -> None:
+def driver(plot_loss: bool, plot_result: bool) -> None:
     """
     Driving function
 
     Parameters
     ----------
     plot_result : bool
-        If true, plots results
+        If true, plots loss against epoch #
     """
     config = CONSTANTS_CONFIG
     config["activations"] = [nn.ReLU(), nn.ReLU(), nn.ReLU()]
@@ -296,15 +298,19 @@ def driver(plot_result: bool) -> None:
 
     opt_params = pb.calibrate(Data=Data, **config)
 
-    if plot_result:
+    if plot_loss:
         plt.figure()
 
         plt.plot(pb.loss_history_epochs, "o-", label="Epochs Loss History")
         plt.legend()
         plt.xlabel("Epoch Number")
         plt.ylabel("MSE")
-        plt.yscale("log")
+        # plt.yscale("log")
 
+        if not plot_result:
+            plt.show()
+
+    if plot_result:
         plt.show()
 
 
@@ -325,21 +331,60 @@ if __name__ == "__main__":
         help="Plots the interpolated spectra data as is",
     )
     parser.add_argument(
+        "-pL",
+        "--plot-loss",
+        action="store_true",
+        help="Plots the resulting loss against epoch # graph",
+    )
+    parser.add_argument(
         "-pR",
         "--plot-result",
         action="store_true",
-        help="Plots the resulting data fit",
+        help="Plots the result",
+    )
+    parser.add_argument(
+        "-eI",
+        "--export-interp",
+        action="store_true",
+        help="Writes out a file Spectra_interp",
+    )
+    parser.add_argument(
+        "-b",
+        "--beta-penal",
+        type=float,
+        default=0.0,
+        help="Provide a coefficient for the additional penalization term"
+    )
+    parser.add_argument(
+        "-p",
+        "--penal",
+        type=float,
+        default=1.0,
+        help="Provide a coefficient for the additional penalization term"
+    )
+    parser.add_argument(
+        "-e",
+        "--epochs",
+        type=int,
+        default=2,
+        help="Number of epochs to run"
     )
 
     args = parser.parse_args()
     if args.plot_interp:
         print("Will plot interp")
-    if args.plot_result:
-        print("Will plot result")
+    if args.plot_loss:
+        print("Will plot loss")
+
+    CONSTANTS_CONFIG["beta_penalty"] = args.beta_penal
+    CONSTANTS_CONFIG["penalty"] = args.penal
+    CONSTANTS_CONFIG["nepochs"] = args.epochs
 
     x_interp, interp_u, interp_v, interp_w, interp_uw = interpolate(args.plot_interp)
+    if args.export_interp:
+        export_interpolation(x_interp, interp_u, interp_v, interp_w, interp_uw, "data/Spectra_interp")
 
     # NOTE: update the config to the problem from above
     CONSTANTS_CONFIG["domain"] = torch.from_numpy(x_interp)
 
-    driver(args.plot_result)
+    driver(args.plot_loss, args.plot_result)

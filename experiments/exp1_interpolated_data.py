@@ -38,10 +38,8 @@ CONSTANTS_CONFIG = {
     "regularization": 1.0e-5,
     "nepochs": 2,
     "curves": [0, 1, 2, 3],
-    "data_type": "Auto",
-    # "spectra_file": "constants/Spectra.dat",
+    "data_type": "Custom",
     "spectra_file": "data/Spectra_interp.dat",
-    # "Uref": 10,
     "Uref": 21,
     "zref": 1,
     "domain": torch.logspace(
@@ -66,7 +64,7 @@ ustar = 0.41 * Uref / np.log(zref / z0)
 
 L = 70
 GAMMA = 3.7
-SIGMA = 3.2
+SIGMA = 0.04
 # UREF = 21
 
 """
@@ -100,13 +98,13 @@ def extract_x_spectra(filepath: Path) -> tuple[np.ndarray, np.ndarray]:
     return np.array(x), np.array(spectra)
 
 
-def export_into_spectra(
+def export_interpolation(
     x: np.ndarray,
     u: np.ndarray,
     v: np.ndarray,
     w: np.ndarray,
     uw: np.ndarray,
-    filename: str = "Spectra_exp",
+    filename: str = "Spectra_interp",
 ) -> None:
     """
     Takes the inputs, which should each be interpreted as columns to be
@@ -134,6 +132,8 @@ def export_into_spectra(
     with open(filename, "w") as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerows(contents)
+
+    print("Wrote file...")
 
 
 def interp_spectra(
@@ -330,6 +330,32 @@ if __name__ == "__main__":
         action="store_true",
         help="Plots the resulting data fit",
     )
+    parser.add_argument(
+        "-eI",
+        "--export-interp",
+        action="store_true",
+        help="Writes out a file Spectra_interp",
+    )
+    parser.add_argument(
+        "-b",
+        "--beta-penal",
+        type=float,
+        default=0.0,
+        help="Provide a coefficient for the additional penalization term"
+    )
+    parser.add_argument(
+        "-p",
+        "--penal",
+        type=float,
+        default=1.0,
+        help="Provide a coefficient for the additional penalization term"
+    )
+    parser.add_argument(
+        "-f",
+        "--filter",
+        action="store_true",
+        help="If given, then will use the filtering"
+    )
 
     args = parser.parse_args()
     if args.plot_interp:
@@ -337,7 +363,12 @@ if __name__ == "__main__":
     if args.plot_result:
         print("Will plot result")
 
+    CONSTANTS_CONFIG["beta_penalty"] = args.beta_penal
+    CONSTANTS_CONFIG["penalty"] = args.penal
+
     x_interp, interp_u, interp_v, interp_w, interp_uw = interpolate(args.plot_interp)
+    if args.export_interp:
+        export_interpolation(x_interp, interp_u, interp_v, interp_w, interp_uw, "data/Spectra_interp")
 
     # NOTE: update the config to the problem from above
     CONSTANTS_CONFIG["domain"] = torch.from_numpy(x_interp)
