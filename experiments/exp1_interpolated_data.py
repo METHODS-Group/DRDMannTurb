@@ -7,10 +7,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
+from scipy.interpolate import CubicSpline
+
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import MannEddyLifetime
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
-from scipy.interpolate import CubicSpline
 
 plt.style.use("bmh")
 
@@ -341,20 +342,20 @@ if __name__ == "__main__":
         "--beta-penal",
         type=float,
         default=0.0,
-        help="Provide a coefficient for the additional penalization term"
+        help="Provide a coefficient for the additional penalization term",
     )
     parser.add_argument(
         "-p",
         "--penal",
         type=float,
         default=1.0,
-        help="Provide a coefficient for the additional penalization term"
+        help="Provide a coefficient for the additional penalization term",
     )
     parser.add_argument(
         "-f",
         "--filter",
         action="store_true",
-        help="If given, then will use the filtering"
+        help="If given, then will use the filtering",
     )
 
     args = parser.parse_args()
@@ -368,7 +369,9 @@ if __name__ == "__main__":
 
     x_interp, interp_u, interp_v, interp_w, interp_uw = interpolate(args.plot_interp)
     if args.export_interp:
-        export_interpolation(x_interp, interp_u, interp_v, interp_w, interp_uw, "data/Spectra_interp")
+        export_interpolation(
+            x_interp, interp_u, interp_v, interp_w, interp_uw, "data/Spectra_interp"
+        )
 
     # NOTE: update the config to the problem from above
     CONSTANTS_CONFIG["domain"] = torch.from_numpy(x_interp)

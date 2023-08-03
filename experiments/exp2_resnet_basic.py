@@ -3,13 +3,13 @@ import sys
 from math import log
 from time import time
 
+import constants.consts_exp2_resnet as consts_resnet
 import matplotlib.pyplot as plt
 import torch
+
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import *
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
-
-import constants.consts_exp2_resnet as consts_resnet
 
 # v2: torch.set_default_device('cuda:0')
 if torch.cuda.is_available():

@@ -17,11 +17,12 @@ from math import log
 from pathlib import Path
 from time import time
 
+from pylab import *
+from torch.nn import parameter
+
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import *
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
-from pylab import *
-from torch.nn import parameter
 
 # v2: torch.set_default_device('cuda:0')
 torch.set_default_tensor_type("torch.cuda.FloatTensor")

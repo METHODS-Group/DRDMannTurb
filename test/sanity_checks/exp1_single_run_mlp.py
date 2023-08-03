@@ -3,20 +3,21 @@ import sys
 from math import log
 from time import time
 
+import arch_eval.constants.consts_exp1 as consts_exp1
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 
-import arch_eval.constants.consts_exp1 as consts_exp1
 from fracturbulence.Calibration import CalibrationProblem
-from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 from fracturbulence.common import MannEddyLifetime
+from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 
 sys.path.append("../")
 
 # plt.rc("text", usetex=True)
 plt.rc("font", family="serif")
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
+
 
 def driver():
     activ_list = [nn.GELU(), nn.GELU(), nn.GELU()]
@@ -41,9 +42,7 @@ def driver():
     IECtau = MannEddyLifetime(k1_data_pts * consts_exp1.L)
     kF = pb.eval(k1_data_pts)
 
-    opt_params = pb.calibrate(
-        Data=Data, **config
-    )
+    opt_params = pb.calibrate(Data=Data, **config)
 
 
 if __name__ == "__main__":

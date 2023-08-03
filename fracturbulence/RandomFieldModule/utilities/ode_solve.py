@@ -1,7 +1,6 @@
 import sys
 from collections.abc import Callable, Iterable
 from math import *
-
 # import numba_scipy
 from time import time
 

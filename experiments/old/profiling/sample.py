@@ -1,8 +1,9 @@
 """Simple profiling for OnePointSpectra Module with config from Calibration tasks"""
 
 import torch
-from fracturbulence import OnePointSpectra
 from torch.profiler import ProfilerActivity, profile, record_function
+
+from fracturbulence import OnePointSpectra
 
 CONFIG = {
     "type_EddyLifetime": "tauNet",

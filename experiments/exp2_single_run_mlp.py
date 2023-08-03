@@ -3,15 +3,15 @@ import sys
 from math import log
 from time import time
 
+import constants.consts_exp2 as consts_exp
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from pylab import *
+
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import *
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
-from pylab import *
-
-import constants.consts_exp2 as consts_exp
 
 sys.path.append("../")
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"

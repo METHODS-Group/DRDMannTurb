@@ -3,14 +3,14 @@ import sys
 from math import log
 from time import time
 
+import constants.consts_exp1 as consts_exp1
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
+
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import MannEddyLifetime
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
-
-import constants.consts_exp1 as consts_exp1
 
 sys.path.append("../")
 

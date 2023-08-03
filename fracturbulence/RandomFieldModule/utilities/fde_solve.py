@@ -6,10 +6,8 @@ from time import time
 import numpy as np
 from pathos.multiprocessing import ProcessingPool as Pool
 
-from ..RationalApproximation import (
-    compute_RationalApproximation_AAA,
-    compute_RationalApproximation_AAA_new,
-)
+from ..RationalApproximation import (compute_RationalApproximation_AAA,
+                                     compute_RationalApproximation_AAA_new)
 from .ode_solve import ode_solve
 
 
