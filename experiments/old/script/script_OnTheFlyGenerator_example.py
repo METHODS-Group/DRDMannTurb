@@ -18,7 +18,9 @@ from tqdm import tqdm
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.OnePointSpectra import OnePointSpectra
 from fracturbulence.WindGeneration.CovarianceKernels import (
-    MannCovariance, VonKarmanCovariance)
+    MannCovariance,
+    VonKarmanCovariance,
+)
 from fracturbulence.WindGeneration.GaussianRandomField import *
 from fracturbulence.WindGeneration.NeuralNetCovariance import NNCovariance
 

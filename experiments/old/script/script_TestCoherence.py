@@ -10,8 +10,7 @@ from torch.nn import parameter
 
 sys.path.append("./")
 from source.Calibration import CalibrationProblem
-from source.DataGenerator import (CoherenceDataGenerator,
-                                  OnePointSpectraDataGenerator)
+from source.DataGenerator import CoherenceDataGenerator, OnePointSpectraDataGenerator
 from source.SpectralCoherence import SpectralCoherence
 
 ####################################
