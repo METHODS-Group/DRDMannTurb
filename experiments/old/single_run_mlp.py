@@ -3,15 +3,14 @@ import sys
 from math import log
 from time import time
 
+import arch_eval.constants.consts as consts
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-from pylab import *
-
-import arch_eval.constants.consts as consts
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import *
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
+from pylab import *
 
 # v2: torch.set_default_device('cuda:0')
 if torch.cuda.is_available():

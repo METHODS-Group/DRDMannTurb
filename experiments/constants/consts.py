@@ -3,7 +3,6 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
-
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 
 if torch.cuda.is_available():

@@ -10,10 +10,8 @@ from torch.nn import parameter
 
 sys.path.append("./")
 from fracturbulence.Calibration import CalibrationProblem
-from fracturbulence.DataGenerator import (
-    CoherenceDataGenerator,
-    OnePointSpectraDataGenerator,
-)
+from fracturbulence.DataGenerator import (CoherenceDataGenerator,
+                                          OnePointSpectraDataGenerator)
 from fracturbulence.SpectralCoherence import SpectralCoherence
 
 ####################################
