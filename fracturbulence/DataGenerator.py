@@ -40,9 +40,9 @@ class OnePointSpectraDataGenerator:
             else:
                 raise Exception("Custom spectra_file not found")
         elif self.data_type == "Auto":
-            if kwargs.get("spectra_file") is not None:
-                print("Reading file " + kwargs.get("spectra_file") + "\n")
-                spectra_file = kwargs.get("spectra_file")
+            spectra_file = kwargs.get("spectra_file")
+            if spectra_file is not None:
+                print(f"Reading file {spectra_file}\n")
 
                 if self.k1 is not None:
 
@@ -113,12 +113,16 @@ class OnePointSpectraDataGenerator:
                     )
 
                     DataValues = np.zeros([len(self.DataPoints), 3, 3])
+                    print("[fit1] ---------------------")
                     fit1 = fitOPS(self.k1, Data_temp[:, 1], 1)
                     DataValues[:, 0, 0] = func124(self.k1, *fit1)
+                    print("[fit2] ---------------------")
                     fit2 = fitOPS(self.k1, Data_temp[:, 2], 2)
                     DataValues[:, 1, 1] = func124(self.k1, *fit2)
+                    print("[fit3] ---------------------")
                     fit3 = fitOPS(self.k1, Data_temp[:, 3], 4)
                     DataValues[:, 2, 2] = func124(self.k1, *fit3)
+                    print("[fit4] ---------------------")
                     fit4 = fitOPS(self.k1, Data_temp[:, 4], 3)
                     DataValues[:, 0, 2] = -func3(self.k1, *fit4)
 

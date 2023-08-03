@@ -286,11 +286,14 @@ class CalibrationProblem:
             TODO: are these embedded functions necessary?
             """
             # y = torch.abs((model-target)).square()
+
             y = torch.log(torch.abs(model / target)).square()
+
             # y = ( (model-target)/(target) ).square()
             # y = 0.5*(y[...,:-1]+y[...,1:])
             # loss = 0.5*torch.sum( y * h4 )
             # loss = torch.sum( y * h1 )
+
             loss = torch.mean(y)
             return loss
 
@@ -383,6 +386,10 @@ class CalibrationProblem:
                 print("=================================\n")
                 self.loss_history_epochs.append(self.loss_only)
                 if self.loss.item() < tol:
+                    break
+
+                if np.isnan(self.loss.item()) or np.isinf(self.loss.item()):
+                    print("WARNING -- LOSS IS NAN OR INF")
                     break
 
         print("\n=================================")
