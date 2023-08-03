@@ -101,6 +101,11 @@ def extract_x_spectra(filepath: Path) -> tuple[np.ndarray, np.ndarray]:
     return np.log10(np.array(x)), np.array(spectra)
 
 
+# TODO -- x-axis is different from the others -- frequency multiplied ... eg, different units
+# TODO -- note also possibly same discrepancy with y-axis/ need to check whether or not unit
+
+
+
 def export_interpolation(
     x: np.ndarray,
     u: np.ndarray,
@@ -253,7 +258,7 @@ def interpolate(plot_interp: bool) -> tuple[np.ndarray, ...]:
         plt.legend()
         plt.show()
 
-    return x_interp, interp_u, interp_v, interp_w, interp_uw
+    return np.power(10, x_interp), interp_u, interp_v, interp_w, interp_uw
 
 
 """
