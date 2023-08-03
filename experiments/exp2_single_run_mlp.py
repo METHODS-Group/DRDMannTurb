@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from pylab import *
 
-import arch_eval.constants.consts_exp2 as consts_exp
+import constants.consts_exp2 as consts_exp
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import *
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator

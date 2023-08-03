@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 
-import arch_eval.constants.consts_exp1 as consts_exp1
+import constants.consts_exp1 as consts_exp1
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 from fracturbulence.common import MannEddyLifetime

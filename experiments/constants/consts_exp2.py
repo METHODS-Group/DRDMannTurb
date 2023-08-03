@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 
-torch.set_default_tensor_type("torch.cuda.FloatTensor")
+if torch.cuda.is_available():
+    torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
 from math import log
 from pathlib import Path
