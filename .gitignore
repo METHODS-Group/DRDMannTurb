@@ -136,6 +136,6 @@ dmypy.json
 
 ## Data/ Paraview Files
 
-*.png
+# *.png
 *.vti
 *.pvd
