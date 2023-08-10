@@ -16,5 +16,5 @@ Using a 4-layer 32-neuron FC neural network with a CosineAnnealer, these are the
 
 This package is provided as a locally ``pip``-installable package. It is recommended that Python 3.9 is used in your local environment. 
 
-A Conda spec-file is included, to install a functioning environment, run ``conda create --name ENV_NAME_HERE --file spec-file.txt``. Then run ``pip install -e .`` to load ``fracturbulence`` into your environment. 
+A Conda spec-file is included, to install a functioning environment, run ``conda create --name ENV_NAME_HERE --file spec-file.txt``. Then run ``pip install -e .`` to load ``drdmannturb`` into your environment. 
 
