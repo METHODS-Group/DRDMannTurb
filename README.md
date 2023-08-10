@@ -1,4 +1,4 @@
-# Fractional Turbulence Modelling 
+# Deep Rapid Distortion theory Mann Turbulence model
 
 Based on the code and theory from [this 2021 publication](https://arxiv.org/pdf/2107.11046.pdf). 
 
