@@ -1,7 +1,0 @@
-torch
-scipy
-tqdm
-matplotlib
-pyevtk
-pyfftw
-pre-commit

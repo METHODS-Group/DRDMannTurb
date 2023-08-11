@@ -12,9 +12,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from fracturbulence.Calibration import CalibrationProblem
-from fracturbulence.common import *
-from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
+from drdmannturb.Calibration import CalibrationProblem
+from drdmannturb.common import *
+from drdmannturb.DataGenerator import OnePointSpectraDataGenerator
 
 # v2: torch.set_default_device('cuda:0')
 
