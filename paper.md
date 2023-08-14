@@ -6,24 +6,25 @@ tags:
   - Mann-model
   - wind-engineering
 authors:
-  - name: Alexey Izmailov, Matthew Meeker, Georgios Deskos, Brendan Keith
-    orcid: 0000-0000-0000-0000
+  - name: Alexey Izmailov
+    orcid: 0000-0000-0000-0000   # TODO -- ORCID?
     equal-contrib: true
-    affiliation: "1, 2" # (Multiple affiliations must be quoted)
-  - name: Author Without ORCID
+    affiliation: 1
+  - name: Matthew Meeker
     equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
-    affiliation: 2
-  - name: Author with no affiliation
+    affiliation: 1
+  - name: Georgios Deskos
     corresponding: true # (This is how to denote the corresponding author)
-    affiliation: 3
+    affiliation: 2
+  - name: Brendan Keith
+    affiliation: 1
+
 affiliations:
- - name: Lyman Spitzer, Jr. Fellow, Princeton University, USA
+ - name: Division of Applied Mathematics, Brown University, Providence, RI, 02912, USA
    index: 1
- - name: Institution Name, Country
+ - name: National Wind Technology Center, National Renewable Energy Laboratory, Golden, CO, 80401, USA
    index: 2
- - name: Independent Researcher, Country
-   index: 3
-date: 13 August 2017
+date: 13 August 2017     # TODO -- what date to use?
 bibliography: paper.bib
 ---
 
@@ -34,7 +35,6 @@ TEMPLATE SECTION
 # Statement of need
 
 TEMPLATE SECTION 
-
 
 # Figures
 
