@@ -14,7 +14,7 @@ authors:
     equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
     affiliation: 1
   - name: Georgios Deskos
-    corresponding: true # (This is how to denote the corresponding author)
+    corresponding: true # TODO -- who is corresponding and name ordering?
     affiliation: 2
   - name: Brendan Keith
     affiliation: 1

@@ -5,12 +5,6 @@ from .common import MannEddyLifetime, VKEnergySpectrum
 from .PowerSpectraRDT import PowerSpectraRDT
 from .tauNet import customNet, tauNet, tauResNet
 
-"""
-==================================================================================================================
-One-Point Spectra class
-==================================================================================================================
-"""
-
 
 class OnePointSpectra(nn.Module):
     def __init__(self, **kwargs):
@@ -20,7 +14,9 @@ class OnePointSpectra(nn.Module):
         self.type_PowerSpectra = kwargs.get("type_PowerSpectra", "RDT")
 
         self.init_grids()
-        self.init_parameters()
+        self.logLengthScale = nn.Parameter(torch.tensor(0, dtype=torch.float64))
+        self.logTimeScale = nn.Parameter(torch.tensor(0, dtype=torch.float64))
+        self.logMagnitude = nn.Parameter(torch.tensor(0, dtype=torch.float64))
 
         if self.type_EddyLifetime == "tauNet":
             self.tauNet = tauNet(**kwargs)
@@ -31,18 +27,19 @@ class OnePointSpectra(nn.Module):
 
     ###-------------------------------------------
 
-    def init_parameters(self):
-        self.logLengthScale = nn.Parameter(torch.tensor(0, dtype=torch.float64))
-        self.logTimeScale = nn.Parameter(torch.tensor(0, dtype=torch.float64))
-        self.logMagnitude = nn.Parameter(torch.tensor(0, dtype=torch.float64))
+    def exp_scales(self) -> tuple[float, float, float]:
+        """
+        Exponentiates the length, time and magnitude scales
 
-    def update_scales(self):
+        Returns
+        -------
+        tuple[float, float, float]
+            _description_
+        """        
         self.LengthScale = torch.exp(self.logLengthScale)  # this is L
         self.TimeScale = torch.exp(self.logTimeScale)  # this is gamma
         self.Magnitude = torch.exp(self.logMagnitude)  # this is sigma
         return self.LengthScale.item(), self.TimeScale.item(), self.Magnitude.item()
-
-    ###-------------------------------------------
 
     def init_grids(self):
         ### k2 grid

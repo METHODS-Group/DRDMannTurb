@@ -1,20 +1,12 @@
-from itertools import product
-from math import *
-from time import time
-
-import matplotlib.pyplot as plt
 import numpy as np
-import scipy.fftpack as fft
 from scipy.special import hyp2f1
-from scipy.special import kv as Kv
-from tqdm import tqdm
-
-#######################################################################################################
-# 	Generic Covariance class
-#######################################################################################################
 
 
 class Covariance:
+    """
+    Generic covariance class; to be sub-classed
+    """
+
     def __init__(self, ndim=2, verbose=0, **kwargs):
         self.verbose = verbose
 
@@ -40,6 +32,10 @@ class Covariance:
 
 
 class VonKarmanCovariance(Covariance):
+    """
+    Implementation of the Von Karman covariance
+    """
+
     def __init__(self, ndim, length_scale, E0, **kwargs):
         super().__init__(**kwargs)
 
@@ -56,7 +52,20 @@ class VonKarmanCovariance(Covariance):
     #   Compute the power spectrum
     # --------------------------------------------------------------------------
 
-    def precompute_Spectrum(self, Frequences):
+    def precompute_Spectrum(self, Frequences) -> np.ndarray:
+        """
+        Compute the power spectrum
+
+        Parameters
+        ----------
+        Frequences : _type_
+            _description_
+
+        Returns
+        -------
+        _type_
+            _description_
+        """
         Nd = [Frequences[j].size for j in range(self.ndim)]
         SqrtSpectralTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
 
@@ -101,20 +110,10 @@ class VonKarmanCovariance(Covariance):
     # --------------------------------------------------------------------------
 
     def eval(self, *args):
-        print("eval function is not supported")
-        raise
+        raise ValueError("eval is not implemented")
 
     def eval_sqrt(self, *args, nu=None, corrlen=None):
-        print("eval_sqrt function is not supported")
-        raise
-
-
-###################################################################
-
-
-#######################################################################################################
-# 	Mann Covariance class
-#######################################################################################################
+        raise ValueError("eval_sqrt is not implemented")
 
 
 class MannCovariance(Covariance):

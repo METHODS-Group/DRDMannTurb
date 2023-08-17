@@ -1,13 +1,13 @@
+"""
+Learnable Eddy Lifetime module
+"""
+
 import torch
 import torch.nn as nn
 
 from .LearnableFunctions import CustomMLP, Rational, SimpleNN
-
-"""
-==================================================================================================================
-Learnable Eddy Liftime class
-==================================================================================================================
-"""
+from typing import List, Any, Callable
+from collections.abc import Iterable
 
 
 class ResNetBlock(nn.Module):
@@ -55,7 +55,13 @@ class ResNetBlock(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self, hlayers, inlayer=3, outlayer=3) -> None:
+    """
+    ResNet implementation
+    """
+
+    def __init__(
+        self, n_layers: list[int], inlayer: int = 3, outlayer: int = 3
+    ) -> None:
         super(ResNet, self).__init__()
         self.indims = 10  # not of the data but after the first layer upward
 
@@ -66,8 +72,8 @@ class ResNet(nn.Module):
         )
 
         # TODO: need to downsample if not 4...??????
-        self.block1 = self._make_layer(hlayers[0], self.indims)
-        self.block2 = self._make_layer(hlayers[1], self.indims)
+        self.block1 = self._make_layer(n_layers[0], self.indims)
+        self.block2 = self._make_layer(n_layers[1], self.indims)
 
         self.fc = nn.Linear(self.indims, outlayer).double()
 
@@ -98,6 +104,12 @@ class ResNet(nn.Module):
 
 
 class tauResNet(nn.Module):
+    """
+    tauResNet implementation
+
+    Consists of ResNet and Rational
+    """
+
     def __init__(self, **kwargs):
         super(tauResNet, self).__init__()
 
@@ -109,15 +121,45 @@ class tauResNet(nn.Module):
 
         # TODO: change activations list here and propagate through to resnet blocks
         # self.NN = CustomMLP(hlayers=self.hlayers, activations=self.activations, inlayer=3, outlayer=3)
-        self.NN = ResNet(hlayers=self.hlayers, inlayer=3, outlayer=3)
+        self.NN = ResNet(n_layers=self.hlayers, inlayer=3, outlayer=3)
         self.Ra = Rational(nModes=self.nModes, learn_nu=self.fg_learn_nu)
 
         self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
 
-    def sym(self, f, k):
+    def sym(
+        self, f: Callable[[torch.Tensor], torch.Tensor], k: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        TODO -- what exactly?
+
+        Parameters
+        ----------
+        f : Callable[[torch.Tensor], torch.Tensor]
+            A function that takes a tensor and returns a tensor
+        k : torch.Tensor
+            _description_
+
+        Returns
+        -------
+        torch.Tensor
+            _description_
+        """
         return 0.5 * (f(k) + f(k * self.sign))
 
-    def forward(self, k):
+    def forward(self, k: torch.Tensor) -> torch.Tensor:
+        """
+        Forward method implementation
+
+        Parameters
+        ----------
+        k : torch.Tensor
+            TODO -- greater meaning
+
+        Returns
+        -------
+        torch.Tensor
+            TODO -- greater meaning
+        """
         k_mod = self.NN(k.abs()).norm(dim=-1)
         tau = self.Ra(k_mod)
 
@@ -125,27 +167,82 @@ class tauResNet(nn.Module):
 
 
 class tauNet(nn.Module):
-    def __init__(self, **kwargs):
-        super(tauNet, self).__init__()
-        self.nlayers = kwargs.get("nlayers", 2)
-        self.hidden_layer_size = kwargs.get("hidden_layer_size", 3)
+    """
+    tauNet implementation
 
-        self.nModes = kwargs.get("nModes", 10)
-        self.fg_learn_nu = kwargs.get("learn_nu", True)
+    Consists of a SimpleNN and a Rational
+    """
+
+    def __init__(
+        self,
+        n_layers: int = 2,
+        hidden_layer_size: int = 3,
+        n_modes: int = 10,
+        learn_nu: bool = True,
+    ):
+        """
+        Constructor for tauNet
+
+        Parameters
+        ----------
+        n_layers : int, optional
+            Number of hidden layers, by default 2
+        hidden_layer_size : int, optional
+            Size of the hidden layers, by default 3
+        n_modes : int, optional
+            Number of wave modes, by default 10
+        learn_nu : bool, optional
+            If true, learns also the exponent Nu, by default True
+        """
+
+        super(tauNet, self).__init__()
+        # TODO -- the four below have been changed off of kwargs onto actual named args
+        self.n_layers = n_layers
+        self.hidden_layer_size = hidden_layer_size
+        self.n_modes = n_modes
+        self.fg_learn_nu = learn_nu
 
         self.NN = SimpleNN(
-            nlayers=self.nlayers, inlayer=3, hlayer=self.hidden_layer_size, outlayer=3
+            nlayers=self.n_layers, inlayer=3, hlayer=self.hidden_layer_size, outlayer=3
         )
-        self.Ra = Rational(nModes=self.nModes, learn_nu=self.fg_learn_nu)
+        self.Ra = Rational(nModes=self.n_modes, learn_nu=self.fg_learn_nu)
 
         # self.T = nn.Linear(3,3,bias=False).double()
 
         self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
 
-    def sym(self, f, k):
+    def sym(self, f, k: torch.Tensor) -> torch.Tensor:
+        """
+        TODO -- figure out exactly what this is
+
+        Parameters
+        ----------
+        f : _type_ TODO -- how to typehint a Functoin pointer?
+            _description_
+        k : torch.Tensor
+            _description_
+
+        Returns
+        -------
+        torch.Tensor
+            _description_
+        """
         return 0.5 * (f(k) + f(k * self.sign))
 
-    def forward(self, k):
+    def forward(self, k: torch.Tensor) -> torch.Tensor:
+        """
+        Forward method implementation.
+
+        Parameters
+        ----------
+        k : torch.Tensor
+            _description_
+
+        Returns
+        -------
+        torch.Tensor
+            _description_
+        """
         # NN    = self.sym(self.NN, k)
         # NN    = self.NN(k**2)
         k_mod = self.NN(k.abs()).norm(dim=-1)
@@ -165,14 +262,40 @@ class tauNet(nn.Module):
 
 
 class customNet(nn.Module):
-    def __init__(self, **kwargs):
+    """
+    customNet
+    """
+
+    def __init__(
+        self,
+        n_layers: int = 2,
+        activations: List[Any] = [nn.ReLU(), nn.ReLU()],
+        n_modes: int = 10,
+        learn_nu: bool = True,
+        **kwargs
+    ):
+        """
+        Constructor for the customNet
+
+        Parameters
+        ----------
+        n_layers : int, optional
+            Number of hidden layers, by default 2
+        activations : List[Any], optional
+            List of activation functions to use, by default [nn.ReLU(), nn.ReLU()]
+        n_modes : int, optional
+            Number of wave modes, by default 10
+        learn_nu : bool, optional
+            Determines whether or not the exponent Nu is also learned, by default True
+        """
+
         super().__init__()
 
-        self.hlayers = kwargs.get("hlayers", [10, 10])
-        self.activations = kwargs.get("activations", [nn.ReLU(), nn.ReLU()])
+        self.n_layers = n_layers
+        self.activations = activations
 
-        self.nModes = kwargs.get("nModes", 10)
-        self.fg_learn_nu = kwargs.get("learn_nu", True)
+        self.n_modes = n_modes
+        self.fg_learn_nu = learn_nu
 
         self.NN = CustomMLP(
             hlayers=self.hlayers, activations=self.activations, inlayer=3, outlayer=3
@@ -181,10 +304,40 @@ class customNet(nn.Module):
 
         self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
 
-    def sym(self, f, k):
+    def sym(
+        self, f: Callable[[torch.Tensor], torch.Tensor], k: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        TODO -- figure out what exactly this is
+
+        Parameters
+        ----------
+        f : Callable[[torch.Tensor], torch.Tensor]
+            A function that takes a Tensor and produces a Tensor
+        k : torch.Tensor
+            TODO -- greater meaning
+
+        Returns
+        -------
+        torch.Tensor
+            TODO -- greater meaning
+        """
         return 0.5 * (f(k) + f(k * self.sign))
 
-    def forward(self, k):
+    def forward(self, k: torch.Tensor) -> torch.Tensor:
+        """
+        Forward method implementation
+
+        Parameters
+        ----------
+        k : torch.Tensor
+            _description_
+
+        Returns
+        -------
+        torch.Tensor
+            _description_
+        """
         k_mod = self.NN(k.abs()).norm(dim=-1)
         tau = self.Ra(k_mod)
         return tau
