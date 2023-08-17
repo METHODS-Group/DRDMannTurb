@@ -423,6 +423,16 @@ class CalibrationProblem:
         # print('grad = ', self.grad)
         pass
 
+    def num_trainable_params(self): 
+        """
+        Returns the number of trainable parameters in neural network.
+        """        
+        if self.OPS.type_EddyLifetime not in ["tauNet", "customMLP", "tauResNet"]: 
+            raise ValueError("Not using trainable model for approximation, must be tauNet, customMLP, or tauResNet")
+        
+        return sum(p.numel() for p in self.OPS.tauNet.parameters())
+
+
     def plot_loss_wolfe(self, beta_pen):
         plt.figure()
         plt.plot(self.loss_2ndOpen, label="1st Order Penalty")
