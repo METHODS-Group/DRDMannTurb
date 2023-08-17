@@ -67,6 +67,8 @@ class CalibrationProblem:
         if self.fg_coherence:
             self.Coherence = SpectralCoherence(**kwargs)
 
+        self.epoch_model_sizes = torch.empty((kwargs.get('nepochs', 10), ))
+
     # enable gpu device
     def init_device(self):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -163,7 +165,7 @@ class CalibrationProblem:
     # Calibration method
     # -----------------------------------------
 
-    def calibrate(self, **kwargs):
+    def calibrate(self, model_magnitude_order = 1, **kwargs):
         print("\nCalibrating MannNet...")
 
         DataPoints, DataValues = kwargs.get("Data")
@@ -376,6 +378,7 @@ class CalibrationProblem:
                 print("\n=================================")
                 print("[Calibration.py -- calibrate]-> Epoch {0:d}".format(epoch))
                 print("=================================\n")
+                self.epoch_model_sizes[epoch] = self.eval_trainable_magnitude(model_magnitude_order)
                 optimizer.step(closure)
                 # TODO: refactor the scheduler things, plateau requires loss
                 # scheduler.step(self.loss) #if scheduler
@@ -424,13 +427,46 @@ class CalibrationProblem:
         pass
 
     def num_trainable_params(self): 
-        """
-        Returns the number of trainable parameters in neural network.
-        """        
+        """Computes the number of trainable network parameters 
+            in the underlying model. OPS must be set to either 
+            tauNet, customMLP, or tauResNet.
+
+        Returns
+        -------
+        _type_
+            _description_
+
+        Raises
+        ------
+        ValueError
+            If the OPS was not initialized to one of tauNet, customMLP, or tauResNet.
+        """                
         if self.OPS.type_EddyLifetime not in ["tauNet", "customMLP", "tauResNet"]: 
             raise ValueError("Not using trainable model for approximation, must be tauNet, customMLP, or tauResNet")
         
         return sum(p.numel() for p in self.OPS.tauNet.parameters())
+    
+    def eval_trainable_magnitude(self, ord=1): 
+        """Evaluates the magnitude (or other norm) of the 
+            trainable parameters in the model. 
+
+            NOTE: OPS must be set to one of tauNet, customMLP, or tauResNet.
+
+        Parameters
+        ----------
+        ord : int, optional
+            Lp norm order in which to evaluate model size, by default 1
+
+        Raises
+        ------
+        ValueError
+            If the OPS was not initialized to one of tauNet, customMLP, or tauResNet.
+        
+        """        
+        if self.OPS.type_EddyLifetime not in ["tauNet", "customMLP", "tauResNet"]: 
+            raise ValueError("Not using trainable model for approximation, must be tauNet, customMLP, or tauResNet")
+
+        return torch.norm(torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord)
 
 
     def plot_loss_wolfe(self, beta_pen):

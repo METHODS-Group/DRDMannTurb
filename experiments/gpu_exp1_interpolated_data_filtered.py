@@ -273,7 +273,7 @@ Define the driving functions
 """
 
 
-def driver(plot_loss: bool, plot_result: bool) -> None:
+def driver(plot_loss: bool, plot_result: bool, plot_model_size: bool=False) -> None:
     """
     Driving function
 
@@ -283,7 +283,7 @@ def driver(plot_loss: bool, plot_result: bool) -> None:
         If true, plots loss against epoch #
     """
     config = CONSTANTS_CONFIG
-    config["activations"] = [nn.ReLU(), nn.ReLU(), nn.ReLU()]
+    config["activations"] = [nn.ReLU(), nn.ReLU(), nn.ReLU(), nn.ReLU()]
     config["hlayers"] = [32] * 4
 
     pb = CalibrationProblem(**config)
@@ -325,6 +325,9 @@ def driver(plot_loss: bool, plot_result: bool) -> None:
 
         if not plot_result:
             plt.show()
+
+    if plot_model_size: 
+        plt.plot([x.detach().cpu().numpy() for x in pb.epoch_model_sizes])
 
     if plot_result:
         plt.show()
@@ -381,6 +384,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "-e", "--epochs", type=int, default=2, help="Number of epochs to run"
     )
+    # parser.add_argument(
+        # "-pM", "--magnitude", type=bool, default=False, help="Number of epochs to run"
+    # )
+
 
     args = parser.parse_args()
     if args.plot_interp:
