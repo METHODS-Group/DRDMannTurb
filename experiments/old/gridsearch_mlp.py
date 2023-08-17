@@ -6,11 +6,10 @@ import arch_eval.constants.consts_exp1 as consts_exp1
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from scipy.optimize import brute
-
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import MannEddyLifetime
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
+from scipy.optimize import brute
 
 sys.path.append("../")
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"

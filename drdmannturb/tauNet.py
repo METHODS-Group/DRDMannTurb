@@ -188,4 +188,3 @@ class customNet(nn.Module):
         k_mod = self.NN(k.abs()).norm(dim=-1)
         tau = self.Ra(k_mod)
         return tau
-    

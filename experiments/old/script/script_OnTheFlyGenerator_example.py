@@ -12,9 +12,6 @@ from time import time
 
 import matplotlib.pyplot as plt
 import numpy as np
-from pyevtk.hl import imageToVTK
-from tqdm import tqdm
-
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.OnePointSpectra import OnePointSpectra
 from fracturbulence.WindGeneration.CovarianceKernels import (
@@ -23,6 +20,8 @@ from fracturbulence.WindGeneration.CovarianceKernels import (
 )
 from fracturbulence.WindGeneration.GaussianRandomField import *
 from fracturbulence.WindGeneration.NeuralNetCovariance import NNCovariance
+from pyevtk.hl import imageToVTK
+from tqdm import tqdm
 
 resdir = Path(__file__).parent / "results"
 

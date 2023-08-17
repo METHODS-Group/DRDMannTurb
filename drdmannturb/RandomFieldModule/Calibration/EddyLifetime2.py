@@ -13,12 +13,11 @@ import numpy as np
 import scipy.fftpack as fft
 import torch
 import torch.nn as nn
-from torch.nn.utils import parameters_to_vector, vector_to_parameters
-
 from fracturbulence.RandomFieldModule.utilities.ode_solve import (
     FEM_coefficient_matrix_generator,
     Grid1D,
 )
+from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
 # from RandomFieldModule.Calibration.MannSpectraObjectiveFunction import MannEddyLifetime, StdEddyLifetime
 

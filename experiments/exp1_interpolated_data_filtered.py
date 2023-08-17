@@ -75,7 +75,9 @@ Define the File IO routines
 """
 
 
-def extract_x_spectra(filepath: Path, abs: bool = False) -> tuple[np.ndarray, np.ndarray]:
+def extract_x_spectra(
+    filepath: Path, abs: bool = False
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Given a filepath to a csv with data in two cols; the first should
     be the x coordinates and the second should be the spectra value
@@ -109,7 +111,6 @@ def extract_x_spectra(filepath: Path, abs: bool = False) -> tuple[np.ndarray, np
 
 # TODO -- x-axis is different from the others -- frequency multiplied ... eg, different units
 # TODO -- note also possibly same discrepancy with y-axis/ need to check whether or not unit
-
 
 
 def export_interpolation(
@@ -205,8 +206,7 @@ def interpolate(plot_interp: bool) -> tuple[np.ndarray, ...]:
         Path().resolve() / "data" / "w_spectra.csv"
     )
     x_coords_uw, uw_cospectra = extract_x_spectra(
-        Path().resolve() / "data" / "uw_cospectra.csv",
-        True
+        Path().resolve() / "data" / "uw_cospectra.csv", True
     )
 
     x_interp = np.linspace(min(x_coords_w), max(x_coords_w), 40)

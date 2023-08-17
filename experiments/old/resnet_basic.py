@@ -6,7 +6,6 @@ from time import time
 import arch_eval.constants.consts_resnet as consts_resnet
 import matplotlib.pyplot as plt
 import torch
-
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import *
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator

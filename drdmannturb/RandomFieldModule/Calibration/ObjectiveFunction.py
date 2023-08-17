@@ -6,13 +6,12 @@ from time import sleep, time
 import numpy as np
 import scipy.optimize
 import torch
-from matplotlib.animation import FuncAnimation
-from pylab import *
-
 from fracturbulence.RandomFieldModule.PowerSpectra import (
     MannEddyLifetime,
     StdEddyLifetime,
 )
+from matplotlib.animation import FuncAnimation
+from pylab import *
 
 from .EddyLifetime import EddyLifetime
 from .Matrices import (

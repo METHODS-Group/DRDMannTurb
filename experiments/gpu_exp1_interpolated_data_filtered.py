@@ -273,7 +273,7 @@ Define the driving functions
 """
 
 
-def driver(plot_loss: bool, plot_result: bool, plot_model_size: bool=False) -> None:
+def driver(plot_loss: bool, plot_result: bool, plot_model_size: bool = False) -> None:
     """
     Driving function
 
@@ -326,7 +326,7 @@ def driver(plot_loss: bool, plot_result: bool, plot_model_size: bool=False) -> N
         if not plot_result:
             plt.show()
 
-    if plot_model_size: 
+    if plot_model_size:
         plt.plot([x.detach().cpu().numpy() for x in pb.epoch_model_sizes])
 
     if plot_result:
@@ -385,9 +385,8 @@ if __name__ == "__main__":
         "-e", "--epochs", type=int, default=2, help="Number of epochs to run"
     )
     # parser.add_argument(
-        # "-pM", "--magnitude", type=bool, default=False, help="Number of epochs to run"
+    # "-pM", "--magnitude", type=bool, default=False, help="Number of epochs to run"
     # )
-
 
     args = parser.parse_args()
     if args.plot_interp:
