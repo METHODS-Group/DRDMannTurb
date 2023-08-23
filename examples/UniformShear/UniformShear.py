@@ -18,7 +18,10 @@ from drdmannturb.WindGeneration.CovarianceKernels import (
 from drdmannturb.WindGeneration.GaussianRandomField import *
 from drdmannturb.WindGeneration.NeuralNetCovariance import NNCovariance
 
-class GenerateWindTurbulence:
+resdir = Path(__file__).parent / "data"
+
+
+class GenerateWind:
     def __init__(
         self,
         friction_velocity,
@@ -29,12 +32,27 @@ class GenerateWindTurbulence:
         blend_num=10,
         **kwargs,
     ):
-        model = kwargs.get("model", "VK")
+        model = kwargs.get("model", "NN")  ### 'FPDE_RDT', 'Mann', 'VK', 'NN'
         print(model)
 
-        E0 = 3.2 * friction_velocity**2 * reference_height ** (-2 / 3)
-        L = 0.59 * reference_height
-        Gamma = 0.0
+        if model == "NN":
+            path_to_parameters = kwargs.get("path_to_parameters", None)
+            with open(path_to_parameters, "rb") as file:
+                config, parameters, Data, _, loss_history = pickle.load(file)
+
+            pb = CalibrationProblem(**config)
+            pb.parameters = parameters
+            L, T, M = pb.OPS.update_scales()
+            M = L ** (-5 / 3) * M
+            print("Scales: ", [L, T, M])
+            E0 = M * friction_velocity**2 * reference_height ** (-2 / 3)
+            L = L * reference_height
+            Gamma = T
+        else:
+            E0 = 3.2 * friction_velocity**2 * reference_height ** (-2 / 3)
+            L = 0.59 * reference_height
+            # L = 95 # why should the length scale depend on the reference height???????
+            Gamma = 3.9
 
         # define margins and buffer
         time_buffer = 3 * Gamma * L
@@ -118,6 +136,36 @@ class GenerateWindTurbulence:
                 grid_shape=self.noise_shape[:-1],
                 Covariance=self.Covariance,
             )
+        elif model == "FPDE_RDT":
+            self.Covariance = None
+            kwargs = {"correlation_length": L, "E0": E0}
+            self.RF = VectorGaussianRandomField(
+                **kwargs,
+                ndim=3,
+                grid_level=grid_levels,
+                grid_dimensions=grid_dimensions,
+                sampling_method="vf_rat_halfspace_rapid_distortion",
+                grid_shape=self.noise_shape[:-1],
+                Covariance=self.Covariance,
+            )
+        elif model == "NN":
+            self.Covariance = NNCovariance(
+                ndim=3,
+                length_scale=L,
+                E0=E0,
+                Gamma=Gamma,
+                OnePointSpectra=pb.OPS,
+                h_ref=reference_height,
+            )
+            self.RF = VectorGaussianRandomField(
+                **kwargs,
+                ndim=3,
+                grid_level=grid_levels,
+                grid_dimensions=grid_dimensions,
+                sampling_method="vf_fftw",
+                grid_shape=self.noise_shape[:-1],
+                Covariance=self.Covariance,
+            )
 
         self.RF.reseed(self.seed)
         # self.RS = np.random.RandomState(seed=self.seed)
@@ -153,6 +201,7 @@ class GenerateWindTurbulence:
 
         return wind
 
+
 ############################################################################
 ############################################################################
 
@@ -160,32 +209,44 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     normalize = False
-    friction_velocity = 0.45
+    friction_velocity = 0.46
     reference_height = 100.0
     roughness_height = 0.01
     grid_dimensions = np.array([1000.0, 1000, 1000])
     grid_levels = np.array([5, 5, 5])
     seed = None  # 9000
 
+    # path_to_parameters = '../data2/tauNet_Custom.pkl'
+    path_to_parameters = resdir / "resultstauNet_Custom.pkl"
 
-    wind_turbulence = GenerateWindTurbulence(
+    wind = GenerateWind(
         friction_velocity,
         reference_height,
         grid_dimensions,
         grid_levels,
         seed,
-        model='Mann'
+        model="NN",
+        path_to_parameters=path_to_parameters,
     )
-
+    # wind = GenerateWind(friction_velocity, reference_height, grid_dimensions, grid_levels, seed, model='NN', path_to_parameters=path_to_parameters)
+    # wind = GenerateWind(friction_velocity, reference_height, grid_dimensions, grid_levels, seed, model='Mann', path_to_parameters=path_to_parameters)
     for _ in range(4):
-        wind_turbulence()
-    wind_field = wind_turbulence.total_wind
+        wind()
+    wind_field = wind.total_wind
 
     if normalize == True:
+        # h = np.array(grid_dimensions/wind_field.shape[0:-1])
+        # h = np.array(1/wind_field.shape[0],1/wind_field.shape[1],1/wind_field.shape[2])
         sd = np.sqrt(np.mean(wind_field**2))
         wind_field = wind_field / sd
         wind_field *= 4.26  # rescale to match Mann model
 
+    # plt.imshow(wind_field[:,0,:,0])
+    # plt.show()
+
+    # # total_wind = wind.total_wind
+    # # plt.imshow(total_wind[:,0,:,0])
+    # # plt.show()
 
     JCSS_law = (
         lambda z, z_0, delta, u_ast: u_ast
@@ -209,7 +270,6 @@ if __name__ == "__main__":
         mean_profile_z.T, (mean_profile.shape[0], mean_profile.shape[1], 1)
     )
 
-    print(mean_profile)
     # wind_field = mean_profile
     wind_field += mean_profile
 
@@ -218,7 +278,7 @@ if __name__ == "__main__":
     ###################
     ## Export to vtk
     print("=" * 30)
-    FileName = str("WindField")
+    FileName = str(resdir / "OntheFlyWindField")
     print("SAVING ON THE FLY WIND FIELDS VTK TO " + f"{FileName}")
 
     # FileName = '../data2/WindField/OntheFlyWindField'
