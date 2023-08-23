@@ -18,7 +18,7 @@ from drdmannturb.WindGeneration.CovarianceKernels import (
 from drdmannturb.WindGeneration.GaussianRandomField import *
 from drdmannturb.WindGeneration.NeuralNetCovariance import NNCovariance
 
-class GenerateTurbulence:
+class GenerateWindTurbulence:
     def __init__(
         self,
         friction_velocity,
@@ -154,8 +154,6 @@ class GenerateTurbulence:
 
         return wind
 
-    def mean_wind_profile
-
 ############################################################################
 ############################################################################
 
@@ -163,7 +161,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     normalize = False
-    friction_velocity = 0.46
+    friction_velocity = 0.45
     reference_height = 100.0
     roughness_height = 0.01
     grid_dimensions = np.array([1000.0, 1000, 1000])
@@ -180,10 +178,9 @@ if __name__ == "__main__":
         model='Mann'
     )
 
-
-    for _ in range(1):
-        wind()
-    wind_field = wind.total_wind
+    for _ in range(4):
+        wind_turbulence()
+    wind_field = wind_turbulence.total_wind
 
     if normalize == True:
         sd = np.sqrt(np.mean(wind_field**2))
@@ -213,6 +210,7 @@ if __name__ == "__main__":
         mean_profile_z.T, (mean_profile.shape[0], mean_profile.shape[1], 1)
     )
 
+    print(mean_profile)
     # wind_field = mean_profile
     wind_field += mean_profile
 
