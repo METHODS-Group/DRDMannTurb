@@ -5,6 +5,7 @@ from .common import MannEddyLifetime, VKEnergySpectrum
 from .PowerSpectraRDT import PowerSpectraRDT
 from .tauNet import customNet, tauNet, tauResNet
 
+from typing import Optional
 
 class OnePointSpectra(nn.Module):
     def __init__(self, **kwargs):
@@ -13,35 +14,6 @@ class OnePointSpectra(nn.Module):
         self.type_EddyLifetime = kwargs.get("type_EddyLifetime", "TwoThird")
         self.type_PowerSpectra = kwargs.get("type_PowerSpectra", "RDT")
 
-        self.init_grids()
-        self.logLengthScale = nn.Parameter(torch.tensor(0, dtype=torch.float64))
-        self.logTimeScale = nn.Parameter(torch.tensor(0, dtype=torch.float64))
-        self.logMagnitude = nn.Parameter(torch.tensor(0, dtype=torch.float64))
-
-        if self.type_EddyLifetime == "tauNet":
-            self.tauNet = tauNet(**kwargs)
-        elif self.type_EddyLifetime == "customMLP":
-            self.tauNet = customNet(**kwargs)
-        elif self.type_EddyLifetime == "tauResNet":
-            self.tauNet = tauResNet(**kwargs)
-
-    ###-------------------------------------------
-
-    def exp_scales(self) -> tuple[float, float, float]:
-        """
-        Exponentiates the length, time and magnitude scales
-
-        Returns
-        -------
-        tuple[float, float, float]
-            _description_
-        """        
-        self.LengthScale = torch.exp(self.logLengthScale)  # this is L
-        self.TimeScale = torch.exp(self.logTimeScale)  # this is gamma
-        self.Magnitude = torch.exp(self.logMagnitude)  # this is sigma
-        return self.LengthScale.item(), self.TimeScale.item(), self.Magnitude.item()
-
-    def init_grids(self):
         ### k2 grid
         p1, p2, N = -3, 3, 100
         grid_zero = torch.tensor([0], dtype=torch.float64)
@@ -58,12 +30,48 @@ class OnePointSpectra(nn.Module):
 
         self.meshgrid23 = torch.meshgrid(self.grid_k2, self.grid_k3)
 
-    ###-------------------------------------------
-    ### FORWARD MAP
+        self.logLengthScale = nn.Parameter(torch.tensor(0, dtype=torch.float64))
+        self.logTimeScale = nn.Parameter(torch.tensor(0, dtype=torch.float64))
+        self.logMagnitude = nn.Parameter(torch.tensor(0, dtype=torch.float64))
+
+        if self.type_EddyLifetime == "tauNet":
+            self.tauNet = tauNet(**kwargs)
+        elif self.type_EddyLifetime == "customMLP":
+            self.tauNet = customNet(**kwargs)
+        elif self.type_EddyLifetime == "tauResNet":
+            self.tauNet = tauResNet(**kwargs)
+
     ###-------------------------------------------
 
-    def forward(self, k1_input):
-        self.update_scales()
+    def exp_scales(self) -> tuple[float, float, float]:
+        """
+        Exponentiates the length, time, and magnitude scales
+
+        Returns
+        -------
+        tuple[float, float, float]
+            Returns .item() on each of the length, time, and magnitude scales
+        """
+        self.LengthScale = torch.exp(self.logLengthScale)  # NOTE: this is L
+        self.TimeScale = torch.exp(self.logTimeScale)  # NOTE: this is gamma
+        self.Magnitude = torch.exp(self.logMagnitude)  # NOTE: this is sigma
+        return self.LengthScale.item(), self.TimeScale.item(), self.Magnitude.item()
+
+    def forward(self, k1_input: torch.Tensor) -> torch.Tensor:
+        """
+        Forward method implementation
+
+        Parameters
+        ----------
+        k1_input : torch.Tensor
+            Network input
+
+        Returns
+        -------
+        torch.Tensor
+            Network output
+        """
+        self.exp_scales()
         self.k = torch.stack(
             torch.meshgrid(k1_input, self.grid_k2, self.grid_k3), dim=-1
         )
@@ -77,17 +85,33 @@ class OnePointSpectra(nn.Module):
         kF = torch.stack([k1_input * self.quad23(Phi) for Phi in self.Phi])
         return kF
 
-    ###-------------------------------------------
-    ### Auxilary methods
-    ###-------------------------------------------
-
     @torch.jit.export
-    def EddyLifetime(self, k=None):
+    def EddyLifetime(self, k: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """
+        Eddy lifetime evaluation
+
+        Parameters
+        ----------
+        k : Optional[torch.Tensor], optional
+            _description_, by default None
+
+        Returns
+        -------
+        torch.Tensor
+            _description_
+
+        Raises
+        ------
+        Exception
+            _description_
+        """
         if k is None:
             k = self.k
         else:
-            self.update_scales()
+            self.exp_scales()
+
         kL = self.LengthScale * k.norm(dim=-1)
+
         if self.type_EddyLifetime == "const":
             tau = torch.ones_like(kL)
         elif (
@@ -112,41 +136,87 @@ class OnePointSpectra(nn.Module):
 
     @torch.jit.export
     def InitialGuess_EddyLifetime(self, kL_norm):
+        """
+        Initial guess implementation
+
+        Parameters
+        ----------
+        kL_norm : _type_
+            _description_
+
+        Returns
+        -------
+        float
+            Initial guess evaluation
+        """
+
         # NOTE: zenodo initial guess suggests 0 as return here
         # tau0 = MannEddyLifetime(kL_norm)
         # return tau0
         tau0 = 0.0
         return tau0
 
-    ###-------------------------------------------
-
     @torch.jit.export
-    def PowerSpectra(self):
+    def PowerSpectra(self) -> torch.Tensor:
+        """
+        Calls the RDT Power Spectra model
+
+        Returns
+        -------
+        torch.Tensor
+            RDT evaluation
+
+        Raises
+        ------
+        Exception
+            In the case that the Power Spectra is not RDT
+            and therefore incorrect
+        """
+
         if self.type_PowerSpectra == "RDT":
-            Phi = PowerSpectraRDT(self.k, self.beta, self.E0)
-        # elif self.type_PowerSpectra == 'Corrector':
-        #     Corrector = self.Corrector(k)
-        #     Phi = PowerSpectraCorr(self.k, beta, E0, Corrector)
+            return PowerSpectraRDT(self.k, self.beta, self.E0)
         else:
             raise Exception("Wrong PowerSpectra model !")
-        return Phi
 
-    ###-------------------------------------------
-
-    ### Integration in k2 and k3
     @torch.jit.export
-    def quad23(self, f):
-        quad = torch.trapz(f, x=self.k[..., 2], dim=-1)  ### integrate in k3
+    def quad23(self, f: torch.Tensor) -> torch.Tensor:
+        """
+        Integrates f in k2 and k3 using torch trapz quadrature
+
+        Parameters
+        ----------
+        f : torch.Tensor
+            Function evaluation (tensor) to integrate
+
+        Returns
+        -------
+        torch.Tensor
+            Evaluated double integral
+        """
+        # NOTE: Integration in k3
+        quad = torch.trapz(f, x=self.k[..., 2], dim=-1)
+
+        # NOTE: Integration in k2 (fixed k3=0, since slices are identical in meshgrid)
         quad = torch.trapz(
             quad, x=self.k[..., 0, 1], dim=-1
-        )  ### integrate in k2 (just fix k3=0, since slices are idential in meshgrid)
+        )
         return quad
 
-    ###-------------------------------------------
-
-    ### Divergence
     @torch.jit.export
-    def get_div(self, Phi):
+    def get_div(self, Phi: torch.Tensor) -> torch.Tensor:
+        """
+        Return divergence
+
+        Parameters
+        ----------
+        Phi : torch.Tensor
+            _description_
+
+        Returns
+        -------
+        _type_
+            _description_
+        """        
         k1, k2, k3 = self.freq
         Phi11, Phi22, Phi33, Phi13, Phi12, Phi23 = Phi
         div = torch.stack(

@@ -4,7 +4,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
-from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
+from drdmannturb.DataGenerator import OnePointSpectraDataGenerator
 
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")

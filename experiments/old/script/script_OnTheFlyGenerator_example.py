@@ -15,14 +15,14 @@ import numpy as np
 from pyevtk.hl import imageToVTK
 from tqdm import tqdm
 
-from fracturbulence.Calibration import CalibrationProblem
-from fracturbulence.OnePointSpectra import OnePointSpectra
-from fracturbulence.WindGeneration.CovarianceKernels import (
+from drdmannturb.Calibration import CalibrationProblem
+from drdmannturb.OnePointSpectra import OnePointSpectra
+from drdmannturb.WindGeneration.CovarianceKernels import (
     MannCovariance,
     VonKarmanCovariance,
 )
-from fracturbulence.WindGeneration.GaussianRandomField import *
-from fracturbulence.WindGeneration.NeuralNetCovariance import NNCovariance
+from drdmannturb.WindGeneration.GaussianRandomField import *
+from drdmannturb.WindGeneration.NeuralNetCovariance import NNCovariance
 
 resdir = Path(__file__).parent / "results"
 

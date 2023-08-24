@@ -3,7 +3,7 @@
 import torch
 from torch.profiler import ProfilerActivity, profile, record_function
 
-from fracturbulence import OnePointSpectra
+from drdmannturb import OnePointSpectra
 
 CONFIG = {
     "type_EddyLifetime": "tauNet",

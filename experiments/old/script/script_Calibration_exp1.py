@@ -19,9 +19,9 @@ from pathlib import Path
 from pylab import *
 from torch.nn import parameter
 
-from fracturbulence.Calibration import CalibrationProblem
-from fracturbulence.common import *
-from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
+from drdmannturb.Calibration import CalibrationProblem
+from drdmannturb.common import *
+from drdmannturb.DataGenerator import OnePointSpectraDataGenerator
 
 savedir = Path().resolve() / "results"
 

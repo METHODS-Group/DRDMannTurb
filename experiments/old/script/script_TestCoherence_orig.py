@@ -11,7 +11,7 @@ from pylab import *
 from torch.nn import parameter
 
 sys.path.append("./")
-from fracturbulence.SpectralCoherence import SpectralCoherence
+from drdmannturb.SpectralCoherence import SpectralCoherence
 
 # from source.SpectralCoherence import SpectralCoherence
 

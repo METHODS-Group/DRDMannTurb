@@ -9,7 +9,7 @@ from scipy.special import hyp2f1
 from scipy.special import kv as Kv
 from tqdm import tqdm
 
-from fracturbulence.RandomFieldModule.utilities import (
+from drdmannturb.RandomFieldModule.utilities import (
     EP_kernel,
     GM_kernel,
     Matern_kernel,

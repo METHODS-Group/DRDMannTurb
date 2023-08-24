@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from scipy.optimize import curve_fit, differential_evolution
 
-from Pathlib import Path
+from pathlib import Path
 
 from enum import Enum
 from typing import Optional, Any

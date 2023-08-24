@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 
-from fracturbulence.Calibration import CalibrationProblem
-from fracturbulence.common import MannEddyLifetime
-from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
+from drdmannturb.Calibration import CalibrationProblem
+from drdmannturb.common import MannEddyLifetime
+from drdmannturb.DataGenerator import OnePointSpectraDataGenerator
 
 sys.path.append("../")
 

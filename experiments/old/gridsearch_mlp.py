@@ -8,9 +8,9 @@ import numpy as np
 import torch
 from scipy.optimize import brute
 
-from fracturbulence.Calibration import CalibrationProblem
-from fracturbulence.common import MannEddyLifetime
-from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
+from drdmannturb.Calibration import CalibrationProblem
+from drdmannturb.common import MannEddyLifetime
+from drdmannturb.DataGenerator import OnePointSpectraDataGenerator
 
 sys.path.append("../")
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"

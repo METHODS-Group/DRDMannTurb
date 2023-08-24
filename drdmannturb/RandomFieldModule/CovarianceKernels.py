@@ -16,40 +16,40 @@ from .utilities import EP_kernel, GM_kernel, Matern_kernel
 # --------------------------------------------------------------------------
 
 
-def set_ShapeOperator(length, angle=None, ndim=2):
-    if np.isscalar(length):
-        l = [length] * ndim
-    else:
-        l = length[:ndim]
-    l = np.array(l)
+# def set_ShapeOperator(length, angle=None, ndim=2):
+#     if np.isscalar(length):
+#         l = [length] * ndim
+#     else:
+#         l = length[:ndim]
+#     l = np.array(l)
 
-    if angle is None:
-        angle = 0
-        l[:] = l.mean()
+#     if angle is None:
+#         angle = 0
+#         l[:] = l.mean()
 
-    if np.isscalar(angle):
-        Theta = np.zeros([ndim, ndim])
-    else:
-        Theta = np.zeros(list(angle.shape) + [ndim, ndim])
+#     if np.isscalar(angle):
+#         Theta = np.zeros([ndim, ndim])
+#     else:
+#         Theta = np.zeros(list(angle.shape) + [ndim, ndim])
 
-    if ndim == 2:
-        c, s = np.cos(angle), np.sin(angle)
-        L0, L1 = l[0] ** 2, l[1] ** 2
-        detTheta = L0 * L1
+#     if ndim == 2:
+#         c, s = np.cos(angle), np.sin(angle)
+#         L0, L1 = l[0] ** 2, l[1] ** 2
+#         detTheta = L0 * L1
 
-        Theta[..., 0, 0] = L0 * (s * s) + L1 * (c * c)
-        Theta[..., 1, 1] = L0 * (c * c) + L1 * (s * s)
-        Theta[..., 0, 1] = L0 * (c * s) - L1 * (s * c)
-        Theta[..., 1, 0] = Theta[..., 0, 1]
+#         Theta[..., 0, 0] = L0 * (s * s) + L1 * (c * c)
+#         Theta[..., 1, 1] = L0 * (c * c) + L1 * (s * s)
+#         Theta[..., 0, 1] = L0 * (c * s) - L1 * (s * c)
+#         Theta[..., 1, 0] = Theta[..., 0, 1]
 
-    else:
-        detTheta = 1
-        for j in range(ndim):
-            Theta[..., j, j] = l[j] ** 2
-            detTheta *= Theta[j, j]
+#     else:
+#         detTheta = 1
+#         for j in range(ndim):
+#             Theta[..., j, j] = l[j] ** 2
+#             detTheta *= Theta[j, j]
 
-    yield Theta
-    yield detTheta
+#     yield Theta
+#     yield detTheta
 
 
 #######################################################################################################
@@ -72,134 +72,6 @@ class Covariance:
 
     def eval(self, *argv, **kwargs):
         self.eval_func(*argv, **kwargs)
-
-
-###################################################################
-
-
-#######################################################################################################
-# 	Matérn Covariance class
-#######################################################################################################
-
-
-class MaternCovariance(Covariance):
-    def __init__(self, nu, corrlen, angle_anis=None, marg_var=1, **kwargs):
-        super().__init__(**kwargs)
-
-        self.nu = nu  # Regularity of the Matérn covariance kernel
-        self.marg_var = marg_var  # Marginal (pointwise) variance of the field
-
-        ### Correlation length
-        self.corrlen = np.zeros(self.ndim)
-        if np.isscalar(corrlen):
-            self.corrlen[:] = corrlen
-        else:
-            self.corrlen[:] = corrlen[: self.ndim]
-
-        if all([self.corrlen[0] == self.corrlen[i] for i in range(self.ndim)]):
-            self.isotropic = True
-        else:
-            self.isotropic = False
-
-        ### Anisotropy
-        self.angle_anis = angle_anis
-
-        ### Operator Theta
-        self.Theta, self.detTheta = set_ShapeOperator(
-            self.corrlen, self.angle_anis, self.ndim
-        )
-
-        ### Normalizing coefficient
-        self.eta = self.set_NormalizingCoefficient()
-
-    # --------------------------------------------------------------------------
-    #   Set Normalizing coefficient
-    # --------------------------------------------------------------------------
-
-    def set_NormalizingCoefficient(self):
-        nu, d = self.nu, self.ndim
-        alpha = nu + d / 2
-        try:
-            default_variance = (
-                gamma(nu)
-                / gamma(alpha)
-                * (2 * nu / (4 * pi)) ** (d / 2)
-                / sqrt(self.detTheta)
-            )
-        except:
-            default_variance = (2 * pi) ** (-d / 2) / sqrt(self.detTheta)
-        return sqrt(self.marg_var / default_variance)
-
-    # --------------------------------------------------------------------------
-    #   Compute the power spectrum
-    # --------------------------------------------------------------------------
-
-    def precompute_Spectrum(self, Frequences):
-        nu, d = self.nu, self.ndim
-
-        alpha = nu + d / 2
-        eta = self.eta
-
-        Nd = [Frequences[j].size for j in range(d)]
-        Spectrum = np.zeros(Nd)
-
-        w = np.array(list(np.meshgrid(*Frequences, indexing="ij")))
-        Tw = np.einsum("kl,l...->k...", self.Theta, w)
-        wTw = np.einsum("k...,k...->...", w, Tw)
-        if nu < 1000:
-            Spectrum = eta * (1 + wTw / (2 * nu)) ** (-0.5 * alpha)
-        else:  # Squared-Exponential
-            Spectrum = eta * np.exp(-1 * wTw / 4)
-
-        return Spectrum
-
-    # --------------------------------------------------------------------------
-    #   Evaluate covariance function
-    # --------------------------------------------------------------------------
-
-    def eval(self, *args, nu=None, corrlen=None):
-        if nu is None:
-            nu = self.nu
-        if corrlen is None:
-            corrlen = self.corrlen[0]
-        if len(args) == 1:
-            r = args[0]
-        elif len(args) == 2:
-            x = args[0]
-            y = args[1]
-            r = np.linalg.norm(x - y)
-        return Matern_kernel(r, nu, corrlen)
-        # if self.isotropic:
-        #     # r = np.linalg.norm(x-y, axis=0)
-        #     r = x-y
-        #     r = np.sqrt(np.sum(r.T.dot(r), axis=0))
-        #     return Matern_kernel(r, nu, corrlen[0])
-        # else:
-        #     r = x-y
-        #     r = np.sqrt(np.sum(self.Theta.dot(r).T.dot(r), axis=0))
-        #     return Matern_kernel(r, nu, 1)
-
-    def eval_sqrt(self, *args, nu=None, corrlen=None):
-        if nu is None:
-            nu = self.nu
-        if corrlen is None:
-            corrlen = self.corrlen[0]
-        if len(args) == 1:
-            r = args[0]
-        elif len(args) == 2:
-            x = args[0]
-            y = args[1]
-            r = np.linalg.norm(x - y)
-        d = self.ndim
-        nu_mod = (nu - d / 2) / 2
-        sigma = sqrt(
-            gamma(nu + d / 2) / gamma(nu) * (nu / (2 * pi) / self.detTheta) ** (d / 2)
-        )
-        sigma *= gamma(nu_mod) / gamma(nu_mod + d / 2)
-        return sigma * Matern_kernel(r, nu_mod, corrlen * sqrt(nu_mod / nu))
-
-
-###################################################################
 
 
 #######################################################################################################
