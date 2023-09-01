@@ -198,9 +198,7 @@ class OnePointSpectra(nn.Module):
         quad = torch.trapz(f, x=self.k[..., 2], dim=-1)
 
         # NOTE: Integration in k2 (fixed k3=0, since slices are identical in meshgrid)
-        quad = torch.trapz(
-            quad, x=self.k[..., 0, 1], dim=-1
-        )
+        quad = torch.trapz(quad, x=self.k[..., 0, 1], dim=-1)
         return quad
 
     @torch.jit.export
@@ -217,7 +215,7 @@ class OnePointSpectra(nn.Module):
         -------
         _type_
             _description_
-        """        
+        """
         k1, k2, k3 = self.freq
         Phi11, Phi22, Phi33, Phi13, Phi12, Phi23 = Phi
         div = torch.stack(
