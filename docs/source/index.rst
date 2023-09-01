@@ -7,8 +7,11 @@
 =======================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Contents:
+
+   getting-started
+   internal_api   
 
 .. note::
    This project is still under development.
