@@ -1,16 +1,7 @@
-import sys
-
-sys.path.append(
-    "/Users/bk/Work/Papers/Collaborations/2020_inletgeneration/code/source/"
-)
-sys.path.append("/home/khristen/Projects/Brendan/2019_inletgeneration/code/source")
-
 from collections.abc import Callable, Iterable
 from math import *
 
-import matplotlib.pyplot as plt
 import numpy as np
-import scipy.fftpack as fft
 import torch
 import torch.nn as nn
 from torch.nn.utils import parameters_to_vector, vector_to_parameters

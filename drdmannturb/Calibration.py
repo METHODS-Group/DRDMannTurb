@@ -5,16 +5,13 @@ import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
 from .common import MannEddyLifetime
-from .OnePointSpectra import OnePointSpectra
-from .SpectralCoherence import SpectralCoherence
-
-plt.rc("text", usetex=True)
-plt.rc("font", family="serif")
+from .one_point_spectra import OnePointSpectra
+from .spectral_coherence import SpectralCoherence
 
 
 class LossFunc:
     """
-    LossFunc calculation
+    Loss function calculation class
     """
 
     def __init__(self, **kwargs):
@@ -29,14 +26,12 @@ class LossFunc:
         return loss
 
 
-"""
-==================================================================================================================
-Calibration problem class
-==================================================================================================================
-"""
-
-
 class CalibrationProblem:
+    """
+    
+    """
+
+
     def __init__(self, **kwargs: Dict[str, Any]):
         # stringify the activation functions used; for manual bash only
         self.activfuncstr = str(kwargs.get("activations", ["relu", "relu"]))

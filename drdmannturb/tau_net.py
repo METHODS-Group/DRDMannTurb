@@ -2,13 +2,12 @@
 Learnable Eddy Lifetime module
 """
 
-from collections.abc import Iterable
 from typing import Any, Callable, List
 
 import torch
 import torch.nn as nn
 
-from .LearnableFunctions import CustomMLP, Rational, SimpleNN
+from .learnable_functions import CustomMLP, Rational, SimpleNN
 
 
 class ResNetBlock(nn.Module):
