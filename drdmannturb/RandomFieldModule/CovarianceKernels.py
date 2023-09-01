@@ -16,40 +16,40 @@ from .utilities import EP_kernel, GM_kernel, Matern_kernel
 # --------------------------------------------------------------------------
 
 
-# def set_ShapeOperator(length, angle=None, ndim=2):
-#     if np.isscalar(length):
-#         l = [length] * ndim
-#     else:
-#         l = length[:ndim]
-#     l = np.array(l)
+def set_ShapeOperator(length, angle=None, ndim=2):
+    if np.isscalar(length):
+        l = [length] * ndim
+    else:
+        l = length[:ndim]
+    l = np.array(l)
 
-#     if angle is None:
-#         angle = 0
-#         l[:] = l.mean()
+    if angle is None:
+        angle = 0
+        l[:] = l.mean()
 
-#     if np.isscalar(angle):
-#         Theta = np.zeros([ndim, ndim])
-#     else:
-#         Theta = np.zeros(list(angle.shape) + [ndim, ndim])
+    if np.isscalar(angle):
+        Theta = np.zeros([ndim, ndim])
+    else:
+        Theta = np.zeros(list(angle.shape) + [ndim, ndim])
 
-#     if ndim == 2:
-#         c, s = np.cos(angle), np.sin(angle)
-#         L0, L1 = l[0] ** 2, l[1] ** 2
-#         detTheta = L0 * L1
+    if ndim == 2:
+        c, s = np.cos(angle), np.sin(angle)
+        L0, L1 = l[0] ** 2, l[1] ** 2
+        detTheta = L0 * L1
 
-#         Theta[..., 0, 0] = L0 * (s * s) + L1 * (c * c)
-#         Theta[..., 1, 1] = L0 * (c * c) + L1 * (s * s)
-#         Theta[..., 0, 1] = L0 * (c * s) - L1 * (s * c)
-#         Theta[..., 1, 0] = Theta[..., 0, 1]
+        Theta[..., 0, 0] = L0 * (s * s) + L1 * (c * c)
+        Theta[..., 1, 1] = L0 * (c * c) + L1 * (s * s)
+        Theta[..., 0, 1] = L0 * (c * s) - L1 * (s * c)
+        Theta[..., 1, 0] = Theta[..., 0, 1]
 
-#     else:
-#         detTheta = 1
-#         for j in range(ndim):
-#             Theta[..., j, j] = l[j] ** 2
-#             detTheta *= Theta[j, j]
+    else:
+        detTheta = 1
+        for j in range(ndim):
+            Theta[..., j, j] = l[j] ** 2
+            detTheta *= Theta[j, j]
 
-#     yield Theta
-#     yield detTheta
+    yield Theta
+    yield detTheta
 
 
 #######################################################################################################

@@ -1,3 +1,5 @@
+from typing import Optional
+
 import torch
 import torch.nn as nn
 
@@ -5,7 +7,6 @@ from .common import MannEddyLifetime, VKEnergySpectrum
 from .PowerSpectraRDT import PowerSpectraRDT
 from .tauNet import customNet, tauNet, tauResNet
 
-from typing import Optional
 
 class OnePointSpectra(nn.Module):
     def __init__(self, **kwargs):

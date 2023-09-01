@@ -1,9 +1,6 @@
-# from math import min
 import numpy as np
 from imageio import imwrite
 from pyevtk.hl import imageToVTK
-
-from .ErrorMessages import *
 
 
 def exportVTK(FileName, cellData):
@@ -25,18 +22,13 @@ def exportVTK(FileName, cellData):
         msgDimError(ndim)
 
 
-# =====================================================================================================
-# =====================================================================================================
-#
-#                                           EXPORT
-#
-# =====================================================================================================
-# =====================================================================================================
-
-
 def save_png(phase, filename):
     imwrite(filename, (1 - phase))
 
 
 def save_vtk(phase, filename):
     exportVTK(filename, cellData={"phase": phase})
+
+
+def msgDimError(ndim):
+    raise Exception("Dimension {0:d} is not supported.".format(ndim))

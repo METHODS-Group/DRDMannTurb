@@ -1,9 +1,10 @@
-from math import *
-
 import numpy as np
+import scipy.fftpack as fft
+import scipy.optimize
 import scipy.special
+from scipy.special import erf, erfc, erfinv
 from scipy.special import kv as Kv
-from tqdm import tqdm
+from scipy.special import owens_t
 
 # =====================================================================================================
 # =====================================================================================================
@@ -13,6 +14,7 @@ from tqdm import tqdm
 # =====================================================================================================
 # =====================================================================================================
 
+# TODO -- we'd like to get rid of all this branching on errors
 
 #######################################################################################################
 # 	Matérn kernel
@@ -20,28 +22,19 @@ from tqdm import tqdm
 
 
 def Mv(nu, X):
-    # R = np.abs(X)
-    # c0 = 2**(nu-1) * gamma(nu)
-    # return np.where(nu<1.e-4, np.where(r>0,0,1), np.where(r>1.e-3, (r**nu) * Kv(nu, r) / c0,1))
     if nu < 1.0e-4:
         m = lambda x: 1 if x == 0 else 0
     else:
         m0 = 1 / (2 ** (nu - 1) * gamma(nu))
 
-        # m = lambda x:  (x**nu) * Kv(nu, x) / m0 if x>1.e-3 else 1
         def m(x):
             if x > 1.0e-4:
                 y = m0 * (x**nu) * Kv(nu, x)
             else:
                 y = 1
-            # y = m0 * sqrt(pi) * 2**(-nu) * exp(-x) * scipy.special.hyperu(1/2-nu, 1-2*nu, 2*x)
-            # res = abs(sqrt(pi) * 2**(-nu) * exp(-x) * scipy.special.hyperu(1/2-nu, 1-2*nu, 2*x) - (x**nu) * Kv(nu, x))
             if y >= 0 and y <= 1:
                 return y
             else:
-                # print()
-                # print(m0, sqrt(pi) * 2**(-nu) * exp(-x) * scipy.special.hyperu(1/2-nu, 1-2*nu, 2*x), x, y, nu)
-                # print()
                 return 1
 
     try:
@@ -64,12 +57,22 @@ def Matern_kernel(x, nu=1, rho=1):
     return y
 
 
-#######################################################################################################
-# 	Shifted Matern kernel
-#######################################################################################################
-
-
 def SM_kernel(x, a):
+    """
+    Shift Matérn kernel implementation
+
+    Parameters
+    ----------
+    x : _type_
+        _description_
+    a : _type_
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
+    """    
     nu, rho, cw = a[0], a[1], a[2:]
     n = len(cw) // 2
     cw = cw.reshape([-1, 2])
@@ -79,33 +82,53 @@ def SM_kernel(x, a):
     return y
 
 
-#######################################################################################################
-# 	Generalized Matern kernel
-#######################################################################################################
-
-
 def GM_kernel(x, nu, rho, a):
+    """
+    Generalized Matérn kernel implementation
+
+    Parameters
+    ----------
+    x : _type_
+        _description_
+    nu : _type_
+        _description_
+    rho : _type_
+        _description_
+    a : _type_
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
     absx = (np.abs(x)).flatten()
-    kappa = sqrt(2 * nu) / rho
+    kappa = np.sqrt(2 * nu) / rho
     r = kappa * absx
     P = 1
     for k in range(len(a)):
         P += a[k] * r ** (k + 2)
     g = Matern_kernel(x, nu, rho) * P
+
     return g
-    # if np.amin(g)>-1 and np.amax(g)<=1:
-    #     return g
-    # else:
-    #     print("g fails:",np.amin(g), np.amax(g), P[np.argmax(g)], np.argmax(g))
-    #     raise Exception("Invalid value for a covariance kernel.")
-
-
-#######################################################################################################
-# 	Exponential-polynomial kernel
-#######################################################################################################
 
 
 def EP_kernel(x, a):
+    """
+    Exponential-polynomial kernel
+
+    Parameters
+    ----------
+    x : _type_
+        _description_
+    a : _type_
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
+    """    
     a0, an = a[0], a[1:]
     n = len(an)  # an.size
     xn = (np.tile(x, (n, 1)).T) ** (1 + np.arange(n))
@@ -121,7 +144,6 @@ def EP_kernel(x, a):
 # =====================================================================================================
 # =====================================================================================================
 
-from scipy.special import erf, erfc, erfinv, owens_t
 
 #######################################################################################################
 # 	Volume fraction to Tau (and vice-versa)
@@ -165,12 +187,25 @@ def Cov2S2(tau, g, strategy=0):
 
 
 def FourierOfGaussian(noise):
+    """
+    Fourier transform of Gaussian noise
+
+    Parameters
+    ----------
+    noise : _type_
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
+    """    
+
     a, b = noise, noise
     for j in range(noise.ndim):
         b = np.roll(np.flip(b, axis=j), 1, axis=j)
     noise_hat = 0.5 * ((a + b) + 1j * (a - b))
-    # for j in range(noise.ndim):
-    #     np.roll(noise_hat, noise.shape[0] // 2 , axis=j)
+
     return noise_hat
 
 
@@ -191,8 +226,6 @@ def compute_Sphericity(V, A):
 # =====================================================================================================
 # =====================================================================================================
 
-import scipy.fftpack as fft
-import scipy.optimize
 
 #######################################################################################################
 # 	Basic probability tools
@@ -200,6 +233,19 @@ import scipy.optimize
 
 
 def Expectation(X):
+    """
+    Quick implementation
+
+    Parameters
+    ----------
+    X : _type_
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
+    """    
     nvalues, nsamples = X.shape
     m = np.zeros((nvalues, 1))
     for isample in range(nsamples):
@@ -347,19 +393,14 @@ def dens_LogNormal(x, m=0, sigma=1):
     return p
 
 
-#######################################################################################################
-# 	Estimate covariance using Monte-Carlo
-#######################################################################################################
-
-
 def MC_estimate_Covariance(RandomField, nsamples=100, nbins=None):
-    ### Stationary covariance only !
+    """
+    Monte Carlo estimation of covariance (must be covariance stationary).
+    """
+
     C = 0
     for isample in tqdm(range(nsamples)):
         field = RandomField.sample()
         C += autocorrelation(field)
     C = C[0, :] / nsamples
     return C if nbins is None else C[:nbins]
-
-
-# =====================================================================================================

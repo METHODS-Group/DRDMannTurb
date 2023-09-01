@@ -1,6 +1,7 @@
+from typing import Callable
+
 import torch
 import torch.nn as nn
-from typing import Callable
 
 
 class Rational(nn.Module):

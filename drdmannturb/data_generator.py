@@ -1,13 +1,11 @@
 import warnings
+from enum import Enum
+from pathlib import Path
+from typing import Any, Optional
 
 import numpy as np
 import torch
 from scipy.optimize import curve_fit, differential_evolution
-
-from pathlib import Path
-
-from enum import Enum
-from typing import Optional, Any
 
 ####################################################################
 #   One Point Spectra Data Generator

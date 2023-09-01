@@ -1,7 +1,6 @@
 import os
 import sys
 from collections.abc import Callable, Iterable
-
 # from pathos.multiprocessing import ProcessingPool as Pool
 # from multiprocessing import Process, Value, Array
 # from multiprocessing import Pool
@@ -14,7 +13,8 @@ import numpy as np
 import scipy.fftpack as fft
 from scipy.special import hyp2f1
 
-from .utilities.common import FourierOfGaussian, SpacialCovariance, autocorrelation
+from .utilities.common import (FourierOfGaussian, SpacialCovariance,
+                               autocorrelation)
 from .utilities.fde_solve import fde_solve
 
 METHOD_DST = "dst"

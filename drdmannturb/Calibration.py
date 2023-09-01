@@ -1,8 +1,8 @@
+from typing import Any, Dict
+
 import matplotlib.pyplot as plt
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
-
-from typing import Any, Dict
 
 from .common import MannEddyLifetime
 from .OnePointSpectra import OnePointSpectra
