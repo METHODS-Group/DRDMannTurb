@@ -1,13 +1,7 @@
-from itertools import product
 from math import *
-from time import time
 
-import matplotlib.pyplot as plt
 import numpy as np
-import scipy.fftpack as fft
 from scipy.special import hyp2f1
-from scipy.special import kv as Kv
-from tqdm import tqdm
 
 from .utilities import EP_kernel, GM_kernel, Matern_kernel
 
@@ -239,41 +233,6 @@ class MannCovariance(Covariance):
                 / (4 * np.pi)
             )
             const = np.sqrt(const / (1 + (self.corrlen**2) * kk0) ** (17 / 6))
-
-            # tmpTens[0,1,...] = -const * k30
-            # tmpTens[0,2,...] =  const * k2
-            # tmpTens[1,0,...] =  const * k30
-            # tmpTens[1,2,...] = -const * k1
-            # tmpTens[2,0,...] = -const * k2
-            # tmpTens[2,1,...] =  const * k1
-
-            # #### RDT
-
-            # s = k1**2 + k2**2
-            # C1  =  beta * k1**2 * (kk0 - 2 * k30**2 + beta * k1 * k30) / (kk * s)
-            # tmp =  beta * k1 * np.sqrt(s) / (kk0 - k30 * k1 * beta)
-            # C2  =  k2 * kk0 / s**(3/2) * np.arctan (tmp)
-
-            # zeta1 =  C1 - k2/k1 * C2
-            # zeta2 =  k2/k1 *C1 + C2
-            # zeta3 =  kk0/kk
-
-            # # deal with divisions by zero (2/2)
-            # zeta1 = np.nan_to_num(zeta1)
-            # zeta2 = np.nan_to_num(zeta2)
-            # zeta3 = np.nan_to_num(zeta3)
-
-            # SqrtSpectralTens[0,0,...] = tmpTens[0,0,...] + zeta1 * tmpTens[2,0,...]
-            # SqrtSpectralTens[0,1,...] = tmpTens[0,1,...] + zeta1 * tmpTens[2,1,...]
-            # SqrtSpectralTens[0,2,...] = tmpTens[0,2,...] + zeta1 * tmpTens[2,2,...]
-            # SqrtSpectralTens[1,0,...] = tmpTens[1,0,...] + zeta2 * tmpTens[2,0,...]
-            # SqrtSpectralTens[1,1,...] = tmpTens[1,1,...] + zeta2 * tmpTens[2,1,...]
-            # SqrtSpectralTens[1,2,...] = tmpTens[1,2,...] + zeta2 * tmpTens[2,2,...]
-            # SqrtSpectralTens[2,0,...] = zeta3 * tmpTens[2,0,...]
-            # SqrtSpectralTens[2,1,...] = zeta3 * tmpTens[2,1,...]
-            # SqrtSpectralTens[2,2,...] = zeta3 * tmpTens[2,2,...]
-
-            ##NOTE: Applying the curl second
 
             #### RDT
 
