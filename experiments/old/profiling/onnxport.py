@@ -3,7 +3,12 @@
 
 import torch
 import torch.onnx
+<<<<<<< HEAD
+
+from drdmannturb import OnePointSpectra
+=======
 from fracturbulence import OnePointSpectra
+>>>>>>> af53bc6372a2a2bdc7e4ce595385e73ece68a031
 
 OPS_CONFIG = {
     "type_EddyLifetime": "tauNet",

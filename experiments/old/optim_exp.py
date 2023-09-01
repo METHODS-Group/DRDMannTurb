@@ -8,10 +8,18 @@ from time import time
 import arch_eval.constants.consts_exp1 as consts_exp1
 import matplotlib.pyplot as plt
 import torch.nn as nn
+<<<<<<< HEAD
+from pylab import *
+
+from drdmannturb.Calibration import CalibrationProblem
+from drdmannturb.common import *
+from drdmannturb.DataGenerator import OnePointSpectraDataGenerator
+=======
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import *
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 from pylab import *
+>>>>>>> af53bc6372a2a2bdc7e4ce595385e73ece68a031
 
 # v2: torch.set_default_device('cuda:0')
 torch.set_default_tensor_type("torch.cuda.FloatTensor")

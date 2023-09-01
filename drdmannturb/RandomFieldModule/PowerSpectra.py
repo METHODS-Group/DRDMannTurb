@@ -5,6 +5,14 @@ from time import time
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.fftpack as fft
+<<<<<<< HEAD
+from scipy.special import hyp2f1
+from scipy.special import kv as Kv
+from tqdm import tqdm
+
+from drdmannturb.RandomFieldModule.utilities import (EP_kernel, GM_kernel,
+                                                     Matern_kernel)
+=======
 from fracturbulence.RandomFieldModule.utilities import (
     EP_kernel,
     GM_kernel,
@@ -13,6 +21,7 @@ from fracturbulence.RandomFieldModule.utilities import (
 from scipy.special import hyp2f1
 from scipy.special import kv as Kv
 from tqdm import tqdm
+>>>>>>> af53bc6372a2a2bdc7e4ce595385e73ece68a031
 
 ###################################################################################################
 # Mann Power Spectrum
