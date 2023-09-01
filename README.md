@@ -19,3 +19,8 @@ This package is provided as a locally ``pip``-installable package. It is recomme
 
 A Conda spec-file is included, to install a functioning environment, run ``conda create --name ENV_NAME_HERE --file spec-file.txt``. Then run ``pip install -e .`` to load ``drdmannturb`` into your environment. 
 
+## Doc Building Instructions 
+
+Docs are in the ``/docs/`` folder. Make sure the following dependencies are installed:
+
+Run ``make html`` to generate html pages in the ``/docs/build/`` folder, which can be hosted locally with ``python -m http.server <PORT-NUMBER>``. 
