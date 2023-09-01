@@ -3,19 +3,11 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
-<<<<<<< HEAD
-
-from drdmannturb.DataGenerator import OnePointSpectraDataGenerator
-=======
-from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
->>>>>>> af53bc6372a2a2bdc7e4ce595385e73ece68a031
 
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
 savedir = Path(__file__).parent / "results"
-
-ACTIVATIONS = [nn.ELU(), nn.ReLU(), nn.GELU(), nn.CELU(), nn.LeakyReLU(), nn.SELU()]
 
 CONSTANTS_CONFIG = {
     "type_EddyLifetime": "customMLP",  # CALIBRATION : 'tauNet',  ### 'const', TwoThird', 'Mann', 'customMLP', 'tauNet'
@@ -27,7 +19,7 @@ CONSTANTS_CONFIG = {
     "lr": 1,  ### learning rate
     "penalty": 1,  # CALIBRATION: 1.e-1,
     "regularization": 1.0e-5,  # CALIBRATION: 1.e-1,
-    "nepochs": 100,
+    "nepochs": 10,
     "curves": [0, 1, 2, 3],
     "data_type": "Kaimal",  # CALIBRATION: 'Custom', ### 'Kaimal', 'SimiuScanlan', 'SimiuYeo', 'iso'
     "spectra_file": "Spectra.dat",

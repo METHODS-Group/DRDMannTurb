@@ -1,6 +1,7 @@
 # Deep Rapid Distortion theory Mann Turbulence model
 
-Based on the code and theory from [this 2021 publication](https://arxiv.org/pdf/2107.11046.pdf). 
+The code is based on the original work of Jacob Mann in [1994](https://doi.org/10.1017/S0022112094001886) and [1998](https://doi.org/10.1016/S0266-8920(97)00036-2)
+as well as in the deep-learning enhancement developed by Keith et al and presented in [this 2021 publication](https://arxiv.org/pdf/2107.11046.pdf). 
 
 ## Baselines
 

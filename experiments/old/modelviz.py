@@ -1,9 +1,13 @@
 import torch
+from fracturbulence import tauNet
 from torchview import draw_graph
 from torchviz import make_dot
 
+<<<<<<< HEAD
 from drdmannturb import tauNet
 
+=======
+>>>>>>> af53bc6372a2a2bdc7e4ce595385e73ece68a031
 torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
 if __name__ == "__main__":

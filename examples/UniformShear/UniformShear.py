@@ -1,9 +1,3 @@
-import sys
-
-sys.path.append("../")
-import os
-
-os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 import pickle
 import sys
 from math import *
@@ -12,7 +6,6 @@ from time import time
 
 import matplotlib.pyplot as plt
 import numpy as np
-<<<<<<< HEAD
 from pyevtk.hl import imageToVTK
 from tqdm import tqdm
 
@@ -24,20 +17,8 @@ from drdmannturb.WindGeneration.CovarianceKernels import (
 )
 from drdmannturb.WindGeneration.GaussianRandomField import *
 from drdmannturb.WindGeneration.NeuralNetCovariance import NNCovariance
-=======
-from fracturbulence.Calibration import CalibrationProblem
-from fracturbulence.OnePointSpectra import OnePointSpectra
-from fracturbulence.WindGeneration.CovarianceKernels import (
-    MannCovariance,
-    VonKarmanCovariance,
-)
-from fracturbulence.WindGeneration.GaussianRandomField import *
-from fracturbulence.WindGeneration.NeuralNetCovariance import NNCovariance
-from pyevtk.hl import imageToVTK
-from tqdm import tqdm
->>>>>>> af53bc6372a2a2bdc7e4ce595385e73ece68a031
 
-resdir = Path(__file__).parent / "results"
+resdir = Path(__file__).parent / "data"
 
 
 class GenerateWind:
