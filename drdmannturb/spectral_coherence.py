@@ -12,7 +12,7 @@ import torch.nn as nn
 from numpy import log
 
 from drdmannturb.common import MannEddyLifetime, VKEnergySpectrum
-from drdmannturb.PowerSpectraRDT import PowerSpectraRDT
+from drdmannturb.power_spectra_rdt import PowerSpectraRDT
 from drdmannturb.tauNet import tauNet
 
 

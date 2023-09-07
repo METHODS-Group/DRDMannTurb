@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 from .common import MannEddyLifetime, VKEnergySpectrum
-from .PowerSpectraRDT import PowerSpectraRDT
+from .power_spectra_rdt import PowerSpectraRDT
 from .tauNet import customNet, tauNet, tauResNet
 
 

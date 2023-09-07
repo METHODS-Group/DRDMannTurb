@@ -12,6 +12,7 @@
 
    getting-started
    examples/index
+   forward_api
    internal_api   
 
 .. note::

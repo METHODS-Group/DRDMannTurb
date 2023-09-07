@@ -1,12 +1,13 @@
 from typing import Any, Dict
 
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
 from .common import MannEddyLifetime
-from .OnePointSpectra import OnePointSpectra
-from .SpectralCoherence import SpectralCoherence
+from .one_point_spectra import OnePointSpectra
+from .spectral_coherence import SpectralCoherence
 
 plt.rc("text", usetex=True)
 plt.rc("font", family="serif")
