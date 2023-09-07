@@ -13,10 +13,6 @@ import numpy as np
 import scipy.fftpack as fft
 from scipy.special import hyp2f1
 
-from .utilities.common import (FourierOfGaussian, SpacialCovariance,
-                               autocorrelation)
-from .utilities.fde_solve import fde_solve
-
 METHOD_DST = "dst"
 METHOD_DCT = "dct"
 METHOD_FFT = "fft"
@@ -35,9 +31,7 @@ METHOD_VF_RAT_HALFSPACE_VK = "vf_rat_halfspace_VK"
 METHOD_VF_RAT_HALFSPACE_GEN_VK = "vf_rat_halfspace_gen_VK"
 METHOD_VF_RAT_HALFSPACE_RAPID_DISTORTION = "vf_rat_halfspace_rapid_distortion"
 
-
 #######################################################################################################
-
 
 class Sampling_method_base:
     def __init__(self, RandomField):

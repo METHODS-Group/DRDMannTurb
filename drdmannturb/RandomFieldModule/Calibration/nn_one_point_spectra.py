@@ -1,10 +1,3 @@
-import sys
-
-sys.path.append(
-    "/Users/bk/Work/Papers/Collaborations/2020_inletgeneration/code/source/"
-)
-sys.path.append("/home/khristen/Projects/Brendan/2019_inletgeneration/code/source")
-
 from collections.abc import Callable, Iterable
 from math import *
 
@@ -13,19 +6,14 @@ import numpy as np
 import scipy.fftpack as fft
 import torch
 import torch.nn as nn
-from pylab import *
 from scipy.special import hyp2f1
 # from rational_torch import Rational
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
-# from drdmannturb.RandomFieldModule.utilities.ode_solve import FEM_coefficient_matrix_generator, Grid1D
-# from RandomFieldModule.Calibration.MannSpectraObjectiveFunction import MannEddyLifetime, StdEddyLifetime
-
-
 """
-    ==================================================================================================================
-    Functions
-    ==================================================================================================================
+==================================================================================================================
+Functions
+==================================================================================================================
 """
 
 
@@ -171,14 +159,36 @@ def PowerSpectraNN(k1, k2, k3, beta, E0, delta_zeta1, delta_zeta2):
 # ====================================================================================
 @torch.jit.script
 def PowerSpectraC3(k1, k2, k3, beta, E0, C3):
+    """
+    Spectra with a C3 corrector
+
+    Parameters
+    ----------
+    k1 : _type_
+        _description_
+    k2 : _type_
+        _description_
+    k3 : _type_
+        _description_
+    beta : _type_
+        _description_
+    E0 : _type_
+        _description_
+    C3 : _type_
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
+
     k30 = k3 + beta * k1
     kk0 = k1**2 + k2**2 + k30**2
     kk = k1**2 + k2**2 + k3**2
     s = k1**2 + k2**2
 
     C1 = beta * k1**2 * (kk0 - 2 * k30**2 + beta * k1 * k30) / (kk * s)
-    # arg = beta * k1 * torch.sqrt(s) / (kk0 - k30 * k1 * beta)
-    # C2  = k2 * kk0 / s**(3/2) * torch.arctan(arg)
 
     arg1 = k30 / torch.sqrt(s)
     arg2 = k3 / torch.sqrt(s)
@@ -207,7 +217,30 @@ def PowerSpectraC3(k1, k2, k3, beta, E0, C3):
 # Corrected Spectra with a general type corretor
 # ====================================================================================
 # @torch.jit.script
-def PowerSpectraCorr(k1, k2, k3, beta, E0, Corrector):
+def PowerSpectraCorr(k1, k2, k3, beta, E0, corrector):
+    """
+    Corrected Spectra with a general type corrector
+
+    Parameters
+    ----------
+    k1 : _type_
+        _description_
+    k2 : _type_
+        _description_
+    k3 : _type_
+        _description_
+    beta : _type_
+        _description_
+    E0 : _type_
+        _description_
+    corrector : _type_
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
     k30 = k3 + beta * k1
     # k3  = k30 - beta*k1
     kk0 = k1**2 + k2**2 + k30**2
@@ -232,14 +265,14 @@ def PowerSpectraCorr(k1, k2, k3, beta, E0, Corrector):
     zeta2 = C1 * k2 / k1 + C2
     zeta3 = kk0 / kk
 
-    D = torch.zeros_like(Corrector)
+    D = torch.zeros_like(corrector)
     D[..., 0, 0] = 1
     D[..., 1, 1] = 1
     D[..., 0, 2] = zeta1
     D[..., 1, 2] = zeta2
     D[..., 2, 2] = zeta3
 
-    P = torch.zeros_like(Corrector)
+    P = torch.zeros_like(corrector)
     P[..., 0, 0] = 1 - k1 * k1 / kk0
     P[..., 1, 1] = 1 - k2 * k2 / kk0
     P[..., 2, 2] = 1 - k30 * k30 / kk0
@@ -440,15 +473,10 @@ class zetaNet(nn.Module):
         self.hidden_layer_size = kwargs.get("hidden_layer_size", 0)
 
         self.actfc = nn.ReLU()
-        # self.fc0   = nn.Linear(3, 1).double()
         self.fc0 = nn.Linear(3, self.hidden_layer_size).double()
         self.fc1 = nn.Linear(self.hidden_layer_size, self.hidden_layer_size).double()
         self.fc2 = nn.Linear(self.hidden_layer_size, self.hidden_layer_size).double()
         self.fc3 = nn.Linear(self.hidden_layer_size, 1).double()
-
-        # self.nModes = 20
-        # self.fc_d   = nn.Linear(1, self.nModes, bias=False).double()
-        # self.fc_c   = nn.Linear(1, self.nModes, bias=False).double()
 
     def forward(self, k):
         k1, k2, k3 = k[..., 0], k[..., 1], k[..., 2]
@@ -461,14 +489,6 @@ class zetaNet(nn.Module):
         out = self.actfc(out)
         out = self.fc3(out)
         return out.squeeze(-1) / kk
-        # ones= torch.ones_like(out)
-        # d   = self.fc_d(ones)
-        # c   = self.fc_c(ones)
-        # z   = out.abs().squeeze(-1)
-        # out = c**2 / (z[...,None] + d.abs())
-        # out = out.sum(dim=-1)
-        # return out
-
 
 # ========================================================
 # NN for C3 corrector
@@ -738,10 +758,10 @@ class NET_OnePointSpectra(nn.Module):
                 k[..., 0], k[..., 1], k[..., 2], beta, E0, C3
             )
         elif self.case_PowerSpectra == "Corrector":
-            Corrector = self.Corrector(k)
-            # Corrector = 0*Corrector
+            corrector = self.corrector(k)
+            # corrector = 0*corrector
             Phi, self.div = PowerSpectraCorr(
-                k[..., 0], k[..., 1], k[..., 2], beta, E0, Corrector
+                k[..., 0], k[..., 1], k[..., 2], beta, E0, corrector
             )
 
         ### Integration in k2 and k3
@@ -801,10 +821,10 @@ class NET_OnePointSpectra(nn.Module):
     #         elif self.case_PowerSpectra == 'C3Net':
     #             C3  = self.C3Net(k)
     #             Phi = PowerSpectraC3(k[...,0], k[...,1], k[...,2], beta, E0, C3)
-    #         elif self.case_PowerSpectra == 'Corrector':
-    #             Corrector = self.Corrector(k)
-    #             # Corrector = 0*Corrector
-    #             Phi = PowerSpectraCorr(k[...,0], k[...,1], k[...,2], beta, E0, Corrector)
+    #         elif self.case_PowerSpectra == 'corrector':
+    #             corrector = self.corrector(k)
+    #             # corrector = 0*corrector
+    #             Phi = PowerSpectraCorr(k[...,0], k[...,1], k[...,2], beta, E0, corrector)
 
     #         ### Integration in k2 and k3
     #         kF = torch.zeros(len(Phi), len(k1_input), dtype=torch.float64)
@@ -909,24 +929,10 @@ class OnePointSpectra:
     def initialize_parameters_with_noise(self):
         noise = self.noise_magnitude * np.random.randn(*self.parameters.shape)
         noise = torch.tensor(noise, dtype=torch.float64)
-        # self.update_parameters(noise**2)
+
         vector_to_parameters(noise.abs(), self.NN.parameters())
-        # try:
-        #     noise2 = 100*noise.clone().detach()
-        #     noise2[:] = 0.5
-        #     vector_to_parameters(noise2, self.NN.zetaNet1.parameters())
-        #     vector_to_parameters(noise2, self.NN.zetaNet2.parameters())
-        # except: pass
-        try:
-            # noise[:] = 0.01
-            vector_to_parameters(noise, self.NN.tauNet.parameters())
-        except:
-            pass
-        try:
-            # noise[:] = 0.1
-            vector_to_parameters(noise.abs(), self.NN.Corrector.parameters())
-        except:
-            pass
+        vector_to_parameters(noise, self.NN.tauNet.parameters())
+        vector_to_parameters(noise.abs(), self.NN.Corrector.parameters())
 
     # =========================================
 

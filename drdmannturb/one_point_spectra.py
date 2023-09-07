@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 
 from .common import MannEddyLifetime, VKEnergySpectrum
-from .PowerSpectraRDT import PowerSpectraRDT
-from .tauNet import customNet, tauNet, tauResNet
+from .power_spectra_rdt import PowerSpectraRDT
+from .tau_net import customNet, tauNet, tauResNet
 
 
 class OnePointSpectra(nn.Module):
@@ -15,14 +15,14 @@ class OnePointSpectra(nn.Module):
         self.type_EddyLifetime = kwargs.get("type_EddyLifetime", "TwoThird")
         self.type_PowerSpectra = kwargs.get("type_PowerSpectra", "RDT")
 
-        ### k2 grid
+        # k2 grid
         p1, p2, N = -3, 3, 100
         grid_zero = torch.tensor([0], dtype=torch.float64)
         grid_plus = torch.logspace(p1, p2, N, dtype=torch.float64)
         grid_minus = -torch.flip(grid_plus, dims=[0])
         self.grid_k2 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
 
-        ### k3 grid
+        # k3 grid
         p1, p2, N = -3, 3, 100
         grid_zero = torch.tensor([0], dtype=torch.float64)
         grid_plus = torch.logspace(p1, p2, N, dtype=torch.float64)
@@ -41,8 +41,6 @@ class OnePointSpectra(nn.Module):
             self.tauNet = customNet(**kwargs)
         elif self.type_EddyLifetime == "tauResNet":
             self.tauNet = tauResNet(**kwargs)
-
-    ###-------------------------------------------
 
     def exp_scales(self) -> tuple[float, float, float]:
         """

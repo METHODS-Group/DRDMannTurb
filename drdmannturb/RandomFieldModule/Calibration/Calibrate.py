@@ -1,9 +1,4 @@
-from math import *
-from time import time
-
-import numpy as np
 import scipy.optimize
-from pylab import *
 
 ###################################################################################################
 #  Calibrate
