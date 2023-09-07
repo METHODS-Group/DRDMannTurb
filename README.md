@@ -23,4 +23,4 @@ A Conda spec-file is included, to install a functioning environment, run ``conda
 
 Docs are in the ``/docs/`` folder. Make sure the following dependencies are installed:
 
-Run ``make html`` to generate html pages in the ``/docs/build/`` folder, which can be hosted locally with ``python -m http.server <PORT-NUMBER>``. 
+Run ``make html`` to generate html pages in the ``/docs/build/html`` folder, which can be hosted locally with ``python -m http.server <PORT-NUMBER>``. 

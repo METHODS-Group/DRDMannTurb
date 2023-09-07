@@ -11,6 +11,7 @@
    :caption: Contents:
 
    getting-started
+   examples/index
    internal_api   
 
 .. note::
