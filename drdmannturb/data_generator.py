@@ -19,6 +19,10 @@ DataType = Enum(
 
 
 class OnePointSpectraDataGenerator:
+    """
+    One point spectra data generator
+    """
+
     def __init__(
         self,
         data_points: Optional[Any] = None,

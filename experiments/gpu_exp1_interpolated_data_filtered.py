@@ -57,7 +57,6 @@ GAMMA = 3.7
 SIGMA = 3.2
 
 
-
 """
 Define the File IO routines
 """

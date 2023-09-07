@@ -38,7 +38,9 @@ def save_vtk(phase, filename):
 def msgDimError(ndim):
     raise Exception("Dimension {0:d} is not supported.".format(ndim))
 
+
 # TODO -- we'd like to get rid of all the try/ catch below
+
 
 def Mv(nu, X):
     if nu < 1.0e-4:

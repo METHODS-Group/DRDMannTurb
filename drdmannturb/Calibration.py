@@ -27,10 +27,7 @@ class LossFunc:
 
 
 class CalibrationProblem:
-    """
-    
-    """
-
+    """ """
 
     def __init__(self, **kwargs: Dict[str, Any]):
         # stringify the activation functions used; for manual bash only

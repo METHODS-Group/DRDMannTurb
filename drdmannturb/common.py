@@ -4,6 +4,10 @@ import numpy as np
 import torch
 from scipy.special import hyp2f1
 
+DataType = Enum(
+    "DataType", ["KAIMAL", "CUSTOM", "SIMIU_SCANLAN", "SIMIU_YEO", "AUTO", "VK", "IEC"]
+)
+
 
 @torch.jit.script
 def VKEnergySpectrum(kL: torch.Tensor) -> torch.Tensor:
