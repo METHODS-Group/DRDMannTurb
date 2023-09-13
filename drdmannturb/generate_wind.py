@@ -34,10 +34,8 @@ class GenerateWind:
         time_buffer = 3 * Gamma * L
         spatial_margin = 1 * L
 
-        try:
-            grid_levels = [grid_levels[i].GetInt() for i in range(3)]
-        except:
-            pass
+        grid_levels = [grid_levels[i].GetInt() for i in range(3)]
+
         Nx = 2 ** grid_levels[0] + 1
         Ny = 2 ** grid_levels[1] + 1
         Nz = 2 ** grid_levels[2] + 1
@@ -157,74 +155,3 @@ class GenerateWind:
         self.total_wind = np.concatenate((self.total_wind, wind), axis=0)
 
         return wind
-
-
-############################################################################
-############################################################################
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    normalize = True
-    friction_velocity = 2.683479938442173
-    reference_height = 180.0
-    roughness_height = 0.75
-    grid_dimensions = np.array([1200.0, 864.0, 576.0])
-    grid_levels = np.array([5, 5, 5])
-    seed = 9000
-
-    wind = GenerateWind(
-        friction_velocity, reference_height, grid_dimensions, grid_levels, seed
-    )
-    for _ in range(4):
-        wind()
-    wind_field = wind.total_wind
-
-    if normalize == True:
-        # h = np.array(grid_dimensions/wind_field.shape[0:-1])
-        # h = np.array(1/wind_field.shape[0],1/wind_field.shape[1],1/wind_field.shape[2])
-        sd = np.sqrt(np.mean(wind_field**2))
-        wind_field = wind_field / sd
-        wind_field *= 4.26  # rescale to match Mann model
-
-    # plt.imshow(wind_field[:,0,:,0])
-    # plt.show()
-
-    # # total_wind = wind.total_wind
-    # # plt.imshow(total_wind[:,0,:,0])
-    # # plt.show()
-
-    JCSS_law = (
-        lambda z, z_0, delta, u_ast: u_ast
-        / 0.41
-        * (
-            np.log(z / z_0 + 1.0)
-            + 5.57 * z / delta
-            - 1.87 * (z / delta) ** 2
-            - 1.33 * (z / delta) ** 3
-            + 0.25 * (z / delta) ** 4
-        )
-    )
-    log_law = lambda z, z_0, u_ast: u_ast * np.log(z / z_0 + 1.0) / 0.41
-
-    z = np.linspace(0.0, grid_dimensions[2], 2 ** (grid_levels[2]) + 1)
-    # mean_profile_z = JCSS_law(z, roughness_height, 10.0, friction_velocity)
-    mean_profile_z = log_law(z, roughness_height, friction_velocity)
-
-    mean_profile = np.zeros_like(wind_field)
-    mean_profile[..., 0] = np.tile(
-        mean_profile_z.T, (mean_profile.shape[0], mean_profile.shape[1], 1)
-    )
-
-    # wind_field = mean_profile
-    wind_field += mean_profile
-
-    ###################
-    ## Export to vtk
-    FileName = "OntheFlyWindField"
-    spacing = tuple(grid_dimensions / (2.0**grid_levels + 1))
-
-    wind_field_vtk = tuple([np.copy(wind_field[..., i], order="C") for i in range(3)])
-
-    cellData = {"grid": np.zeros_like(wind_field[..., 0]), "wind": wind_field_vtk}
-    imageToVTK(FileName, cellData=cellData, spacing=spacing)

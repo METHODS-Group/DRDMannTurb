@@ -1,3 +1,9 @@
+"""
+NOTE: this module is not used throughout the code and is vestigial from
+earlier versions. It is not maintained either.
+"""
+
+
 """An inlet boundary condition process for KratosMultiphysics
 
 license: license.txt

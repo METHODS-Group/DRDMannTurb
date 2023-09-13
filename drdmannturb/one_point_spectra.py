@@ -3,17 +3,31 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-from .common import MannEddyLifetime, VKEnergySpectrum
+from .common import (
+    MannEddyLifetime,
+    VKEnergySpectrum,
+    EddyLifetimeType,
+    PowerSpectraType,
+)
 from .power_spectra_rdt import PowerSpectraRDT
 from .tau_net import customNet, tauNet, tauResNet
 
 
 class OnePointSpectra(nn.Module):
-    def __init__(self, **kwargs):
+    """
+    One point spectra implementation
+    """
+
+    def __init__(
+        self,
+        type_eddy_lifetime: EddyLifetimeType = EddyLifetimeType.TWOTHIRD,
+        type_power_spectra: PowerSpectraType = PowerSpectraType.RDT,
+        **kwargs
+    ):
         super(OnePointSpectra, self).__init__()
 
-        self.type_EddyLifetime = kwargs.get("type_EddyLifetime", "TwoThird")
-        self.type_PowerSpectra = kwargs.get("type_PowerSpectra", "RDT")
+        self.type_EddyLifetime = type_eddy_lifetime
+        self.type_PowerSpectra = type_power_spectra
 
         # k2 grid
         p1, p2, N = -3, 3, 100
@@ -35,11 +49,13 @@ class OnePointSpectra(nn.Module):
         self.logTimeScale = nn.Parameter(torch.tensor(0, dtype=torch.float64))
         self.logMagnitude = nn.Parameter(torch.tensor(0, dtype=torch.float64))
 
-        if self.type_EddyLifetime == "tauNet":
+        if self.type_EddyLifetime == EddyLifetimeType.TAUNET:
             self.tauNet = tauNet(**kwargs)
-        elif self.type_EddyLifetime == "customMLP":
+
+        elif self.type_EddyLifetime == EddyLifetimeType.CUSTOMMLP:
             self.tauNet = customNet(**kwargs)
-        elif self.type_EddyLifetime == "tauResNet":
+
+        elif self.type_EddyLifetime == EddyLifetimeType.TAURESNET:
             self.tauNet = tauResNet(**kwargs)
 
     def exp_scales(self) -> tuple[float, float, float]:
@@ -175,7 +191,7 @@ class OnePointSpectra(nn.Module):
         if self.type_PowerSpectra == "RDT":
             return PowerSpectraRDT(self.k, self.beta, self.E0)
         else:
-            raise Exception("Wrong PowerSpectra model !")
+            raise Exception("Incorrect PowerSpectra model !")
 
     @torch.jit.export
     def quad23(self, f: torch.Tensor) -> torch.Tensor:

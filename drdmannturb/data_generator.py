@@ -1,5 +1,4 @@
 import warnings
-from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
 
@@ -7,15 +6,7 @@ import numpy as np
 import torch
 from scipy.optimize import curve_fit, differential_evolution
 
-####################################################################
-#   One Point Spectra Data Generator
-#   (iso, shear: Kaimal, Simiu-Scanlan, Simiu-Yeo)
-####################################################################
-
-
-DataType = Enum(
-    "DataType", ["KAIMAL", "CUSTOM", "SIMIU_SCANLAN", "SIMIU_YEO", "AUTO", "VK", "IEC"]
-)
+from drdmannturb.common import DataType
 
 
 class OnePointSpectraDataGenerator:
@@ -42,15 +33,19 @@ class OnePointSpectraDataGenerator:
         data_points : Optional[Any], optional
             _description_, by default None
         data_type : DataType, optional
-            _description_, by default DataType.KAIMAL
+            Indicates the data format to generate and operate with, by
+            default DataType.KAIMAL
         k1_data_points : Optional[Any], optional
             _description_, by default None
         spectra_file : Optional[Path], optional
-            _description_, by default None
+            If using DataType.CUSTOM or DataType.AUTO, this
+            is used to indicate the data file (a .dat) to read
+            from. Since it is not used by others, it is by
+            default None
         zref : float, optional
-            _description_, by default 1.0
+            Reference altitude value, by default 1.0
         Uref : float, optional
-            _description_, by default 1.0
+            Reference wind velocity, by default 1.0
 
         Raises
         ------
@@ -69,13 +64,6 @@ class OnePointSpectraDataGenerator:
         self.DataPoints = data_points
         self.data_type = data_type
         self.k1 = k1_data_points
-
-        # self.data_type = kwargs.get(
-        # "data_type", "Kaimal"
-        # )  # 'Kaimal', 'Custom', 'Simiu-Scanlan', 'Simiu-Yeo'
-        # self.k1 = kwargs.get(
-        #     "k1_data_points", None
-        # )  # TODO make this an optional, just like Datapoints and spectra_file
 
         self.zref = zref
         self.Uref = Uref
@@ -131,16 +119,21 @@ class OnePointSpectraDataGenerator:
                             maxX = max(xData)
                             minX = min(xData)
                             maxY = max(yData)
-                            minY = min(yData)
+
+                            # TODO -- can be purged?
+                            # minY = min(yData)
 
                             parameterBounds = []
-                            parameterBounds.append([minX, maxX])  # search bounds for a
-                            parameterBounds.append([minX, maxX])  # search bounds for b
+                            # search bounds for a
+                            parameterBounds.append([minX, maxX])
+                            # search bounds for b
+                            parameterBounds.append([minX, maxX])
                             parameterBounds.append(
                                 [0.0, maxY]
                             )  # search bounds for Offset
 
-                            # "seed" the numpy random number generator for repeatable results
+                            # "seed" the numpy random number generator for
+                            #   replicable results
                             result = differential_evolution(
                                 sumOfSquaredError, parameterBounds, seed=3
                             )
@@ -207,19 +200,19 @@ class OnePointSpectraDataGenerator:
 
         return
 
-    def generate_Data(self, DataPoints):
+    def generate_Data(self, DataPoints) -> tuple[torch.Tensor, torch.Tensor]:
         """
         TODO -- documentation
 
         Parameters
         ----------
-        DataPoints : _type_
+        DataPoints : torch.Tensor
             _description_
 
         Returns
         -------
-        _type_
-            _description_
+        tuple[torch.Tensor, torch.Tensor]
+            Tuple of the input DataPoints and generated DataValues
         """
         DataValues = torch.zeros([len(DataPoints), 3, 3])
 
@@ -230,15 +223,13 @@ class OnePointSpectraDataGenerator:
             DataValues[:, 0, 2] = -self.CustomData[:, 4]
 
         else:
+            # TODO -- there should be a way to vectorize this operation
             for i, Point in enumerate(DataPoints):
                 DataValues[i] = self.eval(*Point)
-
-        print(f"DataValues is on {DataValues.get_device()}")
 
         self.Data = (DataPoints, DataValues)
         return self.Data
 
-    # TODO -- where are these eval functions called?
     def eval_VK(self, k1: float, z: float = 1.0) -> torch.Tensor:
         """
         eval implementation for VK data type
@@ -253,7 +244,7 @@ class OnePointSpectraDataGenerator:
         Returns
         -------
         torch.Tensor
-            _description_
+            Result of the evaluation
         """
 
         C = 3.2
@@ -278,7 +269,7 @@ class OnePointSpectraDataGenerator:
 
     def eval_Kaimal(self, k1: float, z: float = 1.0) -> torch.Tensor:
         """
-        _summary_
+        eval implementation for Kaimal data type
 
         Parameters
         ----------
@@ -290,7 +281,7 @@ class OnePointSpectraDataGenerator:
         Returns
         -------
         torch.Tensor
-            _description_
+            Result of the evaluation
         """
         z = self.zref
         n = 1 / (2 * np.pi) * k1 * z
@@ -302,13 +293,33 @@ class OnePointSpectraDataGenerator:
         return F
 
     def eval_IEC(self, k1: float, z: float = 1.0) -> torch.Tensor:
+        """
+        eval implementation for IEC data type
+
+        Parameters
+        ----------
+        k1 : float
+            _description_
+        z : float, optional
+            _description_, by default 1.0
+
+        Returns
+        -------
+        torch.Tensor
+            Result of the evaluation
+        """
+
         F = torch.zeros([3, 3])
         return F
 
-    def eval_auto(self, k1: float, z: float = 1.0):
-        raise ValueError("Not implemented!")
-        pass
+    def eval_auto(self, **_):
+        """
+        eval implementation for the Auto data type. Notice
+        that this is a non-implementation.
 
-    def _compute_Fit(self, DataPoints, k1_data_points):
+        Raises
+        ------
+        ValueError
+            All branches lead to this; this should not have an implementation
+        """
         raise ValueError("Not implemented!")
-        pass
