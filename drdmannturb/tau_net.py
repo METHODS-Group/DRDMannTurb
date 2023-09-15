@@ -217,7 +217,7 @@ class tauNet(nn.Module):
 
         Parameters
         ----------
-        f : _type_ TODO -- how to typehint a Functoin pointer?
+        f : _type_ TODO -- how to typehint a function pointer?
             _description_
         k : torch.Tensor
             _description_
@@ -236,34 +236,21 @@ class tauNet(nn.Module):
         Parameters
         ----------
         k : torch.Tensor
-            _description_
+            Wave vector input
 
         Returns
         -------
         torch.Tensor
             _description_
         """
-        # NN    = self.sym(self.NN, k)
-        # NN    = self.NN(k**2)
         k_mod = self.NN(k.abs()).norm(dim=-1)
         tau = self.Ra(k_mod)
         return tau
 
-        # k2 = k.norm(dim=-1,keepdim=True).square()
-        # l = k/k2
-        # tau = self.NN(l) + self.NN(l*self.sign)
-        # # k_mod = k.norm(dim=-1) + NN.squeeze(-1)
-        # # tau   = self.Ra(k_mod)
-        # return tau.squeeze(-1)
-
-        # k_mod = self.T(k).norm(dim=-1)
-        # tau   = self.Ra(k_mod)
-        # return tau
-
 
 class customNet(nn.Module):
     """
-    customNet
+    customNet implementation. For this
     """
 
     def __init__(
@@ -283,6 +270,8 @@ class customNet(nn.Module):
             Number of hidden layers, by default 2
         activations : List[Any], optional
             List of activation functions to use, by default [nn.ReLU(), nn.ReLU()]
+            
+            TODO -- type hint this properly
         n_modes : int, optional
             Number of wave modes, by default 10
         learn_nu : bool, optional

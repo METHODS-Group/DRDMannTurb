@@ -4,7 +4,6 @@ Spectral Coherence module
 TODO -- move the EddyLifetime and PowerSpectra into Enums s.t. I can get rid of kwargs
 """
 
-from enum import Enum
 from typing import Union
 
 import torch

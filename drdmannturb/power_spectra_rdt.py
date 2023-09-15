@@ -1,15 +1,31 @@
+"""
+This module implements the RDT PowerSpectra type
+"""
+
 import numpy as np
 import torch
 
-"""
-==================================================================================================================
-Classical Rapid Distortion Spectra
-==================================================================================================================
-"""
-
 
 @torch.jit.script
-def PowerSpectraRDT(k, beta, E0):
+def PowerSpectraRDT(k: torch.Tensor, beta: torch.Tensor, E0) -> torch.Tensor:
+    """
+    Classical rapid distortion spectra
+
+    Parameters
+    ----------
+    k : torch.Tensor
+        Wave vector input
+    beta : torch.Tensor
+        _description_
+    E0 : _type_
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
+
     k1, k2, k3 = k[..., 0], k[..., 1], k[..., 2]
 
     k30 = k3 + beta * k1

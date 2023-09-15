@@ -1,8 +1,12 @@
-import matplotlib.pyplot as plt
+"""
+This modules implements built-in plotting utilities for ease of use
+"""
 
+import matplotlib.pyplot as plt
+from typing import Any
 
 class PlotSpectrum:
-    def __init__(self, obj) -> None:
+    def __init__(self, **kwargs) -> None:
         plt_dynamic = kwargs.get("plt_dynamic", False)
         plt_tau = kwargs.get("plt_tau", True)
 

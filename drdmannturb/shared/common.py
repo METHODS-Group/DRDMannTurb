@@ -3,17 +3,6 @@ from typing import Union
 import numpy as np
 import torch
 from scipy.special import hyp2f1
-from enum import Enum
-
-DataType = Enum(
-    "DataType", ["KAIMAL", "CUSTOM", "SIMIU_SCANLAN", "SIMIU_YEO", "AUTO", "VK", "IEC"]
-)
-
-EddyLifetimeType = Enum(
-    "EddyLifetime", ["TWOTHIRD", "CUSTOMMLP", "TAUNET", "TAURESNET"]
-)
-
-PowerSpectraType = Enum("PowerSpectra", ["RDT"])
 
 
 @torch.jit.script

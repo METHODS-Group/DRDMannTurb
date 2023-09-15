@@ -1,13 +1,8 @@
-import sys
-from math import *
 from time import time
 
-import matplotlib.pyplot as plt
 import numpy as np
 from CovarianceKernels import MannCovariance, VonKarmanCovariance
 from GaussianRandomField import *
-from pyevtk.hl import imageToVTK
-from tqdm import tqdm
 
 
 class GenerateWind:
@@ -43,9 +38,9 @@ class GenerateWind:
         hy = grid_dimensions[1] / Ny
         hz = grid_dimensions[2] / Nz
 
-        n_buffer = ceil(time_buffer / hx)
-        n_marginy = ceil(spatial_margin / hy)
-        n_marginz = ceil(spatial_margin / hz)
+        n_buffer = np.ceil(time_buffer / hx)
+        n_marginy = np.ceil(spatial_margin / hy)
+        n_marginz = np.ceil(spatial_margin / hz)
 
         wind_shape = [0] + [Ny] + [Nz] + [3]
         if blend_num > 0:

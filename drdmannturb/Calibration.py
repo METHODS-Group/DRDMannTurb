@@ -159,7 +159,7 @@ class CalibrationProblem:
         tol = kwargs.get("tol", 1e-3)
         nepochs = kwargs.get("nepochs", 100)
         self.plot_loss_optim = kwargs.get("plot_loss_wolfe", False)
-        show = kwargs.get("show", False)
+        kwargs.get("show", False)
         self.curves = kwargs.get("curves", [0, 1, 2, 3])
 
         alpha_pen = kwargs.get("penalty", 0.0)
@@ -225,13 +225,13 @@ class CalibrationProblem:
         #        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=nepochs)
 
-        softplus = torch.nn.Softplus()
+        torch.nn.Softplus()
         logk1 = torch.log(self.k1_data_pts).detach()
         h1 = torch.diff(logk1)
         h2 = torch.diff(0.5 * (logk1[:-1] + logk1[1:]))
-        h3 = torch.diff(0.5 * (self.k1_data_pts[:-1] + self.k1_data_pts[1:]))
-        h4 = torch.diff(self.k1_data_pts)
-        D = logk1.max() - logk1.min()
+        torch.diff(0.5 * (self.k1_data_pts[:-1] + self.k1_data_pts[1:]))
+        torch.diff(self.k1_data_pts)
+        logk1.max() - logk1.min()
 
         def PenTerm(y):
             """
@@ -509,7 +509,7 @@ class CalibrationProblem:
             )
 
         k1 = self.k1_data_pts
-        k = torch.stack([0 * k1, k1, 0 * k1], dim=-1)
+        torch.stack([0 * k1, k1, 0 * k1], dim=-1)
 
         plt_tau = kwargs.get("plt_tau", True)
         if plt_tau:

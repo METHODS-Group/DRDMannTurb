@@ -9,7 +9,7 @@ class Rational(nn.Module):
     Learnable rational kernel
     """
 
-    def __init__(self, learn_nu: bool = True) -> None:
+    def __init__(self, nModes: int, learn_nu: bool = True) -> None:
         """
         Constructor for Rational
 
@@ -20,6 +20,7 @@ class Rational(nn.Module):
             also; by default True
         """
         super().__init__()
+        self.nModes = nModes
         self.fg_learn_nu = learn_nu
         self.nu = -1.0 / 3.0
         if self.fg_learn_nu:
