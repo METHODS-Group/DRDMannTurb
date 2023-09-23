@@ -292,21 +292,15 @@ class OnePointSpectraDataGenerator:
         F[0, 2] = -12 * n / (1 + 9.6 * n) ** (7.0 / 3.0)
         return F
 
-    def eval_IEC(self, k1: float, z: float = 1.0) -> torch.Tensor:
+    def eval_IEC(self, **_) -> torch.Tensor:
         """
-        eval implementation for IEC data type
-
-        Parameters
-        ----------
-        k1 : float
-            _description_
-        z : float, optional
-            _description_, by default 1.0
+        Eval implementation for IEC data type. Returns constant
+        3x3 of zeros.
 
         Returns
         -------
         torch.Tensor
-            Result of the evaluation
+            Result of the evaluation; constant 3x3 zeros tensor
         """
 
         F = torch.zeros([3, 3])

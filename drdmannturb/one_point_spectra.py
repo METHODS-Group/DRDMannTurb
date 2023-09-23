@@ -3,14 +3,13 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-from .common import (
+from drdmannturb.shared.common import (
     MannEddyLifetime,
     VKEnergySpectrum,
-    EddyLifetimeType,
-    PowerSpectraType,
 )
-from .power_spectra_rdt import PowerSpectraRDT
-from .tau_net import customNet, tauNet, tauResNet
+from drdmannturb.shared.enums import EddyLifetimeType, PowerSpectraType
+from drdmannturb.power_spectra_rdt import PowerSpectraRDT
+from drdmannturb.nn_modules import customNet, tauNet, tauResNet
 
 
 class OnePointSpectra(nn.Module):
@@ -22,7 +21,7 @@ class OnePointSpectra(nn.Module):
         self,
         type_eddy_lifetime: EddyLifetimeType = EddyLifetimeType.TWOTHIRD,
         type_power_spectra: PowerSpectraType = PowerSpectraType.RDT,
-        **kwargs
+        nn_parameters: float = 1,
     ):
         super(OnePointSpectra, self).__init__()
 
@@ -50,13 +49,21 @@ class OnePointSpectra(nn.Module):
         self.logMagnitude = nn.Parameter(torch.tensor(0, dtype=torch.float64))
 
         if self.type_EddyLifetime == EddyLifetimeType.TAUNET:
-            self.tauNet = tauNet(**kwargs)
+            self.tauNet = tauNet(n_layers, hidden_layer_size, n_modes, learn_nu)
 
         elif self.type_EddyLifetime == EddyLifetimeType.CUSTOMMLP:
-            self.tauNet = customNet(**kwargs)
+            """
+            Requires n_layers, activations, n_modes, learn_nu
+            """
+
+            self.tauNet = customNet(n_layers, hidden_layer_size)
 
         elif self.type_EddyLifetime == EddyLifetimeType.TAURESNET:
-            self.tauNet = tauResNet(**kwargs)
+            """
+            Requires hidden_layer_sizes, n_modes, learn_nu
+            """
+
+            self.tauNet = tauResNet(hidden_layer_sizes, n_modes, learn_nu)
 
     def exp_scales(self) -> tuple[float, float, float]:
         """

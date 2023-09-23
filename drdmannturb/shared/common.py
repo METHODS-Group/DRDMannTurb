@@ -1,3 +1,11 @@
+"""
+This module contains implementations of common functions required a few times throughout
+
+TODO -- possibly move this elsewhere/ somewhere more appropriate than here
+"""
+
+__all__ = ["VKEnergySpectrum", "MannEddyLifetime"]
+
 from typing import Union
 
 import numpy as np

@@ -1,6 +1,7 @@
 """
 This module defines the Enums for quality of life
 """
+__all__ = ["DataType", "EddyLifetimeType", "PowerSpectraType"]
 
 from enum import Enum
 
@@ -10,7 +11,7 @@ DataType = Enum(
 )
 
 EddyLifetimeType = Enum(
-    "EddyLifetime", ["TWOTHIRD", "CUSTOMMLP", "TAUNET", "TAURESNET"]
+    "EddyLifetimeType", ["TWOTHIRD", "CUSTOMMLP", "TAUNET", "TAURESNET"]
 )
 
-PowerSpectraType = Enum("PowerSpectra", ["RDT"])
+PowerSpectraType = Enum("PowerSpectraType", ["RDT"])

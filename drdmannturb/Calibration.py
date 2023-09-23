@@ -1,37 +1,44 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import matplotlib.pyplot as plt
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
-from .common import MannEddyLifetime
-from .one_point_spectra import OnePointSpectra
-from .spectral_coherence import SpectralCoherence
+from drdmannturb.shared.common import MannEddyLifetime
+from drdmannturb.one_point_spectra import OnePointSpectra
+from drdmannturb.spectral_coherence import SpectralCoherence
 
 
-class LossFunc:
-    """
-    Loss function calculation class
-    """
+def generic_loss(observed, actual, pen: Optional[float] = None):
+    """ """
 
-    def __init__(self, **kwargs):
-        pass
+    loss = 0.5 * torch.mean((torch.log(torch.abs(observed / actual))) ** 2)
 
-    def __call__(self, model, target, pen=None):
-        # loss = 0.5*torch.mean( (model * torch.log(model.abs()) - target * torch.log(target.abs()) )**2 )
-        loss = 0.5 * torch.mean((torch.log(torch.abs(model / target))) ** 2)
-        # loss = 0.5*torch.mean( ( (model-target)/(1.e-6 + target) )**2 )
-        if pen:
-            loss = loss + pen
-        return loss
+    if pen is not None:
+        loss += pen
+
+    return loss
 
 
 class CalibrationProblem:
-    """ """
+    """
+    Defines a calibration problem
+    """
 
-    def __init__(self, **kwargs: Dict[str, Any]):
+    def __init__(
+        self, activations: list[str] = ["relu", "relu"], **kwargs: Dict[str, Any]
+    ):
+        """
+        Constructor for a CalibrationProblem
+
+        Parameters
+        ----------
+        activations : list[str], optional
+            _description_, by default ["relu", "relu"]
+        """
+
         # stringify the activation functions used; for manual bash only
-        self.activfuncstr = str(kwargs.get("activations", ["relu", "relu"]))
+        self.activfuncstr = str(activations)
         print(self.activfuncstr)
 
         self.input_size = kwargs.get("input_size", 3)
@@ -83,21 +90,11 @@ class CalibrationProblem:
             self.noise_magnitude * torch.randn(*self.parameters.shape),
             dtype=torch.float64,
         )
-        # self.update_parameters(noise**2)
         vector_to_parameters(noise.abs(), self.OPS.parameters())
-        try:
-            vector_to_parameters(noise, self.OPS.tauNet.parameters())
-        except:
-            pass
-        try:
-            vector_to_parameters(noise.abs(), self.OPS.Corrector.parameters())
-        except:
-            pass
 
-    # =========================================
+        vector_to_parameters(noise, self.OPS.tauNet.parameters())
 
-    def __call__(self, k1):
-        return self.eval(k1)
+        vector_to_parameters(noise.abs(), self.OPS.Corrector.parameters())
 
     def eval(self, k1):
         Input = self.format_input(k1)
@@ -150,11 +147,17 @@ class CalibrationProblem:
     # Calibration method
     # -----------------------------------------
 
-    def calibrate(self, model_magnitude_order=1, **kwargs):
+    def calibrate(
+        self,
+        data: tuple[Any, Any],
+        model_magnitude_order=1,
+        optimizer_class: Any = torch.optim.LBFGS,
+        **kwargs,
+    ):
         print("\nCalibrating MannNet...")
 
-        DataPoints, DataValues = kwargs.get("Data")
-        OptimizerClass = kwargs.get("OptimizerClass", torch.optim.LBFGS)
+        DataPoints, DataValues = data
+        OptimizerClass = optimizer_class
         lr = kwargs.get("lr", 1e-1)
         tol = kwargs.get("tol", 1e-3)
         nepochs = kwargs.get("nepochs", 100)
@@ -192,8 +195,7 @@ class CalibrationProblem:
 
         ### The case with the coherence
         ### formatting the data
-        ### DataPoints_coh = (k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts) - tuple of 3 one-dimensional arrays (axes f, Delta_y, Delatz)
-        ### DataValues_coh - 3D array of coherence values at the data points
+
         if self.fg_coherence:
             DataPoints_coh, DataValues_coh = kwargs.get("Data_Coherence")
             k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts = DataPoints_coh
@@ -204,8 +206,7 @@ class CalibrationProblem:
             y_coh_data = torch.zeros_like(y_coh)
             y_coh_data[:] = DataValues_coh
 
-        self.loss_fn = LossFunc()
-        # self.loss_fn = torch.nn.MSELoss(reduction='mean')
+        self.loss_fn = generic_loss
 
         wolfe_iter = kwargs.get("wolfe_iter", 20)
         ##############################
@@ -231,7 +232,6 @@ class CalibrationProblem:
         h2 = torch.diff(0.5 * (logk1[:-1] + logk1[1:]))
         torch.diff(0.5 * (self.k1_data_pts[:-1] + self.k1_data_pts[1:]))
         torch.diff(self.k1_data_pts)
-        logk1.max() - logk1.min()
 
         def PenTerm(y):
             """
