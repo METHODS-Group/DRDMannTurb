@@ -236,12 +236,12 @@ class CalibrationProblem:
         Parameters
         ----------
         out : torch.Tensor
-            Tensor to be brought to CPU and
+            Tensor to be brought to CPU and converted to an np.ndarray
 
         Returns
         -------
         np.ndarray
-            The tensor converted to numpy
+            numpy representation of the input tensor
         """
         return out.cpu().numpy()
 
