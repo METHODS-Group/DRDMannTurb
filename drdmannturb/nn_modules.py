@@ -296,7 +296,7 @@ class TauResNet(nn.Module):
         learn_nu : bool, optional
             _description_, by default True
         """
-        super(tauResNet, self).__init__()
+        super(TauResNet, self).__init__()
 
         self.hlayers = hidden_layer_sizes
 
@@ -440,7 +440,7 @@ class CustomNet(nn.Module):
     def __init__(
         self,
         n_layers: int = 2,
-        hidden_layer_sizes: Union[int, list[int]] = [10,10],
+        hidden_layer_sizes: Union[int, list[int]] = [10, 10],
         activations: List[Callable] = [nn.ReLU(), nn.ReLU()],
         n_modes: int = 10,
         learn_nu: bool = True,

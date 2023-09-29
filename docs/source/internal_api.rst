@@ -8,17 +8,19 @@ Here is a documentation of methods internal to the package, which are subject to
 Internal MLP and ResNet Interfaces
 ----------------------------------
 
-.. autoclass:: drdmannturb.learnable_functions.SimpleNN
+.. autoclass:: drdmannturb.nn_modules.SimpleNN
     :members:
 
-.. autoclass:: drdmannturb.learnable_functions.Rational
+.. autoclass:: drdmannturb.nn_modules.Rational
     :members:
 
-.. autoclass:: drdmannturb.learnable_functions.CustomMLP
+.. autoclass:: drdmannturb.nn_modules.CustomMLP
     :members:
 
-.. autoclass:: drdmannturb.tauNet.ResNetBlock
+.. autoclass:: drdmannturb.nn_modules.ResNetBlock
     :members:
 
 
+Loss Functions for Calibration Problems
+---------------------------------------
 

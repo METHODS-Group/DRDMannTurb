@@ -26,6 +26,8 @@ extensions = [
 ]
 
 autodoc_mock_imports = ["torch"]
+# autodoc_preserve_defaults = False
+# auto_docstring_signature = False
 
 autosummary_generate = True
 napoleon_preprocess_types = True

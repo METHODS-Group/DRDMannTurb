@@ -6,10 +6,10 @@ and interpass.
 from dataclasses import dataclass, field
 from typing import List
 
-from drdmannturb.shared.enums import DataType, EddyLifetimeType, PowerSpectraType
-
 import numpy as np
 import torch
+
+from drdmannturb.shared.enums import DataType, EddyLifetimeType, PowerSpectraType
 
 
 @dataclass
@@ -21,7 +21,7 @@ class ProblemParameters:
 
     learning_rate: float = 1e-1
     tol: float = 1e-3
-    nepochs: int = 100
+    nepochs: int = 10
 
     init_with_noise: bool = False
     noise_magnitude: float = 1e-3
@@ -73,7 +73,7 @@ class PhysicalParameters:
 
     domain: torch.Tensor = torch.logspace(
         -1, 2, 20
-    ) # exp 2 should be logspcae (-2, 2, 40)
+    )  # exp 2 should be logspcae (-2, 2, 40)
 
 
 @dataclass
@@ -111,7 +111,9 @@ class NNParameters:
 
     # TODO -- better way of doing this?
     hidden_layer_size: int = 3
-    hidden_layer_sizes: List[int] = field(default_factory=list) # should be used for customnet or resnet
+    hidden_layer_sizes: List[int] = field(
+        default_factory=list
+    )  # should be used for customnet or resnet
     # [10, 10]
     activations: List[str] = field(default_factory=list)
     # ["relu", "relu"]

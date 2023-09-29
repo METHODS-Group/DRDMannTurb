@@ -6,15 +6,18 @@ import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
 from drdmannturb.one_point_spectra import OnePointSpectra
+from drdmannturb.shared.common import MannEddyLifetime
 from drdmannturb.shared.enums import EddyLifetimeType
+from drdmannturb.shared.parameters import (
+    LossParameters,
+    NNParameters,
+    PhysicalParameters,
+    ProblemParameters,
+)
 from drdmannturb.spectral_coherence import SpectralCoherence
 
-from drdmannturb.shared.parameters import (
-    ProblemParameters,
-    PhysicalParameters,
-    NNParameters,
-    LossParameters,
-)
+plt.rc("text", usetex=True)
+plt.rc("font", family="serif")
 
 
 def generic_loss(
@@ -58,17 +61,26 @@ class CalibrationProblem:
         nn_params: NNParameters = NNParameters(),
         prob_params: ProblemParameters = ProblemParameters(),
         loss_params: LossParameters = LossParameters(),
-        phys_params: PhysicalParameters = PhysicalParameters(L=0.59, Gamma=3.9, sigma=3.4),
+        phys_params: PhysicalParameters = PhysicalParameters(
+            L=0.59, Gamma=3.9, sigma=3.4
+        ),
         output_directory: str = "./results",
         # **kwargs: Dict[str, Any],
     ):
-        """
-        Constructor for a CalibrationProblem
+        """_summary_
 
         Parameters
         ----------
-        activations : list[str], optional
-            _description_, by default ["relu", "relu"]
+        nn_params : NNParameters, optional
+            _description_, by default NNParameters()
+        prob_params : ProblemParameters, optional
+            _description_, by default ProblemParameters()
+        loss_params : LossParameters, optional
+            _description_, by default LossParameters()
+        phys_params : PhysicalParameters, optional
+            _description_, by default PhysicalParameters(L=0.59, Gamma=3.9, sigma=3.4)
+        output_directory : str, optional
+            _description_, by default "./results"
         """
 
         self.nn_params = nn_params
@@ -90,7 +102,7 @@ class CalibrationProblem:
         self.OPS = OnePointSpectra(
             type_eddy_lifetime=self.prob_params.eddy_lifetime,
             type_power_spectra=self.prob_params.power_spectra,
-            nn_parameters=self.nn_params
+            nn_parameters=self.nn_params,
         )
         self.init_device()
         if self.init_with_noise:
@@ -106,6 +118,7 @@ class CalibrationProblem:
 
     # enable gpu device
     def init_device(self):
+        """_summary_"""
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.OPS.to(device)
 
@@ -113,6 +126,13 @@ class CalibrationProblem:
 
     @property
     def parameters(self):
+        """_summary_
+
+        Returns
+        -------
+        _type_
+            _description_
+        """
         NN_parameters = parameters_to_vector(self.OPS.parameters())
         with torch.no_grad():
             param_vec = NN_parameters.cpu().numpy()
@@ -120,15 +140,30 @@ class CalibrationProblem:
 
     @parameters.setter
     def parameters(self, param_vec):
+        """_summary_
+
+        Parameters
+        ----------
+        param_vec : _type_
+            _description_
+        """
         assert len(param_vec) >= 1
         if not torch.is_tensor(param_vec):
             param_vec = torch.tensor(param_vec, dtype=torch.float64)
         vector_to_parameters(param_vec, self.OPS.parameters())
 
     def update_parameters(self, param_vec):
+        """_summary_
+
+        Parameters
+        ----------
+        param_vec : _type_
+            _description_
+        """
         self.parameters = param_vec
 
     def initialize_parameters_with_noise(self):
+        """_summary_"""
         noise = torch.tensor(
             self.noise_magnitude * torch.randn(*self.parameters.shape),
             dtype=torch.float64,
@@ -140,12 +175,36 @@ class CalibrationProblem:
         vector_to_parameters(noise.abs(), self.OPS.Corrector.parameters())
 
     def eval(self, k1):
+        """_summary_
+
+        Parameters
+        ----------
+        k1 : _type_
+            _description_
+
+        Returns
+        -------
+        _type_
+            _description_
+        """
         Input = self.format_input(k1)
         with torch.no_grad():
             Output = self.OPS(Input)
         return self.format_output(Output)
 
     def eval_grad(self, k1):
+        """_summary_
+
+        Parameters
+        ----------
+        k1 : _type_
+            _description_
+
+        Returns
+        -------
+        _type_
+            _description_
+        """
         self.OPS.zero_grad()
         Input = self.format_input(k1)
         self.OPS(Input).backward()
@@ -242,7 +301,7 @@ class CalibrationProblem:
 
         # The case with the coherence formatting the data
 
-        if self.fg_coherence: # NOTE: CURRENTLY NOT REACHED B/C ALWAYS FALSE FOR NOW
+        if self.fg_coherence:  # NOTE: CURRENTLY NOT REACHED B/C ALWAYS FALSE FOR NOW
             DataPoints_coh, DataValues_coh = kwargs.get("Data_Coherence")
             k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts = DataPoints_coh
             k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts = torch.meshgrid(
@@ -436,7 +495,7 @@ class CalibrationProblem:
         print(f"loss = {self.loss.item()}")
         print(f"tol  = {tol}")
         self.print_parameters()
-        self.plot(plt_dynamic=False)
+        # self.plot(plt_dynamic=False)
 
         # TODO: this should change depending on chosen optimizer;
         # wolfe iterations are only present for LBFGS --
@@ -476,7 +535,11 @@ class CalibrationProblem:
         ValueError
             If the OPS was not initialized to one of TauNet, customMLP, or tauResNet.
         """
-        if self.OPS.type_EddyLifetime not in [EddyLifetimeType.TAUNET, EddyLifetimeType.CUSTOMMLP, EddyLifetimeType.TAURESNET]:
+        if self.OPS.type_EddyLifetime not in [
+            EddyLifetimeType.TAUNET,
+            EddyLifetimeType.CUSTOMMLP,
+            EddyLifetimeType.TAURESNET,
+        ]:
             raise ValueError(
                 "Not using trainable model for approximation, must be TauNet, customMLP, or tauResNet"
             )
@@ -500,7 +563,11 @@ class CalibrationProblem:
             If the OPS was not initialized to one of TauNet, customMLP, or tauResNet.
 
         """
-        if self.OPS.type_EddyLifetime not in [EddyLifetimeType.TAUNET, EddyLifetimeType.CUSTOMMLP, EddyLifetimeType.TAURESNET]:
+        if self.OPS.type_EddyLifetime not in [
+            EddyLifetimeType.TAUNET,
+            EddyLifetimeType.CUSTOMMLP,
+            EddyLifetimeType.TAURESNET,
+        ]:
             raise ValueError(
                 "Not using trainable model for approximation, must be TauNet, customMLP, or tauResNet"
             )
@@ -527,212 +594,212 @@ class CalibrationProblem:
         plt.grid("true")
         plt.show()
 
-    # def plot(self, **kwargs: Dict[str, Any]):
-    #     """
-    #     Handles all plotting
-    #     """
-    #     plt_dynamic = kwargs.get("plt_dynamic", False)
-    #     if plt_dynamic:
-    #         ion()
-    #     else:
-    #         ioff()
+    def plot(self, **kwargs: Dict[str, Any]):
+        """
+        Handles all plotting
+        """
+        plt_dynamic = kwargs.get("plt_dynamic", False)
+        # if plt_dynamic:
+        # ion()
+        # else:
+        # ioff()
 
-    #     Data = kwargs.get("Data")
-    #     if Data is not None:
-    #         DataPoints, DataValues = Data
-    #         self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[
-    #             :, 0
-    #         ].squeeze()
-    #         # create a single numpy.ndarray with numpy.array() and then convert to a porch tensor
-    #         # single_data_array=np.array( [DataValues[:, i, i] for i in range(
-    #         # 3)] + [DataValues[:, 0, 2]])
-    #         # self.kF_data_vals = torch.tensor(single_data_array, dtype=torch.float64)
-    #         self.kF_data_vals = torch.cat(
-    #             (
-    #                 DataValues[:, 0, 0],
-    #                 DataValues[:, 1, 1],
-    #                 DataValues[:, 2, 2],
-    #                 DataValues[:, 0, 2],
-    #             )
-    #         )
+        Data = kwargs.get("Data")
+        if Data is not None:
+            DataPoints, DataValues = Data
+            self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[
+                :, 0
+            ].squeeze()
+            # create a single numpy.ndarray with numpy.array() and then convert to a porch tensor
+            # single_data_array=np.array( [DataValues[:, i, i] for i in range(
+            # 3)] + [DataValues[:, 0, 2]])
+            # self.kF_data_vals = torch.tensor(single_data_array, dtype=torch.float64)
+            self.kF_data_vals = torch.cat(
+                (
+                    DataValues[:, 0, 0],
+                    DataValues[:, 1, 1],
+                    DataValues[:, 2, 2],
+                    DataValues[:, 0, 2],
+                )
+            )
 
-    #     k1 = self.k1_data_pts
-    #     torch.stack([0 * k1, k1, 0 * k1], dim=-1)
+        k1 = self.k1_data_pts
+        torch.stack([0 * k1, k1, 0 * k1], dim=-1)
 
-    #     plt_tau = kwargs.get("plt_tau", True)
-    #     if plt_tau:
-    #         k_gd = torch.logspace(-3, 3, 50, dtype=torch.float64)
-    #         k_1 = torch.stack([k_gd, 0 * k_gd, 0 * k_gd], dim=-1)
-    #         k_2 = torch.stack([0 * k_gd, k_gd, 0 * k_gd], dim=-1)
-    #         k_3 = torch.stack([0 * k_gd, 0 * k_gd, k_gd], dim=-1)
-    #         k_4 = torch.stack([k_gd, k_gd, k_gd], dim=-1) / 3 ** (1 / 2)
-    #         # k_norm = torch.norm(k, dim=-1)
+        plt_tau = kwargs.get("plt_tau", True)
+        if plt_tau:
+            k_gd = torch.logspace(-3, 3, 50, dtype=torch.float64)
+            k_1 = torch.stack([k_gd, 0 * k_gd, 0 * k_gd], dim=-1)
+            k_2 = torch.stack([0 * k_gd, k_gd, 0 * k_gd], dim=-1)
+            k_3 = torch.stack([0 * k_gd, 0 * k_gd, k_gd], dim=-1)
+            k_4 = torch.stack([k_gd, k_gd, k_gd], dim=-1) / 3 ** (1 / 2)
+            # k_norm = torch.norm(k, dim=-1)
 
-    #     self.kF_model_vals = kwargs.get("model_vals", None)
-    #     if self.kF_model_vals is None:
-    #         self.kF_model_vals = self.OPS(k1).cpu().detach().numpy()
+        self.kF_model_vals = kwargs.get("model_vals", None)
+        if self.kF_model_vals is None:
+            self.kF_model_vals = self.OPS(k1).cpu().detach().numpy()
 
-    #     if not hasattr(self, "fig"):
-    #         nrows = 1
-    #         ncols = 2 if plt_tau else 1
-    #         self.fig, self.ax = subplots(
-    #             nrows=nrows, ncols=ncols, num="Calibration", clear=True, figsize=[10, 5]
-    #         )
-    #         if not plt_tau:
-    #             self.ax = [self.ax]
+        if not hasattr(self, "fig"):
+            nrows = 1
+            ncols = 2 if plt_tau else 1
+            self.fig, self.ax = plt.subplots(
+                nrows=nrows, ncols=ncols, num="Calibration", clear=True, figsize=[10, 5]
+            )
+            if not plt_tau:
+                self.ax = [self.ax]
 
-    #         # Subplot 1: One-point spectra
-    #         self.ax[0].set_title("One-point spectra")
-    #         self.lines_SP_model = [None] * (self.vdim + 1)
-    #         self.lines_SP_data = [None] * (self.vdim + 1)
-    #         clr = ["red", "blue", "green", "magenta"]
-    #         for i in range(self.vdim):
-    #             (self.lines_SP_model[i],) = self.ax[0].plot(
-    #                 k1.cpu().detach().numpy(),
-    #                 self.kF_model_vals[i],
-    #                 color=clr[i],
-    #                 label=r"$F{0:d}$ model".format(i + 1),
-    #             )  #'o-'
+            # Subplot 1: One-point spectra
+            self.ax[0].set_title("One-point spectra")
+            self.lines_SP_model = [None] * (self.vdim + 1)
+            self.lines_SP_data = [None] * (self.vdim + 1)
+            clr = ["red", "blue", "green", "magenta"]
+            for i in range(self.vdim):
+                (self.lines_SP_model[i],) = self.ax[0].plot(
+                    k1.cpu().detach().numpy(),
+                    self.kF_model_vals[i],
+                    color=clr[i],
+                    label=r"$F{0:d}$ model".format(i + 1),
+                )  #'o-'
 
-    #         print(
-    #             f"k1.size: {k1.size()}   self.kF_data_vals: {self.kF_data_vals.size()}"
-    #         )
+            print(
+                f"k1.size: {k1.size()}   self.kF_data_vals: {self.kF_data_vals.size()}"
+            )
 
-    #         s = self.kF_data_vals.shape[0]
+            s = self.kF_data_vals.shape[0]
 
-    #         for i in range(self.vdim):
-    #             (self.lines_SP_data[i],) = self.ax[0].plot(
-    #                 k1.cpu().detach().numpy(),
-    #                 self.kF_data_vals.view(4, s // 4)[i].cpu().detach().numpy(),
-    #                 "--",
-    #                 color=clr[i],
-    #                 label=r"$F{0:d}$ data".format(i + 1),
-    #             )
-    #         if 3 in self.curves:
-    #             (self.lines_SP_model[self.vdim],) = self.ax[0].plot(
-    #                 k1.cpu().detach().numpy(),
-    #                 -self.kF_model_vals[self.vdim],
-    #                 "o-",
-    #                 color=clr[3],
-    #                 label=r"$-F_{13}$ model",
-    #             )
-    #             (self.lines_SP_data[self.vdim],) = self.ax[0].plot(
-    #                 k1.cpu().detach().numpy(),
-    #                 -self.kF_data_vals.view(4, s // 4)[self.vdim]
-    #                 .cpu()
-    #                 .detach()
-    #                 .numpy(),
-    #                 "--",
-    #                 color=clr[3],
-    #                 label=r"$-F_{13}$ data",
-    #             )
-    #         self.ax[0].legend()
-    #         self.ax[0].set_xscale("log")
-    #         self.ax[0].set_yscale("log")
-    #         self.ax[0].set_xlabel(r"$k_1$")
-    #         self.ax[0].set_ylabel(r"$k_1 F_i /u_*^2$")
-    #         self.ax[0].grid(which="both")
-    #         # self.ax[0].set_aspect(1/2)
+            for i in range(self.vdim):
+                (self.lines_SP_data[i],) = self.ax[0].plot(
+                    k1.cpu().detach().numpy(),
+                    self.kF_data_vals.view(4, s // 4)[i].cpu().detach().numpy(),
+                    "--",
+                    color=clr[i],
+                    label=r"$F{0:d}$ data".format(i + 1),
+                )
+            if 3 in self.curves:
+                (self.lines_SP_model[self.vdim],) = self.ax[0].plot(
+                    k1.cpu().detach().numpy(),
+                    -self.kF_model_vals[self.vdim],
+                    "o-",
+                    color=clr[3],
+                    label=r"$-F_{13}$ model",
+                )
+                (self.lines_SP_data[self.vdim],) = self.ax[0].plot(
+                    k1.cpu().detach().numpy(),
+                    -self.kF_data_vals.view(4, s // 4)[self.vdim]
+                    .cpu()
+                    .detach()
+                    .numpy(),
+                    "--",
+                    color=clr[3],
+                    label=r"$-F_{13}$ data",
+                )
+            self.ax[0].legend()
+            self.ax[0].set_xscale("log")
+            self.ax[0].set_yscale("log")
+            self.ax[0].set_xlabel(r"$k_1$")
+            self.ax[0].set_ylabel(r"$k_1 F_i /u_*^2$")
+            self.ax[0].grid(which="both")
+            # self.ax[0].set_aspect(1/2)
 
-    #         if plt_tau:
-    #             # Subplot 2: Eddy Lifetime
-    #             self.ax[1].set_title("Eddy lifetime")
-    #             self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
-    #             self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
-    #             self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
-    #             self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
-    #             # self.tau_model1m= self.OPS.EddyLifetime(-k_1).detach().numpy()
-    #             # self.tau_model2m= self.OPS.EddyLifetime(-k_2).detach().numpy()
-    #             # self.tau_model3m= self.OPS.EddyLifetime(-k_3).detach().numpy()
-    #             self.tau_ref = (
-    #                 3.9 * MannEddyLifetime(0.59 * k_gd).cpu().detach().numpy()
-    #             )
-    #             (self.lines_LT_model1,) = self.ax[1].plot(
-    #                 k_gd.cpu().detach().numpy(),
-    #                 self.tau_model1,
-    #                 "-",
-    #                 label=r"$\tau_{model}(k_1)$",
-    #             )
-    #             (self.lines_LT_model2,) = self.ax[1].plot(
-    #                 k_gd.cpu().detach().numpy(),
-    #                 self.tau_model2,
-    #                 "-",
-    #                 label=r"$\tau_{model}(k_2)$",
-    #             )
-    #             (self.lines_LT_model3,) = self.ax[1].plot(
-    #                 k_gd.cpu().detach().numpy(),
-    #                 self.tau_model3,
-    #                 "-",
-    #                 label=r"$\tau_{model}(k_3)$",
-    #             )
-    #             (self.lines_LT_model4,) = self.ax[1].plot(
-    #                 k_gd.cpu().detach().numpy(),
-    #                 self.tau_model4,
-    #                 "-",
-    #                 label=r"$\tau_{model}(k,k,k)$",
-    #             )
-    #             # self.lines_LT_model1m, = self.ax[1].plot(k_gd, self.tau_model1m, '-', label=r'$\tau_{model}(-k_1)$')
-    #             # self.lines_LT_model2m, = self.ax[1].plot(k_gd, self.tau_model2m, '-', label=r'$\tau_{model}(-k_2)$')
-    #             # self.lines_LT_model3m, = self.ax[1].plot(k_gd, self.tau_model3m, '-', label=r'$\tau_{model}(-k_3)$')
-    #             (self.lines_LT_ref,) = self.ax[1].plot(
-    #                 k_gd.cpu().detach().numpy(),
-    #                 self.tau_ref,
-    #                 "--",
-    #                 label=r"$\tau_{ref}=$Mann",
-    #             )
-    #             self.ax[1].legend()
-    #             self.ax[1].set_xscale("log")
-    #             self.ax[1].set_yscale("log")
-    #             self.ax[1].set_xlabel(r"$k$")
-    #             self.ax[1].set_ylabel(r"$\tau$")
-    #             self.ax[1].grid(which="both")
+            if plt_tau:
+                # Subplot 2: Eddy Lifetime
+                self.ax[1].set_title("Eddy lifetime")
+                self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
+                self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
+                self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
+                self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
+                # self.tau_model1m= self.OPS.EddyLifetime(-k_1).detach().numpy()
+                # self.tau_model2m= self.OPS.EddyLifetime(-k_2).detach().numpy()
+                # self.tau_model3m= self.OPS.EddyLifetime(-k_3).detach().numpy()
+                self.tau_ref = (
+                    3.9 * MannEddyLifetime(0.59 * k_gd).cpu().detach().numpy()
+                )
+                (self.lines_LT_model1,) = self.ax[1].plot(
+                    k_gd.cpu().detach().numpy(),
+                    self.tau_model1,
+                    "-",
+                    label=r"$\tau_{model}(k_1)$",
+                )
+                (self.lines_LT_model2,) = self.ax[1].plot(
+                    k_gd.cpu().detach().numpy(),
+                    self.tau_model2,
+                    "-",
+                    label=r"$\tau_{model}(k_2)$",
+                )
+                (self.lines_LT_model3,) = self.ax[1].plot(
+                    k_gd.cpu().detach().numpy(),
+                    self.tau_model3,
+                    "-",
+                    label=r"$\tau_{model}(k_3)$",
+                )
+                (self.lines_LT_model4,) = self.ax[1].plot(
+                    k_gd.cpu().detach().numpy(),
+                    self.tau_model4,
+                    "-",
+                    label=r"$\tau_{model}(k,k,k)$",
+                )
+                # self.lines_LT_model1m, = self.ax[1].plot(k_gd, self.tau_model1m, '-', label=r'$\tau_{model}(-k_1)$')
+                # self.lines_LT_model2m, = self.ax[1].plot(k_gd, self.tau_model2m, '-', label=r'$\tau_{model}(-k_2)$')
+                # self.lines_LT_model3m, = self.ax[1].plot(k_gd, self.tau_model3m, '-', label=r'$\tau_{model}(-k_3)$')
+                (self.lines_LT_ref,) = self.ax[1].plot(
+                    k_gd.cpu().detach().numpy(),
+                    self.tau_ref,
+                    "--",
+                    label=r"$\tau_{ref}=$Mann",
+                )
+                self.ax[1].legend()
+                self.ax[1].set_xscale("log")
+                self.ax[1].set_yscale("log")
+                self.ax[1].set_xlabel(r"$k$")
+                self.ax[1].set_ylabel(r"$\tau$")
+                self.ax[1].grid(which="both")
 
-    #             # plt.show()
+                # plt.show()
 
-    #         # TODO clean up plotting things?
-    #         self.fig.canvas.draw()
-    #         # TODO: comment next out if to save
-    #         self.fig.canvas.flush_events()
+            # TODO clean up plotting things?
+            self.fig.canvas.draw()
+            # TODO: comment next out if to save
+            self.fig.canvas.flush_events()
 
-    #     for i in range(self.vdim):
-    #         self.lines_SP_model[i].set_ydata(self.kF_model_vals[i])
-    #     if 3 in self.curves:
-    #         self.lines_SP_model[self.vdim].set_ydata(-self.kF_model_vals[self.vdim])
-    #     # self.ax[0].set_aspect(1)
+        for i in range(self.vdim):
+            self.lines_SP_model[i].set_ydata(self.kF_model_vals[i])
+        if 3 in self.curves:
+            self.lines_SP_model[self.vdim].set_ydata(-self.kF_model_vals[self.vdim])
+        # self.ax[0].set_aspect(1)
 
-    #     if plt_tau:
-    #         self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
-    #         self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
-    #         self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
-    #         self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
-    #         # self.tau_model1m= self.OPS.EddyLifetime(-k_1).detach().numpy()
-    #         # self.tau_model2m= self.OPS.EddyLifetime(-k_2).detach().numpy()
-    #         # self.tau_model3m= self.OPS.EddyLifetime(-k_3).detach().numpy()
-    #         self.lines_LT_model1.set_ydata(self.tau_model1)
-    #         self.lines_LT_model2.set_ydata(self.tau_model2)
-    #         self.lines_LT_model3.set_ydata(self.tau_model3)
-    #         self.lines_LT_model4.set_ydata(self.tau_model4)
-    #         # self.lines_LT_model1m.set_ydata(self.tau_model1m)
-    #         # self.lines_LT_model2m.set_ydata(self.tau_model2m)
-    #         # self.lines_LT_model3m.set_ydata(self.tau_model3m)
+        if plt_tau:
+            self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
+            self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
+            self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
+            self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
+            # self.tau_model1m= self.OPS.EddyLifetime(-k_1).detach().numpy()
+            # self.tau_model2m= self.OPS.EddyLifetime(-k_2).detach().numpy()
+            # self.tau_model3m= self.OPS.EddyLifetime(-k_3).detach().numpy()
+            self.lines_LT_model1.set_ydata(self.tau_model1)
+            self.lines_LT_model2.set_ydata(self.tau_model2)
+            self.lines_LT_model3.set_ydata(self.tau_model3)
+            self.lines_LT_model4.set_ydata(self.tau_model4)
+            # self.lines_LT_model1m.set_ydata(self.tau_model1m)
+            # self.lines_LT_model2m.set_ydata(self.tau_model2m)
+            # self.lines_LT_model3m.set_ydata(self.tau_model3m)
 
-    #         # plt.show()
+            # plt.show()
 
-    #     if plt_dynamic:
-    #         for ax in self.ax:
-    #             ax.relim()
-    #             ax.autoscale_view()
-    #         self.fig.canvas.draw()
-    #         self.fig.canvas.flush_events()
-    #     else:
-    #         pass
-    #         # TODO: uncomment next!
-    #         # print("="*30)
-    #         # print("SAVING FINAL SOLUTION RESULTS TO " + f'{self.output_directory+"/" + self.activfuncstr +"final_solution.png"}')
+        if plt_dynamic:
+            for ax in self.ax:
+                ax.relim()
+                ax.autoscale_view()
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
+        else:
+            pass
+            # TODO: uncomment next!
+            # print("="*30)
+            # print("SAVING FINAL SOLUTION RESULTS TO " + f'{self.output_directory+"/" + self.activfuncstr +"final_solution.png"}')
 
-    #         # self.fig.savefig(self.output_directory+"/" + self.activfuncstr + "final_solution.png", format='png', dpi=100)
+            # self.fig.savefig(self.output_directory+"/" + self.activfuncstr + "final_solution.png", format='png', dpi=100)
 
-    #         # plt.savefig(self.output_directory.resolve()+'Final_solution.png',format='png',dpi=100)
+            # plt.savefig(self.output_directory.resolve()+'Final_solution.png',format='png',dpi=100)
 
-    #     # self.fig.savefig(self.output_directory, format='png', dpi=100)
-    #     # self.fig.savefig(self.output_directory.resolve()+"final_solution.png", format='png', dpi=100)
+        # self.fig.savefig(self.output_directory, format='png', dpi=100)
+        # self.fig.savefig(self.output_directory.resolve()+"final_solution.png", format='png', dpi=100)
