@@ -4,7 +4,7 @@ Spectral Coherence module
 TODO -- move the EddyLifetime and PowerSpectra into Enums s.t. I can get rid of kwargs
 """
 
-from typing import Union
+from typing import Union, Optional
 
 import torch
 import torch.nn as nn
@@ -14,22 +14,31 @@ from drdmannturb.shared.common import MannEddyLifetime, VKEnergySpectrum
 from drdmannturb.power_spectra_rdt import PowerSpectraRDT
 from drdmannturb.nn_modules import TauNet
 
+from drdmannturb.shared.enums import EddyLifetimeType, PowerSpectraType
+from drdmannturb.shared.parameters import NNParameters
+
 
 class SpectralCoherence(nn.Module):
     """
     Spectral Coherence class
     """
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        eddy_lifetime: EddyLifetimeType = EddyLifetimeType.TWOTHIRD,
+        power_spectra: PowerSpectraType = PowerSpectraType.RDT,
+        nn_params: Optional[NNParameters] = None,
+        **kwargs
+    ):
         super(SpectralCoherence, self).__init__()
 
-        self.type_EddyLifetime = kwargs.get("type_EddyLifetime", "TwoThird")
-        self.type_PowerSpectra = kwargs.get("type_PowerSpectra", "RDT")
+        self.type_EddyLifetime = eddy_lifetime
+        self.type_PowerSpectra = power_spectra
 
         self._init_grids()
         self._init_parameters()
 
-        if self.type_EddyLifetime == "tauNet":
+        if self.type_EddyLifetime == EddyLifetimeType.TAUNET:
             self.tauNet = TauNet(**kwargs)
 
     def forward(
