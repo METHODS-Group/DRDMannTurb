@@ -16,7 +16,7 @@ import numpy as np
 from pyevtk.hl import imageToVTK
 from tqdm import tqdm
 
-from drdmannturb.Calibration import CalibrationProblem
+from drdmannturb.calibration import CalibrationProblem
 from drdmannturb.OnePointSpectra import OnePointSpectra
 from drdmannturb.WindGeneration.CovarianceKernels import (
     MannCovariance,

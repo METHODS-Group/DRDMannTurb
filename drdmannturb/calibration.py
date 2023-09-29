@@ -1,16 +1,32 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import matplotlib.pyplot as plt
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
-from drdmannturb.shared.common import MannEddyLifetime
 from drdmannturb.one_point_spectra import OnePointSpectra
+from drdmannturb.shared.common import MannEddyLifetime
 from drdmannturb.spectral_coherence import SpectralCoherence
 
 
-def generic_loss(observed, actual, pen: Optional[float] = None):
-    """ """
+def generic_loss(observed: Union[torch.Tensor, float], actual: Union[torch.Tensor, float], pen: Optional[float] = None) -> torch.Tensor:
+    """
+    Generic loss function implementation
+
+    Parameters
+    ----------
+    observed : torch.Tensor
+        The observed value
+    actual : torch.Tensor
+        The expected value
+    pen : Optional[float], optional
+        Penalization term, if any, by default None
+
+    Returns
+    -------
+    torch.Tensor
+        Loss function evaluation
+    """
 
     loss = 0.5 * torch.mean((torch.log(torch.abs(observed / actual))) ** 2)
 

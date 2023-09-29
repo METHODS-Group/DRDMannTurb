@@ -5,8 +5,8 @@ and interpass.
 
 __all__ = ["NumericalParameters", "LossParameters", "NNParameters"]
 
-from typing import List
 from dataclasses import dataclass
+from typing import List
 
 import numpy as np
 
@@ -93,6 +93,8 @@ class NNParameters:
 
     nlayers: int = 2
     hidden_layer_sizes: List[int] = [10, 10]
+
+    activation: List[str] = ["relu", "relu"]
 
     inlayer: int = 3
     hlayer: int = 3

@@ -8,7 +8,6 @@ from typing import Any, Callable, List, Union
 import torch
 import torch.nn as nn
 
-
 """
 Learnable functions
 """
@@ -271,7 +270,7 @@ class ResNet(nn.Module):
         return self._forward_impl(x)
 
 
-class tauResNet(nn.Module):
+class TauResNet(nn.Module):
     """
     tauResNet implementation
 
@@ -352,7 +351,7 @@ class tauResNet(nn.Module):
         return tau
 
 
-class tauNet(nn.Module):
+class TauNet(nn.Module):
     """
     tauNet implementation
 
@@ -432,9 +431,10 @@ class tauNet(nn.Module):
         return tau
 
 
-class customNet(nn.Module):
+class CustomNet(nn.Module):
     """
-    customNet implementation. For this
+    CustomNet implementation. Consists of a CustomMLP and
+    Rational module.
     """
 
     def __init__(

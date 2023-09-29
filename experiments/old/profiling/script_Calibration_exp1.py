@@ -21,9 +21,9 @@ from time import time
 from pylab import *
 from torch.nn import parameter
 
-from drdmannturb.Calibration import CalibrationProblem
+from drdmannturb.calibration import CalibrationProblem
 from drdmannturb.common import *
-from drdmannturb.DataGenerator import OnePointSpectraDataGenerator
+from drdmannturb.data_generator import OnePointSpectraDataGenerator
 =======
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import *

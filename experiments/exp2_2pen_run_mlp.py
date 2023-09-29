@@ -14,9 +14,9 @@ import torch.nn as nn
 from pylab import *
 from torch.nn import parameter
 
-from drdmannturb.Calibration import CalibrationProblem
+from drdmannturb.calibration import CalibrationProblem
 from drdmannturb.common import *
-from drdmannturb.DataGenerator import OnePointSpectraDataGenerator
+from drdmannturb.data_generator import OnePointSpectraDataGenerator
 
 # v2: torch.set_default_device('cuda:0')
 if torch.cuda.is_available():

@@ -1,3 +1,5 @@
+# Imports
+
 import sys
 from math import log
 from time import time
@@ -7,8 +9,10 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 
-from drdmannturb.Calibration import CalibrationProblem
-from drdmannturb.DataGenerator import OnePointSpectraDataGenerator
+from drdmannturb.calibration import CalibrationProblem
+from drdmannturb.data_generator import OnePointSpectraDataGenerator
+
+# Quality of life things
 
 sys.path.append("../")
 
@@ -18,6 +22,7 @@ plt.rc("font", family="serif")
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
+# Driver function
 
 def driver():
     start = time()
@@ -58,5 +63,6 @@ def driver():
     print(f"Elapsed time : {time() - start}")
 
 
+# Script
 if __name__ == "__main__":
     driver()

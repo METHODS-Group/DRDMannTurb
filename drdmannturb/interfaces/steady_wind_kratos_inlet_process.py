@@ -21,12 +21,7 @@ def isclose(a, b, rel_tol=1e-9, abs_tol=0.0):
 from math import log
 
 from GaussianRandomField import *
-from KratosMultiphysics import (
-    TIME,
-    VELOCITY_X,
-    VELOCITY_Y,
-    VELOCITY_Z,
-)
+from KratosMultiphysics import TIME, VELOCITY_X, VELOCITY_Y, VELOCITY_Z
 
 ##DONE: added support for power law
 ##DONE: read all mean profile parameters from json file

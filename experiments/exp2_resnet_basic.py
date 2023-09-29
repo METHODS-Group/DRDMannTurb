@@ -7,9 +7,9 @@ import constants.consts_exp2_resnet as consts_resnet
 import matplotlib.pyplot as plt
 import torch
 
-from drdmannturb.Calibration import CalibrationProblem
+from drdmannturb.calibration import CalibrationProblem
 from drdmannturb.common import *
-from drdmannturb.DataGenerator import OnePointSpectraDataGenerator
+from drdmannturb.data_generator import OnePointSpectraDataGenerator
 
 # v2: torch.set_default_device('cuda:0')
 if torch.cuda.is_available():

@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 import torch
 <<<<<<< HEAD
 
-from drdmannturb.Calibration import CalibrationProblem
+from drdmannturb.calibration import CalibrationProblem
 from drdmannturb.common import *
-from drdmannturb.DataGenerator import OnePointSpectraDataGenerator
+from drdmannturb.data_generator import OnePointSpectraDataGenerator
 =======
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import *

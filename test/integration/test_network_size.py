@@ -14,8 +14,8 @@ from configurations_util.taunet_noiseless_synthetic import (
     sigma,
 )
 
-from drdmannturb.Calibration import CalibrationProblem
-from drdmannturb.DataGenerator import OnePointSpectraDataGenerator
+from drdmannturb.calibration import CalibrationProblem
+from drdmannturb.data_generator import OnePointSpectraDataGenerator
 
 
 def test_network_paramcount():

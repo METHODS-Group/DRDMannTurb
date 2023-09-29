@@ -2,8 +2,9 @@
 This modules implements built-in plotting utilities for ease of use
 """
 
-import matplotlib.pyplot as plt
 from typing import Any
+
+import matplotlib.pyplot as plt
 
 
 class PlotSpectrum:
