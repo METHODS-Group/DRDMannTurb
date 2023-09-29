@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 <<<<<<< HEAD
 
-from drdmannturb.DataGenerator import OnePointSpectraDataGenerator
+from drdmannturb.data_generator import OnePointSpectraDataGenerator
 =======
 from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
 >>>>>>> af53bc6372a2a2bdc7e4ce595385e73ece68a031

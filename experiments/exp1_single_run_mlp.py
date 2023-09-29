@@ -1,4 +1,5 @@
-import os
+# Imports
+
 import sys
 from math import log
 from time import time
@@ -8,20 +9,20 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 
-from drdmannturb.Calibration import CalibrationProblem
-from drdmannturb.common import MannEddyLifetime
-from drdmannturb.DataGenerator import OnePointSpectraDataGenerator
+from drdmannturb.calibration import CalibrationProblem
+from drdmannturb.data_generator import OnePointSpectraDataGenerator
+
+# Quality of life things
 
 sys.path.append("../")
 
 plt.rc("text", usetex=True)
 plt.rc("font", family="serif")
-os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
-# v2: torch.set_default_device('cuda:0')
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
+# Driver function
 
 def driver():
     start = time()
@@ -45,18 +46,12 @@ def driver():
     DataPoints = [(k1, 1) for k1 in k1_data_pts]
     Data = OnePointSpectraDataGenerator(DataPoints=DataPoints, **config).Data
 
-    DataValues = Data[1]
+    pb.eval(k1_data_pts)
 
-    IECtau = MannEddyLifetime(k1_data_pts * consts_exp1.L)
-    kF = pb.eval(k1_data_pts)
-
-    opt_params = pb.calibrate(
-        Data=Data, **config
-    )  # , OptimizerClass=torch.optim.RMSprop)
+    pb.calibrate(Data=Data, **config)
 
     plt.figure()
 
-    # plt.plot( pb.loss_history_total, label="Total Loss History")
     plt.plot(pb.loss_history_epochs, "o-", label="Epochs Loss History")
     plt.legend()
     plt.xlabel("Epoch Number")
@@ -65,15 +60,9 @@ def driver():
 
     plt.show()
 
-    #        plt.savefig(config['output_folder']+"/" + str(activ_list) + "train_history.png", format='png', dpi=100)
-
-    # print("+"*30)
-    # print(f"Successfully finished combination {activ_list}")
-
     print(f"Elapsed time : {time() - start}")
 
 
+# Script
 if __name__ == "__main__":
-    from time import time
-
     driver()

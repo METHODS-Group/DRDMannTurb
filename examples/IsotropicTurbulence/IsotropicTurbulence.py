@@ -9,7 +9,7 @@ import numpy as np
 from pyevtk.hl import imageToVTK
 from tqdm import tqdm
 
-from drdmannturb.Calibration import CalibrationProblem
+from drdmannturb.calibration import CalibrationProblem
 from drdmannturb.OnePointSpectra import OnePointSpectra
 from drdmannturb.WindGeneration.CovarianceKernels import (
     MannCovariance,
@@ -17,6 +17,7 @@ from drdmannturb.WindGeneration.CovarianceKernels import (
 )
 from drdmannturb.WindGeneration.GaussianRandomField import *
 from drdmannturb.WindGeneration.NeuralNetCovariance import NNCovariance
+
 
 class GenerateWindTurbulence:
     def __init__(
@@ -153,6 +154,7 @@ class GenerateWindTurbulence:
 
         return wind
 
+
 ############################################################################
 ############################################################################
 
@@ -167,14 +169,13 @@ if __name__ == "__main__":
     grid_levels = np.array([5, 5, 5])
     seed = None  # 9000
 
-
     wind_turbulence = GenerateWindTurbulence(
         friction_velocity,
         reference_height,
         grid_dimensions,
         grid_levels,
         seed,
-        model='Mann'
+        model="Mann",
     )
 
     for _ in range(4):
@@ -185,7 +186,6 @@ if __name__ == "__main__":
         sd = np.sqrt(np.mean(wind_field**2))
         wind_field = wind_field / sd
         wind_field *= 4.26  # rescale to match Mann model
-
 
     JCSS_law = (
         lambda z, z_0, delta, u_ast: u_ast

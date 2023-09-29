@@ -1,9 +1,5 @@
 import os
-import pickle
 import sys
-from itertools import product
-from math import log
-from pathlib import Path
 from time import time
 
 import constants.consts_exp1 as consts_exp1
@@ -12,9 +8,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from drdmannturb.Calibration import CalibrationProblem
+from drdmannturb.calibration import CalibrationProblem
 from drdmannturb.common import *
-from drdmannturb.DataGenerator import OnePointSpectraDataGenerator
+from drdmannturb.data_generator import OnePointSpectraDataGenerator
 
 # v2: torch.set_default_device('cuda:0')
 
@@ -41,9 +37,9 @@ def driver():
     pb = CalibrationProblem(**config)
     parameters = pb.parameters
     parameters[:3] = [
-        log(consts_exp1.L),
-        log(consts_exp1.Gamma),
-        log(consts_exp1.sigma),
+        np.log(consts_exp1.L),
+        np.log(consts_exp1.Gamma),
+        np.log(consts_exp1.sigma),
     ]  # All of these parameters are positive
     # so we can train the NN for the log of these parameters.
     pb.parameters = parameters[: len(pb.parameters)]

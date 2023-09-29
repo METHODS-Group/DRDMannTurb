@@ -1,46 +1,61 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
-from .common import MannEddyLifetime
-from .one_point_spectra import OnePointSpectra
-from .spectral_coherence import SpectralCoherence
-
-plt.rc("text", usetex=True)
-plt.rc("font", family="serif")
+from drdmannturb.one_point_spectra import OnePointSpectra
+from drdmannturb.shared.common import MannEddyLifetime
+from drdmannturb.spectral_coherence import SpectralCoherence
 
 
-class LossFunc:
+def generic_loss(observed: Union[torch.Tensor, float], actual: Union[torch.Tensor, float], pen: Optional[float] = None) -> torch.Tensor:
     """
-    LossFunc calculation
+    Generic loss function implementation
+
+    Parameters
+    ----------
+    observed : torch.Tensor
+        The observed value
+    actual : torch.Tensor
+        The expected value
+    pen : Optional[float], optional
+        Penalization term, if any, by default None
+
+    Returns
+    -------
+    torch.Tensor
+        Loss function evaluation
     """
 
-    def __init__(self, **kwargs):
-        pass
+    loss = 0.5 * torch.mean((torch.log(torch.abs(observed / actual))) ** 2)
 
-    def __call__(self, model, target, pen=None):
-        # loss = 0.5*torch.mean( (model * torch.log(model.abs()) - target * torch.log(target.abs()) )**2 )
-        loss = 0.5 * torch.mean((torch.log(torch.abs(model / target))) ** 2)
-        # loss = 0.5*torch.mean( ( (model-target)/(1.e-6 + target) )**2 )
-        if pen:
-            loss = loss + pen
-        return loss
+    if pen is not None:
+        loss += pen
 
-
-"""
-==================================================================================================================
-Calibration problem class
-==================================================================================================================
-"""
+    return loss
 
 
 class CalibrationProblem:
-    def __init__(self, **kwargs: Dict[str, Any]):
+    """
+    Defines a calibration problem
+    """
+
+    def __init__(
+        self, activations: list[str] = ["relu", "relu"], **kwargs: Dict[str, Any]
+    ):
+        """
+        Constructor for a CalibrationProblem
+
+        Parameters
+        ----------
+        activations : list[str], optional
+            _description_, by default ["relu", "relu"]
+        """
+
         # stringify the activation functions used; for manual bash only
-        self.activfuncstr = str(kwargs.get("activations", ["relu", "relu"]))
+        self.activfuncstr = str(activations)
         print(self.activfuncstr)
 
         self.input_size = kwargs.get("input_size", 3)
@@ -92,21 +107,11 @@ class CalibrationProblem:
             self.noise_magnitude * torch.randn(*self.parameters.shape),
             dtype=torch.float64,
         )
-        # self.update_parameters(noise**2)
         vector_to_parameters(noise.abs(), self.OPS.parameters())
-        try:
-            vector_to_parameters(noise, self.OPS.tauNet.parameters())
-        except:
-            pass
-        try:
-            vector_to_parameters(noise.abs(), self.OPS.Corrector.parameters())
-        except:
-            pass
 
-    # =========================================
+        vector_to_parameters(noise, self.OPS.tauNet.parameters())
 
-    def __call__(self, k1):
-        return self.eval(k1)
+        vector_to_parameters(noise.abs(), self.OPS.Corrector.parameters())
 
     def eval(self, k1):
         Input = self.format_input(k1)
@@ -159,16 +164,22 @@ class CalibrationProblem:
     # Calibration method
     # -----------------------------------------
 
-    def calibrate(self, model_magnitude_order=1, **kwargs):
+    def calibrate(
+        self,
+        data: tuple[Any, Any],
+        model_magnitude_order=1,
+        optimizer_class: Any = torch.optim.LBFGS,
+        **kwargs,
+    ):
         print("\nCalibrating MannNet...")
 
-        DataPoints, DataValues = kwargs.get("Data")
-        OptimizerClass = kwargs.get("OptimizerClass", torch.optim.LBFGS)
+        DataPoints, DataValues = data
+        OptimizerClass = optimizer_class
         lr = kwargs.get("lr", 1e-1)
         tol = kwargs.get("tol", 1e-3)
         nepochs = kwargs.get("nepochs", 100)
         self.plot_loss_optim = kwargs.get("plot_loss_wolfe", False)
-        show = kwargs.get("show", False)
+        kwargs.get("show", False)
         self.curves = kwargs.get("curves", [0, 1, 2, 3])
 
         alpha_pen = kwargs.get("penalty", 0.0)
@@ -201,8 +212,7 @@ class CalibrationProblem:
 
         ### The case with the coherence
         ### formatting the data
-        ### DataPoints_coh = (k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts) - tuple of 3 one-dimensional arrays (axes f, Delta_y, Delatz)
-        ### DataValues_coh - 3D array of coherence values at the data points
+
         if self.fg_coherence:
             DataPoints_coh, DataValues_coh = kwargs.get("Data_Coherence")
             k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts = DataPoints_coh
@@ -213,8 +223,7 @@ class CalibrationProblem:
             y_coh_data = torch.zeros_like(y_coh)
             y_coh_data[:] = DataValues_coh
 
-        self.loss_fn = LossFunc()
-        # self.loss_fn = torch.nn.MSELoss(reduction='mean')
+        self.loss_fn = generic_loss
 
         wolfe_iter = kwargs.get("wolfe_iter", 20)
         ##############################
@@ -234,13 +243,12 @@ class CalibrationProblem:
         #        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=nepochs)
 
-        softplus = torch.nn.Softplus()
+        torch.nn.Softplus()
         logk1 = torch.log(self.k1_data_pts).detach()
         h1 = torch.diff(logk1)
         h2 = torch.diff(0.5 * (logk1[:-1] + logk1[1:]))
-        h3 = torch.diff(0.5 * (self.k1_data_pts[:-1] + self.k1_data_pts[1:]))
-        h4 = torch.diff(self.k1_data_pts)
-        D = logk1.max() - logk1.min()
+        torch.diff(0.5 * (self.k1_data_pts[:-1] + self.k1_data_pts[1:]))
+        torch.diff(self.k1_data_pts)
 
         def PenTerm(y):
             """
@@ -425,7 +433,7 @@ class CalibrationProblem:
     def num_trainable_params(self):
         """Computes the number of trainable network parameters
             in the underlying model. OPS must be set to either
-            tauNet, customMLP, or tauResNet.
+            TauNet, customMLP, or tauResNet.
 
         Returns
         -------
@@ -435,20 +443,20 @@ class CalibrationProblem:
         Raises
         ------
         ValueError
-            If the OPS was not initialized to one of tauNet, customMLP, or tauResNet.
+            If the OPS was not initialized to one of TauNet, customMLP, or tauResNet.
         """
-        if self.OPS.type_EddyLifetime not in ["tauNet", "customMLP", "tauResNet"]:
+        if self.OPS.type_EddyLifetime not in ["TauNet", "customMLP", "tauResNet"]:
             raise ValueError(
-                "Not using trainable model for approximation, must be tauNet, customMLP, or tauResNet"
+                "Not using trainable model for approximation, must be TauNet, customMLP, or tauResNet"
             )
 
-        return sum(p.numel() for p in self.OPS.tauNet.parameters())
+        return sum(p.numel() for p in self.OPS.TauNet.parameters())
 
     def eval_trainable_magnitude(self, ord=1):
         """Evaluates the magnitude (or other norm) of the
             trainable parameters in the model.
 
-            NOTE: OPS must be set to one of tauNet, customMLP, or tauResNet.
+            NOTE: OPS must be set to one of TauNet, customMLP, or tauResNet.
 
         Parameters
         ----------
@@ -458,12 +466,12 @@ class CalibrationProblem:
         Raises
         ------
         ValueError
-            If the OPS was not initialized to one of tauNet, customMLP, or tauResNet.
+            If the OPS was not initialized to one of TauNet, customMLP, or tauResNet.
 
         """
         if self.OPS.type_EddyLifetime not in ["tauNet", "customMLP", "tauResNet"]:
             raise ValueError(
-                "Not using trainable model for approximation, must be tauNet, customMLP, or tauResNet"
+                "Not using trainable model for approximation, must be TauNet, customMLP, or tauResNet"
             )
 
         return torch.norm(
@@ -518,7 +526,7 @@ class CalibrationProblem:
             )
 
         k1 = self.k1_data_pts
-        k = torch.stack([0 * k1, k1, 0 * k1], dim=-1)
+        torch.stack([0 * k1, k1, 0 * k1], dim=-1)
 
         plt_tau = kwargs.get("plt_tau", True)
         if plt_tau:

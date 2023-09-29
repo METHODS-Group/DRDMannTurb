@@ -9,9 +9,9 @@ import torch
 import torch.nn as nn
 from scipy.interpolate import CubicSpline
 
-from drdmannturb.Calibration import CalibrationProblem
+from drdmannturb.calibration import CalibrationProblem
 from drdmannturb.common import MannEddyLifetime
-from drdmannturb.DataGenerator import OnePointSpectraDataGenerator
+from drdmannturb.data_generator import OnePointSpectraDataGenerator
 
 plt.style.use("bmh")
 
@@ -55,7 +55,6 @@ Uref = CONSTANTS_CONFIG["Uref"]
 L = 70
 GAMMA = 3.7
 SIGMA = 3.2
-
 
 
 """

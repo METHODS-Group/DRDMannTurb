@@ -3,26 +3,43 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
+<<<<<<< HEAD
+from drdmannturb.nn_modules import CustomNet, TauNet, TauResNet
+from drdmannturb.power_spectra_rdt import PowerSpectraRDT
+from drdmannturb.shared.common import MannEddyLifetime, VKEnergySpectrum
+from drdmannturb.shared.enums import EddyLifetimeType, PowerSpectraType
+from drdmannturb.shared.parameters import NNParameters
+=======
 from .common import MannEddyLifetime, VKEnergySpectrum
 from .power_spectra_rdt import PowerSpectraRDT
 from .tauNet import customNet, tauNet, tauResNet
+>>>>>>> 3b3ab6c83f04375394478296acf5e9e0a5bf0c54
 
 
 class OnePointSpectra(nn.Module):
-    def __init__(self, **kwargs):
+    """
+    One point spectra implementation
+    """
+
+    def __init__(
+        self,
+        type_eddy_lifetime: EddyLifetimeType = EddyLifetimeType.TWOTHIRD,
+        type_power_spectra: PowerSpectraType = PowerSpectraType.RDT,
+        nn_parameters: NNParameters = NNParameters(),
+    ):
         super(OnePointSpectra, self).__init__()
 
-        self.type_EddyLifetime = kwargs.get("type_EddyLifetime", "TwoThird")
-        self.type_PowerSpectra = kwargs.get("type_PowerSpectra", "RDT")
+        self.type_EddyLifetime = type_eddy_lifetime
+        self.type_PowerSpectra = type_power_spectra
 
-        ### k2 grid
+        # k2 grid
         p1, p2, N = -3, 3, 100
         grid_zero = torch.tensor([0], dtype=torch.float64)
         grid_plus = torch.logspace(p1, p2, N, dtype=torch.float64)
         grid_minus = -torch.flip(grid_plus, dims=[0])
         self.grid_k2 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
 
-        ### k3 grid
+        # k3 grid
         p1, p2, N = -3, 3, 100
         grid_zero = torch.tensor([0], dtype=torch.float64)
         grid_plus = torch.logspace(p1, p2, N, dtype=torch.float64)
@@ -35,14 +52,23 @@ class OnePointSpectra(nn.Module):
         self.logTimeScale = nn.Parameter(torch.tensor(0, dtype=torch.float64))
         self.logMagnitude = nn.Parameter(torch.tensor(0, dtype=torch.float64))
 
-        if self.type_EddyLifetime == "tauNet":
-            self.tauNet = tauNet(**kwargs)
-        elif self.type_EddyLifetime == "customMLP":
-            self.tauNet = customNet(**kwargs)
-        elif self.type_EddyLifetime == "tauResNet":
-            self.tauNet = tauResNet(**kwargs)
+        if self.type_EddyLifetime == EddyLifetimeType.TAUNET:
+            self.tauNet = TauNet(nn_parameters)
+            # self.tauNet = tauNet(n_layers, hidden_layer_size, n_modes, learn_nu)
 
-    ###-------------------------------------------
+        elif self.type_EddyLifetime == EddyLifetimeType.CUSTOMMLP:
+            """
+            Requires n_layers, activations, n_modes, learn_nu
+            """
+            self.tauNet = customNet(nn_parameters)
+            # self.tauNet = customNet(n_layers, hidden_layer_size)
+
+        elif self.type_EddyLifetime == EddyLifetimeType.TAURESNET:
+            """
+            Requires hidden_layer_sizes, n_modes, learn_nu
+            """
+
+            self.tauNet = tauResNet(hidden_layer_sizes, n_modes, learn_nu)
 
     def exp_scales(self) -> tuple[float, float, float]:
         """
@@ -177,7 +203,7 @@ class OnePointSpectra(nn.Module):
         if self.type_PowerSpectra == "RDT":
             return PowerSpectraRDT(self.k, self.beta, self.E0)
         else:
-            raise Exception("Wrong PowerSpectra model !")
+            raise Exception("Incorrect PowerSpectra model !")
 
     @torch.jit.export
     def quad23(self, f: torch.Tensor) -> torch.Tensor:

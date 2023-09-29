@@ -1,3 +1,9 @@
+"""
+NOTE: this module is not used throughout the code and is vestigial from
+earlier versions. It is not maintained either.
+"""
+
+
 """An inlet boundary condition process for KratosMultiphysics
 
 license: license.txt
@@ -22,13 +28,8 @@ def isclose(a, b, rel_tol=1e-9, abs_tol=0.0):
 
 
 from math import ceil, floor, log
-from time import time
 
-import h5py
-import KratosMultiphysics
-import matplotlib.pyplot as plt
 import numpy as np
-from CovarianceKernels import MannCovariance, VonKarmanCovariance
 from GaussianRandomField import *
 from GenerateWind import GenerateWind
 from KratosMultiphysics import (DELTA_TIME, TIME, VELOCITY_X, VELOCITY_Y,

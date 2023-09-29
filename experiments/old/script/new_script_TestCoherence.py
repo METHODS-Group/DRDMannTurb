@@ -9,8 +9,8 @@ from pylab import *
 from torch.nn import parameter
 
 sys.path.append("./")
-from drdmannturb.Calibration import CalibrationProblem
-from drdmannturb.DataGenerator import (
+from drdmannturb.calibration import CalibrationProblem
+from drdmannturb.data_generator import (
     CoherenceDataGenerator,
     OnePointSpectraDataGenerator,
 )
