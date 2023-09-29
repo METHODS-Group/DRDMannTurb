@@ -6,3 +6,5 @@ pydata-sphinx-theme>=0.13.0
 sphinx-panels
 sphinx-notfound-page
 sphinx-copybutton
+sphinxcontrib-mermaid
+myst_parser

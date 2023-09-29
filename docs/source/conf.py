@@ -23,7 +23,13 @@ extensions = [
     "sphinx.ext.githubpages",
     "nbsphinx",
     "sphinx.ext.mathjax",
+    "myst_parser",
+    "sphinxcontrib.mermaid",  # https://github.com/mgaitan/sphinxcontrib-mermaid#building-pdfs-on-readthedocsio
 ]
+
+mermaid_params = ["-p" "puppeteer-config.json"]
+mermaid_d3_zoom = True
+myst_fence_as_directive = ["mermaid"]
 
 autodoc_mock_imports = ["torch"]
 # autodoc_preserve_defaults = False
@@ -43,6 +49,7 @@ napoleon_use_param = True
 napoleon_use_rtype = False
 
 nbsphinx_execute = "always"  # make sure that notebooks are always executed
+nbsphinx_requirejs_path = ""  # for mermaid js to work
 
 nbsphinx_execute_arguments = [
     "--InlineBackend.figure_formats={'svg', 'pdf'}",

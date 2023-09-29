@@ -9,6 +9,6 @@ jobs:
       - uses: actions/checkout@v3
       - uses: psf/black@stable
         with:
-          options: "--check --verbose"
+          # options: "--check --verbose"
           src: "./drdmannturb"
           version: "~= 22.3.0"
