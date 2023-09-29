@@ -27,6 +27,7 @@ class OnePointSpectraDataGenerator:
         Constructor for the data generator
 
         TODO -- the parameter descriptions
+        TODO -- some of these should *not* have default values?
 
         Parameters
         ----------

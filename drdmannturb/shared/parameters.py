@@ -6,7 +6,7 @@ and interpass.
 from dataclasses import dataclass, field
 from typing import List
 
-from drdmannturb.shared.enums import EddyLifetimeType, PowerSpectraType
+from drdmannturb.shared.enums import DataType, EddyLifetimeType, PowerSpectraType
 
 import numpy as np
 import torch
@@ -27,7 +27,8 @@ class ProblemParameters:
     noise_magnitude: float = 1e-3
 
     fg_coherence: bool = False
-    data_type: EddyLifetimeType = EddyLifetimeType.CUSTOMMLP
+    data_type: DataType = DataType.KAIMAL
+    eddy_lifetime: EddyLifetimeType = EddyLifetimeType.CUSTOMMLP
     power_spectra: PowerSpectraType = PowerSpectraType.RDT
 
     learn_nu: bool = False  # true in exp 2

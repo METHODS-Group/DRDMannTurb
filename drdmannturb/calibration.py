@@ -6,7 +6,7 @@ import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
 from drdmannturb.one_point_spectra import OnePointSpectra
-from drdmannturb.shared.common import MannEddyLifetime
+from drdmannturb.shared.enums import EddyLifetimeType
 from drdmannturb.spectral_coherence import SpectralCoherence
 
 from drdmannturb.shared.parameters import (
@@ -15,8 +15,6 @@ from drdmannturb.shared.parameters import (
     NNParameters,
     LossParameters,
 )
-
-from pathlib import Path
 
 
 def generic_loss(
@@ -62,7 +60,7 @@ class CalibrationProblem:
         loss_params: LossParameters = LossParameters(),
         phys_params: PhysicalParameters = PhysicalParameters(L=0.59, Gamma=3.9, sigma=3.4),
         output_directory: str = "./results",
-        **kwargs: Dict[str, Any],
+        # **kwargs: Dict[str, Any],
     ):
         """
         Constructor for a CalibrationProblem
@@ -89,7 +87,11 @@ class CalibrationProblem:
         self.init_with_noise = prob_params.init_with_noise
         self.noise_magnitude = prob_params.noise_magnitude
 
-        self.OPS = OnePointSpectra(**kwargs)
+        self.OPS = OnePointSpectra(
+            type_eddy_lifetime=self.prob_params.eddy_lifetime,
+            type_power_spectra=self.prob_params.power_spectra,
+            nn_parameters=self.nn_params
+        )
         self.init_device()
         if self.init_with_noise:
             self.initialize_parameters_with_noise()
@@ -193,7 +195,7 @@ class CalibrationProblem:
         data: tuple[Any, Any],
         model_magnitude_order=1,
         optimizer_class: Any = torch.optim.LBFGS,
-        **kwargs,
+        # **kwargs,
     ):
         print("\nCalibrating MannNet...")
 
@@ -240,7 +242,7 @@ class CalibrationProblem:
 
         # The case with the coherence formatting the data
 
-        if self.fg_coherence:
+        if self.fg_coherence: # NOTE: CURRENTLY NOT REACHED B/C ALWAYS FALSE FOR NOW
             DataPoints_coh, DataValues_coh = kwargs.get("Data_Coherence")
             k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts = DataPoints_coh
             k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts = torch.meshgrid(
@@ -252,7 +254,8 @@ class CalibrationProblem:
 
         self.loss_fn = generic_loss
 
-        wolfe_iter = kwargs.get("wolfe_iter", 20)
+        wolfe_iter = 20
+        # wolfe_iter = kwargs.get("wolfe_iter", 20)
 
         ##############################
         # Optimization
@@ -473,7 +476,7 @@ class CalibrationProblem:
         ValueError
             If the OPS was not initialized to one of TauNet, customMLP, or tauResNet.
         """
-        if self.OPS.type_EddyLifetime not in ["TauNet", "customMLP", "tauResNet"]:
+        if self.OPS.type_EddyLifetime not in [EddyLifetimeType.TAUNET, EddyLifetimeType.CUSTOMMLP, EddyLifetimeType.TAURESNET]:
             raise ValueError(
                 "Not using trainable model for approximation, must be TauNet, customMLP, or tauResNet"
             )
@@ -497,7 +500,7 @@ class CalibrationProblem:
             If the OPS was not initialized to one of TauNet, customMLP, or tauResNet.
 
         """
-        if self.OPS.type_EddyLifetime not in ["tauNet", "customMLP", "tauResNet"]:
+        if self.OPS.type_EddyLifetime not in [EddyLifetimeType.TAUNET, EddyLifetimeType.CUSTOMMLP, EddyLifetimeType.TAURESNET]:
             raise ValueError(
                 "Not using trainable model for approximation, must be TauNet, customMLP, or tauResNet"
             )
