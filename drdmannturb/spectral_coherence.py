@@ -10,9 +10,9 @@ import torch
 import torch.nn as nn
 from numpy import log
 
-from drdmannturb.common import MannEddyLifetime, VKEnergySpectrum
-from drdmannturb.PowerSpectraRDT import PowerSpectraRDT
-from drdmannturb.tauNet import tauNet
+from drdmannturb.shared.common import MannEddyLifetime, VKEnergySpectrum
+from drdmannturb.power_spectra_rdt import PowerSpectraRDT
+from drdmannturb.nn_modules import TauNet
 
 
 class SpectralCoherence(nn.Module):
@@ -30,7 +30,7 @@ class SpectralCoherence(nn.Module):
         self._init_parameters()
 
         if self.type_EddyLifetime == "tauNet":
-            self.tauNet = tauNet(**kwargs)
+            self.tauNet = TauNet(**kwargs)
 
     def forward(
         self,

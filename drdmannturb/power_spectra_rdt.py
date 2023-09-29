@@ -6,8 +6,9 @@ import numpy as np
 import torch
 
 
+# TODO -- figure out a better to type annotate the return val
 @torch.jit.script
-def PowerSpectraRDT(k: torch.Tensor, beta: torch.Tensor, E0) -> torch.Tensor:
+def PowerSpectraRDT(k: torch.Tensor, beta: torch.Tensor, E0) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Classical rapid distortion spectra
 

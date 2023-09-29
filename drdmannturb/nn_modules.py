@@ -353,7 +353,7 @@ class TauResNet(nn.Module):
 
 class TauNet(nn.Module):
     """
-    tauNet implementation
+    TauNet implementation
 
     Consists of a SimpleNN and a Rational
     """
@@ -366,7 +366,7 @@ class TauNet(nn.Module):
         learn_nu: bool = True,
     ):
         """
-        Constructor for tauNet
+        Constructor for TauNet
 
         Parameters
         ----------
@@ -380,7 +380,7 @@ class TauNet(nn.Module):
             If true, learns also the exponent Nu, by default True
         """
 
-        super(tauNet, self).__init__()
+        super(TauNet, self).__init__()
 
         self.n_layers = n_layers
         self.hidden_layer_size = hidden_layer_size

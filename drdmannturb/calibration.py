@@ -432,7 +432,7 @@ class CalibrationProblem:
     def num_trainable_params(self):
         """Computes the number of trainable network parameters
             in the underlying model. OPS must be set to either
-            tauNet, customMLP, or tauResNet.
+            TauNet, customMLP, or tauResNet.
 
         Returns
         -------
@@ -442,20 +442,20 @@ class CalibrationProblem:
         Raises
         ------
         ValueError
-            If the OPS was not initialized to one of tauNet, customMLP, or tauResNet.
+            If the OPS was not initialized to one of TauNet, customMLP, or tauResNet.
         """
-        if self.OPS.type_EddyLifetime not in ["tauNet", "customMLP", "tauResNet"]:
+        if self.OPS.type_EddyLifetime not in ["TauNet", "customMLP", "tauResNet"]:
             raise ValueError(
-                "Not using trainable model for approximation, must be tauNet, customMLP, or tauResNet"
+                "Not using trainable model for approximation, must be TauNet, customMLP, or tauResNet"
             )
 
-        return sum(p.numel() for p in self.OPS.tauNet.parameters())
+        return sum(p.numel() for p in self.OPS.TauNet.parameters())
 
     def eval_trainable_magnitude(self, ord=1):
         """Evaluates the magnitude (or other norm) of the
             trainable parameters in the model.
 
-            NOTE: OPS must be set to one of tauNet, customMLP, or tauResNet.
+            NOTE: OPS must be set to one of TauNet, customMLP, or tauResNet.
 
         Parameters
         ----------
@@ -465,12 +465,12 @@ class CalibrationProblem:
         Raises
         ------
         ValueError
-            If the OPS was not initialized to one of tauNet, customMLP, or tauResNet.
+            If the OPS was not initialized to one of TauNet, customMLP, or tauResNet.
 
         """
         if self.OPS.type_EddyLifetime not in ["tauNet", "customMLP", "tauResNet"]:
             raise ValueError(
-                "Not using trainable model for approximation, must be tauNet, customMLP, or tauResNet"
+                "Not using trainable model for approximation, must be TauNet, customMLP, or tauResNet"
             )
 
         return torch.norm(
