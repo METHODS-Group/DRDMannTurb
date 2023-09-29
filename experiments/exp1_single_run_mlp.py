@@ -22,8 +22,8 @@ plt.rc("font", family="serif")
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
-# Driver function
 
+# Driver function
 def driver():
     start = time()
 

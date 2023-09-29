@@ -3,16 +3,17 @@ This module defines several dataclasses for ease of parameter definition
 and interpass.
 """
 
-__all__ = ["NumericalParameters", "LossParameters", "NNParameters"]
-
 from dataclasses import dataclass, field
 from typing import List
 
+from drdmannturb.shared.enums import EddyLifetimeType, PowerSpectraType
+
 import numpy as np
+import torch
 
 
 @dataclass
-class NumericalParameters:
+class ProblemParameters:
     """
     This class provides a convenient method of storing and passing around
     generic numerical parameters; this also offers default values
@@ -21,6 +22,15 @@ class NumericalParameters:
     learning_rate: float = 1e-1
     tol: float = 1e-3
     nepochs: int = 100
+
+    init_with_noise: bool = False
+    noise_magnitude: float = 1e-3
+
+    fg_coherence: bool = False
+    data_type: EddyLifetimeType = EddyLifetimeType.CUSTOMMLP
+    power_spectra: PowerSpectraType = PowerSpectraType.RDT
+
+    learn_nu: bool = False  # true in exp 2
 
 
 @dataclass
@@ -60,6 +70,10 @@ class PhysicalParameters:
     z0: float = 0.01
     ustar: float = 0.41 * Uref / np.log(zref / z0)
 
+    domain: torch.Tensor = torch.logspace(
+        -1, 2, 20
+    ) # exp 2 should be logspcae (-2, 2, 40)
+
 
 @dataclass
 class LossParameters:
@@ -92,12 +106,12 @@ class NNParameters:
     """
 
     nlayers: int = 2
-    hidden_layer_sizes: List[int] = field(default_factory=list)
-    #[10, 10]
+    input_size: int = 3
 
-    activation: List[str] = field(default_factory=list)
-    #["relu", "relu"]
-
-    inlayer: int = 3
-    hlayer: int = 3
-    outlayer: int = 3
+    # TODO -- better way of doing this?
+    hidden_layer_size: int = 3
+    hidden_layer_sizes: List[int] = field(default_factory=list) # should be used for customnet or resnet
+    # [10, 10]
+    activations: List[str] = field(default_factory=list)
+    # ["relu", "relu"]
+    output_size: int = 3

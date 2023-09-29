@@ -32,8 +32,14 @@ from math import ceil, floor, log
 import numpy as np
 from GaussianRandomField import *
 from GenerateWind import GenerateWind
-from KratosMultiphysics import (DELTA_TIME, TIME, VELOCITY_X, VELOCITY_Y,
-                                VELOCITY_Z, Logger)
+from KratosMultiphysics import (
+    DELTA_TIME,
+    TIME,
+    VELOCITY_X,
+    VELOCITY_Y,
+    VELOCITY_Z,
+    Logger,
+)
 from pyevtk.hl import imageToVTK
 from scipy.special import comb
 

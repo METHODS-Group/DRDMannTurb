@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from scipy.optimize import curve_fit, differential_evolution
 
-from drdmannturb.common import DataType
+from drdmannturb.shared.enums import DataType
 
 
 class OnePointSpectraDataGenerator:

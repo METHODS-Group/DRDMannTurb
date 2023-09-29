@@ -3,17 +3,11 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-<<<<<<< HEAD
 from drdmannturb.nn_modules import CustomNet, TauNet, TauResNet
 from drdmannturb.power_spectra_rdt import PowerSpectraRDT
 from drdmannturb.shared.common import MannEddyLifetime, VKEnergySpectrum
 from drdmannturb.shared.enums import EddyLifetimeType, PowerSpectraType
 from drdmannturb.shared.parameters import NNParameters
-=======
-from .common import MannEddyLifetime, VKEnergySpectrum
-from .power_spectra_rdt import PowerSpectraRDT
-from .tauNet import customNet, tauNet, tauResNet
->>>>>>> 3b3ab6c83f04375394478296acf5e9e0a5bf0c54
 
 
 class OnePointSpectra(nn.Module):
