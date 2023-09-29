@@ -3,17 +3,11 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-<<<<<<< HEAD
 from drdmannturb.nn_modules import CustomNet, TauNet, TauResNet
 from drdmannturb.power_spectra_rdt import PowerSpectraRDT
 from drdmannturb.shared.common import MannEddyLifetime, VKEnergySpectrum
 from drdmannturb.shared.enums import EddyLifetimeType, PowerSpectraType
 from drdmannturb.shared.parameters import NNParameters
-=======
-from .common import MannEddyLifetime, VKEnergySpectrum
-from .power_spectra_rdt import PowerSpectraRDT
-from .tauNet import customNet, tauNet, tauResNet
->>>>>>> 3b3ab6c83f04375394478296acf5e9e0a5bf0c54
 
 
 class OnePointSpectra(nn.Module):
@@ -26,6 +20,7 @@ class OnePointSpectra(nn.Module):
         type_eddy_lifetime: EddyLifetimeType = EddyLifetimeType.TWOTHIRD,
         type_power_spectra: PowerSpectraType = PowerSpectraType.RDT,
         nn_parameters: NNParameters = NNParameters(),
+        learn_nu: bool = False
     ):
         super(OnePointSpectra, self).__init__()
 
@@ -53,6 +48,7 @@ class OnePointSpectra(nn.Module):
         self.logMagnitude = nn.Parameter(torch.tensor(0, dtype=torch.float64))
 
         if self.type_EddyLifetime == EddyLifetimeType.TAUNET:
+            #TODO -- FIX TAUNET
             self.tauNet = TauNet(nn_parameters)
             # self.tauNet = tauNet(n_layers, hidden_layer_size, n_modes, learn_nu)
 
@@ -60,7 +56,10 @@ class OnePointSpectra(nn.Module):
             """
             Requires n_layers, activations, n_modes, learn_nu
             """
-            self.tauNet = customNet(nn_parameters)
+            self.tauNet = CustomNet(
+                nn_parameters.nlayers,
+                learn_nu=learn_nu
+            )
             # self.tauNet = customNet(n_layers, hidden_layer_size)
 
         elif self.type_EddyLifetime == EddyLifetimeType.TAURESNET:
@@ -68,7 +67,10 @@ class OnePointSpectra(nn.Module):
             Requires hidden_layer_sizes, n_modes, learn_nu
             """
 
-            self.tauNet = tauResNet(hidden_layer_sizes, n_modes, learn_nu)
+            self.tauNet = TauResNet(
+                nn_parameters
+            )
+            # self.tauNet = TauResNet(hidden_layer_sizes, n_modes, learn_nu)
 
     def exp_scales(self) -> tuple[float, float, float]:
         """
@@ -139,15 +141,16 @@ class OnePointSpectra(nn.Module):
 
         kL = self.LengthScale * k.norm(dim=-1)
 
-        if self.type_EddyLifetime == "const":
+        if self.type_EddyLifetime == EddyLifetimeType.CONST:
             tau = torch.ones_like(kL)
-        elif (
-            self.type_EddyLifetime == "Mann"
-        ):  ### uses numpy - can not be backpropagated !!
+        elif self.type_EddyLifetime == EddyLifetimeType.MANN:  # uses numpy - can not be backpropagated !!
             tau = MannEddyLifetime(kL)
-        elif self.type_EddyLifetime == "TwoThird":
+        elif self.type_EddyLifetime == EddyLifetimeType.TWOTHIRD:
             tau = kL ** (-2 / 3)
-        elif self.type_EddyLifetime in ["tauNet", "customMLP", "tauResNet"]:
+        # elif self.type_EddyLifetime in ["tauNet", "customMLP", "tauResNet"]:
+        elif self.type_EddyLifetime in [
+            EddyLifetimeType.TAUNET, EddyLifetimeType.CUSTOMMLP, EddyLifetimeType.TAURESNET
+        ]:
             tau0 = self.InitialGuess_EddyLifetime(kL)
             tau = tau0 + self.tauNet(
                 k * self.LengthScale
@@ -184,7 +187,7 @@ class OnePointSpectra(nn.Module):
         return tau0
 
     @torch.jit.export
-    def PowerSpectra(self) -> torch.Tensor:
+    def PowerSpectra(self):
         """
         Calls the RDT Power Spectra model
 
@@ -200,7 +203,7 @@ class OnePointSpectra(nn.Module):
             and therefore incorrect
         """
 
-        if self.type_PowerSpectra == "RDT":
+        if self.type_PowerSpectra == PowerSpectraType.RDT:
             return PowerSpectraRDT(self.k, self.beta, self.E0)
         else:
             raise Exception("Incorrect PowerSpectra model !")

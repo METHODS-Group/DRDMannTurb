@@ -440,7 +440,7 @@ class CustomNet(nn.Module):
     def __init__(
         self,
         n_layers: int = 2,
-        hidden_layer_sizes: Union[int, list[int]] = [],
+        hidden_layer_sizes: Union[int, list[int]] = [10,10],
         activations: List[Callable] = [nn.ReLU(), nn.ReLU()],
         n_modes: int = 10,
         learn_nu: bool = True,
