@@ -19,9 +19,9 @@ This package is provided as a locally ``pip``-installable package. It is recomme
 
 A Conda spec-file is included, to install a functioning environment, run ``conda create --name ENV_NAME_HERE --file spec-file.txt``. Then run ``pip install -e .`` to load ``drdmannturb`` into your environment. 
 
-## Doc Building Instructions 
+## Local Documentation Building Instructions 
 
-Docs are in the ``/docs/`` folder. Make sure the following dependencies are installed:
+Docs are in the ``/docs/`` folder. Make sure the dependencies listed in ``./requirements-docs.txt`` are installed.
 
 Run ``make html`` to generate html pages in the ``/docs/build/html`` folder, which can be hosted locally with ``python -m http.server <PORT-NUMBER>``. 
 ```mermaid
@@ -32,6 +32,8 @@ classDiagram
     class CalibrationProblem {
         <<class>>
         - output_directory : Path
+        - device : str
+        init_device()
         update_parameters() 
         eval()
         eval_grad() 

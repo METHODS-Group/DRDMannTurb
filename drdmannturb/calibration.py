@@ -58,6 +58,7 @@ class CalibrationProblem:
 
     def __init__(
         self,
+        device: str,
         nn_params: NNParameters = NNParameters(),
         prob_params: ProblemParameters = ProblemParameters(),
         loss_params: LossParameters = LossParameters(),
@@ -65,9 +66,8 @@ class CalibrationProblem:
             L=0.59, Gamma=3.9, sigma=3.4
         ),
         output_directory: str = "./results",
-        # **kwargs: Dict[str, Any],
     ):
-        """_summary_
+        """Constructor for CalibrationProblem class. As depicted in the UML diagram, this class consists of 4 dataclasses.
 
         Parameters
         ----------
@@ -82,6 +82,7 @@ class CalibrationProblem:
         output_directory : str, optional
             _description_, by default "./results"
         """
+        self.init_device(device)
 
         self.nn_params = nn_params
         self.prob_params = prob_params
@@ -90,7 +91,6 @@ class CalibrationProblem:
 
         # stringify the activation functions used; for manual bash only
         self.activfuncstr = str(nn_params.activations)
-        # print(self.activfuncstr)
 
         self.input_size = nn_params.input_size
         self.hidden_layer_size = nn_params.hidden_layer_sizes
@@ -104,7 +104,7 @@ class CalibrationProblem:
             type_power_spectra=self.prob_params.power_spectra,
             nn_parameters=self.nn_params,
         )
-        self.init_device()
+
         if self.init_with_noise:
             self.initialize_parameters_with_noise()
 
@@ -116,11 +116,19 @@ class CalibrationProblem:
 
         self.epoch_model_sizes = torch.empty((prob_params.nepochs,))
 
-    # enable gpu device
-    def init_device(self):
-        """_summary_"""
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.OPS.to(device)
+    # TODO: propagate device setting through this method
+    def init_device(self, device: str):
+        """Initializes the device (CPU or GPU) on which computation is performed.
+
+        Parameters
+        ----------
+        device : str
+            string following PyTorch conventions -- "cuda" or "cpu"
+        """
+        self.device = torch.device(device)
+        if device == "cuda" and torch.cuda.is_available():
+            torch.set_default_tensor_type("torch.cuda.FloatTensor")
+        # self.OPS.to(self.device)
 
     # =========================================
 

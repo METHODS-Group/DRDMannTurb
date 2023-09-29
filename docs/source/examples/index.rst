@@ -6,4 +6,4 @@ Examples
 .. toctree::
     :titlesonly:
 
-    Synthetic.ipynb
+    Synthetic Data Fit.ipynb
