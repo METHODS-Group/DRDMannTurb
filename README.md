@@ -24,6 +24,11 @@ A Conda spec-file is included, to install a functioning environment, run ``conda
 Docs are in the ``/docs/`` folder. Make sure the dependencies listed in ``./requirements-docs.txt`` are installed.
 
 Run ``make html`` to generate html pages in the ``/docs/build/html`` folder, which can be hosted locally with ``python -m http.server <PORT-NUMBER>``. 
+
+## UML Diagram for CalibrationProblem
+
+this will be moved later into general docs
+
 ```mermaid
 ---
 title: Phase 1 - CalibrationProblem Class System
