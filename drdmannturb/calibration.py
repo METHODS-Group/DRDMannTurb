@@ -1,6 +1,7 @@
 from typing import Any, Dict, Optional, Union
 
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 

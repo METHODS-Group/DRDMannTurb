@@ -7,8 +7,13 @@
 =======================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Contents:
+
+   getting-started
+   examples/index
+   forward_api
+   internal_api   
 
 .. note::
    This project is still under development.
