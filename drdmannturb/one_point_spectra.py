@@ -20,7 +20,7 @@ class OnePointSpectra(nn.Module):
         type_eddy_lifetime: EddyLifetimeType = EddyLifetimeType.TWOTHIRD,
         type_power_spectra: PowerSpectraType = PowerSpectraType.RDT,
         nn_parameters: NNParameters = NNParameters(),
-        learn_nu: bool = False
+        learn_nu: bool = False,
     ):
         super(OnePointSpectra, self).__init__()
 
@@ -48,7 +48,7 @@ class OnePointSpectra(nn.Module):
         self.logMagnitude = nn.Parameter(torch.tensor(0, dtype=torch.float64))
 
         if self.type_EddyLifetime == EddyLifetimeType.TAUNET:
-            #TODO -- FIX TAUNET
+            # TODO -- FIX TAUNET
             self.tauNet = TauNet(nn_parameters)
             # self.tauNet = tauNet(n_layers, hidden_layer_size, n_modes, learn_nu)
 
@@ -56,10 +56,7 @@ class OnePointSpectra(nn.Module):
             """
             Requires n_layers, activations, n_modes, learn_nu
             """
-            self.tauNet = CustomNet(
-                nn_parameters.nlayers,
-                learn_nu=learn_nu
-            )
+            self.tauNet = CustomNet(nn_parameters.nlayers, learn_nu=learn_nu)
             # self.tauNet = customNet(n_layers, hidden_layer_size)
 
         elif self.type_EddyLifetime == EddyLifetimeType.TAURESNET:
@@ -67,9 +64,7 @@ class OnePointSpectra(nn.Module):
             Requires hidden_layer_sizes, n_modes, learn_nu
             """
 
-            self.tauNet = TauResNet(
-                nn_parameters
-            )
+            self.tauNet = TauResNet(nn_parameters)
             # self.tauNet = TauResNet(hidden_layer_sizes, n_modes, learn_nu)
 
     def exp_scales(self) -> tuple[float, float, float]:
@@ -143,13 +138,17 @@ class OnePointSpectra(nn.Module):
 
         if self.type_EddyLifetime == EddyLifetimeType.CONST:
             tau = torch.ones_like(kL)
-        elif self.type_EddyLifetime == EddyLifetimeType.MANN:  # uses numpy - can not be backpropagated !!
+        elif (
+            self.type_EddyLifetime == EddyLifetimeType.MANN
+        ):  # uses numpy - can not be backpropagated !!
             tau = MannEddyLifetime(kL)
         elif self.type_EddyLifetime == EddyLifetimeType.TWOTHIRD:
             tau = kL ** (-2 / 3)
         # elif self.type_EddyLifetime in ["tauNet", "customMLP", "tauResNet"]:
         elif self.type_EddyLifetime in [
-            EddyLifetimeType.TAUNET, EddyLifetimeType.CUSTOMMLP, EddyLifetimeType.TAURESNET
+            EddyLifetimeType.TAUNET,
+            EddyLifetimeType.CUSTOMMLP,
+            EddyLifetimeType.TAURESNET,
         ]:
             tau0 = self.InitialGuess_EddyLifetime(kL)
             tau = tau0 + self.tauNet(
