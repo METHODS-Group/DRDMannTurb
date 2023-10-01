@@ -84,9 +84,6 @@ Getting Started
         CalibrationProblem o-- ProblemParameters
         CalibrationProblem o-- PhysicalParameters
         CalibrationProblem o-- LossParameters
-        ProblemParameters o-- OnePointSpectra
-        NNParameters o-- OnePointSpectra
-
-.. include:: mermdiagram.md
-
-    :parser: myst_parser.sphinx_
+        CalibrationProblem o-- OnePointSpectra
+        OnePointSpectra o--  ProblemParameters
+        OnePointSpectra  o-- NNParameters
