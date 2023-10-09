@@ -70,7 +70,7 @@ k1 = torch.logspace(-3, log10(0.5), N_f, dtype=torch.float64)
 # Delta_z = torch.linspace(-A, A, N_z, dtype=torch.float64)
 Delta_y = torch.tensor([0], dtype=torch.float64)
 Delta_z = torch.tensor([30], dtype=torch.float64)
-DataPoints = torch.meshgrid(k1, Delta_y, Delta_z)
+DataPoints = torch.meshgrid(k1, Delta_y, Delta_z, indexing="ij")
 DataPoints = list(torch.vstack(list(map(torch.ravel, DataPoints))).T)
 DataShape = [k1.numel(), Delta_y.numel(), Delta_z.numel()]
 

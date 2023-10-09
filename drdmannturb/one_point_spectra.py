@@ -41,7 +41,7 @@ class OnePointSpectra(nn.Module):
         grid_minus = -torch.flip(grid_plus, dims=[0])
         self.grid_k3 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
 
-        self.meshgrid23 = torch.meshgrid(self.grid_k2, self.grid_k3)
+        self.meshgrid23 = torch.meshgrid(self.grid_k2, self.grid_k3, indexing="ij")
 
         self.logLengthScale = nn.Parameter(torch.tensor(0, dtype=torch.float64))
         self.logTimeScale = nn.Parameter(torch.tensor(0, dtype=torch.float64))
@@ -97,7 +97,7 @@ class OnePointSpectra(nn.Module):
         """
         self.exp_scales()
         self.k = torch.stack(
-            torch.meshgrid(k1_input, self.grid_k2, self.grid_k3), dim=-1
+            torch.meshgrid(k1_input, self.grid_k2, self.grid_k3, indexing="ij"), dim=-1
         )
         self.k123 = self.k[..., 0], self.k[..., 1], self.k[..., 2]
         self.beta = self.EddyLifetime()

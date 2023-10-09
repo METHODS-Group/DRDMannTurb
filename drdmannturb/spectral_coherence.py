@@ -4,16 +4,15 @@ Spectral Coherence module
 TODO -- move the EddyLifetime and PowerSpectra into Enums s.t. I can get rid of kwargs
 """
 
-from typing import Union, Optional
+from typing import Optional, Union
 
 import torch
 import torch.nn as nn
 from numpy import log
 
-from drdmannturb.shared.common import MannEddyLifetime, VKEnergySpectrum
-from drdmannturb.power_spectra_rdt import PowerSpectraRDT
 from drdmannturb.nn_modules import TauNet
-
+from drdmannturb.power_spectra_rdt import PowerSpectraRDT
+from drdmannturb.shared.common import MannEddyLifetime, VKEnergySpectrum
 from drdmannturb.shared.enums import EddyLifetimeType, PowerSpectraType
 from drdmannturb.shared.parameters import NNParameters
 
@@ -67,7 +66,7 @@ class SpectralCoherence(nn.Module):
 
         self._exp_scales()
         self.k = torch.stack(
-            torch.meshgrid(k1_input, self.grid_k2, self.grid_k3), dim=-1
+            torch.meshgrid(k1_input, self.grid_k2, self.grid_k3), dim=-1, indexing="ij"
         )
         self.k123 = self.k[..., 0], self.k[..., 1], self.k[..., 2]
         self.beta = self.EddyLifetime()
@@ -242,7 +241,7 @@ class SpectralCoherence(nn.Module):
         grid_minus = -torch.flip(grid_plus, dims=[0])
         self.grid_k3 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
 
-        self.meshgrid23 = torch.meshgrid(self.grid_k2, self.grid_k3)
+        self.meshgrid23 = torch.meshgrid(self.grid_k2, self.grid_k3, indexing="ij")
 
     def _exp_scales(self) -> tuple[float, float, float]:
         """
