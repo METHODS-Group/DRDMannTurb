@@ -320,24 +320,20 @@ class CalibrationProblem:
 
         self.loss_fn = generic_loss
 
-        wolfe_iter = 20
-        # wolfe_iter = kwargs.get("wolfe_iter", 20)
-
         ##############################
-        # Optimization
+        # Optimizer Set-up
         ##############################
         if OptimizerClass == torch.optim.LBFGS:
             optimizer = OptimizerClass(
                 self.OPS.parameters(),
                 lr=lr,
                 line_search_fn="strong_wolfe",
-                max_iter=wolfe_iter,
+                max_iter=self.prob_params.wolfe_iter_count,
                 history_size=nepochs,
             )
         else:
             optimizer = OptimizerClass(self.OPS.parameters(), lr=lr)
 
-        #        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=nepochs)
 
         torch.nn.Softplus()
@@ -483,7 +479,7 @@ class CalibrationProblem:
                 optimizer.step(closure)
                 # TODO: refactor the scheduler things, plateau requires loss
                 # scheduler.step(self.loss) #if scheduler
-                scheduler.step(self.loss)
+                scheduler.step()  # self.loss
                 self.print_grad()
                 print("---------------------------------\n")
                 self.print_parameters()
