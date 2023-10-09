@@ -262,7 +262,6 @@ class CalibrationProblem:
         data: tuple[Any, Any],
         model_magnitude_order=1,
         optimizer_class: Any = torch.optim.LBFGS,
-        # **kwargs,
     ):
         print("\nCalibrating MannNet...")
 

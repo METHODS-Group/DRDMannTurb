@@ -1,6 +1,10 @@
 # csv data 
 *.csv
 
+# overrides for data used in examples
+# necessary for interpolation data example 
+!/docs/source/examples/data/*.csv 
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

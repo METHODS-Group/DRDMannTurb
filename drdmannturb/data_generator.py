@@ -18,11 +18,12 @@ class OnePointSpectraDataGenerator:
         self,
         data_points: Optional[Any] = None,
         data_type: DataType = DataType.KAIMAL,
-        k1_data_points: Optional[Any] = None,
+        k1_data_points: Optional[Any] = None,  # TODO: properly type
+        spectra_values: Optional[Any] = None,  # TODO: properly type
         spectra_file: Optional[Path] = None,
         zref: float = 1.0,
         Uref: float = 1.0,
-    ):
+    ):  # TODO: make docstrings make sense
         """
         Constructor for the data generator
 
@@ -51,13 +52,10 @@ class OnePointSpectraDataGenerator:
         Raises
         ------
         ValueError
-            In the case that custom data is indicated, but no spectra_file
+            In the case that DataType.CUSTOM is indicated, but no spectra_file
             is provided
         ValueError
-            In the case that Auto data is indicated, but no k1_data_pts
-            is provided
-        ValueError
-            In the case that Auto data is indicated, but no spectra_file
+            In the case that DataType.AUTO data is indicated, but no k1_data_pts
             is provided
         """
         # TODO -- Note the Any annotations above; need to figure out what type should be given
@@ -65,6 +63,9 @@ class OnePointSpectraDataGenerator:
         self.DataPoints = data_points
         self.data_type = data_type
         self.k1 = k1_data_points
+
+        if spectra_values is not None:
+            self.spectra_values = spectra_values
 
         self.zref = zref
         self.Uref = Uref
@@ -90,110 +91,102 @@ class OnePointSpectraDataGenerator:
                 )
 
         elif self.data_type == DataType.AUTO:
-            if spectra_file is not None:
-                print(f'Reading spectra data file "{spectra_file}"')
+            if self.k1 is not None:
 
-                if self.k1 is not None:
+                def func124(k1, a, b, c):
+                    ft = 1 / (2 * np.pi) * k1 * self.zref
 
-                    def func124(k1, a, b, c):
-                        ft = 1 / (2 * np.pi) * k1 * self.zref
+                    return a * ft / (1.0 + b * ft) ** c
 
-                        return a * ft / (1.0 + b * ft) ** c
+                def func3(k1, a, b, c):
+                    ft = 1 / (2 * np.pi) * k1 * self.zref
 
-                    def func3(k1, a, b, c):
-                        ft = 1 / (2 * np.pi) * k1 * self.zref
+                    return a * ft / (1 + b * ft**c)
 
-                        return a * ft / (1 + b * ft**c)
+                def fitOPS(xData, yData, num):
+                    func = func3 if num == 3 else func124
 
-                    def fitOPS(xData, yData, num):
-                        func = func3 if num == 3 else func124
+                    def sumOfSquaredError(parameterTuple):
+                        warnings.filterwarnings(
+                            "ignore"
+                        )  # do not print warnings by genetic algorithm
+                        val = func(xData, *parameterTuple)
+                        return np.sum((yData - val) ** 2.0)
 
-                        def sumOfSquaredError(parameterTuple):
-                            warnings.filterwarnings(
-                                "ignore"
-                            )  # do not print warnings by genetic algorithm
-                            val = func(xData, *parameterTuple)
-                            return np.sum((yData - val) ** 2.0)
+                    def generate_Initial_Parameters():
+                        # min and max used for bounds
+                        maxX = max(xData)
+                        minX = min(xData)
+                        maxY = max(yData)
 
-                        def generate_Initial_Parameters():
-                            # min and max used for bounds
-                            maxX = max(xData)
-                            minX = min(xData)
-                            maxY = max(yData)
+                        parameterBounds = []
+                        # search bounds for a
+                        parameterBounds.append([minX, maxX])
+                        # search bounds for b
+                        parameterBounds.append([minX, maxX])
+                        parameterBounds.append([0.0, maxY])  # search bounds for Offset
 
-                            # TODO -- can be purged?
-                            # minY = min(yData)
-
-                            parameterBounds = []
-                            # search bounds for a
-                            parameterBounds.append([minX, maxX])
-                            # search bounds for b
-                            parameterBounds.append([minX, maxX])
-                            parameterBounds.append(
-                                [0.0, maxY]
-                            )  # search bounds for Offset
-
-                            # "seed" the numpy random number generator for
-                            #   replicable results
-                            result = differential_evolution(
-                                sumOfSquaredError, parameterBounds, seed=3
-                            )
-                            return result.x
-
-                        geneticParameters = generate_Initial_Parameters()
-
-                        # curve fit the test data
-                        fittedParameters, pcov = curve_fit(
-                            func, xData, yData, geneticParameters, maxfev=50_000
+                        # "seed" the numpy random number generator for
+                        #   replicable results
+                        result = differential_evolution(
+                            sumOfSquaredError, parameterBounds, seed=3
                         )
+                        return result.x
 
-                        print("Parameters", fittedParameters)
+                    geneticParameters = generate_Initial_Parameters()
 
-                        modelPredictions = func(xData, *fittedParameters)
-
-                        absError = modelPredictions - yData
-
-                        SE = np.square(absError)  # squared errors
-                        MSE = np.mean(SE)  # mean squared errors
-                        RMSE = np.sqrt(MSE)  # Root Mean Squared Error, RMSE
-                        Rsquared = 1.0 - (np.var(absError) / np.var(yData))
-                        print("RMSE:", RMSE)
-                        print("R-squared:", Rsquared)
-
-                        return fittedParameters
-
-                    Data_temp = np.genfromtxt(
-                        spectra_file, skip_header=1, delimiter=","
+                    # curve fit the test data
+                    fittedParameters, pcov = curve_fit(
+                        func, xData, yData, geneticParameters, maxfev=50_000
                     )
 
-                    DataValues = np.zeros([len(self.DataPoints), 3, 3])
-                    print("[fit1] ---------------------")
-                    fit1 = fitOPS(self.k1, Data_temp[:, 1], 1)
-                    DataValues[:, 0, 0] = func124(self.k1, *fit1)
-                    print("[fit2] ---------------------")
-                    fit2 = fitOPS(self.k1, Data_temp[:, 2], 2)
-                    DataValues[:, 1, 1] = func124(self.k1, *fit2)
-                    print("[fit3] ---------------------")
-                    fit3 = fitOPS(self.k1, Data_temp[:, 3], 4)
-                    DataValues[:, 2, 2] = func124(self.k1, *fit3)
-                    print("[fit4] ---------------------")
-                    fit4 = fitOPS(self.k1, Data_temp[:, 4], 3)
-                    DataValues[:, 0, 2] = -func3(self.k1, *fit4)
+                    print("Parameters", fittedParameters)
 
-                    DataValues = torch.tensor(DataValues)
+                    modelPredictions = func(xData, *fittedParameters)
 
-                    self.Data = (self.DataPoints, DataValues)
-                    print(f"DataValues is on {DataValues.get_device()}")
+                    absError = modelPredictions - yData
 
-                    self.CustomData = torch.tensor(Data_temp)
+                    SE = np.square(absError)  # squared errors
+                    MSE = np.mean(SE)  # mean squared errors
+                    RMSE = np.sqrt(MSE)  # Root Mean Squared Error, RMSE
+                    Rsquared = 1.0 - (np.var(absError) / np.var(yData))
+                    print("RMSE:", RMSE)
+                    print("R-squared:", Rsquared)
+
+                    return fittedParameters
+
+                if self.spectra_values is not None:
+                    Data_temp = self.spectra_values.copy()
                 else:
                     raise ValueError(
-                        "Indicated Auto data, but did not provide k1_data_points"
+                        "Indicated DataType.AUTO, but did not provide spectra data. "
                     )
+                # Data_temp = np.genfromtxt(
+                # spectra_file, skip_header=1, delimiter=","
+                # )
 
+                DataValues = np.zeros([len(self.DataPoints), 3, 3])
+                print("[fit1] ---------------------")
+                fit1 = fitOPS(self.k1, Data_temp[:, 0], 1)
+                DataValues[:, 0, 0] = func124(self.k1, *fit1)
+                print("[fit2] ---------------------")
+                fit2 = fitOPS(self.k1, Data_temp[:, 1], 2)
+                DataValues[:, 1, 1] = func124(self.k1, *fit2)
+                print("[fit3] ---------------------")
+                fit3 = fitOPS(self.k1, Data_temp[:, 2], 4)
+                DataValues[:, 2, 2] = func124(self.k1, *fit3)
+                print("[fit4] ---------------------")
+                fit4 = fitOPS(self.k1, Data_temp[:, 3], 3)
+                DataValues[:, 0, 2] = -func3(self.k1, *fit4)
+
+                DataValues = torch.tensor(DataValues)
+
+                self.Data = (self.DataPoints, DataValues)
+
+                self.CustomData = torch.tensor(Data_temp)
             else:
                 raise ValueError(
-                    "Indicated Auto data, but did not provide a spectra_file"
+                    "Indicated DataType.AUTO, but did not provide k1_data_points"
                 )
 
         if self.DataPoints is not None and self.data_type != DataType.AUTO:
