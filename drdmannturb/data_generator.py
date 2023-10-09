@@ -22,7 +22,7 @@ class OnePointSpectraDataGenerator:
         spectra_values: Optional[Any] = None,  # TODO: properly type
         spectra_file: Optional[Path] = None,
         zref: float = 1.0,
-        Uref: float = 1.0,
+        seed: int = 3,
     ):  # TODO: make docstrings make sense
         """
         Constructor for the data generator
@@ -46,8 +46,6 @@ class OnePointSpectraDataGenerator:
             default None
         zref : float, optional
             Reference altitude value, by default 1.0
-        Uref : float, optional
-            Reference wind velocity, by default 1.0
 
         Raises
         ------
@@ -64,11 +62,12 @@ class OnePointSpectraDataGenerator:
         self.data_type = data_type
         self.k1 = k1_data_points
 
+        self.seed = seed
+
         if spectra_values is not None:
             self.spectra_values = spectra_values
 
         self.zref = zref
-        self.Uref = Uref
 
         if self.data_type == DataType.VK:
             self.eval = self.eval_VK
@@ -129,7 +128,7 @@ class OnePointSpectraDataGenerator:
                         # "seed" the numpy random number generator for
                         #   replicable results
                         result = differential_evolution(
-                            sumOfSquaredError, parameterBounds, seed=3
+                            sumOfSquaredError, parameterBounds, seed=seed
                         )
                         return result.x
 
@@ -139,8 +138,6 @@ class OnePointSpectraDataGenerator:
                     fittedParameters, pcov = curve_fit(
                         func, xData, yData, geneticParameters, maxfev=50_000
                     )
-
-                    print("Parameters", fittedParameters)
 
                     modelPredictions = func(xData, *fittedParameters)
 
@@ -161,21 +158,27 @@ class OnePointSpectraDataGenerator:
                     raise ValueError(
                         "Indicated DataType.AUTO, but did not provide spectra data. "
                     )
-                # Data_temp = np.genfromtxt(
-                # spectra_file, skip_header=1, delimiter=","
-                # )
 
                 DataValues = np.zeros([len(self.DataPoints), 3, 3])
-                print("[fit1] ---------------------")
+                print("Filtering provided spectra interpolation: ")
+                print("=" * 30)
+                print("[fit u spectra]")
+                print("---------------------")
                 fit1 = fitOPS(self.k1, Data_temp[:, 0], 1)
                 DataValues[:, 0, 0] = func124(self.k1, *fit1)
-                print("[fit2] ---------------------")
+                print("---------------------")
+                print("[fit v spectra]")
+                print("---------------------")
                 fit2 = fitOPS(self.k1, Data_temp[:, 1], 2)
                 DataValues[:, 1, 1] = func124(self.k1, *fit2)
-                print("[fit3] ---------------------")
+                print("---------------------")
+                print("[fit w spectra]")
+                print("---------------------")
                 fit3 = fitOPS(self.k1, Data_temp[:, 2], 4)
                 DataValues[:, 2, 2] = func124(self.k1, *fit3)
-                print("[fit4] ---------------------")
+                print("---------------------")
+                print("[fit uw cospectra]")
+                print("---------------------")
                 fit4 = fitOPS(self.k1, Data_temp[:, 3], 3)
                 DataValues[:, 0, 2] = -func3(self.k1, *fit4)
 
@@ -299,15 +302,3 @@ class OnePointSpectraDataGenerator:
 
         F = torch.zeros([3, 3])
         return F
-
-    def eval_auto(self, **_):
-        """
-        eval implementation for the Auto data type. Notice
-        that this is a non-implementation.
-
-        Raises
-        ------
-        ValueError
-            All branches lead to this; this should not have an implementation
-        """
-        raise ValueError("Not implemented!")
