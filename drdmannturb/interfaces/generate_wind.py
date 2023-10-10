@@ -1,8 +1,9 @@
 from time import time
 
 import numpy as np
-from CovarianceKernels import MannCovariance, VonKarmanCovariance
-from GaussianRandomField import *
+
+from .covariance_kernels import MannCovariance, VonKarmanCovariance
+from .gaussian_random_fields import *
 
 
 class GenerateWind:
