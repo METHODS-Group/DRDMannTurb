@@ -17,6 +17,23 @@ class GenerateWind:
         blend_num=10,
         **kwargs
     ):
+        """_summary_
+
+        Parameters
+        ----------
+        friction_velocity : _type_
+            _description_
+        reference_height : _type_
+            _description_
+        grid_dimensions : _type_
+            _description_
+        grid_levels : _type_
+            _description_
+        seed : _type_, optional
+            _description_, by default None
+        blend_num : int, optional
+            _description_, by default 10
+        """
         # Parameters taken from pg 13 of M. Andre's dissertation
         # model = 'FPDE_RDT'
         model = "Mann"
