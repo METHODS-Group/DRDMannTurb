@@ -1,9 +1,14 @@
 # csv data 
 *.csv
 
+# model pickles 
+*.pkl 
+
 # overrides for data used in examples
 # necessary for interpolation data example 
 !/docs/source/examples/data/*.csv 
+# necessary for model saving, loading, and viz examples 
+!/docs/source/examples/results/*.pkl
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

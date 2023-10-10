@@ -12,3 +12,5 @@ The first two examples correspond to the experiments presented in `the original 
     Synthetic Data Fit.ipynb
 
     Custom Data Fit.ipynb
+
+    Interpolating and Fitting.ipynb

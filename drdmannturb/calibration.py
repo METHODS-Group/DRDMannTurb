@@ -1,3 +1,5 @@
+import os
+import pickle
 from typing import Any, Dict, Optional, Union
 
 import matplotlib.pyplot as plt
@@ -133,42 +135,43 @@ class CalibrationProblem:
     # =========================================
 
     @property
-    def parameters(self):
-        """_summary_
+    def parameters(self) -> np.ndarray:
+        """Returns all parameters of the One Point Spectra surrogate model as a single vector.
 
         Returns
         -------
-        _type_
-            _description_
+        np.ndarray
+            Single vector containing all model parameters on the CPU, which can be loaded into an object with the same architecture with the
+            parameters setter method. This automatically offloads any model parameters that were on the GPU, if any.
         """
         NN_parameters = parameters_to_vector(self.OPS.parameters())
+
         with torch.no_grad():
-            param_vec = NN_parameters.cpu().numpy()
+            param_vec = (
+                NN_parameters.cpu().numpy()
+                if NN_parameters.is_cuda
+                else NN_parameters.numpy()
+            )
+
         return param_vec
 
     @parameters.setter
-    def parameters(self, param_vec):
-        """_summary_
+    def parameters(self, param_vec: Union[np.ndarray, torch.tensor]) -> None:
+        """Setter method for loading in model parameters from a given vector.
 
         Parameters
         ----------
-        param_vec : _type_
-            _description_
+        param_vec : Union[np.ndarray, torch.tensor]
+            Single vector of model parameters.
         """
         assert len(param_vec) >= 1
+
         if not torch.is_tensor(param_vec):
-            param_vec = torch.tensor(param_vec, dtype=torch.float64)
+            param_vec = torch.tensor(
+                param_vec, dtype=torch.float64
+            )  # TODO: this should also properly load on GPU, issue #28
+
         vector_to_parameters(param_vec, self.OPS.parameters())
-
-    def update_parameters(self, param_vec):
-        """_summary_
-
-        Parameters
-        ----------
-        param_vec : _type_
-            _description_
-        """
-        self.parameters = param_vec
 
     def initialize_parameters_with_noise(self):
         """_summary_"""
@@ -596,6 +599,60 @@ class CalibrationProblem:
         plt.legend()
         plt.grid("true")
         plt.show()
+
+    def save_model(self, save_dir: Optional[str] = None):
+        """Saves model with current weights, model configuration, and training histories to file.
+
+        File output is of the form save_dir/type_EddyLifetime_data_type.pkl
+
+        Fields that are stored are:
+            - NNParameters
+            - ProblemParameters
+            - PhysicalParameters
+            - LossParameters
+            - Optimized Parameters (.parameters field)
+            - Total Loss History
+            - Epoch-wise Loss History
+
+        Parameters
+        ----------
+        save_dir : Optional[str], optional
+            Directory to save to, by default None; defaults to provided output_dir field for object.
+
+        Raises
+        ------
+        ValueError
+            No output_directory provided during object initialization and no save_dir provided for this method call.
+        """
+
+        if save_dir is None and self.output_directory is None:
+            raise ValueError("Must provide directory to save output to.")
+
+        if save_dir is None:
+            save_dir = self.output_directory
+
+        filename = (
+            save_dir
+            + "/"
+            + str(self.prob_params.eddy_lifetime)
+            + "_"
+            + str(self.prob_params.data_type)
+            + ".pkl"
+        )
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, "wb+") as file:
+            pickle.dump(
+                [
+                    self.nn_params,
+                    self.prob_params,
+                    self.loss_params,
+                    self.phys_params,
+                    self.parameters,
+                    self.loss_history_total,
+                    self.loss_history_epochs,
+                ],
+                file,
+            )
 
     def plot(self, **kwargs: Dict[str, Any]):
         """
