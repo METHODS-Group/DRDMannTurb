@@ -21,7 +21,6 @@ class GenerateWind:
         blend_num=10,
         **kwargs
     ):
-
         model = kwargs.get("model", "Mann")  ### 'FPDE_RDT', 'Mann', 'VK', 'NN'
 
         # # Parameters taken from pg 13 of M. Andre's dissertation

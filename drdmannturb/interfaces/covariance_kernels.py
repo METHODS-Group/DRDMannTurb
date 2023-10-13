@@ -18,7 +18,6 @@ from tqdm import tqdm
 
 class Covariance:
     def __init__(self, ndim=2, verbose=0, **kwargs):
-
         self.verbose = verbose
 
         self.ndim = ndim  # dimension 2D or 3D
@@ -60,7 +59,6 @@ class VonKarmanCovariance(Covariance):
     # --------------------------------------------------------------------------
 
     def precompute_Spectrum(self, Frequences):
-
         Nd = [Frequences[j].size for j in range(self.ndim)]
         SqrtSpectralTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
 
@@ -140,7 +138,6 @@ class MannCovariance(Covariance):
     # --------------------------------------------------------------------------
 
     def precompute_Spectrum(self, Frequences):
-
         Nd = [Frequences[j].size for j in range(self.ndim)]
         SqrtSpectralTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
         tmpTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
@@ -149,7 +146,6 @@ class MannCovariance(Covariance):
         kk = np.sum(k**2, axis=0)
 
         with np.errstate(divide="ignore", invalid="ignore"):
-
             beta = (
                 self.Gamma
                 * (kk * self.L**2) ** (-1 / 3)

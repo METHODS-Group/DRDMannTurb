@@ -7,14 +7,13 @@ tags:
   - wind-engineering
 authors:
   - name: Alexey Izmailov
-    orcid: 0000-0000-0000-0000   # TODO -- ORCID?
     equal-contrib: true
     affiliation: 1
   - name: Matthew Meeker
-    equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
+    equal-contrib: true
     affiliation: 1
   - name: Georgios Deskos
-    corresponding: true # TODO -- who is corresponding and name ordering?
+    corresponding: true
     affiliation: 2
   - name: Brendan Keith
     affiliation: 1

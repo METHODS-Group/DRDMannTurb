@@ -117,7 +117,6 @@ class GaussianRandomField:
 
     ### Sample GRF
     def sample(self, noise=None):
-
         if noise is None:
             noise = self.sample_noise()
 
@@ -138,7 +137,6 @@ class GaussianRandomField:
 
 class VectorGaussianRandomField(GaussianRandomField):
     def __init__(self, vdim=3, **kwargs):
-
         super().__init__(**kwargs)
         self.vdim = vdim
         self.DomainSlice = tuple(list(self.DomainSlice) + [slice(None, None, None)])

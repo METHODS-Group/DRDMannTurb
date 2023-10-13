@@ -41,7 +41,6 @@ class NNCovariance(Covariance):
     # --------------------------------------------------------------------------
 
     def precompute_Spectrum(self, Frequences):
-
         Nd = [Frequences[j].size for j in range(self.ndim)]
         SqrtSpectralTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
         tmpTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
@@ -50,7 +49,6 @@ class NNCovariance(Covariance):
         kk = np.sum(k**2, axis=0)
 
         with np.errstate(divide="ignore", invalid="ignore"):
-
             k_torch = torch.tensor(np.moveaxis(k, 0, -1)) * self.h_ref
             beta_torch = self.Gamma * self.OPS.tauNet(k_torch)
             beta = (
