@@ -7,7 +7,7 @@ if torch.cuda.is_available():
 from math import log
 from pathlib import Path
 
-from drdmannturb.data_generator import OnePointSpectraDataGenerator
+from drdmannturb.calibration.data_generator import OnePointSpectraDataGenerator
 
 savedir = Path(__file__).parent / "results"
 spectra_dir = Path(__file__).parent / "Spectra.dat"

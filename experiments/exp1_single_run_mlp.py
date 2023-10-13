@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 
-from drdmannturb.calibration import CalibrationProblem
-from drdmannturb.data_generator import OnePointSpectraDataGenerator
+from drdmannturb.calibration.calibration import CalibrationProblem
+from drdmannturb.calibration.data_generator import OnePointSpectraDataGenerator
 
 # Quality of life things
 

@@ -3,7 +3,7 @@ from time import time
 
 import numpy as np
 
-from drdmannturb.calibration import CalibrationProblem
+from drdmannturb.calibration.calibration import CalibrationProblem
 
 from .covariance_kernels import MannCovariance, VonKarmanCovariance
 from .gaussian_random_fields import *

@@ -9,9 +9,9 @@ import torch
 import torch.nn as nn
 from scipy.interpolate import CubicSpline
 
-from drdmannturb.calibration import CalibrationProblem
+from drdmannturb.calibration.calibration import CalibrationProblem
 from drdmannturb.common import MannEddyLifetime
-from drdmannturb.data_generator import OnePointSpectraDataGenerator
+from drdmannturb.calibration.data_generator import OnePointSpectraDataGenerator
 
 plt.style.use("bmh")
 

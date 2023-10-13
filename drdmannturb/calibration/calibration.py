@@ -7,7 +7,7 @@ import numpy as np
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
-from drdmannturb.one_point_spectra import OnePointSpectra
+from drdmannturb.calibration.one_point_spectra import OnePointSpectra
 from drdmannturb.shared.common import MannEddyLifetime
 from drdmannturb.shared.enums import EddyLifetimeType
 from drdmannturb.shared.parameters import (
@@ -16,7 +16,7 @@ from drdmannturb.shared.parameters import (
     PhysicalParameters,
     ProblemParameters,
 )
-from drdmannturb.spectral_coherence import SpectralCoherence
+from drdmannturb.calibration.spectral_coherence import SpectralCoherence
 
 plt.rc("text", usetex=True)
 plt.rc("font", family="serif")
@@ -73,12 +73,16 @@ class CalibrationProblem:
 
         Parameters
         ----------
+        device: str,
+            One of the strings "cpu", "cuda", "mps" indicating the torch device to use
         nn_params : NNParameters, optional
-            _description_, by default NNParameters()
+            A NNParameters (for Neural Network) dataclass instance, which defines values of interest
+            eg. size and depth. By default, calls constructor using default values.
         prob_params : ProblemParameters, optional
-            _description_, by default ProblemParameters()
+            A ProblemParameters dataclass instance, which is used to determine the conditional branching
+            and computations required, among other things. By default, calls constructor using default values
         loss_params : LossParameters, optional
-            _description_, by default LossParameters()
+            A LossParameters dataclass instance, which defines the loss function terms and related coefficients, by default LossParameters()
         phys_params : PhysicalParameters, optional
             _description_, by default PhysicalParameters(L=0.59, Gamma=3.9, sigma=3.4)
         output_directory : str, optional

@@ -12,11 +12,10 @@ from time import time
 
 import matplotlib.pyplot as plt
 import numpy as np
-<<<<<<< HEAD
 from pyevtk.hl import imageToVTK
 from tqdm import tqdm
 
-from drdmannturb.calibration import CalibrationProblem
+from drdmannturb.calibration.calibration import CalibrationProblem
 from drdmannturb.OnePointSpectra import OnePointSpectra
 from drdmannturb.WindGeneration.CovarianceKernels import (
     MannCovariance,
@@ -24,18 +23,6 @@ from drdmannturb.WindGeneration.CovarianceKernels import (
 )
 from drdmannturb.WindGeneration.GaussianRandomField import *
 from drdmannturb.WindGeneration.NeuralNetCovariance import NNCovariance
-=======
-from fracturbulence.Calibration import CalibrationProblem
-from fracturbulence.OnePointSpectra import OnePointSpectra
-from fracturbulence.WindGeneration.CovarianceKernels import (
-    MannCovariance,
-    VonKarmanCovariance,
-)
-from fracturbulence.WindGeneration.GaussianRandomField import *
-from fracturbulence.WindGeneration.NeuralNetCovariance import NNCovariance
-from pyevtk.hl import imageToVTK
-from tqdm import tqdm
->>>>>>> af53bc6372a2a2bdc7e4ce595385e73ece68a031
 
 resdir = Path(__file__).parent / "results"
 

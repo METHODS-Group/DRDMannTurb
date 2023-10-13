@@ -7,16 +7,10 @@ import arch_eval.constants.consts_exp1 as consts_exp1
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-<<<<<<< HEAD
 
-from drdmannturb.calibration import CalibrationProblem
-from drdmannturb.common import MannEddyLifetime
-from drdmannturb.data_generator import OnePointSpectraDataGenerator
-=======
-from fracturbulence.Calibration import CalibrationProblem
-from fracturbulence.common import MannEddyLifetime
-from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
->>>>>>> af53bc6372a2a2bdc7e4ce595385e73ece68a031
+from drdmannturb.calibration.calibration import CalibrationProblem
+from drdmannturb.shared import MannEddyLifetime
+from drdmannturb.calibration.data_generator import OnePointSpectraDataGenerator
 
 sys.path.append("../")
 

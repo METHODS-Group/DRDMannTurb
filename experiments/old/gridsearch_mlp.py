@@ -9,9 +9,9 @@ import torch
 <<<<<<< HEAD
 from scipy.optimize import brute
 
-from drdmannturb.calibration import CalibrationProblem
+from drdmannturb.calibration.calibration import CalibrationProblem
 from drdmannturb.common import MannEddyLifetime
-from drdmannturb.data_generator import OnePointSpectraDataGenerator
+from drdmannturb.calibration.data_generator import OnePointSpectraDataGenerator
 =======
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import MannEddyLifetime

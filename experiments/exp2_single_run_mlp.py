@@ -9,9 +9,9 @@ import numpy as np
 import torch
 from pylab import *
 
-from drdmannturb.calibration import CalibrationProblem
+from drdmannturb.calibration.calibration import CalibrationProblem
 from drdmannturb.common import *
-from drdmannturb.data_generator import OnePointSpectraDataGenerator
+from drdmannturb.calibration.data_generator import OnePointSpectraDataGenerator
 
 sys.path.append("../")
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"

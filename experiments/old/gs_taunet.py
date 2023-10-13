@@ -10,9 +10,9 @@ import torch
 <<<<<<< HEAD
 from pylab import *
 
-from drdmannturb.calibration import CalibrationProblem
+from drdmannturb.calibration.calibration import CalibrationProblem
 from drdmannturb.common import *
-from drdmannturb.data_generator import OnePointSpectraDataGenerator
+from drdmannturb.calibration.data_generator import OnePointSpectraDataGenerator
 =======
 from fracturbulence.Calibration import CalibrationProblem
 from fracturbulence.common import *

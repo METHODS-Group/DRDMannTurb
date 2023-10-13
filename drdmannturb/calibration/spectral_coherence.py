@@ -10,8 +10,8 @@ import torch
 import torch.nn as nn
 from numpy import log
 
-from drdmannturb.nn_modules import TauNet
-from drdmannturb.power_spectra_rdt import PowerSpectraRDT
+from drdmannturb.calibration.nn_modules import TauNet
+from drdmannturb.calibration.power_spectra_rdt import PowerSpectraRDT
 from drdmannturb.shared.common import MannEddyLifetime, VKEnergySpectrum
 from drdmannturb.shared.enums import EddyLifetimeType, PowerSpectraType
 from drdmannturb.shared.parameters import NNParameters

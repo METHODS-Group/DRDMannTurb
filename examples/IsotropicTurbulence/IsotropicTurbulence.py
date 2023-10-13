@@ -1,17 +1,21 @@
+"""
+This example does TODO
+"""
+
 from time import time
 
 import matplotlib.pyplot as plt
 import numpy as np
 from pyevtk.hl import imageToVTK
 
-from drdmannturb.calibration import CalibrationProblem
-from drdmannturb.one_point_spectra import OnePointSpectra
-from drdmannturb.WindGeneration.CovarianceKernels import (
+from drdmannturb.calibration.calibration import CalibrationProblem
+from drdmannturb.calibration.one_point_spectra import OnePointSpectra
+from drdmannturb.wind_generation.covariance_kernels import (
     MannCovariance,
     VonKarmanCovariance,
 )
-from drdmannturb.WindGeneration.GaussianRandomField import *
-from drdmannturb.WindGeneration.NeuralNetCovariance import NNCovariance
+from drdmannturb.wind_generation.gaussian_random_fields import *
+from drdmannturb.wind_generation.nn_covariance import NNCovariance
 
 
 class GenerateWindTurbulence:

@@ -9,12 +9,12 @@ from pylab import *
 from torch.nn import parameter
 
 sys.path.append("./")
-from drdmannturb.calibration import CalibrationProblem
-from drdmannturb.data_generator import (
+from drdmannturb.calibration.calibration import CalibrationProblem
+from drdmannturb.calibration.data_generator import (
     CoherenceDataGenerator,
     OnePointSpectraDataGenerator,
 )
-from drdmannturb.SpectralCoherence import SpectralCoherence
+from drdmannturb.calibration.spectral_coherence import SpectralCoherence
 
 ####################################
 ### Configuration

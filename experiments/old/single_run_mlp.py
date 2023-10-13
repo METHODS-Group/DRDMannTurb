@@ -7,18 +7,11 @@ import arch_eval.constants.consts as consts
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-<<<<<<< HEAD
 from pylab import *
 
-from drdmannturb.calibration import CalibrationProblem
+from drdmannturb.calibration.calibration import CalibrationProblem
 from drdmannturb.common import *
-from drdmannturb.data_generator import OnePointSpectraDataGenerator
-=======
-from fracturbulence.Calibration import CalibrationProblem
-from fracturbulence.common import *
-from fracturbulence.DataGenerator import OnePointSpectraDataGenerator
-from pylab import *
->>>>>>> af53bc6372a2a2bdc7e4ce595385e73ece68a031
+from drdmannturb.calibration.data_generator import OnePointSpectraDataGenerator
 
 # v2: torch.set_default_device('cuda:0')
 if torch.cuda.is_available():
