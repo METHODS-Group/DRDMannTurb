@@ -41,7 +41,7 @@ def format_wind_field(wind_field):
     return tuple([np.copy(wind_field[..., i], order="C") for i in range(3)])
 
 
-def plot_velocity_components(spacing, wind_field, surface_count=25):
+def plot_velocity_components(spacing, wind_field, surface_count=25, reshape=True):
     """Plots x, y, z components of given wind field over provided spacing.
 
     Parameters
@@ -51,9 +51,10 @@ def plot_velocity_components(spacing, wind_field, surface_count=25):
     wind_field : _type_
         _description_
     """
+
     X, Y, Z = create_grid(spacing, wind_field.shape)
 
-    formatted_wind_field = format_wind_field(wind_field)
+    formatted_wind_field = format_wind_field(wind_field) if reshape else wind_field
 
     fig = make_subplots(
         rows=1,
@@ -134,7 +135,7 @@ def plot_velocity_components(spacing, wind_field, surface_count=25):
     return fig
 
 
-def plot_velocity_magnitude(spacing, wind_field, surf_count=75):
+def plot_velocity_magnitude(spacing, wind_field, surf_count=75, reshape=True):
     """Plots velocity magnitude field from provided 3-component wind field over the provided spacing.
 
     Parameters
@@ -149,7 +150,7 @@ def plot_velocity_magnitude(spacing, wind_field, surf_count=75):
 
     X, Y, Z = create_grid(spacing, wind_field.shape)
 
-    formatted_wind_field = format_wind_field(wind_field)
+    formatted_wind_field = format_wind_field(wind_field) if reshape else wind_field
 
     wind_magnitude = np.sqrt(
         formatted_wind_field[0] ** 2
