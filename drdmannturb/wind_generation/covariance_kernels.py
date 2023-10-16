@@ -68,8 +68,7 @@ class MannCovariance(Covariance):
 
         ### Spatial dimensions
         if ndim != 3:
-            print("ndim MUST BE 3")
-            raise
+            raise ValueError("ndim MUST BE 3")
         self.ndim = 3
 
         self.L = length_scale

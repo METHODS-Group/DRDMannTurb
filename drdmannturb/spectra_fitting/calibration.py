@@ -294,7 +294,6 @@ class CalibrationProblem:
 
         optimizer_class : torch.optim.Optimizer
             User's choice of torch optimizer. By default, LBFGS
-        
         """       
 
         lgg.drdmannturb_log.info("Calibrating MannNet...")
@@ -322,7 +321,6 @@ class CalibrationProblem:
         # create a single numpy.ndarray with numpy.array() and then convert to a torch tensor
         # single_data_array=torch.tensor( [DataValues[:, i, i] for i in range(
         #     3)] + [DataValues[:, 0, 2]])
-        # self.kF_data_vals = torch.tensor(single_data_array, dtype=torch.float64)
         self.kF_data_vals = torch.cat(
             (
                 DataValues[:, 0, 0],
@@ -333,11 +331,10 @@ class CalibrationProblem:
         )
 
         k1_data_pts, y_data0 = self.k1_data_pts, self.kF_data_vals
-        # self.x, self.y, self.y_data = k1_data_pts
 
         y = self.OPS(k1_data_pts)
         y_data = torch.zeros_like(y)
-        print(y_data0.shape)
+        lgg.drdmannturb_log.debug(f"Y_DATA0 shape: {y_data0.shape}")
         y_data[:4, ...] = y_data0.view(4, y_data0.shape[0] // 4)
 
         # The case with the coherence formatting the data
@@ -494,11 +491,14 @@ class CalibrationProblem:
                     # self.loss_1stOpen.append(pen.item())
                     self.loss += pen
                 self.loss.backward()
-                print("loss  = ", self.loss.item())
+                lgg.drdmannturb_log.simple_optinfo(f"Loss = {self.loss.item()}")
+                
+                # TODO -- reimplement nu value logging
                 # if hasattr(self.OPS, 'tauNet'):
                 #     if hasattr(self.OPS.tauNet.Ra.nu, 'item'):
                 #         print('-> nu = ', self.OPS.tauNet.Ra.nu.item())
                 self.kF_model_vals = y.clone().detach()
+
                 # self.plot(**kwargs, plt_dynamic=True,
                 #           model_vals=self.kF_model_vals.cpu().detach().numpy() if torch.is_tensor(self.kF_model_vals) else self.kF_model_vals)
                 return self.loss
@@ -524,9 +524,6 @@ class CalibrationProblem:
                     lgg.drdmannturb_log.warning("LOSS IS NAN OR INF")
                     break
 
-        print("\n=================================")
-        print("{Calibration.py -- calibrate} Calibration terminated.")
-        print("=================================\n")
         lgg.drdmannturb_log.optinfo(
             f"Calibration terminated with loss = {self.loss.item()} at tol = {tol}",
             "Calibration"
@@ -739,7 +736,7 @@ class CalibrationProblem:
                     label=r"$F{0:d}$ model".format(i + 1),
                 )  #'o-'
 
-            print(
+            lgg.drdmannturb_log.debug(
                 f"k1.size: {k1.size()}   self.kF_data_vals: {self.kF_data_vals.size()}"
             )
 

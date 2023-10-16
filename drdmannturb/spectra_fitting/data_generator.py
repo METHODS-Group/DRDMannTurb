@@ -80,7 +80,7 @@ class OnePointSpectraDataGenerator:
 
         elif self.data_type == DataType.CUSTOM:
             if spectra_file is not None:
-                print(f'Reading spectra data file "{spectra_file}"')
+                lgg.drdmannturb_log.info(f'Reading spectra data file "{spectra_file}"')
                 self.CustomData = torch.tensor(
                     np.genfromtxt(spectra_file, skip_header=1, delimiter=",")
                 )
@@ -162,7 +162,6 @@ class OnePointSpectraDataGenerator:
 
                 DataValues = np.zeros([len(self.DataPoints), 3, 3])
                 lgg.drdmannturb_log.info("Filtering provided spectra interpolation...")
-                print("Filtering provided spectra interpolation: ")
                 lgg.drdmannturb_log.simple_optinfo("=" * 30)
 
                 lgg.drdmannturb_log.sub_optinfo("fit u spectra")               

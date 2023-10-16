@@ -27,6 +27,9 @@ class SpectralCoherence(nn.Module):
         nn_params: Optional[NNParameters] = None,
         **kwargs
     ):
+        """
+        Spectral coherence constructor
+        """
         super(SpectralCoherence, self).__init__()
 
         self.type_EddyLifetime = eddy_lifetime

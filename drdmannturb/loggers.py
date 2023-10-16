@@ -44,7 +44,7 @@ def equals_border_fprint(msg: str, loc: str = "") -> None:
         "=================================\n"
     )
 
-def equals_border_fprint(msg: str, loc: str = "") -> None:
+def dash_border_fprint(msg: str, loc: str = "") -> None:
     """
     Format print routine with = vertical delimiting. Specifically, prints out
     in the form

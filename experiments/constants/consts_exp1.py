@@ -2,7 +2,7 @@ from pathlib import Path
 
 import torch
 
-from drdmannturb.shared.parameters import (
+from drdmannturb.parameters import (
     ProblemParameters,
     NNParameters,
     LossParameters,
