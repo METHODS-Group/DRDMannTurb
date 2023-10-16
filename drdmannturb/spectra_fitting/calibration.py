@@ -681,10 +681,6 @@ class CalibrationProblem:
         Handles all plotting
         """
         plt_dynamic = kwargs.get("plt_dynamic", False)
-        # if plt_dynamic:
-        # ion()
-        # else:
-        # ioff()
 
         Data = kwargs.get("Data")
         if Data is not None:
@@ -790,9 +786,6 @@ class CalibrationProblem:
                 self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
                 self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
                 self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
-                # self.tau_model1m= self.OPS.EddyLifetime(-k_1).detach().numpy()
-                # self.tau_model2m= self.OPS.EddyLifetime(-k_2).detach().numpy()
-                # self.tau_model3m= self.OPS.EddyLifetime(-k_3).detach().numpy()
                 self.tau_ref = (
                     3.9 * MannEddyLifetime(0.59 * k_gd).cpu().detach().numpy()
                 )
@@ -820,9 +813,6 @@ class CalibrationProblem:
                     "-",
                     label=r"$\tau_{model}(k,k,k)$",
                 )
-                # self.lines_LT_model1m, = self.ax[1].plot(k_gd, self.tau_model1m, '-', label=r'$\tau_{model}(-k_1)$')
-                # self.lines_LT_model2m, = self.ax[1].plot(k_gd, self.tau_model2m, '-', label=r'$\tau_{model}(-k_2)$')
-                # self.lines_LT_model3m, = self.ax[1].plot(k_gd, self.tau_model3m, '-', label=r'$\tau_{model}(-k_3)$')
                 (self.lines_LT_ref,) = self.ax[1].plot(
                     k_gd.cpu().detach().numpy(),
                     self.tau_ref,

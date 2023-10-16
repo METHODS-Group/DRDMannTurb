@@ -252,7 +252,6 @@ class ResNet(nn.Module):
     def _forward_impl(self, x):
         # This exists since TorchScript doesn't support inheritance, so the superclass method
         # (this one) needs to have a name other than `forward` that can be accessed in a subclass
-        # print(f"@@@@RESNSET forward_impl type(x) = {type(x)}")
         x = self.layer0(x)
         x = self.block1(x)
         x = self.block2(x)
