@@ -6,9 +6,10 @@
    :caption: Contents:
 
    getting-started
-   examples/index
+   examples
    forward_api
    internal_api   
+
 
 .. note::
    This project is still under development.

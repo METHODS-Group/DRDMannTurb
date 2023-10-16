@@ -6,9 +6,11 @@
 
 # overrides for data used in examples
 # necessary for interpolation data example 
-!/docs/source/examples/data/*.csv 
+!/docs/source/data/*.csv 
 # necessary for model saving, loading, and viz examples 
-!/docs/source/examples/results/*.pkl
+!/docs/source/results/*.pkl
+
+docs/source/auto_examples
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
