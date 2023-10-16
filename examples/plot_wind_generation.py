@@ -1,4 +1,15 @@
-"""Wind Field Generation from Trained DRD Model"""
+"""
+============================================
+Wind Field Generation from Trained DRD Model
+============================================
+
+This example demonstrates the utilities for generating wind fields from a pre-trained DRD model. DRDMannTurb provides several utilities for plotting the resulting fields as well, though the resulting fields can be readily saved to VTK to be visualized in Paraview. 
+
+.. warning:: 
+    This example may take some time to load. Please be patient, Plotly requires some time to pre-render. 
+"""
+
+# %%
 
 # %%
 from pathlib import Path
@@ -13,12 +24,6 @@ from drdmannturb.interfaces.wind_plot import (
     plot_velocity_magnitude,
 )
 
-# import plotly
-# plotly.offline.init_notebook_mode()
-
-# import plotly.io as pio
-# pio.renderers.default='notebook'
-
 path = Path().resolve()
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -27,6 +32,9 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
+
+##########################################
+# Having set-up the necessary parameters for the domain, we now generate the wind field.
 # %%
 Type_Model = "NN"  ### 'FPDE_RDT', 'Mann', 'VK', 'NN'
 nBlocks = 3
@@ -46,8 +54,11 @@ path_to_parameters = (
 )
 
 ##########################################
-### Wind generation
+# Wind generation
+# ---------------
+
 ##########################################
+# %%
 wind = GenerateWind(
     friction_velocity,
     reference_height,
@@ -63,8 +74,12 @@ for _ in range(nBlocks):
 
 # TODO: these should be moved into a GenerateWind method...?
 ##########################################
-### Scaling of the field (normalization)
+# Scaling of the field (normalization)
+# ------------------------------------
+
 ##########################################
+# %%
+
 if normalize == True:
     sd = np.sqrt(np.mean(wind_field**2))
     wind_field = wind_field / sd
@@ -113,9 +128,9 @@ filename = str(
 imageToVTK(filename, cellData=cellData, spacing=spacing)
 
 # %%
-fig_components = plot_velocity_components(spacing, wind_field)
+# fig_components = plot_velocity_components(spacing, wind_field)
 
-fig_components
+# fig_components
 
 # %%
 fig_magnitude = plot_velocity_magnitude(spacing, wind_field)
