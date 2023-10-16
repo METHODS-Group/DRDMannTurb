@@ -6,13 +6,10 @@ import numpy as np
 import torch
 
 
-# TODO -- figure out a better to type annotate the return val
 @torch.jit.script
 def PowerSpectraRDT(
     k: torch.Tensor, beta: torch.Tensor, E0
-) -> tuple[
-    torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor
-]:
+) -> tuple[torch.Tensor, ...]:
     """
     Classical rapid distortion spectra
 
@@ -27,8 +24,8 @@ def PowerSpectraRDT(
 
     Returns
     -------
-    _type_
-        _description_
+    tuple[torch.Tensor, ...]
+        6-tuple of the components of the velocity-spectrum tensor
     """
 
     k1, k2, k3 = k[..., 0], k[..., 1], k[..., 2]
@@ -52,7 +49,7 @@ def PowerSpectraRDT(
 
     zeta1 = C1 - k2 / k1 * C2
     zeta2 = C1 * k2 / k1 + C2
-    E0 = E0 / (4 * np.pi)
+    E0 /= (4 * np.pi)
     Phi11 = (
         E0
         / (kk0**2)

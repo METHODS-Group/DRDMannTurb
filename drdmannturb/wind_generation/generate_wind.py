@@ -3,7 +3,7 @@ from time import time
 
 import numpy as np
 
-from drdmannturb.calibration.calibration import CalibrationProblem
+from drdmannturb.spectra_fitting.calibration import CalibrationProblem
 
 from .covariance_kernels import MannCovariance, VonKarmanCovariance
 from .gaussian_random_fields import *
@@ -11,6 +11,11 @@ from .nn_covariance import NNCovariance
 
 
 class GenerateWind:
+    """
+    Wind generation class
+    """
+
+
     def __init__(
         self,
         friction_velocity,

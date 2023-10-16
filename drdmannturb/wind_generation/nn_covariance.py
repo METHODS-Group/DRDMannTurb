@@ -1,23 +1,13 @@
-from itertools import product
-from math import *
-from time import time
-
-import matplotlib.pyplot as plt
 import numpy as np
-import scipy.fftpack as fft
 import torch
-from scipy.special import hyp2f1
-from scipy.special import kv as Kv
-from tqdm import tqdm
 
 from .covariance_kernels import Covariance
 
-#######################################################################################################
-# 	Neural Net Covariance class
-#######################################################################################################
-
 
 class NNCovariance(Covariance):
+    """
+    Neural Network Covariance class
+    """
     def __init__(self, ndim, length_scale, E0, Gamma, **kwargs):
         super().__init__(**kwargs)
 
@@ -36,11 +26,10 @@ class NNCovariance(Covariance):
         ### NOTE: NN implicitely involves the lengthscales (it is associated with non-dimensional internal L)
         ### NOTE: However, here we scale L with the reference_height - the latter has to be taken into account
 
-    # --------------------------------------------------------------------------
-    #   Compute the power spectrum
-    # --------------------------------------------------------------------------
-
     def precompute_Spectrum(self, Frequences):
+        """
+        Compute the power spectrum
+        """
         Nd = [Frequences[j].size for j in range(self.ndim)]
         SqrtSpectralTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
         tmpTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
@@ -121,15 +110,3 @@ class NNCovariance(Covariance):
             SqrtSpectralTens[2, 2, ...] = zeta3 * tmpTens[2, 2, ...]
 
             return SqrtSpectralTens * 1j
-
-    # --------------------------------------------------------------------------
-    #   Evaluate covariance function
-    # --------------------------------------------------------------------------
-
-    def eval(self, *args):
-        print("eval function is not supported")
-        raise
-
-    def eval_sqrt(self, *args, nu=None, corrlen=None):
-        print("eval_sqrt function is not supported")
-        raise

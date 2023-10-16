@@ -5,8 +5,6 @@ from time import time
 import numpy as np
 import scipy.fftpack as fft
 
-from .wind_generator_util import FourierOfGaussian
-
 METHOD_DST = "dst"
 METHOD_DCT = "dct"
 METHOD_FFT = "fft"
@@ -14,7 +12,14 @@ METHOD_FFTW = "fftw"
 METHOD_VF_FFTW = "vf_fftw"
 
 
-#######################################################################################################
+def FourierOfGaussian(noise):
+    a, b = noise, noise
+    for j in range(noise.ndim):
+        b = np.roll(np.flip(b, axis=j), 1, axis=j)
+    noise_hat = 0.5 * ((a + b) + 1j * (a - b))
+    # for j in range(noise.ndim):
+    #     np.roll(noise_hat, noise.shape[0] // 2 , axis=j)
+    return noise_hat
 
 
 class Sampling_method_base:

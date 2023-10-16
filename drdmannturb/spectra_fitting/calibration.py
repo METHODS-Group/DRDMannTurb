@@ -1,3 +1,9 @@
+"""
+This module provides 
+"""
+
+
+
 import os
 import pickle
 from typing import Any, Dict, Optional, Union
@@ -82,11 +88,14 @@ class CalibrationProblem:
             A ProblemParameters dataclass instance, which is used to determine the conditional branching
             and computations required, among other things. By default, calls constructor using default values
         loss_params : LossParameters, optional
-            A LossParameters dataclass instance, which defines the loss function terms and related coefficients, by default LossParameters()
+            A LossParameters dataclass instance, which defines the loss function terms and related coefficients.
+            By default, calls the constructor LossParameters() using the default values.
         phys_params : PhysicalParameters, optional
-            _description_, by default PhysicalParameters(L=0.59, Gamma=3.9, sigma=3.4)
+            A PhysicalParameters dataclass instance, which defines the physical constants governing the
+            problem setting; note that the PhysicalParameters constructor requires three positional
+            arguments. By default, calls the constructor PhysicalParameters(L=0.59, Gamma=3.9, sigma=3.4).
         output_directory : str, optional
-            _description_, by default "./results"
+            The directory to write output to; by default "./results"
         """
         self.init_device(device)
 
@@ -515,21 +524,6 @@ class CalibrationProblem:
 
         return self.parameters
 
-    # ------------------------------------------------
-    ### Post-treatment and Export
-    # ------------------------------------------------
-
-    def print_parameters(self):
-        # print(('Optimal NN parameters = [' + ', '.join(['{}'] *
-        #       len(self.parameters)) + ']\n').format(*self.parameters))
-        pass
-
-    def print_grad(self):
-        # self.grad = torch.cat([param.grad.view(-1)
-        #                       for param in self.OPS.parameters()]).detach().numpy()
-        # print('grad = ', self.grad)
-        pass
-
     def num_trainable_params(self):
         """Computes the number of trainable network parameters
             in the underlying model. OPS must be set to either
@@ -571,7 +565,6 @@ class CalibrationProblem:
         ------
         ValueError
             If the OPS was not initialized to one of TauNet, customMLP, or tauResNet.
-
         """
         if self.OPS.type_EddyLifetime not in [
             EddyLifetimeType.TAUNET,
@@ -586,7 +579,14 @@ class CalibrationProblem:
             torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord
         )
 
-    def plot_loss_wolfe(self, beta_pen):
+    def plot_loss_wolfe(self, beta_pen: float = 0.0) -> None:
+        """Plots the Wolfe Search loss against the iterations
+
+        Parameters
+        ----------
+        beta_pen : float, optional
+            The loss beta penalty term coefficient; by default, 0.0
+        """        
         plt.figure()
         plt.plot(self.loss_2ndOpen, label="1st Order Penalty")
         plt.plot(self.loss_reg, label="Regularization")

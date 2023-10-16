@@ -95,7 +95,7 @@ class SpectralCoherence(nn.Module):
     @torch.jit.export
     def EddyLifetime(self, k: Union[torch.Tensor, None] = None) -> torch.Tensor:
         """
-        _summary_
+        Eddy Lifetime evaluation conditional branching function to individual implementations
 
         Parameters
         ----------
@@ -118,19 +118,19 @@ class SpectralCoherence(nn.Module):
         else:
             self._exp_scales()
         kL = self.LengthScale * k.norm(dim=-1)
-        if self.type_EddyLifetime == "const":
+
+        if self.type_EddyLifetime == EddyLifetimeType.CONST:
             tau = torch.ones_like(kL)
-        elif (
-            self.type_EddyLifetime == "Mann"
-        ):  ### uses numpy - can not be backpropagated !!
+        elif self.type_EddyLifetime == EddyLifetimeType.MANN:  # NOTE: uses numpy --> cannot be backpropagated
             tau = MannEddyLifetime(kL)
-        elif self.type_EddyLifetime == "TwoThird":
+        elif self.type_EddyLifetime == EddyLifetimeType.TWOTHIRD:
             tau = kL ** (-2 / 3)
-        elif self.type_EddyLifetime == "tauNet":
+        elif self.type_EddyLifetime == EddyLifetimeType.TAUNET:
             tau0 = self.InitialGuess_EddyLifetime(k.norm(dim=-1))
             tau = tau0 + self.tauNet(k)
         else:
-            raise Exception("Wrong EddyLifetime model !")
+            raise ValueError("Provided EddyLifetimeType is not implemented")
+
         return self.TimeScale * tau
 
     @torch.jit.export
@@ -181,17 +181,17 @@ class SpectralCoherence(nn.Module):
     @torch.jit.export
     def get_div(self, Phi: torch.Tensor) -> torch.Tensor:
         """
-        Calculates the divergence of TODO
+        Calculates the divergence of the velocity-spectrum tensor
 
         Parameters
         ----------
         Phi : torch.Tensor
-            _description_
+            Velocity-spectrum tensor
 
         Returns
         -------
         torch.Tensor
-            _description_
+            Divergence of the input Phi
         """
 
         k1, k2, k3 = self.freq

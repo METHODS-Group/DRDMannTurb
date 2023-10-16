@@ -1,23 +1,12 @@
-from itertools import product
-from math import *
-from time import time
-
-import matplotlib.pyplot as plt
 import numpy as np
-import pyfftw
-import scipy.fftpack as fft
-from scipy.linalg import sqrtm
-from scipy.special import kv as Kv
-from tqdm import tqdm
-
-from .sampling_methods import *
-
-#######################################################################################################
-# 	Gaussian Random Field generator class
-#######################################################################################################
+from drdmannturb.wind_generation.sampling_methods import *
 
 
 class GaussianRandomField:
+    """
+    Gaussian Random Field generator class
+    """
+
     def __init__(
         self,
         grid_level,
@@ -70,11 +59,10 @@ class GaussianRandomField:
         self.prng = np.random.RandomState()
         self.noise_std = np.sqrt(np.prod(h))
 
-    # --------------------------------------------------------------------------
-    #   Initialize sampling method
-    # --------------------------------------------------------------------------
-
     def setSamplingMethod(self, method, **kwargs):
+        """
+        Initialize the sampling method
+        """
         self.method = method
 
         if method == METHOD_FFT:
@@ -95,12 +83,10 @@ class GaussianRandomField:
         else:
             raise Exception('Unknown sampling method "{0}".'.format(method))
 
-    # --------------------------------------------------------------------------
-    #   Sample a realization
-    # --------------------------------------------------------------------------
-
-    ### Reseed pseudo-random number generator
     def reseed(self, seed=None):
+        """
+        Quick routine to seed the PRNG
+        """
         if seed is not None:
             self.prng.seed(seed)
         else:
@@ -130,12 +116,11 @@ class GaussianRandomField:
         return field
 
 
-#######################################################################################################
-# 	Gaussian Random Vector Field generator class
-#######################################################################################################
-
-
 class VectorGaussianRandomField(GaussianRandomField):
+    """
+    Gaussian random vector field generator
+    """
+
     def __init__(self, vdim=3, **kwargs):
         super().__init__(**kwargs)
         self.vdim = vdim

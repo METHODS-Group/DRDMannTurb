@@ -22,6 +22,14 @@ class OnePointSpectra(nn.Module):
         nn_parameters: NNParameters = NNParameters(),
         learn_nu: bool = False,
     ):
+        """
+        __description__
+
+        Parameters
+        ----------
+
+        
+        """
         super(OnePointSpectra, self).__init__()
 
         self.type_EddyLifetime = type_eddy_lifetime
@@ -48,24 +56,13 @@ class OnePointSpectra(nn.Module):
         self.logMagnitude = nn.Parameter(torch.tensor(0, dtype=torch.float64))
 
         if self.type_EddyLifetime == EddyLifetimeType.TAUNET:
-            # TODO -- FIX TAUNET
             self.tauNet = TauNet(nn_parameters)
-            # self.tauNet = tauNet(n_layers, hidden_layer_size, n_modes, learn_nu)
 
         elif self.type_EddyLifetime == EddyLifetimeType.CUSTOMMLP:
-            """
-            Requires n_layers, activations, n_modes, learn_nu
-            """
             self.tauNet = CustomNet(nn_parameters.nlayers, learn_nu=learn_nu)
-            # self.tauNet = customNet(n_layers, hidden_layer_size)
 
         elif self.type_EddyLifetime == EddyLifetimeType.TAURESNET:
-            """
-            Requires hidden_layer_sizes, n_modes, learn_nu
-            """
-
             self.tauNet = TauResNet(nn_parameters)
-            # self.tauNet = TauResNet(hidden_layer_sizes, n_modes, learn_nu)
 
     def exp_scales(self) -> tuple[float, float, float]:
         """
