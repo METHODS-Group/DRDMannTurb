@@ -1,7 +1,5 @@
 """
 Spectral Coherence module
-
-TODO -- move the EddyLifetime and PowerSpectra into Enums s.t. I can get rid of kwargs
 """
 
 from typing import Optional, Union
@@ -10,11 +8,11 @@ import torch
 import torch.nn as nn
 from numpy import log
 
-from drdmannturb.calibration.nn_modules import TauNet
-from drdmannturb.calibration.power_spectra_rdt import PowerSpectraRDT
-from drdmannturb.shared.common import MannEddyLifetime, VKEnergySpectrum
-from drdmannturb.shared.enums import EddyLifetimeType, PowerSpectraType
-from drdmannturb.shared.parameters import NNParameters
+from drdmannturb.nn_modules import TauNet
+from drdmannturb.spectra_fitting.power_spectra_rdt import PowerSpectraRDT
+from drdmannturb.common import MannEddyLifetime, VKEnergySpectrum
+from drdmannturb.enums import EddyLifetimeType, PowerSpectraType
+from drdmannturb.parameters import NNParameters
 
 
 class SpectralCoherence(nn.Module):

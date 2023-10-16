@@ -1,8 +1,6 @@
 """
-This module provides 
+This module implements the exposed CalibrationProblem class.
 """
-
-
 
 import os
 import pickle
@@ -13,19 +11,22 @@ import numpy as np
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
-from drdmannturb.calibration.one_point_spectra import OnePointSpectra
-from drdmannturb.shared.common import MannEddyLifetime
-from drdmannturb.shared.enums import EddyLifetimeType
-from drdmannturb.shared.parameters import (
+from drdmannturb.spectra_fitting.one_point_spectra import OnePointSpectra
+from drdmannturb.common import MannEddyLifetime
+from drdmannturb.enums import EddyLifetimeType
+from drdmannturb.parameters import (
     LossParameters,
     NNParameters,
     PhysicalParameters,
     ProblemParameters,
 )
-from drdmannturb.calibration.spectral_coherence import SpectralCoherence
+from drdmannturb.spectra_fitting.spectral_coherence import SpectralCoherence
+import drdmannturb.loggers as lgg
 
-plt.rc("text", usetex=True)
-plt.rc("font", family="serif")
+
+# TODO -- move these into the specific plots utils
+# plt.rc("text", usetex=True)
+# plt.rc("font", family="serif")
 
 
 def generic_loss(
@@ -74,6 +75,7 @@ class CalibrationProblem:
             L=0.59, Gamma=3.9, sigma=3.4
         ),
         output_directory: str = "./results",
+        logging_level: int = lgg.log.ERROR
     ):
         """Constructor for CalibrationProblem class. As depicted in the UML diagram, this class consists of 4 dataclasses.
 
@@ -98,6 +100,7 @@ class CalibrationProblem:
             The directory to write output to; by default "./results"
         """
         self.init_device(device)
+        lgg.drdmannturb_log.setLevel(logging_level)
 
         self.nn_params = nn_params
         self.prob_params = prob_params
@@ -126,7 +129,7 @@ class CalibrationProblem:
         self.vdim = 3
         self.output_directory = output_directory
         self.fg_coherence = prob_params.fg_coherence
-        if self.fg_coherence:
+        if self.fg_coherence: # TODO -- Spectral Coherence needs to be updated with new parameter dataclasses
             self.Coherence = SpectralCoherence(**kwargs)
 
         self.epoch_model_sizes = torch.empty((prob_params.nepochs,))
@@ -279,7 +282,7 @@ class CalibrationProblem:
         model_magnitude_order=1,
         optimizer_class: Any = torch.optim.LBFGS,
     ):
-        print("\nCalibrating MannNet...")
+        lgg.drdmannturb_log.info("Calibrating MannNet...")
 
         DataPoints, DataValues = data
         OptimizerClass = optimizer_class
@@ -429,7 +432,7 @@ class CalibrationProblem:
         self.loss_2ndOpen = []
         self.loss_1stOpen = []
 
-        print("Initial loss: ", self.loss.item())
+        lgg.drdmannturb_log.lossinfo(f"Initial loss: {self.loss.item()}")
         self.loss_history_total.append(self.loss.item())
         self.loss_history_epochs.append(self.loss.item())
         # TODO make sure this doesn't do anything when not using tauNet
@@ -505,14 +508,16 @@ class CalibrationProblem:
                     break
 
                 if np.isnan(self.loss.item()) or np.isinf(self.loss.item()):
-                    print("WARNING -- LOSS IS NAN OR INF")
+                    lgg.drdmannturb_log.warning("LOSS IS NAN OR INF")
                     break
 
         print("\n=================================")
         print("{Calibration.py -- calibrate} Calibration terminated.")
         print("=================================\n")
-        print(f"loss = {self.loss.item()}")
-        print(f"tol  = {tol}")
+        lgg.drdmannturb_log.optinfo(
+            f"Calibration terminated with loss = {self.loss.item()} at tol = {tol}",
+            "Calibration"
+        )
         self.print_parameters()
         # self.plot(plt_dynamic=False)
 

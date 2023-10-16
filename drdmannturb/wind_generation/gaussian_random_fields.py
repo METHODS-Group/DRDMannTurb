@@ -1,3 +1,7 @@
+"""
+This module implements and exposes a Gaussian random field generator
+"""
+
 import numpy as np
 from drdmannturb.wind_generation.sampling_methods import *
 

@@ -1,3 +1,7 @@
+"""
+This module implements and exposes the various sampling methods required
+"""
+
 import os
 from math import *
 from time import time

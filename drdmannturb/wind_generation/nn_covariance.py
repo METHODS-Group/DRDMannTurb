@@ -1,3 +1,8 @@
+"""
+This module implements and exposes a covariance implementation for
+neural network models.
+"""
+
 import numpy as np
 import torch
 

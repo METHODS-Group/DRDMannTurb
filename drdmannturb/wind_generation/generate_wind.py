@@ -5,16 +5,15 @@ import numpy as np
 
 from drdmannturb.spectra_fitting.calibration import CalibrationProblem
 
-from .covariance_kernels import MannCovariance, VonKarmanCovariance
-from .gaussian_random_fields import *
-from .nn_covariance import NNCovariance
+from drdmannturb.wind_generation.covariance_kernels import MannCovariance, VonKarmanCovariance
+from drdmannturb.wind_generation.gaussian_random_fields import *
+from drdmannturb.wind_generation.nn_covariance import NNCovariance
 
 
 class GenerateWind:
     """
     Wind generation class
     """
-
 
     def __init__(
         self,

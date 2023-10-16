@@ -6,12 +6,14 @@ import numpy as np
 import torch
 from scipy.optimize import curve_fit, differential_evolution
 
-from drdmannturb.shared.enums import DataType
+from drdmannturb.enums import DataType
 
 
 class OnePointSpectraDataGenerator:
     """
     One point spectra data generator
+
+    TODO -- better introduction/ description of its purpose in the code
     """
 
     def __init__(
@@ -23,12 +25,9 @@ class OnePointSpectraDataGenerator:
         spectra_file: Optional[Path] = None,
         zref: float = 1.0,
         seed: int = 3,
-    ):  # TODO: make docstrings make sense
+    ):
         """
-        Constructor for the data generator
-
-        TODO -- the parameter descriptions
-        TODO -- some of these should *not* have default values?
+        TODO -- This needs a better introduction
 
         Parameters
         ----------
