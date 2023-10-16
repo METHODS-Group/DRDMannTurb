@@ -189,8 +189,10 @@ class CalibrationProblem:
 
         vector_to_parameters(param_vec, self.OPS.parameters())
 
-    def initialize_parameters_with_noise(self):
-        """_summary_"""
+    def initialize_parameters_with_noise(self) -> None:
+        """
+        TODO -- docstring
+        """
         noise = torch.tensor(
             self.noise_magnitude * torch.randn(*self.parameters.shape),
             dtype=torch.float64,
@@ -202,7 +204,7 @@ class CalibrationProblem:
         vector_to_parameters(noise.abs(), self.OPS.Corrector.parameters())
 
     def eval(self, k1):
-        """_summary_
+        """TODO -- docstring
 
         Parameters
         ----------
@@ -220,7 +222,7 @@ class CalibrationProblem:
         return self.format_output(Output)
 
     def eval_grad(self, k1):
-        """_summary_
+        """TODO -- docstring
 
         Parameters
         ----------
@@ -273,15 +275,28 @@ class CalibrationProblem:
         return out.cpu().numpy()
 
     # -----------------------------------------
-    # Calibration method
-    # -----------------------------------------
 
     def calibrate(
         self,
-        data: tuple[Any, Any],
+        data: tuple[Any, Any],  # TODO -- properly type this
         model_magnitude_order=1,
-        optimizer_class: Any = torch.optim.LBFGS,
+        optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
     ):
+        """
+        Calibration method, which handles the main training loop and some
+        data pre-processing.
+
+        Parameters
+        ----------
+        data
+
+        model_magnitude_order
+
+        optimizer_class : torch.optim.Optimizer
+            User's choice of torch optimizer. By default, LBFGS
+        
+        """       
+
         lgg.drdmannturb_log.info("Calibrating MannNet...")
 
         DataPoints, DataValues = data
@@ -432,7 +447,7 @@ class CalibrationProblem:
         self.loss_2ndOpen = []
         self.loss_1stOpen = []
 
-        lgg.drdmannturb_log.lossinfo(f"Initial loss: {self.loss.item()}")
+        lgg.drdmannturb_log.simple_optinfo(f"Initial loss: {self.loss.item()}", tabbed = True)
         self.loss_history_total.append(self.loss.item())
         self.loss_history_epochs.append(self.loss.item())
         # TODO make sure this doesn't do anything when not using tauNet
@@ -489,9 +504,7 @@ class CalibrationProblem:
                 return self.loss
 
             for epoch in range(nepochs):
-                print("\n=================================")
-                print("[Calibration.py -- calibrate]-> Epoch {0:d}".format(epoch))
-                print("=================================\n")
+                lgg.drdmannturb_log.optinfo(f"Epoch {epoch}", "\{Calibration\}")
                 self.epoch_model_sizes[epoch] = self.eval_trainable_magnitude(
                     model_magnitude_order
                 )
@@ -500,9 +513,9 @@ class CalibrationProblem:
                 # scheduler.step(self.loss) #if scheduler
                 scheduler.step()  # self.loss
                 self.print_grad()
-                print("---------------------------------\n")
-                self.print_parameters()
-                print("=================================\n")
+                
+                lgg.drdmannturb_log.optinfo(self.print_parameters())
+
                 self.loss_history_epochs.append(self.loss_only)
                 if self.loss.item() < tol:
                     break

@@ -44,6 +44,38 @@ def equals_border_fprint(msg: str, loc: str = "") -> None:
         "=================================\n"
     )
 
+def equals_border_fprint(msg: str, loc: str = "") -> None:
+    """
+    Format print routine with = vertical delimiting. Specifically, prints out
+    in the form
+
+    ```
+    ---------------------------------
+    [{loc}] -> {msg}
+    ---------------------------------
+    ```
+
+    where the substring `[{loc}] -> ` is added only if loc is not empty.
+
+    Parameters
+    ----------
+    msg
+        The intended message
+    loc
+        A string to be printed between square brackets preceding the
+        arrow. Intended to be used as some indication of where the 
+        call to this function is located. By default, the empty string.
+    """
+
+    header = ""
+    if loc is not "":
+        header = f"[{loc}] -> "
+
+    print(f"\n---------------------------------\n"
+        f"{header}{msg}\n"
+        "---------------------------------\n"
+    )
+
 
 def simple_fprint(msg: str, loc: str = "", tabbed: bool = False) -> None:
     """
@@ -74,4 +106,5 @@ def simple_fprint(msg: str, loc: str = "", tabbed: bool = False) -> None:
 
 
 setattr(log.getLoggerClass(), "optinfo", equals_border_fprint)
+setattr(log.getLoggerClass(), "sub_optinfo", dash_border_fprint)
 setattr(log.getLoggerClass(), "simple_optinfo", simple_fprint)
