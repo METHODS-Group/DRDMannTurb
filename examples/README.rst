@@ -9,9 +9,9 @@ The first two examples correspond to the experiments presented in `the original 
     :numbered:
     :caption: Contents:
     
-    Custom Data Fit.ipynb
+    plot_custom_data_fit.py
 
-    plot_Wind_Generation.py
+    plot_wind_generation.py
 
 
 
