@@ -20,6 +20,18 @@ from tqdm import tqdm
 
 
 def FourierOfGaussian(noise):
+    """Multidimensional Fourier Transform of Gaussian
+
+    Parameters
+    ----------
+    noise : _type_
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
     a, b = noise, noise
     for j in range(noise.ndim):
         b = np.roll(np.flip(b, axis=j), 1, axis=j)

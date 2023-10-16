@@ -5,35 +5,35 @@ API Reference
 
 This is the main reference for the forward-facing interface. 
 
-********************
-DataClass Primitives
-********************
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
 
-NNParameters
-------------
+   calibration
 
-.. autoclass:: drdmannturb.shared.parameters.NNParameters
-    :members: 
+.. raw:: html
 
-.. autoclass:: drdmannturb.shared.parameters.LossParameters
-    :members: 
-
-.. autoclass:: drdmannturb.shared.parameters.PhysicalParameters
-    :members: 
-
-.. autoclass:: drdmannturb.shared.parameters.ProblemParameters
-    :members: 
+    <hr>
 
 
-*******
-Classes
-*******
+.. toctree::
+   :maxdepth: 2
 
-CalibrationProblem
-------------------
+   dataclasses
 
-.. autoclass:: drdmannturb.calibration.CalibrationProblem
-    :members:
+.. raw:: html
+
+    <hr>
+
+
+.. toctree::
+   :maxdepth: 2
+
+   windgeneration
+
+.. raw:: html
+
+    <hr>
 
 Forward-Facing Network Architecture Interfaces
 ----------------------------------------------
