@@ -1,19 +1,17 @@
 `DRDMannTurb`
 =============
 
+.. note::
+   This project is still under development.
+
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
    :caption: Contents:
 
    getting-started
    examples
    forward_api
    internal_api   
-
-
-.. note::
-   This project is still under development.
-
 
 Indices and tables
 ==================

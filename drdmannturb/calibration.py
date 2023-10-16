@@ -61,12 +61,10 @@ class CalibrationProblem:
     def __init__(
         self,
         device: str,
-        nn_params: NNParameters = NNParameters(),
-        prob_params: ProblemParameters = ProblemParameters(),
-        loss_params: LossParameters = LossParameters(),
-        phys_params: PhysicalParameters = PhysicalParameters(
-            L=0.59, Gamma=3.9, sigma=3.4
-        ),
+        nn_params: NNParameters,
+        prob_params: ProblemParameters,
+        loss_params: LossParameters,
+        phys_params: PhysicalParameters,
         output_directory: str = "./results",
     ):
         """Constructor for CalibrationProblem class. As depicted in the UML diagram, this class consists of 4 dataclasses.

@@ -1,23 +1,12 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# For the full list of built-in configuration values, see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
-
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
-
-project = "DRDMannTurb"
-copyright = "2023, Matthew Meeker, Alexey Izmailov"
-author = "Alexey Izmailov, Matthew Meeker"
-release = "0.1"
-
-# -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
-
 import plotly.io as pio
 import sphinx_gallery
 
 pio.renderers.default = "sphinx_gallery"
+
+project = "DRDMannTurb"
+copyright = "Alexey Izmailov, Matthew Meeker"
+author = "Alexey Izmailov, Matthew Meeker"
+release = "0.1"
 
 nbsphinx_prolog = r"""
 .. raw:: html
@@ -38,8 +27,7 @@ html_js_files = [
 sphinx_gallery_conf = {
     "examples_dirs": "../../examples",  # path to your example scripts
     "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
-    # 'ignore_pattern': r'*\.csv, *\.dat',
-    # 'filename_pattern': '/plot_'
+    "run_stale_examples": False,
 }
 
 extensions = [
