@@ -199,16 +199,11 @@ class ResNetBlock(nn.Module):
         # This exists since TorchScript doesn't support inheritance, so the superclass method
         # (this one) needs to have a name other than `forward` that can be accessed in a subclass
 
-        # print(f"@@@@BLOCK forward_impl type(x) = {type(x)}")
-
         residual = x
-        # print(f"@@@@BLOCK forward_impl type(residual) = {type(residual)}")
 
         output = self.fc1(x)
-        # print(f"@@@@BLOCK forward_impl after fc1 type(output) = {type(output)}")
 
         output = self.fc2(output)
-        # print(f"@@@@BLOCK forward_impl after fc2 type(output) = {type(output)}")
 
         output += residual
         output = self.relu(output)
