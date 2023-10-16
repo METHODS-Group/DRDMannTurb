@@ -7,4 +7,7 @@ sphinx-panels
 sphinx-notfound-page
 sphinx-copybutton
 sphinxcontrib-mermaid
+sphinxcontrib-jsmath
+nbsphinx
+sphinx-gallery
 myst_parser
