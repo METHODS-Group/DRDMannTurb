@@ -58,7 +58,7 @@ class GenerateWind:
 
             # L, T, M = pb.OPS.update_scales()
             M = (4 * np.pi) * L ** (-5 / 3) * M
-            print("Scales: ", [L, T, M])
+            # print("Scales: ", [L, T, M])
             E0 = M * friction_velocity**2 * reference_height ** (-2 / 3)
             L = L * reference_height
             Gamma = T
@@ -201,7 +201,7 @@ class GenerateWind:
 
         t = time()
         wind_block = self.RF.sample(noise)
-        print("block computation:", time() - t)
+        # print("block computation:", time() - t)
         wind = wind_block[tuple(central_part)]
         if self.blend_num > 0:
             self.blend_region = wind[-self.blend_num :, ...].copy()

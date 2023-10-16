@@ -30,7 +30,7 @@ class GaussianRandomField:
 
         if np.isscalar(grid_level):
             if not np.isscalar(grid_shape):
-                print("grid_level and grid_shape must have the same dimensions")
+                raise ValueError("grid_level and grid_shape must have the same dimensions")
             h = 1 / 2**grid_level
             self.grid_shape = np.array([grid_shape] * ndim)
         else:
@@ -59,7 +59,7 @@ class GaussianRandomField:
         t = time()
         self.setSamplingMethod(sampling_method, **kwargs)
         if self.verbose:
-            print("Init method {0:s}, time {1}".format(self.method, time() - t))
+            lgg.drdmannturb_log.info("Init method {0:s}, time {1}".format(self.method, time() - t))
 
         # Pseudo-random number generator
         self.prng = np.random.RandomState()
@@ -117,7 +117,7 @@ class GaussianRandomField:
         t0 = time()
         field = self.Correlate(noise)
         if self.verbose >= 2:
-            print("Convolution time: ", time() - t0)
+            lgg.drdmannturb_log.info("Convolution time: ", time() - t0)
 
         return field
 

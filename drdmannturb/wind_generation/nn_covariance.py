@@ -6,9 +6,10 @@ neural network models.
 import numpy as np
 import torch
 
-from .covariance_kernels import Covariance
+from drdmannturb.wind_generation.covariance_kernels import Covariance
 
 
+# TODO -- this still has kwargs...
 class NNCovariance(Covariance):
     """
     Neural Network Covariance class
@@ -18,8 +19,8 @@ class NNCovariance(Covariance):
 
         ### Spatial dimensions
         if ndim != 3:
-            print("ndim MUST BE 3")
-            raise
+            raise ValueError("ndim MUST BE 3")
+
         self.ndim = 3
 
         self.L = length_scale
