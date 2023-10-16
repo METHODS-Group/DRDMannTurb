@@ -11,6 +11,10 @@ The first two examples correspond to the experiments presented in `the original 
     
     plot_synthetic_fit.py
 
+    plot_synthetic_deep_arch.py
+
+    plot_synthetic_3term_loss.py
+
     plot_interpolating_and_fitting.py
 
     plot_custom_data_fit.py
