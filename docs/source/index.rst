@@ -2,7 +2,7 @@
 =============
 
 .. toctree::
-   :maxdepth: 8
+   :maxdepth: 4
    :caption: Contents:
 
    getting-started

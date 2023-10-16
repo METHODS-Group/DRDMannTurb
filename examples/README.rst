@@ -18,4 +18,3 @@ The first two examples correspond to the experiments presented in `the original 
     plot_wind_generation.py
 
     
-

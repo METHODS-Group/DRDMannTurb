@@ -1,7 +1,7 @@
 .. py:currentmodule:: drdmannturb
 
 API Reference
-======================
+=============
 
 This is the main reference for the forward-facing interface. 
 
@@ -46,3 +46,10 @@ Forward-Facing Network Architecture Interfaces
 
 .. autoclass::drdmannturb.nn_modules.TauResNet
     :members:
+
+*************
+Interpolation
+*************
+
+    .. automodule:: drdmannturb.interpolation
+        :members: 
