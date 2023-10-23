@@ -307,7 +307,12 @@ class OnePointSpectraDataGenerator:
         F = torch.zeros([3, 3])
         return F
 
-    def plot(self, x_interp: Optional[np.ndarray] = None):
+    def plot(
+        self,
+        x_interp: Optional[np.ndarray] = None,
+        spectra_full: Optional[np.ndarray] = None,
+        x_coords_full: Optional[np.ndarray] = None,
+    ):
         """_summary_
 
         Parameters
@@ -321,7 +326,7 @@ class OnePointSpectraDataGenerator:
             _description_
         """
 
-        fig, ax = plt.figure()
+        fig, ax = plt.subplots()
 
         cmap = plt.get_cmap("Spectral", 4)
         custom_palette = [mpl.colors.rgb2hex(cmap(i)) for i in range(cmap.N)]
@@ -330,6 +335,11 @@ class OnePointSpectraDataGenerator:
             if x_interp is None:
                 raise ValueError(
                     "Provide interpolation domain (normal space) for filtered plots."
+                )
+
+            if spectra_full is None or x_coords_full is None:
+                raise ValueError(
+                    "Provide original spectra and associated domains as a single stack of np.arrays, even if all x coordinates are matching."
                 )
 
             x_interp_plt = np.log10(x_interp)
@@ -346,4 +356,62 @@ class OnePointSpectraDataGenerator:
                 color=custom_palette[0],
             )
 
-            pass
+            ax.plot(
+                x_coords_full[0],
+                spectra_full[0],
+                "o",
+                label="Observed u spectra",
+                color=custom_palette[0],
+            )
+
+            ax.plot(
+                x_interp_plt,
+                filtered_data_fit[:, 1, 1],
+                label="Filtered v spectra",
+                color=custom_palette[1],
+            )
+
+            ax.plot(
+                x_coords_full[1],
+                spectra_full[1],
+                "o",
+                label="Observed v spectra",
+                color=custom_palette[1],
+            )
+
+            ax.plot(
+                x_interp_plt,
+                filtered_data_fit[:, 2, 2],
+                label="Filtered w spectra",
+                color=custom_palette[2],
+            )
+
+            ax.plot(
+                x_coords_full[2],
+                spectra_full[2],
+                "o",
+                label="Observed w spectra",
+                color=custom_palette[2],
+            )
+
+            ax.plot(
+                x_interp_plt,
+                filtered_data_fit[:, 0, 2],
+                label="Filtered uw cospectra",
+                color=custom_palette[3],
+            )
+
+            ax.plot(
+                x_coords_full[3],
+                spectra_full[3],
+                "o",
+                label="Observed uw cospectra",
+                color=custom_palette[3],
+            )
+
+            ax.set_title("Filtered and Original Spectra")
+            ax.set_xlabel(r"$k_1$")
+            ax.set_ylabel(r"$k_1 F_i /u_*^2$")
+            ax.legend()
+
+            fig.show()

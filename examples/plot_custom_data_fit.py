@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
-from scipy.interpolate import CubicSpline
 
 from drdmannturb.calibration import CalibrationProblem
 from drdmannturb.data_generator import OnePointSpectraDataGenerator
