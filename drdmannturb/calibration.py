@@ -220,14 +220,21 @@ class CalibrationProblem:
             - TimeScale
             - Magnitude
         """
-        parameters = self.parameters
-        parameters[:3] = [
-            np.log(self.phys_params.L),
-            np.log(self.phys_params.Gamma),
-            np.log(self.phys_params.sigma),
-        ]
+        if (
+            self.phys_params.L > 0
+            and self.phys_params.Gamma > 0
+            and self.phys_params.sigma > 0
+        ):
+            parameters = self.parameters
+            parameters[:3] = [
+                np.log(self.phys_params.L),
+                np.log(self.phys_params.Gamma),
+                np.log(self.phys_params.sigma),
+            ]
 
-        self.parameters = parameters[: len(self.parameters)]
+            self.parameters = parameters[: len(self.parameters)]
+        else:
+            raise ValueError("All dimension scaling constants must be positive.")
 
     def initialize_parameters_with_noise(self):
         """_summary_"""

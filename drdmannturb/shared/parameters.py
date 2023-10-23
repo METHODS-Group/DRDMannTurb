@@ -156,4 +156,6 @@ class NNParameters:
     # [10, 10]
     activations: List[str] = field(default_factory=list)
     # ["relu", "relu"]
+    n_modes: int = 10
+
     output_size: int = 3

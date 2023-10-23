@@ -49,14 +49,25 @@ class OnePointSpectra(nn.Module):
 
         if self.type_EddyLifetime == EddyLifetimeType.TAUNET:
             # TODO -- FIX TAUNET
-            self.tauNet = TauNet(nn_parameters)
+            self.tauNet = TauNet(
+                nn_parameters.nlayers,
+                nn_parameters.hidden_layer_size,
+                nn_parameters.n_modes,
+                learn_nu=learn_nu,
+            )
             # self.tauNet = tauNet(n_layers, hidden_layer_size, n_modes, learn_nu)
 
         elif self.type_EddyLifetime == EddyLifetimeType.CUSTOMMLP:
             """
             Requires n_layers, activations, n_modes, learn_nu
             """
-            self.tauNet = CustomNet(nn_parameters.nlayers, learn_nu=learn_nu)
+            self.tauNet = CustomNet(
+                nn_parameters.nlayers,
+                nn_parameters.hidden_layer_sizes,
+                nn_parameters.activations,
+                nn_parameters.n_modes,
+                learn_nu=learn_nu,
+            )
             # self.tauNet = customNet(n_layers, hidden_layer_size)
 
         elif self.type_EddyLifetime == EddyLifetimeType.TAURESNET:
@@ -64,7 +75,11 @@ class OnePointSpectra(nn.Module):
             Requires hidden_layer_sizes, n_modes, learn_nu
             """
 
-            self.tauNet = TauResNet(nn_parameters)
+            self.tauNet = TauResNet(
+                nn_parameters.hidden_layer_sizes,
+                nn_parameters.n_modes,
+                learn_nu=learn_nu,
+            )
             # self.tauNet = TauResNet(hidden_layer_sizes, n_modes, learn_nu)
 
     def exp_scales(self) -> tuple[float, float, float]:
