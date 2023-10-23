@@ -1,6 +1,8 @@
 """
 This module implements and exposes the various terms that can be
 added and scaled in a generic loss function
+
+TODO -- currently not utilized
 """
 
 import torch

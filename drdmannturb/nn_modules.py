@@ -104,11 +104,13 @@ class SimpleNN(nn.Module):
             Network output
         """
         out = x.clone()
+
         for lin in self.linears:
             out = self.actfc(lin(out))
+
         out = self.linear_out(out)
-        out += x
-        return out
+
+        return out + x
 
 
 class CustomMLP(nn.Module):
@@ -135,8 +137,12 @@ class CustomMLP(nn.Module):
         """
         super().__init__()
 
+        num_layers = len(hlayers)
         self.linears = nn.ModuleList(
-            [nn.Linear(hlayer, hlayer, bias=False).double() for hlayer in hlayers]
+            [
+                nn.Linear(hlayers[k], hlayers[k + 1], bias=False).double()
+                for k in range(num_layers - 1)
+            ]
         )
         self.linears.insert(0, nn.Linear(inlayer, hlayers[0], bias=False).double())
         self.linear_out = nn.Linear(hlayers[-1], outlayer, bias=False).double()
@@ -164,8 +170,8 @@ class CustomMLP(nn.Module):
         """
         out = x.clone()
 
-        for lin, activ in zip(self.linears, self.activations):
-            out = activ(lin(out))
+        for idx, lin in enumerate(self.linears):
+            out = self.activations[idx](lin(out))
 
         out = self.linear_out(out)
 

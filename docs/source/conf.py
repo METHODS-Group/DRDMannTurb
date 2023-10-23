@@ -1,20 +1,37 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# For the full list of built-in configuration values, see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
+import plotly.io as pio
+import sphinx_gallery
 
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+pio.renderers.default = "sphinx_gallery"
 
 project = "DRDMannTurb"
-copyright = "2023, Matthew Meeker, Alexey Izmailov"
+copyright = "Alexey Izmailov, Matthew Meeker"
 author = "Alexey Izmailov, Matthew Meeker"
 release = "0.1"
 
-# -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+nbsphinx_prolog = r"""
+.. raw:: html
+
+    <script src='http://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js'></script>
+    <script>require=requirejs;</script>
+
+
+"""
+
+html_js_files = [
+    "require.min.js",  # Add to your _static
+    "custom.js",
+]
+
+
+# declare examples directory for sphinx-gallery scraper
+sphinx_gallery_conf = {
+    "examples_dirs": "../../examples",  # path to your example scripts
+    "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
+    "run_stale_examples": False,
+}
 
 extensions = [
+    "sphinx_gallery.gen_gallery",
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",

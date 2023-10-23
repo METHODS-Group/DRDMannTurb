@@ -9,8 +9,16 @@ The first two examples correspond to the experiments presented in `the original 
     :numbered:
     :caption: Contents:
     
-    Synthetic Data Fit.ipynb
+    plot_synthetic_fit.py
 
-    Custom Data Fit.ipynb
+    plot_synthetic_deep_arch.py
 
-    Interpolating and Fitting.ipynb
+    plot_synthetic_3term_loss.py
+
+    plot_interpolating_and_fitting.py
+
+    plot_custom_data_fit.py
+
+    plot_wind_generation.py
+
+    

@@ -1,43 +1,64 @@
 import pickle
+from os import PathLike
 from time import time
+from typing import Union
 
 import numpy as np
 
-from drdmannturb.spectra_fitting.calibration import CalibrationProblem
+from drdmannturb.spectra_fitting import CalibrationProblem
 
-from drdmannturb.wind_generation.covariance_kernels import (
-    MannCovariance,
-    VonKarmanCovariance,
-)
-from drdmannturb.wind_generation.gaussian_random_fields import *
-from drdmannturb.wind_generation.nn_covariance import NNCovariance
+from .covariance_kernels import MannCovariance, VonKarmanCovariance
+from .gaussian_random_fields import *
+from .nn_covariance import NNCovariance
 
 
 class GenerateWind:
-    """
-    Wind generation class
-    """
-
     def __init__(
         self,
         friction_velocity,
         reference_height,
         grid_dimensions,
         grid_levels,
+        model: str,
+        path_to_parameters: Union[str, PathLike],
         seed=None,
         blend_num=10,
-        **kwargs
     ):
-        model = kwargs.get("model", "Mann")  ### 'FPDE_RDT', 'Mann', 'VK', 'NN'
+        """_summary_
+
+        Parameters
+        ----------
+        friction_velocity : _type_
+            _description_
+        reference_height : _type_
+            _description_
+        grid_dimensions : _type_
+            _description_
+        grid_levels : _type_
+            _description_
+        model : str
+            _description_
+        path_to_parameters : Union[str, PathLike]
+            _description_
+        seed : _type_, optional
+            _description_, by default None
+        blend_num : int, optional
+            _description_, by default 10
+
+        Raises
+        ------
+        ValueError
+            _description_
+        """
+
+        if model not in ["NN", "VK", "FPDE_RDT", "Mann"]:
+            raise ValueError(
+                "Provided model type not supported, must be one of NN, VK, FPDT_RDT, MANN"
+            )
 
         # # Parameters taken from pg 13 of M. Andre's dissertation
-        # # model = 'FPDE_RDT'
-        # model = 'Mann'
-        # # model = 'VK'
-        # model = 'NN'
 
         if model == "NN":
-            path_to_parameters = kwargs.get("path_to_parameters", None)
             with open(path_to_parameters, "rb") as file:
                 (
                     nn_params,
@@ -61,7 +82,7 @@ class GenerateWind:
 
             # L, T, M = pb.OPS.update_scales()
             M = (4 * np.pi) * L ** (-5 / 3) * M
-            # print("Scales: ", [L, T, M])
+            print("Scales: ", [L, T, M])
             E0 = M * friction_velocity**2 * reference_height ** (-2 / 3)
             L = L * reference_height
             Gamma = T
@@ -134,24 +155,24 @@ class GenerateWind:
         if model == "VK":
             self.Covariance = VonKarmanCovariance(ndim=3, length_scale=L, E0=E0)
             self.RF = VectorGaussianRandomField(
-                **kwargs,
+                # **kwargs,
                 ndim=3,
                 grid_level=grid_levels,
                 grid_dimensions=grid_dimensions,
                 sampling_method="vf_fftw",
                 grid_shape=self.noise_shape[:-1],
-                Covariance=self.Covariance
+                Covariance=self.Covariance,
             )
         elif model == "Mann":
             self.Covariance = MannCovariance(ndim=3, length_scale=L, E0=E0, Gamma=Gamma)
             self.RF = VectorGaussianRandomField(
-                **kwargs,
+                # **kwargs,
                 ndim=3,
                 grid_level=grid_levels,
                 grid_dimensions=grid_dimensions,
                 sampling_method="vf_fftw",
                 grid_shape=self.noise_shape[:-1],
-                Covariance=self.Covariance
+                Covariance=self.Covariance,
             )
         elif model == "FPDE_RDT":
             self.Covariance = None
@@ -175,13 +196,13 @@ class GenerateWind:
                 h_ref=reference_height,
             )
             self.RF = VectorGaussianRandomField(
-                **kwargs,
+                # **kwargs,
                 ndim=3,
                 grid_level=grid_levels,
                 grid_dimensions=grid_dimensions,
                 sampling_method="vf_fftw",
                 grid_shape=self.noise_shape[:-1],
-                Covariance=self.Covariance
+                Covariance=self.Covariance,
             )
 
         self.RF.reseed(self.seed)
