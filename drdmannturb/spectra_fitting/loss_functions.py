@@ -33,6 +33,7 @@ def PenTerm1stO(y):
     pen = torch.mean(f)
     return pen
 
+
 def RegTerm():
     """
     TODO: are these embedded functions necessary?

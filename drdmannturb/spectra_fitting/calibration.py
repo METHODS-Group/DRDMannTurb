@@ -75,7 +75,7 @@ class CalibrationProblem:
             L=0.59, Gamma=3.9, sigma=3.4
         ),
         output_directory: str = "./results",
-        logging_level: int = lgg.log.ERROR
+        logging_level: int = lgg.log.ERROR,
     ):
         """Constructor for CalibrationProblem class. As depicted in the UML diagram, this class consists of 4 dataclasses.
 
@@ -129,7 +129,9 @@ class CalibrationProblem:
         self.vdim = 3
         self.output_directory = output_directory
         self.fg_coherence = prob_params.fg_coherence
-        if self.fg_coherence: # TODO -- Spectral Coherence needs to be updated with new parameter dataclasses
+        if (
+            self.fg_coherence
+        ):  # TODO -- Spectral Coherence needs to be updated with new parameter dataclasses
             self.Coherence = SpectralCoherence(**kwargs)
 
         self.epoch_model_sizes = torch.empty((prob_params.nepochs,))
@@ -294,7 +296,7 @@ class CalibrationProblem:
 
         optimizer_class : torch.optim.Optimizer
             User's choice of torch optimizer. By default, LBFGS
-        """       
+        """
 
         lgg.drdmannturb_log.info("Calibrating MannNet...")
 
@@ -444,7 +446,9 @@ class CalibrationProblem:
         self.loss_2ndOpen = []
         self.loss_1stOpen = []
 
-        lgg.drdmannturb_log.simple_optinfo(f"Initial loss: {self.loss.item()}", tabbed = True)
+        lgg.drdmannturb_log.simple_optinfo(
+            f"Initial loss: {self.loss.item()}", tabbed=True
+        )
         self.loss_history_total.append(self.loss.item())
         self.loss_history_epochs.append(self.loss.item())
         # TODO make sure this doesn't do anything when not using tauNet
@@ -492,7 +496,7 @@ class CalibrationProblem:
                     self.loss += pen
                 self.loss.backward()
                 lgg.drdmannturb_log.simple_optinfo(f"Loss = {self.loss.item()}")
-                
+
                 # TODO -- reimplement nu value logging
                 # if hasattr(self.OPS, 'tauNet'):
                 #     if hasattr(self.OPS.tauNet.Ra.nu, 'item'):
@@ -513,7 +517,7 @@ class CalibrationProblem:
                 # scheduler.step(self.loss) #if scheduler
                 scheduler.step()  # self.loss
                 self.print_grad()
-                
+
                 lgg.drdmannturb_log.optinfo(self.print_parameters())
 
                 self.loss_history_epochs.append(self.loss_only)
@@ -526,7 +530,7 @@ class CalibrationProblem:
 
         lgg.drdmannturb_log.optinfo(
             f"Calibration terminated with loss = {self.loss.item()} at tol = {tol}",
-            "Calibration"
+            "Calibration",
         )
         self.print_parameters()
         # self.plot(plt_dynamic=False)
@@ -601,7 +605,7 @@ class CalibrationProblem:
         ----------
         beta_pen : float, optional
             The loss beta penalty term coefficient; by default, 0.0
-        """        
+        """
         plt.figure()
         plt.plot(self.loss_2ndOpen, label="1st Order Penalty")
         plt.plot(self.loss_reg, label="Regularization")

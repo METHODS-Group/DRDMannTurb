@@ -49,7 +49,7 @@ def PowerSpectraRDT(
 
     zeta1 = C1 - k2 / k1 * C2
     zeta2 = C1 * k2 / k1 + C2
-    E0 /= (4 * np.pi)
+    E0 /= 4 * np.pi
     Phi11 = (
         E0
         / (kk0**2)

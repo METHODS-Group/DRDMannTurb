@@ -8,6 +8,7 @@ class Covariance:
     """
     Generic Covariance implementation class
     """
+
     def __init__(self, ndim=2, verbose=0, **kwargs):
         self.verbose = verbose
 
@@ -24,6 +25,7 @@ class VonKarmanCovariance(Covariance):
     """
     Von Karman covariance class subclassing Covariance
     """
+
     def __init__(self, ndim, length_scale, E0, **kwargs):
         super().__init__(**kwargs)
 
@@ -61,9 +63,16 @@ class VonKarmanCovariance(Covariance):
 class MannCovariance(Covariance):
     """
     Mann covariance implementation
-    """   
+    """
 
-    def __init__(self, ndim: int = 3, length_scale: float = 1.0, E0: float = 1.0, Gamma: float = 1.0, **kwargs):
+    def __init__(
+        self,
+        ndim: int = 3,
+        length_scale: float = 1.0,
+        E0: float = 1.0,
+        Gamma: float = 1.0,
+        **kwargs
+    ):
         super().__init__(**kwargs)
 
         ### Spatial dimensions

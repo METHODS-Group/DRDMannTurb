@@ -122,7 +122,9 @@ class SpectralCoherence(nn.Module):
 
         if self.type_EddyLifetime == EddyLifetimeType.CONST:
             tau = torch.ones_like(kL)
-        elif self.type_EddyLifetime == EddyLifetimeType.MANN:  # NOTE: uses numpy --> cannot be backpropagated
+        elif (
+            self.type_EddyLifetime == EddyLifetimeType.MANN
+        ):  # NOTE: uses numpy --> cannot be backpropagated
             tau = MannEddyLifetime(kL)
         elif self.type_EddyLifetime == EddyLifetimeType.TWOTHIRD:
             tau = kL ** (-2 / 3)

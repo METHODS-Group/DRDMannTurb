@@ -28,7 +28,7 @@ class OnePointSpectra(nn.Module):
         Parameters
         ----------
 
-        
+
         """
         super(OnePointSpectra, self).__init__()
 
@@ -141,7 +141,6 @@ class OnePointSpectra(nn.Module):
             tau = MannEddyLifetime(kL)
         elif self.type_EddyLifetime == EddyLifetimeType.TWOTHIRD:
             tau = kL ** (-2 / 3)
-        # elif self.type_EddyLifetime in ["tauNet", "customMLP", "tauResNet"]:
         elif self.type_EddyLifetime in [
             EddyLifetimeType.TAUNET,
             EddyLifetimeType.CUSTOMMLP,

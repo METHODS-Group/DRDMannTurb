@@ -5,7 +5,10 @@ import numpy as np
 
 from drdmannturb.spectra_fitting.calibration import CalibrationProblem
 
-from drdmannturb.wind_generation.covariance_kernels import MannCovariance, VonKarmanCovariance
+from drdmannturb.wind_generation.covariance_kernels import (
+    MannCovariance,
+    VonKarmanCovariance,
+)
 from drdmannturb.wind_generation.gaussian_random_fields import *
 from drdmannturb.wind_generation.nn_covariance import NNCovariance
 

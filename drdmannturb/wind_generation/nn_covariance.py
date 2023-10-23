@@ -14,6 +14,7 @@ class NNCovariance(Covariance):
     """
     Neural Network Covariance class
     """
+
     def __init__(self, ndim, length_scale, E0, Gamma, **kwargs):
         super().__init__(**kwargs)
 

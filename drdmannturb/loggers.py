@@ -11,7 +11,6 @@ log.addLevelName(5, "OPTINFO")
 setattr(log, "OPTINFO", 5)
 
 
-
 def equals_border_fprint(msg: str, loc: str = "") -> None:
     """
     Format print routine with = vertical delimiting. Specifically, prints out
@@ -31,7 +30,7 @@ def equals_border_fprint(msg: str, loc: str = "") -> None:
         The intended message
     loc
         A string to be printed between square brackets preceding the
-        arrow. Intended to be used as some indication of where the 
+        arrow. Intended to be used as some indication of where the
         call to this function is located. By default, the empty string.
     """
 
@@ -39,10 +38,12 @@ def equals_border_fprint(msg: str, loc: str = "") -> None:
     if loc is not "":
         header = f"[{loc}] -> "
 
-    print(f"\n=================================\n"
+    print(
+        f"\n=================================\n"
         f"{header}{msg}\n"
         "=================================\n"
     )
+
 
 def dash_border_fprint(msg: str, loc: str = "") -> None:
     """
@@ -63,7 +64,7 @@ def dash_border_fprint(msg: str, loc: str = "") -> None:
         The intended message
     loc
         A string to be printed between square brackets preceding the
-        arrow. Intended to be used as some indication of where the 
+        arrow. Intended to be used as some indication of where the
         call to this function is located. By default, the empty string.
     """
 
@@ -71,7 +72,8 @@ def dash_border_fprint(msg: str, loc: str = "") -> None:
     if loc is not "":
         header = f"[{loc}] -> "
 
-    print(f"\n---------------------------------\n"
+    print(
+        f"\n---------------------------------\n"
         f"{header}{msg}\n"
         "---------------------------------\n"
     )

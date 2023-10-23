@@ -12,6 +12,7 @@ import torch.nn as nn
 Learnable functions
 """
 
+
 class Rational(nn.Module):
     """
     Learnable rational kernel

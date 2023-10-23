@@ -147,9 +147,11 @@ class OnePointSpectraDataGenerator:
                     MSE = np.mean(SE)  # mean squared errors
                     RMSE = np.sqrt(MSE)  # Root Mean Squared Error, RMSE
                     Rsquared = 1.0 - (np.var(absError) / np.var(yData))
-                    
+
                     # TODO -- is this the appropriate level?
-                    lgg.drdmannturb_log.debug(f"[AUTO type data generator] : RMSE {RMSE}, R-squared {Rsquared}")
+                    lgg.drdmannturb_log.debug(
+                        f"[AUTO type data generator] : RMSE {RMSE}, R-squared {Rsquared}"
+                    )
 
                     return fittedParameters
 
@@ -164,19 +166,19 @@ class OnePointSpectraDataGenerator:
                 lgg.drdmannturb_log.info("Filtering provided spectra interpolation...")
                 lgg.drdmannturb_log.simple_optinfo("=" * 30)
 
-                lgg.drdmannturb_log.sub_optinfo("fit u spectra")               
+                lgg.drdmannturb_log.sub_optinfo("fit u spectra")
                 fit1 = fitOPS(self.k1, Data_temp[:, 0], 1)
                 DataValues[:, 0, 0] = func124(self.k1, *fit1)
 
-                lgg.drdmannturb_log.sub_optinfo("fit v spectra")               
+                lgg.drdmannturb_log.sub_optinfo("fit v spectra")
                 fit2 = fitOPS(self.k1, Data_temp[:, 1], 2)
                 DataValues[:, 1, 1] = func124(self.k1, *fit2)
 
-                lgg.drdmannturb_log.sub_optinfo("fit w spectra")               
+                lgg.drdmannturb_log.sub_optinfo("fit w spectra")
                 fit3 = fitOPS(self.k1, Data_temp[:, 2], 4)
                 DataValues[:, 2, 2] = func124(self.k1, *fit3)
 
-                lgg.drdmannturb_log.sub_optinfo("fit uw spectra")               
+                lgg.drdmannturb_log.sub_optinfo("fit uw spectra")
                 fit4 = fitOPS(self.k1, Data_temp[:, 3], 3)
                 DataValues[:, 0, 2] = -func3(self.k1, *fit4)
 
