@@ -171,9 +171,39 @@ class CalibrationProblem:
         Parameters
         ----------
         param_vec : Union[np.ndarray, torch.tensor]
-            Single vector of model parameters.
+            One-dimensional vector of model parameters.
+
+        Raises
+        ------
+        ValueError
+            "Parameter vector must contain at least 3 dimensionless scale quantities (L, Gamma, sigma) as well as network parameters, if using one of TAUNET, CUSTOMMLP, or TAURESNET."
+        ValueError
+            "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP, or TAURESNET. Check the architecture being imported against the currently constructed architecture if this mismatch occurs."
+        ValueError
+            "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP, or TAURESNET. Check the architecture being imported against the currently constructed architecture if this mismatch occurs."
         """
-        assert len(param_vec) >= 1
+        if len(param_vec) < 3:
+            raise ValueError(
+                "Parameter vector must contain at least 3 dimensionless scale quantities (L, Gamma, sigma) as well as network parameters, if using one of TAUNET, CUSTOMMLP, or TAURESNET."
+            )
+
+        if len(param_vec) != len(list(self.parameters)):
+            raise ValueError(
+                "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP, or TAURESNET. Check the architecture being imported against the currently constructed architecture if this mismatch occurs."
+            )
+
+        if (
+            self.OPS.type_EddyLifetime
+            in [
+                EddyLifetimeType.TAUNET,
+                EddyLifetimeType.CUSTOMMLP,
+                EddyLifetimeType.TAURESNET,
+            ]
+            and len(param_vec[3:]) != self.num_trainable_params()
+        ):
+            raise ValueError(
+                "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP, or TAURESNET. Check the architecture being imported against the currently constructed architecture if this mismatch occurs."
+            )
 
         if not torch.is_tensor(param_vec):
             param_vec = torch.tensor(
@@ -502,8 +532,8 @@ class CalibrationProblem:
                 print("\n=================================")
                 print("[Calibration.py -- calibrate]-> Epoch {0:d}".format(epoch))
                 print("=================================\n")
-                self.epoch_model_sizes[epoch] = self.eval_trainable_magnitude(
-                    model_magnitude_order
+                self.epoch_model_sizes[epoch] = self.eval_trainable_norm(
+                    model_magnitude_order, ord=1
                 )
                 optimizer.step(closure)
                 # TODO: refactor the scheduler things, plateau requires loss
@@ -552,20 +582,25 @@ class CalibrationProblem:
         # print('grad = ', self.grad)
         pass
 
-    def num_trainable_params(self):
+    def num_trainable_params(self) -> int:
         """Computes the number of trainable network parameters
-            in the underlying model. OPS must be set to either
-            TauNet, customMLP, or tauResNet.
+            in the underlying model.
+
+            The EddyLifetimeType must be set to one of the following, which involve
+            a network surrogate for the eddy lifetime:
+                - TAUNET
+                - CUSTOMMLP
+                - TAURESNET
 
         Returns
         -------
-        _type_
-            _description_
+        int
+            The number of trainable network parameters in the underlying model.
 
         Raises
         ------
         ValueError
-            If the OPS was not initialized to one of TauNet, customMLP, or tauResNet.
+            If the OPS was not initialized to one of TAUNET, CUSTOMMLP, or TAURESNET.
         """
         if self.OPS.type_EddyLifetime not in [
             EddyLifetimeType.TAUNET,
@@ -573,26 +608,30 @@ class CalibrationProblem:
             EddyLifetimeType.TAURESNET,
         ]:
             raise ValueError(
-                "Not using trainable model for approximation, must be TauNet, customMLP, or tauResNet"
+                "Not using trainable model for approximation, must be TAUNET, CUSTOMMLP, or TAURESNET."
             )
 
-        return sum(p.numel() for p in self.OPS.TauNet.parameters())
+        return sum(p.numel() for p in self.OPS.tauNet.parameters())
 
-    def eval_trainable_magnitude(self, ord=1):
+    def eval_trainable_norm(self, ord: Optional[Union[float, str]] = "fro"):
         """Evaluates the magnitude (or other norm) of the
             trainable parameters in the model.
 
-            NOTE: OPS must be set to one of TauNet, customMLP, or tauResNet.
+            NOTE: The EddyLifetimeType must be set to one of the following, which involve
+            a network surrogate for the eddy lifetime:
+                - TAUNET
+                - CUSTOMMLP
+                - TAURESNET
 
         Parameters
         ----------
-        ord : int, optional
-            Lp norm order in which to evaluate model size, by default 1
+        ord : Optional[Union[float, str]]
+            The order of the norm approximation, follows ``torch.norm`` conventions.
 
         Raises
         ------
         ValueError
-            If the OPS was not initialized to one of TauNet, customMLP, or tauResNet.
+            If the OPS was not initialized to one of TAUNET, CUSTOMMLP, or TAURESNET.
 
         """
         if self.OPS.type_EddyLifetime not in [
@@ -601,7 +640,7 @@ class CalibrationProblem:
             EddyLifetimeType.TAURESNET,
         ]:
             raise ValueError(
-                "Not using trainable model for approximation, must be TauNet, customMLP, or tauResNet"
+                "Not using trainable model for approximation, must be TAUNET, CUSTOMMLP, or TAURESNET."
             )
 
         return torch.norm(
