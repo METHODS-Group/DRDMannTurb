@@ -64,6 +64,8 @@ domain = torch.tensor(x_interp)
 
 pb = CalibrationProblem(
     nn_params=NNParameters(
+        nlayers=2,
+        hidden_layer_sizes=[10, 10],
         activations=[nn.GELU(), nn.GELU()],
     ),
     prob_params=ProblemParameters(nepochs=5),
