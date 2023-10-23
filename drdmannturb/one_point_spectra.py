@@ -48,7 +48,6 @@ class OnePointSpectra(nn.Module):
         self.logMagnitude = nn.Parameter(torch.tensor(0, dtype=torch.float64))
 
         if self.type_EddyLifetime == EddyLifetimeType.TAUNET:
-            # TODO -- FIX TAUNET
             self.tauNet = TauNet(
                 nn_parameters.nlayers,
                 nn_parameters.hidden_layer_size,

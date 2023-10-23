@@ -540,7 +540,7 @@ class CalibrationProblem:
                 print("[Calibration.py -- calibrate]-> Epoch {0:d}".format(epoch))
                 print("=================================\n")
                 self.epoch_model_sizes[epoch] = self.eval_trainable_norm(
-                    model_magnitude_order, ord=1
+                    model_magnitude_order
                 )
                 optimizer.step(closure)
                 # TODO: refactor the scheduler things, plateau requires loss

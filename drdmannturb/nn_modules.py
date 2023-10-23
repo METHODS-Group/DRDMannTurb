@@ -135,11 +135,20 @@ class CustomMLP(nn.Module):
         """
         super().__init__()
 
+        print(hlayers, inlayer, outlayer)
+
+        num_layers = len(hlayers)
         self.linears = nn.ModuleList(
-            [nn.Linear(hlayer, hlayer, bias=False).double() for hlayer in hlayers]
+            [
+                nn.Linear(hlayers[k], hlayers[k + 1], bias=False).double()
+                for k in range(num_layers - 1)
+            ]
         )
         self.linears.insert(0, nn.Linear(inlayer, hlayers[0], bias=False).double())
         self.linear_out = nn.Linear(hlayers[-1], outlayer, bias=False).double()
+
+        print(self.linears)
+        print(self.linear_out)
 
         self.activations = activations
 
@@ -163,10 +172,12 @@ class CustomMLP(nn.Module):
             Output of the network
         """
         out = x.clone()
+        print(out.detach().cpu().numpy().shape)
 
         for lin, activ in zip(self.linears, self.activations):
             out = activ(lin(out))
 
+        print(out.detach().cpu().numpy().shape)
         out = self.linear_out(out)
 
         return x + out
