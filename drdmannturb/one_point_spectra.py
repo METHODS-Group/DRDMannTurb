@@ -69,7 +69,12 @@ class OnePointSpectra(nn.Module):
 
     def exp_scales(self) -> tuple[float, float, float]:
         """
-        Exponentiates the length, time, and magnitude scales
+        Exponentiates the length, time, and magnitude scales,
+
+        NOTE: The first 3 parameters of self.parameters() are exactly
+            - LengthScale
+            - TimeScale
+            - Magnitude
 
         Returns
         -------

@@ -45,11 +45,6 @@ pb = CalibrationProblem(
 )
 
 # %%
-parameters = pb.parameters
-parameters[:3] = [np.log(L), np.log(Gamma), np.log(sigma)]
-
-pb.parameters = parameters[: len(pb.parameters)]
-
 k1_data_pts = domain
 DataPoints = [(k1, 1) for k1 in k1_data_pts]
 

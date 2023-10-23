@@ -66,10 +66,6 @@ pb = CalibrationProblem(
 )
 
 # %%
-parameters = pb.parameters
-parameters[:3] = [np.log(L), np.log(GAMMA), np.log(SIGMA)]
-pb.parameters = parameters[: len(pb.parameters)]
-
 CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=","))
 f = CustomData[:, 0]
 k1_data_pts = 2 * torch.pi * f / Uref

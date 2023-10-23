@@ -75,11 +75,6 @@ pb = CalibrationProblem(
 )
 
 # %%
-parameters = pb.parameters
-parameters[:3] = [np.log(L), np.log(Gamma), np.log(sigma)]
-
-pb.parameters = parameters[: len(pb.parameters)]
-
 f = domain
 k1_data_pts = 2 * torch.pi * f / Uref
 

@@ -108,6 +108,8 @@ class CalibrationProblem:
         if self.init_with_noise:
             self.initialize_parameters_with_noise()
 
+        self.log_dimensional_scales()
+
         self.vdim = 3
         self.output_directory = output_directory
         self.fg_coherence = prob_params.fg_coherence
@@ -136,6 +138,10 @@ class CalibrationProblem:
     def parameters(self) -> np.ndarray:
         """Returns all parameters of the One Point Spectra surrogate model as a single vector.
 
+        NOTE: The first 3 parameters of self.parameters() are exactly
+            - LengthScale
+            - TimeScale
+            - Magnitude
         Returns
         -------
         np.ndarray
@@ -157,6 +163,11 @@ class CalibrationProblem:
     def parameters(self, param_vec: Union[np.ndarray, torch.tensor]) -> None:
         """Setter method for loading in model parameters from a given vector.
 
+        NOTE: The first 3 parameters of self.parameters() are exactly
+            - LengthScale
+            - TimeScale
+            - Magnitude
+
         Parameters
         ----------
         param_vec : Union[np.ndarray, torch.tensor]
@@ -170,6 +181,23 @@ class CalibrationProblem:
             )  # TODO: this should also properly load on GPU, issue #28
 
         vector_to_parameters(param_vec, self.OPS.parameters())
+
+    def log_dimensional_scales(self) -> None:
+        """Sets the quantities for non-dimensionalization in log-space.
+
+        NOTE: The first 3 parameters of self.parameters() are exactly
+            - LengthScale
+            - TimeScale
+            - Magnitude
+        """
+        parameters = self.parameters
+        parameters[:3] = [
+            np.log(self.phys_params.L),
+            np.log(self.phys_params.Gamma),
+            np.log(self.phys_params.sigma),
+        ]
+
+        self.parameters = parameters[: len(self.parameters)]
 
     def initialize_parameters_with_noise(self):
         """_summary_"""

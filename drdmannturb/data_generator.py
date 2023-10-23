@@ -2,9 +2,13 @@ import warnings
 from pathlib import Path
 from typing import Any, Optional
 
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from scipy.optimize import curve_fit, differential_evolution
+
+mpl.style.use("bmh")
 
 from drdmannturb.shared.enums import DataType
 
@@ -135,7 +139,7 @@ class OnePointSpectraDataGenerator:
                     geneticParameters = generate_Initial_Parameters()
 
                     # curve fit the test data
-                    fittedParameters, pcov = curve_fit(
+                    fittedParameters, _ = curve_fit(
                         func, xData, yData, geneticParameters, maxfev=50_000
                     )
 
@@ -156,7 +160,7 @@ class OnePointSpectraDataGenerator:
                     Data_temp = self.spectra_values.copy()
                 else:
                     raise ValueError(
-                        "Indicated DataType.AUTO, but did not provide spectra data. "
+                        "Indicated DataType.AUTO, but did not provide raw spectra data. "
                     )
 
                 DataValues = np.zeros([len(self.DataPoints), 3, 3])
@@ -302,3 +306,44 @@ class OnePointSpectraDataGenerator:
 
         F = torch.zeros([3, 3])
         return F
+
+    def plot(self, x_interp: Optional[np.ndarray] = None):
+        """_summary_
+
+        Parameters
+        ----------
+        x_interp : Optional[np.ndarray], optional
+            _description_, by default None
+
+        Raises
+        ------
+        ValueError
+            _description_
+        """
+
+        fig, ax = plt.figure()
+
+        cmap = plt.get_cmap("Spectral", 4)
+        custom_palette = [mpl.colors.rgb2hex(cmap(i)) for i in range(cmap.N)]
+
+        if self.data_type == DataType.AUTO:
+            if x_interp is None:
+                raise ValueError(
+                    "Provide interpolation domain (normal space) for filtered plots."
+                )
+
+            x_interp_plt = np.log10(x_interp)
+            filtered_data_fit = (
+                self.Data[1].cpu().numpy()
+                if torch.cuda.is_available()
+                else self.Data[1].numpy()
+            )
+
+            ax.plot(
+                x_interp_plt,
+                filtered_data_fit[:, 0, 0],
+                label="Filtered u spectra",
+                color=custom_palette[0],
+            )
+
+            pass
