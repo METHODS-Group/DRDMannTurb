@@ -606,7 +606,6 @@ class CalibrationProblem:
     # ------------------------------------------------
 
     def print_parameters(self):
-        
         lgg.drdmannturb_log.warning("[print_parameters] seems deprecated")
         # print(('Optimal NN parameters = [' + ', '.join(['{}'] *
         #       len(self.parameters)) + ']\n').format(*self.parameters))
@@ -805,7 +804,6 @@ class CalibrationProblem:
             self.kF_model_vals = self.OPS(k1).cpu().detach().numpy()
 
         if not hasattr(self, "fig"):
-
             nrows = 1
             ncols = 2 if plt_tau else 1
 
