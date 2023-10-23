@@ -81,6 +81,9 @@ class SimpleNN(nn.Module):
         self.linears.insert(0, nn.Linear(inlayer, hlayer, bias=False).double())
         self.linear_out = nn.Linear(hlayer, outlayer, bias=False).double()
 
+        print(self.linears)
+        print(self.linear_out)
+
         self.actfc = nn.ReLU()
 
         # NOTE: init parameters with noise
@@ -104,8 +107,11 @@ class SimpleNN(nn.Module):
             Network output
         """
         out = x.clone()
+        print(out.shape)
         for lin in self.linears:
             out = self.actfc(lin(out))
+
+        print(out.shape)
         out = self.linear_out(out)
         out += x
         return out
@@ -172,12 +178,16 @@ class CustomMLP(nn.Module):
             Output of the network
         """
         out = x.clone()
-        print(out.detach().cpu().numpy().shape)
+        # print(out.detach().cpu().numpy().shape)
+        # print(list(zip(self.linears, self.activations)))
 
-        for lin, activ in zip(self.linears, self.activations):
-            out = activ(lin(out))
+        for idx, lin in enumerate(self.linears):
+            out = self.activations[idx](lin(out))
 
-        print(out.detach().cpu().numpy().shape)
+        # for lin, activ in zip(self.linears, self.activations):
+        # out = activ(lin(out))
+        #
+        # print(out.detach().cpu().numpy().shape)
         out = self.linear_out(out)
 
         return x + out
