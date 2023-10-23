@@ -9,8 +9,6 @@ from pathlib import Path
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-mpl.style.use("seaborn")
-
 # %%
 import numpy as np
 import torch

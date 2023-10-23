@@ -100,52 +100,50 @@ def interpolate(
         import matplotlib as mpl
         import matplotlib.pyplot as plt
 
-        mpl.style.use("seaborn")
-        print("Plotting interpolations of experimental data")
-
         cmap = plt.get_cmap("Spectral", 4)
         custom_palette = [mpl.colors.rgb2hex(cmap(i)) for i in range(cmap.N)]
 
-        plt.plot(
-            x_coords_u,
-            u_spectra,
-            "o",
-            label="Observed u Spectra",
-            color=custom_palette[0],
-        )
-        plt.plot(x_interp, interp_u, color=custom_palette[0])
+        with plt.style.context("bmh"):
+            plt.plot(
+                x_coords_u,
+                u_spectra,
+                "o",
+                label="Observed u Spectra",
+                color=custom_palette[0],
+            )
+            plt.plot(x_interp, interp_u, color=custom_palette[0])
 
-        plt.plot(
-            x_coords_v,
-            v_spectra,
-            "o",
-            label="Observed v Spectra",
-            color=custom_palette[1],
-        )
-        plt.plot(x_interp, interp_v, color=custom_palette[1])
+            plt.plot(
+                x_coords_v,
+                v_spectra,
+                "o",
+                label="Observed v Spectra",
+                color=custom_palette[1],
+            )
+            plt.plot(x_interp, interp_v, color=custom_palette[1])
 
-        plt.plot(
-            x_coords_w,
-            w_spectra,
-            "o",
-            label="Observed w Spectra",
-            color=custom_palette[2],
-        )
-        plt.plot(x_interp, interp_w, color=custom_palette[2])
+            plt.plot(
+                x_coords_w,
+                w_spectra,
+                "o",
+                label="Observed w Spectra",
+                color=custom_palette[2],
+            )
+            plt.plot(x_interp, interp_w, color=custom_palette[2])
 
-        plt.plot(
-            x_coords_uw,
-            uw_cospectra,
-            "o",
-            label="Observed uw Cospectra",
-            color=custom_palette[3],
-        )
-        plt.plot(x_interp, interp_uw, color=custom_palette[3])
+            plt.plot(
+                x_coords_uw,
+                uw_cospectra,
+                "o",
+                label="Observed uw Cospectra",
+                color=custom_palette[3],
+            )
+            plt.plot(x_interp, interp_uw, color=custom_palette[3])
 
-        plt.xlabel(r"$k_1$")
-        plt.ylabel(r"$k_1 F_i /u_*^2$")
-        plt.title("Logspace Spectra Interpolation")
-        plt.legend()
+            plt.xlabel(r"$k_1$")
+            plt.ylabel(r"$k_1 F_i /u_*^2$")
+            plt.title("Logspace Spectra Interpolation")
+            plt.legend()
 
         plt.show()
 

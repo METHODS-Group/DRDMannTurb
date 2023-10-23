@@ -27,11 +27,6 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
-plt.style.use("bmh")
-
-plt.rc("text", usetex=True)
-plt.rc("font", family="serif")
-
 # %%
 spectra_file = (
     path / "../docs/source/data/Spectra_interp.dat"

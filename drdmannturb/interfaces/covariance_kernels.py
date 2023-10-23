@@ -4,7 +4,6 @@ from itertools import product
 from math import *
 from time import time
 
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy.fftpack as fft
 from scipy.special import hyp2f1
