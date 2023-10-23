@@ -8,8 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pyevtk.hl import imageToVTK
 
-from drdmannturb.calibration.calibration import CalibrationProblem
-from drdmannturb.calibration.one_point_spectra import OnePointSpectra
+# from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectra
 from drdmannturb.wind_generation.covariance_kernels import (
     MannCovariance,
     VonKarmanCovariance,

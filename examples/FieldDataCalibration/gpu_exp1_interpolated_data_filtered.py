@@ -1,3 +1,8 @@
+"""
+TODO -- this is out of date and the API changes need to be propagated
+"""
+
+
 import argparse
 import csv
 from pathlib import Path
@@ -9,9 +14,8 @@ import torch
 import torch.nn as nn
 from scipy.interpolate import CubicSpline
 
-from drdmannturb.calibration.calibration import CalibrationProblem
-from drdmannturb.common import MannEddyLifetime
-from drdmannturb.calibration.data_generator import OnePointSpectraDataGenerator
+from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+from drdmannturb import MannEddyLifetime
 
 plt.style.use("bmh")
 

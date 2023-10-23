@@ -5,11 +5,13 @@ This module implements the RDT PowerSpectra type
 import numpy as np
 import torch
 
+Tensor = torch.Tensor
+
 
 @torch.jit.script
 def PowerSpectraRDT(
-    k: torch.Tensor, beta: torch.Tensor, E0
-) -> tuple[torch.Tensor, ...]:
+    k: Tensor, beta: Tensor, E0
+) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
     """
     Classical rapid distortion spectra
 

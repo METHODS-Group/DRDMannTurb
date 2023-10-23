@@ -35,7 +35,7 @@ def equals_border_fprint(msg: str, loc: str = "") -> None:
     """
 
     header = ""
-    if loc is not "":
+    if loc != "":
         header = f"[{loc}] -> "
 
     print(
@@ -69,7 +69,7 @@ def dash_border_fprint(msg: str, loc: str = "") -> None:
     """
 
     header = ""
-    if loc is not "":
+    if loc != "":
         header = f"[{loc}] -> "
 
     print(
@@ -101,7 +101,7 @@ def simple_fprint(msg: str, loc: str = "", tabbed: bool = False) -> None:
     """
 
     header = "    " if tabbed else ""
-    if loc is not "":
+    if loc != "":
         header += f"[{loc}] -> "
 
     print(f"{header}{msg}")
