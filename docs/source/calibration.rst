@@ -6,5 +6,5 @@ DRD Calibration and Spectra Fitting
 CalibrationProblem
 ------------------
 
-.. autoclass:: drdmannturb.calibration.CalibrationProblem
+.. autoclass:: drdmannturb.CalibrationProblem 
     :members:

@@ -8,16 +8,16 @@ Here is a documentation of methods internal to the package, which are subject to
 Internal MLP and ResNet Interfaces
 ----------------------------------
 
-.. autoclass:: drdmannturb.nn_modules.SimpleNN
+.. autoclass:: drdmannturb.SimpleNN
     :members:
 
-.. autoclass:: drdmannturb.nn_modules.Rational
+.. autoclass:: drdmannturb.Rational
     :members:
 
-.. autoclass:: drdmannturb.nn_modules.CustomMLP
+.. autoclass:: drdmannturb.CustomMLP
     :members:
 
-.. autoclass:: drdmannturb.nn_modules.ResNetBlock
+.. autoclass:: drdmannturb.ResNetBlock
     :members:
 
 

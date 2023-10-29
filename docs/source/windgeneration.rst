@@ -3,13 +3,13 @@
 Wind Field Generation 
 =====================
 
-.. autoclass:: drdmannturb.interfaces.generate_wind.GenerateWind
+.. autoclass:: drdmannturb.GenerateWind 
     :members: 
 
 Plotting Utilities 
 ------------------
 
-.. currentmodule:: drdmannturb.interfaces.wind_plot
+.. currentmodule:: drdmannturb.wind_generation.wind_plot
 
 .. autofunction:: plot_velocity_magnitude
 

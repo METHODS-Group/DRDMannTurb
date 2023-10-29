@@ -6,24 +6,24 @@ Dataclass Primitives
 Neural Network Parameters
 -------------------------
 
-.. autoclass:: drdmannturb.shared.parameters.NNParameters
+.. autoclass:: drdmannturb.NNParameters 
     :members: 
 
 
 Physical Parameters  
 -------------------
 
-.. autoclass:: drdmannturb.shared.parameters.PhysicalParameters
+.. autoclass:: drdmannturb.PhysicalParameters
     :members: 
 
 Problem/Training Parameters 
 ---------------------------
 
-.. autoclass:: drdmannturb.shared.parameters.ProblemParameters
+.. autoclass:: drdmannturb.ProblemParameters 
     :members: 
 
 Loss Function Parameters
 ------------------------
 
-.. autoclass:: drdmannturb.shared.parameters.LossParameters
+.. autoclass:: drdmannturb.LossParameters
     :members: 
