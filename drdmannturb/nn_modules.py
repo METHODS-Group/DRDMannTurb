@@ -3,6 +3,8 @@ This module contains all the implementations PyTorch nn.Module subclasses
 used throughout.
 """
 
+__all__ = ["TauResNet", "TauNet", "CustomNet"]
+
 from typing import Any, Callable, List, Union
 
 import torch
@@ -268,6 +270,10 @@ class ResNet(nn.Module):
 
     def forward(self, x):
         return self._forward_impl(x)
+
+##############################################################################
+# Below here are exposed.
+##############################################################################
 
 
 class TauResNet(nn.Module):

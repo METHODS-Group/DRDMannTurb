@@ -566,7 +566,7 @@ class CalibrationProblem:
                 return self.loss
 
             for epoch in range(nepochs):
-                lgg.drdmannturb_log.optinfo(f"Epoch {epoch}", "\{Calibration\}")
+                lgg.drdmannturb_log.optinfo(f"Epoch {epoch}")
                 self.epoch_model_sizes[epoch] = self.eval_trainable_magnitude(
                     model_magnitude_order
                 )

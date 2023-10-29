@@ -1,2 +1,2 @@
-from .calibration import CalibrationProblem
-from .data_generator import OnePointSpectraDataGenerator
+from drdmannturb.spectra_fitting.calibration import CalibrationProblem
+from drdmannturb.spectra_fitting.data_generator import OnePointSpectraDataGenerator

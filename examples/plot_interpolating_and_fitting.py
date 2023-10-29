@@ -14,11 +14,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from drdmannturb.calibration import CalibrationProblem
-from drdmannturb.data_generator import OnePointSpectraDataGenerator
+from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 from drdmannturb.interpolation import extract_x_spectra, interpolate
-from drdmannturb.shared.enums import DataType
-from drdmannturb.shared.parameters import (
+from drdmannturb.enums import DataType
+from drdmannturb.parameters import (
     LossParameters,
     NNParameters,
     PhysicalParameters,
