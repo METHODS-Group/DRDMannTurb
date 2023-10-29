@@ -18,11 +18,18 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from drdmannturb.interfaces.generate_wind import GenerateWind
-from drdmannturb.interfaces.wind_plot import (
+# from drdmannturb.wind_generation.generate_wind import GenerateWind
+from drdmannturb.wind_generation import (
+    GenerateWind,
     plot_velocity_components,
     plot_velocity_magnitude,
 )
+
+# from drdmannturb.interfaces.generate_wind import GenerateWind
+# from drdmannturb.interfaces.wind_plot import (
+# plot_velocity_components,
+# plot_velocity_magnitude,
+# )
 
 path = Path().resolve()
 

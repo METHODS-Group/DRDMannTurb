@@ -11,7 +11,7 @@ import numpy as np
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
-from drdmannturb.spectra_fitting.one_point_spectra import OnePointSpectra
+import drdmannturb.loggers as lgg
 from drdmannturb.common import MannEddyLifetime
 from drdmannturb.enums import EddyLifetimeType
 from drdmannturb.parameters import (
@@ -20,8 +20,8 @@ from drdmannturb.parameters import (
     PhysicalParameters,
     ProblemParameters,
 )
+from drdmannturb.spectra_fitting.one_point_spectra import OnePointSpectra
 from drdmannturb.spectra_fitting.spectral_coherence import SpectralCoherence
-import drdmannturb.loggers as lgg
 
 
 def generic_loss(
@@ -91,6 +91,7 @@ class CalibrationProblem:
             arguments. By default, calls the constructor PhysicalParameters(L=0.59, Gamma=3.9, sigma=3.4).
         output_directory : str, optional
             The directory to write output to; by default "./results"
+            TODO: add logging_level docs
         """
         self.init_device(device)
         lgg.drdmannturb_log.setLevel(logging_level)
@@ -504,9 +505,9 @@ class CalibrationProblem:
         self.loss_2ndOpen = []
         self.loss_1stOpen = []
 
-        lgg.drdmannturb_log.simple_optinfo(
-            f"Initial loss: {self.loss.item()}", tabbed=True
-        )
+        # lgg.drdmannturb_log.simple_optinfo(
+        # f"Initial loss: {self.loss.item()}", tabbed=True
+        # )
         self.loss_history_total.append(self.loss.item())
         self.loss_history_epochs.append(self.loss.item())
         # TODO make sure this doesn't do anything when not using tauNet
@@ -553,7 +554,7 @@ class CalibrationProblem:
                     # self.loss_1stOpen.append(pen.item())
                     self.loss += pen
                 self.loss.backward()
-                lgg.drdmannturb_log.simple_optinfo(f"Loss = {self.loss.item()}")
+                # lgg.drdmannturb_log.simple_optinfo(f"Loss = {self.loss.item()}")
 
                 # TODO -- reimplement nu value logging
                 # if hasattr(self.OPS, 'tauNet'):
@@ -566,17 +567,17 @@ class CalibrationProblem:
                 return self.loss
 
             for epoch in range(nepochs):
-                lgg.drdmannturb_log.optinfo(f"Epoch {epoch}")
-                self.epoch_model_sizes[epoch] = self.eval_trainable_magnitude(
+                # lgg.drdmannturb_log.optinfo(f"Epoch {epoch}")
+                self.epoch_model_sizes[epoch] = self.eval_trainable_norm(
                     model_magnitude_order
                 )
                 optimizer.step(closure)
                 # TODO: refactor the scheduler things, plateau requires loss
                 # scheduler.step(self.loss) #if scheduler
                 scheduler.step()  # self.loss
-                self.print_grad()
+                # self.print_grad()
 
-                lgg.drdmannturb_log.optinfo(self.print_parameters())
+                # lgg.drdmannturb_log.optinfo(self.print_parameters())
 
                 self.loss_history_epochs.append(self.loss_only)
                 if self.loss.item() < tol:
@@ -586,11 +587,11 @@ class CalibrationProblem:
                     lgg.drdmannturb_log.warning("LOSS IS NAN OR INF")
                     break
 
-        lgg.drdmannturb_log.optinfo(
-            f"Calibration terminated with loss = {self.loss.item()} at tol = {tol}",
-            "Calibration",
-        )
-        self.print_parameters()
+        # lgg.drdmannturb_log.optinfo(
+        # f"Calibration terminated with loss = {self.loss.item()} at tol = {tol}",
+        # "Calibration",
+        # )
+        # self.print_parameters()
         # self.plot(plt_dynamic=False)
 
         # TODO: this should change depending on chosen optimizer;
@@ -648,6 +649,40 @@ class CalibrationProblem:
             )
 
         return sum(p.numel() for p in self.OPS.tauNet.parameters())
+
+    def eval_trainable_norm(self, ord: Optional[Union[float, str]] = "fro"):
+        """Evaluates the magnitude (or other norm) of the
+            trainable parameters in the model.
+
+            NOTE: The EddyLifetimeType must be set to one of the following, which involve
+            a network surrogate for the eddy lifetime:
+                - TAUNET
+                - CUSTOMMLP
+                - TAURESNET
+
+        Parameters
+        ----------
+        ord : Optional[Union[float, str]]
+            The order of the norm approximation, follows ``torch.norm`` conventions.
+
+        Raises
+        ------
+        ValueError
+            If the OPS was not initialized to one of TAUNET, CUSTOMMLP, or TAURESNET.
+
+        """
+        if self.OPS.type_EddyLifetime not in [
+            EddyLifetimeType.TAUNET,
+            EddyLifetimeType.CUSTOMMLP,
+            EddyLifetimeType.TAURESNET,
+        ]:
+            raise ValueError(
+                "Not using trainable model for approximation, must be TAUNET, CUSTOMMLP, or TAURESNET."
+            )
+
+        return torch.norm(
+            torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord
+        )
 
     def eval_trainable_norm(self, ord: Optional[Union[float, str]] = "fro"):
         """Evaluates the magnitude (or other norm) of the
