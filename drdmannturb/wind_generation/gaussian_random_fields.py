@@ -1,23 +1,18 @@
-from itertools import product
-from math import *
-from time import time
+"""
+This module implements and exposes a Gaussian random field generator
+"""
 
-import matplotlib.pyplot as plt
 import numpy as np
-import pyfftw
-import scipy.fftpack as fft
-from scipy.linalg import sqrtm
-from scipy.special import kv as Kv
-from tqdm import tqdm
+from drdmannturb.wind_generation.sampling_methods import *
 
-from .sampling_methods import *
-
-#######################################################################################################
-# 	Gaussian Random Field generator class
-#######################################################################################################
+import drdmannturb.loggers as lgg
 
 
 class GaussianRandomField:
+    """
+    Gaussian Random Field generator class
+    """
+
     def __init__(
         self,
         grid_level,
@@ -35,7 +30,9 @@ class GaussianRandomField:
 
         if np.isscalar(grid_level):
             if not np.isscalar(grid_shape):
-                print("grid_level and grid_shape must have the same dimensions")
+                raise ValueError(
+                    "grid_level and grid_shape must have the same dimensions"
+                )
             h = 1 / 2**grid_level
             self.grid_shape = np.array([grid_shape] * ndim)
         else:
@@ -64,17 +61,18 @@ class GaussianRandomField:
         t = time()
         self.setSamplingMethod(sampling_method, **kwargs)
         if self.verbose:
-            print("Init method {0:s}, time {1}".format(self.method, time() - t))
+            lgg.drdmannturb_log.info(
+                "Init method {0:s}, time {1}".format(self.method, time() - t)
+            )
 
         # Pseudo-random number generator
         self.prng = np.random.RandomState()
         self.noise_std = np.sqrt(np.prod(h))
 
-    # --------------------------------------------------------------------------
-    #   Initialize sampling method
-    # --------------------------------------------------------------------------
-
     def setSamplingMethod(self, method, **kwargs):
+        """
+        Initialize the sampling method
+        """
         self.method = method
 
         if method == METHOD_FFT:
@@ -95,12 +93,10 @@ class GaussianRandomField:
         else:
             raise Exception('Unknown sampling method "{0}".'.format(method))
 
-    # --------------------------------------------------------------------------
-    #   Sample a realization
-    # --------------------------------------------------------------------------
-
-    ### Reseed pseudo-random number generator
     def reseed(self, seed=None):
+        """
+        Quick routine to seed the PRNG
+        """
         if seed is not None:
             self.prng.seed(seed)
         else:
@@ -125,17 +121,16 @@ class GaussianRandomField:
         t0 = time()
         field = self.Correlate(noise)
         if self.verbose >= 2:
-            print("Convolution time: ", time() - t0)
+            lgg.drdmannturb_log.info("Convolution time: ", time() - t0)
 
         return field
 
 
-#######################################################################################################
-# 	Gaussian Random Vector Field generator class
-#######################################################################################################
-
-
 class VectorGaussianRandomField(GaussianRandomField):
+    """
+    Gaussian random vector field generator
+    """
+
     def __init__(self, vdim=3, **kwargs):
         super().__init__(**kwargs)
         self.vdim = vdim

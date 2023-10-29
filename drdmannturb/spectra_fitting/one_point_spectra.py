@@ -3,11 +3,11 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
+from drdmannturb.common import MannEddyLifetime, VKEnergySpectrum
+from drdmannturb.enums import EddyLifetimeType, PowerSpectraType
 from drdmannturb.nn_modules import CustomNet, TauNet, TauResNet
-from drdmannturb.power_spectra_rdt import PowerSpectraRDT
-from drdmannturb.shared.common import MannEddyLifetime, VKEnergySpectrum
-from drdmannturb.shared.enums import EddyLifetimeType, PowerSpectraType
-from drdmannturb.shared.parameters import NNParameters
+from drdmannturb.parameters import NNParameters
+from drdmannturb.spectra_fitting.power_spectra_rdt import PowerSpectraRDT
 
 
 class OnePointSpectra(nn.Module):
@@ -22,6 +22,14 @@ class OnePointSpectra(nn.Module):
         nn_parameters: NNParameters = NNParameters(),
         learn_nu: bool = False,
     ):
+        """
+        __description__
+
+        Parameters
+        ----------
+
+
+        """
         super(OnePointSpectra, self).__init__()
 
         self.type_EddyLifetime = type_eddy_lifetime
@@ -79,7 +87,6 @@ class OnePointSpectra(nn.Module):
                 nn_parameters.n_modes,
                 learn_nu=learn_nu,
             )
-            # self.tauNet = TauResNet(hidden_layer_sizes, n_modes, learn_nu)
 
     def exp_scales(self) -> tuple[float, float, float]:
         """
@@ -163,7 +170,6 @@ class OnePointSpectra(nn.Module):
             tau = MannEddyLifetime(kL)
         elif self.type_EddyLifetime == EddyLifetimeType.TWOTHIRD:
             tau = kL ** (-2 / 3)
-        # elif self.type_EddyLifetime in ["tauNet", "customMLP", "tauResNet"]:
         elif self.type_EddyLifetime in [
             EddyLifetimeType.TAUNET,
             EddyLifetimeType.CUSTOMMLP,

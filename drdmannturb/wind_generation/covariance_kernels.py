@@ -1,21 +1,14 @@
 """Includes covariance kernels used in generating wind."""
 
-from itertools import product
-from math import *
-from time import time
-
 import numpy as np
-import scipy.fftpack as fft
 from scipy.special import hyp2f1
-from scipy.special import kv as Kv
-from tqdm import tqdm
-
-#######################################################################################################
-# 	Generic Covariance class
-#######################################################################################################
 
 
 class Covariance:
+    """
+    Generic Covariance implementation class
+    """
+
     def __init__(self, ndim=2, verbose=0, **kwargs):
         self.verbose = verbose
 
@@ -24,44 +17,31 @@ class Covariance:
         if "func" in kwargs:
             self.eval_func = kwargs["func"]
 
-    # --------------------------------------------------------------------------
-    #   Evaluate covariance function
-    # --------------------------------------------------------------------------
-
     def eval(self, *argv, **kwargs):
         self.eval_func(*argv, **kwargs)
 
 
-###################################################################
-
-
-#######################################################################################################
-# 	Von Karman Covariance class
-#######################################################################################################
-
-
 class VonKarmanCovariance(Covariance):
+    """
+    Von Karman covariance class subclassing Covariance
+    """
+
     def __init__(self, ndim, length_scale, E0, **kwargs):
         super().__init__(**kwargs)
 
         ### Spatial dimensions
         if ndim != 3:
-            print("ndim MUST BE 3")
-            raise
+            raise ValueError("ndim must be 3 for Von Karman covariance.")
         self.ndim = 3
 
         self.L = length_scale
         self.E0 = E0
 
-    # --------------------------------------------------------------------------
-    #   Compute the power spectrum
-    # --------------------------------------------------------------------------
-
-    def precompute_Spectrum(self, Frequences):
-        Nd = [Frequences[j].size for j in range(self.ndim)]
+    def precompute_Spectrum(self, Frequencies):
+        Nd = [Frequencies[j].size for j in range(self.ndim)]
         SqrtSpectralTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
 
-        k = np.array(list(np.meshgrid(*Frequences, indexing="ij")))
+        k = np.array(list(np.meshgrid(*Frequencies, indexing="ij")))
         kk = np.sum(k**2, axis=0)
 
         const = self.E0 * (self.L ** (17 / 3)) / (4 * np.pi)
@@ -79,64 +59,35 @@ class VonKarmanCovariance(Covariance):
 
         return SqrtSpectralTens * 1j
 
-    # --------------------------------------------------------------------------
-    #   Compute the power spectrum
-    # --------------------------------------------------------------------------
-
-    # def factor(self, SpectralTensor):
-
-    #     w, v = np.linalg.eig(SpectralTensor)
-
-    #     w[w.real < 1e-15] = 0.0
-
-    #     w = np.sqrt(np.maximum(w,0.0))
-    #     wdiag = np.diag(w)
-
-    #     # if any(isinstance(v_, complex) for v_ in list(v.flatten())):
-    #     #     print('v = ', v)
-
-    #     return np.dot(wdiag,np.transpose(v)).real
-
-    # --------------------------------------------------------------------------
-    #   Evaluate covariance function
-    # --------------------------------------------------------------------------
-
-    def eval(self, *args):
-        print("eval function is not supported")
-        raise
-
-    def eval_sqrt(self, *args, nu=None, corrlen=None):
-        print("eval_sqrt function is not supported")
-        raise
-
-
-###################################################################
-
-
-#######################################################################################################
-# 	Mann Covariance class
-#######################################################################################################
-
 
 class MannCovariance(Covariance):
-    def __init__(self, ndim, length_scale, E0, Gamma, **kwargs):
+    """
+    Mann covariance implementation
+    """
+
+    def __init__(
+        self,
+        ndim: int = 3,
+        length_scale: float = 1.0,
+        E0: float = 1.0,
+        Gamma: float = 1.0,
+        **kwargs
+    ):
         super().__init__(**kwargs)
 
         ### Spatial dimensions
         if ndim != 3:
-            print("ndim MUST BE 3")
-            raise
+            raise ValueError("ndim MUST BE 3")
         self.ndim = 3
 
         self.L = length_scale
         self.E0 = E0
         self.Gamma = Gamma
 
-    # --------------------------------------------------------------------------
-    #   Compute the power spectrum
-    # --------------------------------------------------------------------------
-
     def precompute_Spectrum(self, Frequences):
+        """
+        Compute the power spectrum
+        """
         Nd = [Frequences[j].size for j in range(self.ndim)]
         SqrtSpectralTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
         tmpTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
@@ -214,18 +165,3 @@ class MannCovariance(Covariance):
             SqrtSpectralTens[2, 2, ...] = zeta3 * tmpTens[2, 2, ...]
 
             return SqrtSpectralTens * 1j
-
-    # --------------------------------------------------------------------------
-    #   Evaluate covariance function
-    # --------------------------------------------------------------------------
-
-    def eval(self, *args):
-        print("eval function is not supported")
-        raise
-
-    def eval_sqrt(self, *args, nu=None, corrlen=None):
-        print("eval_sqrt function is not supported")
-        raise
-
-
-###################################################################

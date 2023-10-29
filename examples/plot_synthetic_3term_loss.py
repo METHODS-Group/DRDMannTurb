@@ -9,9 +9,8 @@ import torch
 import torch.nn as nn
 
 # %%
-from drdmannturb.calibration import CalibrationProblem
-from drdmannturb.data_generator import OnePointSpectraDataGenerator
-from drdmannturb.shared.parameters import (
+from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+from drdmannturb.parameters import (
     LossParameters,
     NNParameters,
     PhysicalParameters,

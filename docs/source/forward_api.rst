@@ -15,6 +15,14 @@ This is the main reference for the forward-facing interface.
 
     <hr>
 
+.. toctree::
+   :maxdepth: 2
+
+   interpolation
+
+.. raw:: html
+
+    <hr>
 
 .. toctree::
    :maxdepth: 2
@@ -38,18 +46,12 @@ This is the main reference for the forward-facing interface.
 Forward-Facing Network Architecture Interfaces
 ----------------------------------------------
 
-.. autoclass:: drdmannturb.nn_modules.TauNet
+.. autoclass:: drdmannturb.TauNet 
     :members:
 
-.. autoclass:: drdmannturb.nn_modules.CustomNet
+.. autoclass:: drdmannturb.CustomNet
     :members:
 
-.. autoclass::drdmannturb.nn_modules.TauResNet
+.. autoclass:: drdmannturb.TauResNet 
     :members:
 
-*************
-Interpolation
-*************
-
-    .. automodule:: drdmannturb.interpolation
-        :members: 

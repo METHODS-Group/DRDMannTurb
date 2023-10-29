@@ -8,12 +8,15 @@ import numpy as np
 import torch
 from scipy.optimize import curve_fit, differential_evolution
 
-from drdmannturb.shared.enums import DataType
+from drdmannturb.enums import DataType
+import drdmannturb.loggers as lgg
 
 
 class OnePointSpectraDataGenerator:
     """
     One point spectra data generator
+
+    TODO -- better introduction/ description of its purpose in the code
     """
 
     def __init__(
@@ -25,12 +28,9 @@ class OnePointSpectraDataGenerator:
         spectra_file: Optional[Path] = None,
         zref: float = 1.0,
         seed: int = 3,
-    ):  # TODO: make docstrings make sense
+    ):
         """
-        Constructor for the data generator
-
-        TODO -- the parameter descriptions
-        TODO -- some of these should *not* have default values?
+        TODO -- This needs a better introduction
 
         Parameters
         ----------
@@ -82,7 +82,7 @@ class OnePointSpectraDataGenerator:
 
         elif self.data_type == DataType.CUSTOM:
             if spectra_file is not None:
-                print(f'Reading spectra data file "{spectra_file}"')
+                lgg.drdmannturb_log.info(f'Reading spectra data file "{spectra_file}"')
                 self.CustomData = torch.tensor(
                     np.genfromtxt(spectra_file, skip_header=1, delimiter=",")
                 )
@@ -149,8 +149,11 @@ class OnePointSpectraDataGenerator:
                     MSE = np.mean(SE)  # mean squared errors
                     RMSE = np.sqrt(MSE)  # Root Mean Squared Error, RMSE
                     Rsquared = 1.0 - (np.var(absError) / np.var(yData))
-                    print("RMSE:", RMSE)
-                    print("R-squared:", Rsquared)
+
+                    # TODO -- is this the appropriate level?
+                    lgg.drdmannturb_log.debug(
+                        f"[AUTO type data generator] : RMSE {RMSE}, R-squared {Rsquared}"
+                    )
 
                     return fittedParameters
 
@@ -162,25 +165,22 @@ class OnePointSpectraDataGenerator:
                     )
 
                 DataValues = np.zeros([len(self.DataPoints), 3, 3])
-                print("Filtering provided spectra interpolation: ")
-                print("=" * 30)
-                print("[fit u spectra]")
-                print("---------------------")
+                lgg.drdmannturb_log.info("Filtering provided spectra interpolation...")
+                lgg.drdmannturb_log.simple_optinfo("=" * 30)
+
+                lgg.drdmannturb_log.sub_optinfo("fit u spectra")
                 fit1 = fitOPS(self.k1, Data_temp[:, 0], 1)
                 DataValues[:, 0, 0] = func124(self.k1, *fit1)
-                print("---------------------")
-                print("[fit v spectra]")
-                print("---------------------")
+
+                lgg.drdmannturb_log.sub_optinfo("fit v spectra")
                 fit2 = fitOPS(self.k1, Data_temp[:, 1], 2)
                 DataValues[:, 1, 1] = func124(self.k1, *fit2)
-                print("---------------------")
-                print("[fit w spectra]")
-                print("---------------------")
+
+                lgg.drdmannturb_log.sub_optinfo("fit w spectra")
                 fit3 = fitOPS(self.k1, Data_temp[:, 2], 4)
                 DataValues[:, 2, 2] = func124(self.k1, *fit3)
-                print("---------------------")
-                print("[fit uw cospectra]")
-                print("---------------------")
+
+                lgg.drdmannturb_log.sub_optinfo("fit uw spectra")
                 fit4 = fitOPS(self.k1, Data_temp[:, 3], 3)
                 DataValues[:, 0, 2] = -func3(self.k1, *fit4)
 

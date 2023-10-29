@@ -8,10 +8,9 @@ import pytest
 import torch
 import torch.nn as nn
 
-from drdmannturb.calibration import CalibrationProblem
-from drdmannturb.data_generator import OnePointSpectraDataGenerator
-from drdmannturb.shared.enums import EddyLifetimeType
-from drdmannturb.shared.parameters import (
+from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+from drdmannturb.enums import EddyLifetimeType
+from drdmannturb.parameters import (
     LossParameters,
     NNParameters,
     PhysicalParameters,

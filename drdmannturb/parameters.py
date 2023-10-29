@@ -8,7 +8,9 @@ from typing import List
 import numpy as np
 import torch
 
-from drdmannturb.shared.enums import DataType, EddyLifetimeType, PowerSpectraType
+from drdmannturb.enums import DataType, EddyLifetimeType, PowerSpectraType
+
+__all__ = ["ProblemParameters", "PhysicalParameters", "NNParameters", "LossParameters"]
 
 
 @dataclass

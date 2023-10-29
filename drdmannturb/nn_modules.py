@@ -3,6 +3,8 @@ This module contains all the implementations PyTorch nn.Module subclasses
 used throughout.
 """
 
+__all__ = ["TauResNet", "TauNet", "CustomNet"]
+
 from typing import Any, Callable, List, Union
 
 import torch
@@ -206,16 +208,11 @@ class ResNetBlock(nn.Module):
         # This exists since TorchScript doesn't support inheritance, so the superclass method
         # (this one) needs to have a name other than `forward` that can be accessed in a subclass
 
-        # print(f"@@@@BLOCK forward_impl type(x) = {type(x)}")
-
         residual = x
-        # print(f"@@@@BLOCK forward_impl type(residual) = {type(residual)}")
 
         output = self.fc1(x)
-        # print(f"@@@@BLOCK forward_impl after fc1 type(output) = {type(output)}")
 
         output = self.fc2(output)
-        # print(f"@@@@BLOCK forward_impl after fc2 type(output) = {type(output)}")
 
         output += residual
         output = self.relu(output)
@@ -264,7 +261,6 @@ class ResNet(nn.Module):
     def _forward_impl(self, x):
         # This exists since TorchScript doesn't support inheritance, so the superclass method
         # (this one) needs to have a name other than `forward` that can be accessed in a subclass
-        # print(f"@@@@RESNSET forward_impl type(x) = {type(x)}")
         x = self.layer0(x)
         x = self.block1(x)
         x = self.block2(x)
@@ -274,6 +270,11 @@ class ResNet(nn.Module):
 
     def forward(self, x):
         return self._forward_impl(x)
+
+
+##############################################################################
+# Below here are exposed.
+##############################################################################
 
 
 class TauResNet(nn.Module):

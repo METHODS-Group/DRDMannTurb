@@ -5,7 +5,7 @@ from typing import Union
 
 import numpy as np
 
-from drdmannturb.calibration import CalibrationProblem
+from drdmannturb.spectra_fitting import CalibrationProblem
 
 from .covariance_kernels import MannCovariance, VonKarmanCovariance
 from .gaussian_random_fields import *
@@ -225,7 +225,7 @@ class GenerateWind:
 
         t = time()
         wind_block = self.RF.sample(noise)
-        print("block computation:", time() - t)
+        # print("block computation:", time() - t)
         wind = wind_block[tuple(central_part)]
         if self.blend_num > 0:
             self.blend_region = wind[-self.blend_num :, ...].copy()

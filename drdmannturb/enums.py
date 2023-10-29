@@ -15,3 +15,5 @@ EddyLifetimeType = Enum(
 )
 
 PowerSpectraType = Enum("PowerSpectraType", ["RDT"])
+
+SamplingMethod = Enum("SamplingMethod", ["DST", "DCT", "FFT", "FFTW", "VF_FFTW"])

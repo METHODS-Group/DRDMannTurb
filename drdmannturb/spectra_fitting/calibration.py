@@ -1,3 +1,7 @@
+"""
+This module implements the exposed CalibrationProblem class.
+"""
+
 import os
 import pickle
 from typing import Any, Dict, Optional, Union
@@ -7,16 +11,17 @@ import numpy as np
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
-from drdmannturb.one_point_spectra import OnePointSpectra
-from drdmannturb.shared.common import MannEddyLifetime
-from drdmannturb.shared.enums import EddyLifetimeType
-from drdmannturb.shared.parameters import (
+import drdmannturb.loggers as lgg
+from drdmannturb.common import MannEddyLifetime
+from drdmannturb.enums import EddyLifetimeType
+from drdmannturb.parameters import (
     LossParameters,
     NNParameters,
     PhysicalParameters,
     ProblemParameters,
 )
-from drdmannturb.spectral_coherence import SpectralCoherence
+from drdmannturb.spectra_fitting.one_point_spectra import OnePointSpectra
+from drdmannturb.spectra_fitting.spectral_coherence import SpectralCoherence
 
 
 def generic_loss(
@@ -63,23 +68,33 @@ class CalibrationProblem:
         loss_params: LossParameters,
         phys_params: PhysicalParameters,
         output_directory: str = "./results",
+        logging_level: int = lgg.log.ERROR,
     ):
         """Constructor for CalibrationProblem class. As depicted in the UML diagram, this class consists of 4 dataclasses.
 
         Parameters
         ----------
+        device: str,
+            One of the strings "cpu", "cuda", "mps" indicating the torch device to use
         nn_params : NNParameters, optional
-            _description_, by default NNParameters()
+            A NNParameters (for Neural Network) dataclass instance, which defines values of interest
+            eg. size and depth. By default, calls constructor using default values.
         prob_params : ProblemParameters, optional
-            _description_, by default ProblemParameters()
+            A ProblemParameters dataclass instance, which is used to determine the conditional branching
+            and computations required, among other things. By default, calls constructor using default values
         loss_params : LossParameters, optional
-            _description_, by default LossParameters()
+            A LossParameters dataclass instance, which defines the loss function terms and related coefficients.
+            By default, calls the constructor LossParameters() using the default values.
         phys_params : PhysicalParameters, optional
-            _description_, by default PhysicalParameters(L=0.59, Gamma=3.9, sigma=3.4)
+            A PhysicalParameters dataclass instance, which defines the physical constants governing the
+            problem setting; note that the PhysicalParameters constructor requires three positional
+            arguments. By default, calls the constructor PhysicalParameters(L=0.59, Gamma=3.9, sigma=3.4).
         output_directory : str, optional
-            _description_, by default "./results"
+            The directory to write output to; by default "./results"
+            TODO: add logging_level docs
         """
         self.init_device(device)
+        lgg.drdmannturb_log.setLevel(logging_level)
 
         self.nn_params = nn_params
         self.prob_params = prob_params
@@ -110,7 +125,9 @@ class CalibrationProblem:
         self.vdim = 3
         self.output_directory = output_directory
         self.fg_coherence = prob_params.fg_coherence
-        if self.fg_coherence:
+        if (
+            self.fg_coherence
+        ):  # TODO -- Spectral Coherence needs to be updated with new parameter dataclasses
             self.Coherence = SpectralCoherence(**kwargs)
 
         self.epoch_model_sizes = torch.empty((prob_params.nepochs,))
@@ -234,7 +251,9 @@ class CalibrationProblem:
             raise ValueError("All dimension scaling constants must be positive.")
 
     def initialize_parameters_with_noise(self):
-        """_summary_"""
+        """
+        TODO -- docstring
+        """
         noise = torch.tensor(
             self.noise_magnitude * torch.randn(*self.parameters.shape),
             dtype=torch.float64,
@@ -246,7 +265,7 @@ class CalibrationProblem:
         vector_to_parameters(noise.abs(), self.OPS.Corrector.parameters())
 
     def eval(self, k1):
-        """_summary_
+        """TODO -- docstring
 
         Parameters
         ----------
@@ -264,7 +283,7 @@ class CalibrationProblem:
         return self.format_output(Output)
 
     def eval_grad(self, k1):
-        """_summary_
+        """TODO -- docstring
 
         Parameters
         ----------
@@ -317,16 +336,28 @@ class CalibrationProblem:
         return out.cpu().numpy()
 
     # -----------------------------------------
-    # Calibration method
-    # -----------------------------------------
 
     def calibrate(
         self,
-        data: tuple[Any, Any],
+        data: tuple[Any, Any],  # TODO -- properly type this
         model_magnitude_order=1,
-        optimizer_class: Any = torch.optim.LBFGS,
+        optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
     ):
-        print("\nCalibrating MannNet...")
+        """
+        Calibration method, which handles the main training loop and some
+        data pre-processing.
+
+        Parameters
+        ----------
+        data
+
+        model_magnitude_order
+
+        optimizer_class : torch.optim.Optimizer
+            User's choice of torch optimizer. By default, LBFGS
+        """
+
+        lgg.drdmannturb_log.info("Calibrating MannNet...")
 
         DataPoints, DataValues = data
         OptimizerClass = optimizer_class
@@ -351,7 +382,6 @@ class CalibrationProblem:
         # create a single numpy.ndarray with numpy.array() and then convert to a torch tensor
         # single_data_array=torch.tensor( [DataValues[:, i, i] for i in range(
         #     3)] + [DataValues[:, 0, 2]])
-        # self.kF_data_vals = torch.tensor(single_data_array, dtype=torch.float64)
         self.kF_data_vals = torch.cat(
             (
                 DataValues[:, 0, 0],
@@ -362,11 +392,10 @@ class CalibrationProblem:
         )
 
         k1_data_pts, y_data0 = self.k1_data_pts, self.kF_data_vals
-        # self.x, self.y, self.y_data = k1_data_pts
 
         y = self.OPS(k1_data_pts)
         y_data = torch.zeros_like(y)
-        print(y_data0.shape)
+        lgg.drdmannturb_log.debug(f"Y_DATA0 shape: {y_data0.shape}")
         y_data[:4, ...] = y_data0.view(4, y_data0.shape[0] // 4)
 
         # The case with the coherence formatting the data
@@ -476,7 +505,9 @@ class CalibrationProblem:
         self.loss_2ndOpen = []
         self.loss_1stOpen = []
 
-        print("Initial loss: ", self.loss.item())
+        # lgg.drdmannturb_log.simple_optinfo(
+        # f"Initial loss: {self.loss.item()}", tabbed=True
+        # )
         self.loss_history_total.append(self.loss.item())
         self.loss_history_epochs.append(self.loss.item())
         # TODO make sure this doesn't do anything when not using tauNet
@@ -523,19 +554,20 @@ class CalibrationProblem:
                     # self.loss_1stOpen.append(pen.item())
                     self.loss += pen
                 self.loss.backward()
-                print("loss  = ", self.loss.item())
+                # lgg.drdmannturb_log.simple_optinfo(f"Loss = {self.loss.item()}")
+
+                # TODO -- reimplement nu value logging
                 # if hasattr(self.OPS, 'tauNet'):
                 #     if hasattr(self.OPS.tauNet.Ra.nu, 'item'):
                 #         print('-> nu = ', self.OPS.tauNet.Ra.nu.item())
                 self.kF_model_vals = y.clone().detach()
+
                 # self.plot(**kwargs, plt_dynamic=True,
                 #           model_vals=self.kF_model_vals.cpu().detach().numpy() if torch.is_tensor(self.kF_model_vals) else self.kF_model_vals)
                 return self.loss
 
             for epoch in range(nepochs):
-                print("\n=================================")
-                print("[Calibration.py -- calibrate]-> Epoch {0:d}".format(epoch))
-                print("=================================\n")
+                # lgg.drdmannturb_log.optinfo(f"Epoch {epoch}")
                 self.epoch_model_sizes[epoch] = self.eval_trainable_norm(
                     model_magnitude_order
                 )
@@ -543,24 +575,23 @@ class CalibrationProblem:
                 # TODO: refactor the scheduler things, plateau requires loss
                 # scheduler.step(self.loss) #if scheduler
                 scheduler.step()  # self.loss
-                self.print_grad()
-                print("---------------------------------\n")
-                self.print_parameters()
-                print("=================================\n")
+                # self.print_grad()
+
+                # lgg.drdmannturb_log.optinfo(self.print_parameters())
+
                 self.loss_history_epochs.append(self.loss_only)
                 if self.loss.item() < tol:
                     break
 
                 if np.isnan(self.loss.item()) or np.isinf(self.loss.item()):
-                    print("WARNING -- LOSS IS NAN OR INF")
+                    lgg.drdmannturb_log.warning("LOSS IS NAN OR INF")
                     break
 
-        print("\n=================================")
-        print("{Calibration.py -- calibrate} Calibration terminated.")
-        print("=================================\n")
-        print(f"loss = {self.loss.item()}")
-        print(f"tol  = {tol}")
-        self.print_parameters()
+        # lgg.drdmannturb_log.optinfo(
+        # f"Calibration terminated with loss = {self.loss.item()} at tol = {tol}",
+        # "Calibration",
+        # )
+        # self.print_parameters()
         # self.plot(plt_dynamic=False)
 
         # TODO: this should change depending on chosen optimizer;
@@ -576,11 +607,13 @@ class CalibrationProblem:
     # ------------------------------------------------
 
     def print_parameters(self):
+        lgg.drdmannturb_log.warning("[print_parameters] seems deprecated")
         # print(('Optimal NN parameters = [' + ', '.join(['{}'] *
         #       len(self.parameters)) + ']\n').format(*self.parameters))
         pass
 
     def print_grad(self):
+        lgg.drdmannturb_log.warning("[print_grad] seems deprecated")
         # self.grad = torch.cat([param.grad.view(-1)
         #                       for param in self.OPS.parameters()]).detach().numpy()
         # print('grad = ', self.grad)
@@ -651,7 +684,48 @@ class CalibrationProblem:
             torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord
         )
 
-    def plot_loss_wolfe(self, beta_pen):
+    def eval_trainable_norm(self, ord: Optional[Union[float, str]] = "fro"):
+        """Evaluates the magnitude (or other norm) of the
+            trainable parameters in the model.
+
+            NOTE: The EddyLifetimeType must be set to one of the following, which involve
+            a network surrogate for the eddy lifetime:
+                - TAUNET
+                - CUSTOMMLP
+                - TAURESNET
+
+        Parameters
+        ----------
+        ord : Optional[Union[float, str]]
+            The order of the norm approximation, follows ``torch.norm`` conventions.
+
+        Raises
+        ------
+        ValueError
+            If the OPS was not initialized to one of TAUNET, CUSTOMMLP, or TAURESNET.
+
+        """
+        if self.OPS.type_EddyLifetime not in [
+            EddyLifetimeType.TAUNET,
+            EddyLifetimeType.CUSTOMMLP,
+            EddyLifetimeType.TAURESNET,
+        ]:
+            raise ValueError(
+                "Not using trainable model for approximation, must be TAUNET, CUSTOMMLP, or TAURESNET."
+            )
+
+        return torch.norm(
+            torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord
+        )
+
+    def plot_loss_wolfe(self, beta_pen: float = 0.0) -> None:
+        """Plots the Wolfe Search loss against the iterations
+
+        Parameters
+        ----------
+        beta_pen : float, optional
+            The loss beta penalty term coefficient; by default, 0.0
+        """
         plt.figure()
         plt.plot(self.loss_2ndOpen, label="1st Order Penalty")
         plt.plot(self.loss_reg, label="Regularization")
@@ -728,10 +802,6 @@ class CalibrationProblem:
         Handles all plotting
         """
         plt_dynamic = kwargs.get("plt_dynamic", False)
-        # if plt_dynamic:
-        # ion()
-        # else:
-        # ioff()
 
         Data = kwargs.get("Data")
         if Data is not None:
@@ -769,7 +839,6 @@ class CalibrationProblem:
             self.kF_model_vals = self.OPS(k1).cpu().detach().numpy()
 
         if not hasattr(self, "fig"):
-
             nrows = 1
             ncols = 2 if plt_tau else 1
 

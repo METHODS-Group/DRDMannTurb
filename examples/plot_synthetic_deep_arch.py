@@ -8,15 +8,27 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-# %%
-from drdmannturb.calibration import CalibrationProblem
-from drdmannturb.data_generator import OnePointSpectraDataGenerator
-from drdmannturb.shared.parameters import (
+from drdmannturb.common import MannEddyLifetime
+from drdmannturb.enums import DataType, EddyLifetimeType, PowerSpectraType
+from drdmannturb.parameters import (
     LossParameters,
     NNParameters,
     PhysicalParameters,
     ProblemParameters,
 )
+from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+
+# %%
+
+
+# from drdmannturb.calibration import CalibrationProblem
+# from drdmannturb.data_generator import OnePointSpectraDataGenerator
+# from drdmannturb.shared.parameters import (
+# LossParameters,
+# NNParameters,
+# PhysicalParameters,
+# ProblemParameters,
+# )
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
