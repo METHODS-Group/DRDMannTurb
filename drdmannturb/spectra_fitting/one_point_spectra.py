@@ -3,11 +3,11 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-from drdmannturb.nn_modules import CustomNet, TauNet, TauResNet
-from drdmannturb.spectra_fitting.power_spectra_rdt import PowerSpectraRDT
 from drdmannturb.common import MannEddyLifetime, VKEnergySpectrum
 from drdmannturb.enums import EddyLifetimeType, PowerSpectraType
+from drdmannturb.nn_modules import CustomNet, TauNet, TauResNet
 from drdmannturb.parameters import NNParameters
+from drdmannturb.spectra_fitting.power_spectra_rdt import PowerSpectraRDT
 
 
 class OnePointSpectra(nn.Module):
@@ -56,13 +56,37 @@ class OnePointSpectra(nn.Module):
         self.logMagnitude = nn.Parameter(torch.tensor(0, dtype=torch.float64))
 
         if self.type_EddyLifetime == EddyLifetimeType.TAUNET:
-            self.tauNet = TauNet(nn_parameters)
+            self.tauNet = TauNet(
+                nn_parameters.nlayers,
+                nn_parameters.hidden_layer_size,
+                nn_parameters.n_modes,
+                learn_nu=learn_nu,
+            )
+            # self.tauNet = tauNet(n_layers, hidden_layer_size, n_modes, learn_nu)
 
         elif self.type_EddyLifetime == EddyLifetimeType.CUSTOMMLP:
-            self.tauNet = CustomNet(nn_parameters.nlayers, learn_nu=learn_nu)
+            """
+            Requires n_layers, activations, n_modes, learn_nu
+            """
+            self.tauNet = CustomNet(
+                nn_parameters.nlayers,
+                nn_parameters.hidden_layer_sizes,
+                nn_parameters.activations,
+                nn_parameters.n_modes,
+                learn_nu=learn_nu,
+            )
+            # self.tauNet = customNet(n_layers, hidden_layer_size)
 
         elif self.type_EddyLifetime == EddyLifetimeType.TAURESNET:
-            self.tauNet = TauResNet(nn_parameters)
+            """
+            Requires hidden_layer_sizes, n_modes, learn_nu
+            """
+
+            self.tauNet = TauResNet(
+                nn_parameters.hidden_layer_sizes,
+                nn_parameters.n_modes,
+                learn_nu=learn_nu,
+            )
 
     def exp_scales(self) -> tuple[float, float, float]:
         """
