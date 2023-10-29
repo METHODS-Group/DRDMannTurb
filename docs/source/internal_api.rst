@@ -21,6 +21,49 @@ Internal MLP and ResNet Interfaces
     :members:
 
 
+Covariance Kernels 
+------------------
+
+.. autoclass:: drdmannturb.Covariance 
+    :members: 
+
+.. autoclass:: drdmannturb.VonKarmanCovariance
+    :members
+
+.. autoclass:: drdmannturb.MannCovariance
+    :members
+
+.. autoclass:: drdmannturb.NNCovariance
+    :members
+
+
+Covariance Sampling Methods
+---------------------------
+
+.. autoclass:: drdmannturb.Sampling_method_base
+    :members
+
+.. autoclass:: drdmannturb.Sampling_method_freq
+    :members
+
+.. autoclass:: drdmannturb.Sampling_FFTW
+    :members
+
+.. autoclass:: drdmannturb.Sampling_VF_FFTW
+    :members
+
+.. autoclass:: drdmannturb.Sampling_FFT
+    :members
+
+.. autoclass:: drdmannturb.Sampling_DST
+    :members
+
+.. autoclass:: drdmannturb.Sampling_DCT
+    :members
+
+
+
+
 Loss Functions for Calibration Problems
 ---------------------------------------
 
