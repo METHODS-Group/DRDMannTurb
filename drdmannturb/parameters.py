@@ -12,6 +12,7 @@ from drdmannturb.enums import DataType, EddyLifetimeType, PowerSpectraType
 
 __all__ = ["ProblemParameters", "PhysicalParameters", "NNParameters", "LossParameters"]
 
+
 @dataclass
 class ProblemParameters:
     """
