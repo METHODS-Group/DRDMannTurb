@@ -4,12 +4,14 @@ This module implements the exposed CalibrationProblem class.
 
 import os
 import pickle
+from functools import partial
 from typing import Any, Dict, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
+from tqdm import tqdm
 
 import drdmannturb.loggers as lgg
 from drdmannturb.common import MannEddyLifetime
@@ -24,6 +26,8 @@ from drdmannturb.spectra_fitting.one_point_spectra import OnePointSpectra
 from drdmannturb.spectra_fitting.spectral_coherence import SpectralCoherence
 
 from .loss_functions import LossAggregator
+
+tqdm = partial(tqdm, position=0, leave=True)
 
 
 def generic_loss(
@@ -359,8 +363,6 @@ class CalibrationProblem:
             User's choice of torch optimizer. By default, LBFGS
         """
 
-        lgg.drdmannturb_log.info("Calibrating MannNet...")
-
         DataPoints, DataValues = data
         OptimizerClass = optimizer_class
         lr = self.prob_params.learning_rate
@@ -368,16 +370,8 @@ class CalibrationProblem:
         nepochs = self.prob_params.nepochs
 
         self.plot_loss_optim = False
-        # self.plot_loss_optim = kwargs.get("plot_loss_wolfe", False)
-        # kwargs.get("show", False)
 
-        # TODO -- this should be taken into problem params?
         self.curves = [0, 1, 2, 3]
-        # self.curves = kwargs.get("curves", [0, 1, 2, 3])
-
-        alpha_pen1 = self.loss_params.alpha_pen1
-        alpha_pen2 = self.loss_params.alpha_pen2
-        beta_reg = self.loss_params.beta_reg
 
         self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
 
@@ -415,9 +409,9 @@ class CalibrationProblem:
 
         self.loss_fn = generic_loss
 
-        ##############################
-        # Optimizer Set-up
-        ##############################
+        ########################################
+        # Optimizer and Scheduler Initialization
+        ########################################
         if OptimizerClass == torch.optim.LBFGS:
             optimizer = OptimizerClass(
                 self.OPS.parameters(),
@@ -439,7 +433,11 @@ class CalibrationProblem:
             y[self.curves], y_data[self.curves], theta_NN, 0
         )
 
+        print("=" * 30)
+
         print(f"Initial loss: {self.loss.item()}")
+
+        print("=" * 30)
 
         def closure():
             optimizer.zero_grad()
@@ -448,21 +446,31 @@ class CalibrationProblem:
 
             self.loss = self.LossAggregator.eval(
                 y[self.curves], y_data[self.curves], theta_NN, self.e_count
-            )  # pass epoch
+            )
 
             self.loss.backward()
 
             self.e_count += 1
-            print(self.loss.item())
 
             return self.loss
 
-        for epoch in range(nepochs):
+        for _ in tqdm(range(1, nepochs + 1)):
             optimizer.step(closure)
             scheduler.step()
 
+            if not (torch.isfinite(self.loss)):
+                raise RuntimeError(
+                    "Loss is not a finite value, check initialization and learning hyperparameters."
+                )
+
             if self.loss.item() < tol:
+                print(
+                    f"Spectra Fitting Concluded with loss below tolerance. Final loss: {self.loss.item()}"
+                )
                 break
+
+        print("=" * 30)
+        print(f"Spectra fitting concluded with final loss: {self.loss.item()}")
 
         # torch.nn.Softplus()
         # logk1 = torch.log(self.k1_data_pts).detach()
