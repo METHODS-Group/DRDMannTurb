@@ -8,7 +8,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 from drdmannturb.common import MannEddyLifetime
 from drdmannturb.enums import DataType, EddyLifetimeType, PowerSpectraType
 from drdmannturb.parameters import (
@@ -17,6 +16,7 @@ from drdmannturb.parameters import (
     PhysicalParameters,
     ProblemParameters,
 )
+from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 
 path = Path().resolve()
 
@@ -74,7 +74,7 @@ Data = OnePointSpectraDataGenerator(
 
 
 # %%
-pb.calibrate(data=Data)
+optimal_parameters = pb.calibrate(data=Data)
 
 # %%
 pb.plot(plt_dynamic=False)

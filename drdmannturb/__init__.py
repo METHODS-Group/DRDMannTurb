@@ -19,6 +19,7 @@ from .parameters import (
 )
 from .spectra_fitting import (
     CalibrationProblem,
+    OnePointSpectra,
     OnePointSpectraDataGenerator,
     PowerSpectraRDT,
     SpectralCoherence,

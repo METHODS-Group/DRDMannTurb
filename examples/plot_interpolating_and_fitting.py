@@ -14,15 +14,15 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
-from drdmannturb.interpolation import extract_x_spectra, interpolate
 from drdmannturb.enums import DataType
+from drdmannturb.interpolation import extract_x_spectra, interpolate
 from drdmannturb.parameters import (
     LossParameters,
     NNParameters,
     PhysicalParameters,
     ProblemParameters,
 )
+from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 
 path = Path().resolve()
 datapath = (
@@ -98,7 +98,7 @@ Data = datagen.Data
 
 # %%
 pb.eval(k1_data_pts)
-pb.calibrate(data=Data)
+optimal_parameters = pb.calibrate(data=Data)
 
 # %%
 pb.plot(plt_dynamic=False)

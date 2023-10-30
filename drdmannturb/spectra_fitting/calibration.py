@@ -373,9 +373,9 @@ class CalibrationProblem:
         self.curves = [0, 1, 2, 3]
         # self.curves = kwargs.get("curves", [0, 1, 2, 3])
 
-        alpha_pen = self.loss_params.alpha_pen
-        alpha_reg = self.loss_params.alpha_reg
-        beta_pen = self.loss_params.beta_pen
+        alpha_pen1 = self.loss_params.alpha_pen1
+        alpha_pen2 = self.loss_params.alpha_pen2
+        beta_reg = self.loss_params.beta_reg
 
         self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
 
@@ -537,20 +537,20 @@ class CalibrationProblem:
                     self.loss = w1 * self.loss + w2 * loss_coh
                 self.loss_only = 1.0 * self.loss.item()
                 self.loss_history_total.append(self.loss_only)
-                if alpha_pen:
+                if alpha_pen2:
                     # adds 2nd order penalty term
-                    pen = alpha_pen * PenTerm(y[self.curves[i:]])
+                    pen = alpha_pen2 * PenTerm(y[self.curves[i:]])
                     # self.loss_2ndOpen.append(pen.item())
                     self.loss = self.loss + pen
                     # print('pen = ', pen.item())
-                if alpha_reg:
-                    reg = alpha_reg * RegTerm()
+                if beta_reg:
+                    reg = beta_reg * RegTerm()
                     # self.loss_reg.append(reg.item())
                     self.loss = self.loss + reg
                     # print('reg = ', reg.item())
-                if beta_pen:
+                if alpha_pen1:
                     # adds 1st order penalty term
-                    pen = beta_pen * PenTerm1stO(y[self.curves[i:]])
+                    pen = alpha_pen1 * PenTerm1stO(y[self.curves[i:]])
                     # self.loss_1stOpen.append(pen.item())
                     self.loss += pen
                 self.loss.backward()

@@ -8,7 +8,6 @@ import pytest
 import torch
 import torch.nn as nn
 
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 from drdmannturb.enums import EddyLifetimeType
 from drdmannturb.parameters import (
     LossParameters,
@@ -16,6 +15,7 @@ from drdmannturb.parameters import (
     PhysicalParameters,
     ProblemParameters,
 )
+from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -39,7 +39,7 @@ def test_network_paramcount(eddylifetime: EddyLifetimeType):
     pb = CalibrationProblem(
         nn_params=NNParameters(hidden_layer_sizes=[10, 10]),
         prob_params=ProblemParameters(nepochs=5, eddy_lifetime=eddylifetime),
-        loss_params=LossParameters(alpha_pen=1.0, alpha_reg=1.0e-5, beta_pen=2e-4),
+        loss_params=LossParameters(alpha_pen2=1.0, alpha_pen1=1.0e-5, beta_reg=2e-4),
         phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, domain=domain),
         device=device,
     )
@@ -61,7 +61,7 @@ def test_nnparams_load_trained_TAUNET():
             nlayers=2, hidden_layer_size=10, hidden_layer_sizes=[10, 10]
         ),
         prob_params=ProblemParameters(nepochs=2, eddy_lifetime=EddyLifetimeType.TAUNET),
-        loss_params=LossParameters(alpha_pen=1.0, alpha_reg=1.0e-5, beta_pen=2e-4),
+        loss_params=LossParameters(alpha_pen2=1.0, alpha_pen1=1.0e-5, beta_reg=2e-4),
         phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, domain=domain),
         device=device,
     )
@@ -110,7 +110,7 @@ def test_nnparams_load_trained_CUSTOMMLP():
         prob_params=ProblemParameters(
             nepochs=2, eddy_lifetime=EddyLifetimeType.CUSTOMMLP
         ),
-        loss_params=LossParameters(alpha_pen=1.0, alpha_reg=1.0e-5, beta_pen=2e-4),
+        loss_params=LossParameters(alpha_pen2=1.0, alpha_pen1=1.0e-5, beta_reg=2e-4),
         phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, domain=domain),
         device=device,
     )

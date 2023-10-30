@@ -110,18 +110,18 @@ class LossParameters:
 
     Fields
     ------
-    alpha_pen : float
-        Set the alpha penalization term coefficient, by default 0.0
-    alpha_reg : float
-        Set the alpha regularization term coefficient, by default 0.0
-    beta_pen : float
-        Set the beta penalization term coefficient, by default 0.0
+    alpha_pen1 : float
+        Set the first-order penalization term coefficient :math:`\alpha_1`, by default 0.0
+    alpha_pen2 : float
+        Set the second-order penalization term coefficient :math:`\alpha_2`, by default 0.0
+    beta_reg : float
+        Set the regularization term coefficient :math:`\beta`, by default 0.0
     """
 
-    alpha_pen: float = 0.0
-    alpha_reg: float = 0.0
+    alpha_pen1: float = 0.0
+    alpha_pen2: float = 0.0
 
-    beta_pen: float = 0.0
+    beta_reg: float = 0.0
 
 
 @dataclass

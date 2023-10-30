@@ -8,14 +8,15 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-# %%
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 from drdmannturb.parameters import (
     LossParameters,
     NNParameters,
     PhysicalParameters,
     ProblemParameters,
 )
+
+# %%
+from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -38,7 +39,7 @@ pb = CalibrationProblem(
         activations=[nn.GELU(), nn.GELU()],
     ),
     prob_params=ProblemParameters(nepochs=5),
-    loss_params=LossParameters(alpha_pen=1.0, alpha_reg=1.0e-5, beta_pen=2e-4),
+    loss_params=LossParameters(alpha_pen2=1.0, alpha_pen1=1.0e-5, beta_reg=2e-4),
     phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, domain=domain),
     device=device,
 )
@@ -52,7 +53,7 @@ Data = OnePointSpectraDataGenerator(data_points=DataPoints).Data
 
 # %%
 pb.eval(k1_data_pts)
-pb.calibrate(data=Data)
+optimal_parameters = pb.calibrate(data=Data)
 
 # %%
 pb.plot(plt_dynamic=False)
