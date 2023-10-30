@@ -398,7 +398,7 @@ class CalibrationProblem:
 
         y = self.OPS(k1_data_pts)
         y_data = torch.zeros_like(y)
-        lgg.drdmannturb_log.debug(f"Y_DATA0 shape: {y_data0.shape}")
+        # lgg.drdmannturb_log.debug(f"Y_DATA0 shape: {y_data0.shape}")
         y_data[:4, ...] = y_data0.view(4, y_data0.shape[0] // 4)
 
         # The case with the coherence formatting the data
@@ -435,7 +435,9 @@ class CalibrationProblem:
 
         theta_NN = parameters_to_vector(self.OPS.tauNet.NN.parameters())
 
-        self.loss = self.LossAggregator.eval(y, y_data, theta_NN, 0)
+        self.loss = self.LossAggregator.eval(
+            y[self.curves], y_data[self.curves], theta_NN, 0
+        )
 
         print(f"Initial loss: {self.loss.item()}")
 
@@ -445,7 +447,7 @@ class CalibrationProblem:
             theta_NN = parameters_to_vector(self.OPS.tauNet.NN.parameters())
 
             self.loss = self.LossAggregator.eval(
-                y, y_data, theta_NN, self.e_count
+                y[self.curves], y_data[self.curves], theta_NN, self.e_count
             )  # pass epoch
 
             self.loss.backward()

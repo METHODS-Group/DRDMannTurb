@@ -33,18 +33,30 @@ class LossAggregator:
 
         self.loss_func = lambda y, theta_NN, epoch: 0.0
         if self.params.alpha_pen1:
-            self.loss_func += (
-                lambda y, _, epoch: self.params.alpha_pen1 * self.Pen1StOrder(y, epoch)
+            t_alphapen1 = (
+                lambda y, theta_NN, epoch: self.params.alpha_pen1
+                * self.Pen1stOrder(y, epoch)
             )
+            # self.loss_func = (
+            # lambda y, theta_NN, epoch: self.loss_func(y, theta_NN, epoch) + self.params.alpha_pen1 * self.Pen1StOrder(y, epoch)
+            # )
         if self.params.alpha_pen2:
-            self.loss_func += (
-                lambda y, _, epoch: self.params.alpha_pen2 * self.Pen2ndOrder(y, epoch)
+            t_alphapen2 = (
+                lambda y, theta_NN, epoch: self.params.alpha_pen2
+                * self.Pen2ndOrder(y, epoch)
             )
+            # self.loss_func = (
+            # lambda y, theta_NN, epoch: self.loss_func(y, theta_NN, epoch) + self.params.alpha_pen2 * self.Pen2ndOrder(y, epoch)
+            # )
         if self.params.beta_reg:
-            self.loss_func += (
-                lambda _, theta_NN, epoch: self.params.beta_reg
+            t_beta_reg = (
+                lambda y, theta_NN, epoch: self.params.beta_reg
                 * self.Regularization(theta_NN, epoch)
             )
+            # self.loss_func = (
+            # lambda y, theta_NN, epoch: self.loss_func(y, theta_NN, epoch) + self.params.beta_reg
+            # * self.Regularization(theta_NN, epoch)
+            # )
 
     def MSE_term(self, model: torch.Tensor, target: torch.Tensor, epoch: int):
         """_summary_
@@ -61,8 +73,12 @@ class LossAggregator:
         _type_
             _description_
         """
+        # print(f"model tensor: {model}")
+        # print(f"target tensor: {target}")
         mse_loss = torch.mean(torch.log(torch.abs(model / target)).square())
         writer.add_scalar("MSE Loss", mse_loss, epoch)
+
+        print(f"mse loss: {mse_loss}")
 
         return mse_loss
         # return torch.mean(torch.log(torch.abs(model/ target)).square())
@@ -80,13 +96,15 @@ class LossAggregator:
 
         pen2ndorder_loss = torch.mean(torch.relu(d2logy).square())
 
+        print(f"2nd order pen loss: {pen2ndorder_loss}")
+
         writer.add_scalar("2nd Order Penalty", pen2ndorder_loss, epoch)
 
         return pen2ndorder_loss
 
         # return torch.mean(torch.relu(d2logy).square())
 
-    def Pen1StOrder(self, y: torch.Tensor, epoch: int):
+    def Pen1stOrder(self, y: torch.Tensor, epoch: int):
         """_summary_
 
         Parameters
@@ -100,6 +118,9 @@ class LossAggregator:
         pen1storder_loss = torch.mean(torch.relu(d1logy).square())
         writer.add_scalar("1st Order Penalty", pen1storder_loss, epoch)
 
+        print(f"1st order pen loss: {pen1storder_loss}")
+
+        return pen1storder_loss
         # return torch.mean(torch.relu(d1logy).square())
 
     def Regularization(self, theta_NN: torch.Tensor, epoch: int):
@@ -113,6 +134,10 @@ class LossAggregator:
         reg_loss = theta_NN.square().mean()
 
         writer.add_scalar("Regularization", reg_loss, epoch)
+
+        print(f"regularization loss: {reg_loss}")
+
+        return reg_loss
 
         # return theta_NN.square().mean()
 
@@ -136,9 +161,9 @@ class LossAggregator:
         epoch : int
             _description_
         """
-        total_loss = self.MSE_term(y, y_data, epoch) + self.loss_func(
-            y, theta_NN, epoch
-        )
+        total_loss = self.MSE_term(y, y_data, epoch)  # + self.loss_func(
+        # y, theta_NN, epoch
+        # )
 
         writer.add_scalar("Total Loss", total_loss, epoch)
         return total_loss
