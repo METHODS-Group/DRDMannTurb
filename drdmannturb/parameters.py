@@ -104,7 +104,7 @@ class PhysicalParameters:
 
 @dataclass
 class LossParameters:
-    """
+    r"""
     This class provides a convenient method of storing and passing around
     the loss function term coefficients; this also offers default values.
 

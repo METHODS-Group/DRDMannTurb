@@ -23,6 +23,8 @@ from drdmannturb.parameters import (
 from drdmannturb.spectra_fitting.one_point_spectra import OnePointSpectra
 from drdmannturb.spectra_fitting.spectral_coherence import SpectralCoherence
 
+from .loss_functions import LossAggregator
+
 
 def generic_loss(
     observed: Union[torch.Tensor, float],
@@ -379,9 +381,10 @@ class CalibrationProblem:
 
         self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
 
-        # create a single numpy.ndarray with numpy.array() and then convert to a torch tensor
-        # single_data_array=torch.tensor( [DataValues[:, i, i] for i in range(
-        #     3)] + [DataValues[:, 0, 2]])
+        self.LossAggregator = LossAggregator(
+            self.loss_params, self.k1_data_pts, self.prob_params.nepochs
+        )
+
         self.kF_data_vals = torch.cat(
             (
                 DataValues[:, 0, 0],
@@ -428,164 +431,195 @@ class CalibrationProblem:
 
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=nepochs)
 
-        torch.nn.Softplus()
-        logk1 = torch.log(self.k1_data_pts).detach()
-        h1 = torch.diff(logk1)
-        h2 = torch.diff(0.5 * (logk1[:-1] + logk1[1:]))
-        torch.diff(0.5 * (self.k1_data_pts[:-1] + self.k1_data_pts[1:]))
-        torch.diff(self.k1_data_pts)
+        self.e_count: int = 0
 
-        def PenTerm(y):
-            """
-            TODO: are these embedded functions necessary?
-            """
-            logy = torch.log(torch.abs(y))
-            d2logy = torch.diff(torch.diff(logy, dim=-1) / h1, dim=-1) / h2
-            # f = torch.nn.GELU()(d2logy) ** 2
-            f = torch.relu(d2logy).square()
-            # pen = torch.sum( f * h2 ) / D
-            pen = torch.mean(f)
-            return pen
+        theta_NN = parameters_to_vector(self.OPS.tauNet.NN.parameters())
 
-        def PenTerm1stO(y):
-            """
-            TODO: are these embedded functions necessary?
-            """
-            logy = torch.log(torch.abs(y))
-            d1logy = torch.diff(logy, dim=-1) / h1
-            # d2logy = torch.diff(torch.diff(logy, dim=-1)/h1, dim=-1)/h2
-            # f = torch.nn.GELU()(d1logy) ** 2
-            f = torch.relu(d1logy).square()
-            # pen = torch.sum( f * h2 ) / D
-            pen = torch.mean(f)
-            return pen
+        self.loss = self.LossAggregator.eval(y, y_data, theta_NN, 0)
 
-        def RegTerm():
-            """
-            TODO: are these embedded functions necessary?
-            """
-            reg = 0
-            if self.OPS.type_EddyLifetime == "tauNet":
-                theta_NN = parameters_to_vector(self.OPS.tauNet.NN.parameters())
-                reg = theta_NN.square().mean()
-            return reg
+        print(f"Initial loss: {self.loss.item()}")
 
-        def loss_fn(model, target, weights):
-            """
-            TODO: are these embedded functions necessary?
-            """
-            # y = torch.abs((model-target)).square()
+        def closure():
+            optimizer.zero_grad()
+            y = self.OPS(k1_data_pts)
+            theta_NN = parameters_to_vector(self.OPS.tauNet.NN.parameters())
 
-            y = torch.log(torch.abs(model / target)).square()
+            self.loss = self.LossAggregator.eval(
+                y, y_data, theta_NN, self.e_count
+            )  # pass epoch
 
-            # y = ( (model-target)/(target) ).square()
-            # y = 0.5*(y[...,:-1]+y[...,1:])
-            # loss = 0.5*torch.sum( y * h4 )
-            # loss = torch.sum( y * h1 )
+            self.loss.backward()
 
-            loss = torch.mean(y)
-            return loss
+            self.e_count += 1
+            print(self.loss.item())
 
-        # self.loss_fn = LossFunc()
-        self.loss_fn = loss_fn
-        w = torch.abs(y) / torch.sum(torch.abs(y[:, 0]))
-        self.loss = self.loss_fn(y[self.curves], y_data[self.curves], w[self.curves])
+            return self.loss
 
-        # TODO: these should all be torch tensors;
-        # epochs & wolfe iters are known at this point
-        self.loss_history_total = []
-        self.loss_history_epochs = []
-        self.loss_reg = []
-        # TODO: in loss func refactor,
-        # loss_history_total seems to store MSE?
-        # this should rather be stored in loss_mse while
-        # loss_history_total holds the total loss from
-        # all terms
-        self.loss_mse = []
-        self.loss_2ndOpen = []
-        self.loss_1stOpen = []
+        for epoch in range(nepochs):
+            optimizer.step(closure)
+            scheduler.step()
 
-        # lgg.drdmannturb_log.simple_optinfo(
-        # f"Initial loss: {self.loss.item()}", tabbed=True
-        # )
-        self.loss_history_total.append(self.loss.item())
-        self.loss_history_epochs.append(self.loss.item())
-        # TODO make sure this doesn't do anything when not using tauNet
-        # self.loss_reg.append(alpha_reg * RegTerm().item())
-        # self.loss_2ndOpen.append(alpha_pen * PenTerm(y).item())
-        # self.loss_1stOpen.append(beta_pen * PenTerm1stO(y).item())
+            if self.loss.item() < tol:
+                break
 
-        # TODO: why is this i needed? just takes all curves?
-        for i in (0,):  # range(len(self.curves),0,-1):
+        # torch.nn.Softplus()
+        # logk1 = torch.log(self.k1_data_pts).detach()
+        # h1 = torch.diff(logk1)
+        # h2 = torch.diff(0.5 * (logk1[:-1] + logk1[1:]))
+        # torch.diff(0.5 * (self.k1_data_pts[:-1] + self.k1_data_pts[1:]))
+        # torch.diff(self.k1_data_pts)
 
-            def closure():
-                optimizer.zero_grad()
-                y = self.OPS(k1_data_pts)
-                w = k1_data_pts * y_data / torch.sum(k1_data_pts * y_data)
-                self.loss = self.loss_fn(
-                    y[self.curves[i:]], y_data[self.curves[i:]], w[self.curves[i:]]
-                )
-                if self.fg_coherence:
-                    w1, w2 = (
-                        1,
-                        1,
-                    )  ### weights to balance the coherence misfit and others
-                    y_coh = self.Coherence(
-                        k1_data_pts, Delta_y_data_pts, Delta_z_data_pts
-                    )
-                    loss_coh = self.loss_fn(y_coh, y_coh_data)
-                    self.loss = w1 * self.loss + w2 * loss_coh
-                self.loss_only = 1.0 * self.loss.item()
-                self.loss_history_total.append(self.loss_only)
-                if alpha_pen2:
-                    # adds 2nd order penalty term
-                    pen = alpha_pen2 * PenTerm(y[self.curves[i:]])
-                    # self.loss_2ndOpen.append(pen.item())
-                    self.loss = self.loss + pen
-                    # print('pen = ', pen.item())
-                if beta_reg:
-                    reg = beta_reg * RegTerm()
-                    # self.loss_reg.append(reg.item())
-                    self.loss = self.loss + reg
-                    # print('reg = ', reg.item())
-                if alpha_pen1:
-                    # adds 1st order penalty term
-                    pen = alpha_pen1 * PenTerm1stO(y[self.curves[i:]])
-                    # self.loss_1stOpen.append(pen.item())
-                    self.loss += pen
-                self.loss.backward()
-                # lgg.drdmannturb_log.simple_optinfo(f"Loss = {self.loss.item()}")
+        # def PenTerm(y):
+        #     """
+        #     TODO: are these embedded functions necessary?
+        #     """
+        #     logy = torch.log(torch.abs(y))
+        #     d2logy = torch.diff(torch.diff(logy, dim=-1) / h1, dim=-1) / h2
+        #     # f = torch.nn.GELU()(d2logy) ** 2
+        #     f = torch.relu(d2logy).square()
+        #     # pen = torch.sum( f * h2 ) / D
+        #     pen = torch.mean(f)
+        #     return pen
 
-                # TODO -- reimplement nu value logging
-                # if hasattr(self.OPS, 'tauNet'):
-                #     if hasattr(self.OPS.tauNet.Ra.nu, 'item'):
-                #         print('-> nu = ', self.OPS.tauNet.Ra.nu.item())
-                self.kF_model_vals = y.clone().detach()
+        # def PenTerm1stO(y):
+        #     """
+        #     TODO: are these embedded functions necessary?
+        #     """
+        #     logy = torch.log(torch.abs(y))
+        #     d1logy = torch.diff(logy, dim=-1) / h1
+        #     # d2logy = torch.diff(torch.diff(logy, dim=-1)/h1, dim=-1)/h2
+        #     # f = torch.nn.GELU()(d1logy) ** 2
+        #     f = torch.relu(d1logy).square()
+        #     # pen = torch.sum( f * h2 ) / D
+        #     pen = torch.mean(f)
+        #     return pen
 
-                # self.plot(**kwargs, plt_dynamic=True,
-                #           model_vals=self.kF_model_vals.cpu().detach().numpy() if torch.is_tensor(self.kF_model_vals) else self.kF_model_vals)
-                return self.loss
+        # def RegTerm():
+        #     """
+        #     TODO: are these embedded functions necessary?
+        #     """
+        #     reg = 0
+        #     if self.OPS.type_EddyLifetime == "tauNet":
+        #         theta_NN = parameters_to_vector(self.OPS.tauNet.NN.parameters())
+        #         reg = theta_NN.square().mean()
+        #     return reg
 
-            for epoch in range(nepochs):
-                # lgg.drdmannturb_log.optinfo(f"Epoch {epoch}")
-                self.epoch_model_sizes[epoch] = self.eval_trainable_norm(
-                    model_magnitude_order
-                )
-                optimizer.step(closure)
-                # TODO: refactor the scheduler things, plateau requires loss
-                # scheduler.step(self.loss) #if scheduler
-                scheduler.step()  # self.loss
-                # self.print_grad()
+        # def loss_fn(model, target, weights):
+        #     """
+        #     TODO: are these embedded functions necessary?
+        #     """
+        #     # y = torch.abs((model-target)).square()
 
-                # lgg.drdmannturb_log.optinfo(self.print_parameters())
+        #     y = torch.log(torch.abs(model / target)).square()
 
-                self.loss_history_epochs.append(self.loss_only)
-                if self.loss.item() < tol:
-                    break
+        #     # y = ( (model-target)/(target) ).square()
+        #     # y = 0.5*(y[...,:-1]+y[...,1:])
+        #     # loss = 0.5*torch.sum( y * h4 )
+        #     # loss = torch.sum( y * h1 )
 
-                if np.isnan(self.loss.item()) or np.isinf(self.loss.item()):
-                    lgg.drdmannturb_log.warning("LOSS IS NAN OR INF")
-                    break
+        #     loss = torch.mean(y)
+        #     return loss
+
+        # # self.loss_fn = LossFunc()
+        # self.loss_fn = loss_fn
+        # w = torch.abs(y) / torch.sum(torch.abs(y[:, 0]))
+        # self.loss = self.loss_fn(y[self.curves], y_data[self.curves], w[self.curves])
+
+        # # TODO: these should all be torch tensors;
+        # # epochs & wolfe iters are known at this point
+        # self.loss_history_total = []
+        # self.loss_history_epochs = []
+        # self.loss_reg = []
+        # # TODO: in loss func refactor,
+        # # loss_history_total seems to store MSE?
+        # # this should rather be stored in loss_mse while
+        # # loss_history_total holds the total loss from
+        # # all terms
+        # self.loss_mse = []
+        # self.loss_2ndOpen = []
+        # self.loss_1stOpen = []
+
+        # # lgg.drdmannturb_log.simple_optinfo(
+        # # f"Initial loss: {self.loss.item()}", tabbed=True
+        # # )
+        # self.loss_history_total.append(self.loss.item())
+        # self.loss_history_epochs.append(self.loss.item())
+        # # TODO make sure this doesn't do anything when not using tauNet
+        # # self.loss_reg.append(alpha_reg * RegTerm().item())
+        # # self.loss_2ndOpen.append(alpha_pen * PenTerm(y).item())
+        # # self.loss_1stOpen.append(beta_pen * PenTerm1stO(y).item())
+
+        # # TODO: why is this i needed? just takes all curves?
+        # for i in (0,):  # range(len(self.curves),0,-1):
+
+        #     def closure():
+        #         optimizer.zero_grad()
+        #         y = self.OPS(k1_data_pts)
+        #         w = k1_data_pts * y_data / torch.sum(k1_data_pts * y_data)
+        #         self.loss = self.loss_fn(
+        #             y[self.curves[i:]], y_data[self.curves[i:]], w[self.curves[i:]]
+        #         )
+        #         if self.fg_coherence:
+        #             w1, w2 = (
+        #                 1,
+        #                 1,
+        #             )  ### weights to balance the coherence misfit and others
+        #             y_coh = self.Coherence(
+        #                 k1_data_pts, Delta_y_data_pts, Delta_z_data_pts
+        #             )
+        #             loss_coh = self.loss_fn(y_coh, y_coh_data)
+        #             self.loss = w1 * self.loss + w2 * loss_coh
+        #         self.loss_only = 1.0 * self.loss.item()
+        #         self.loss_history_total.append(self.loss_only)
+        #         if alpha_pen2:
+        #             # adds 2nd order penalty term
+        #             pen = alpha_pen2 * PenTerm(y[self.curves[i:]])
+        #             # self.loss_2ndOpen.append(pen.item())
+        #             self.loss = self.loss + pen
+        #             # print('pen = ', pen.item())
+        #         if beta_reg:
+        #             reg = beta_reg * RegTerm()
+        #             # self.loss_reg.append(reg.item())
+        #             self.loss = self.loss + reg
+        #             # print('reg = ', reg.item())
+        #         if alpha_pen1:
+        #             # adds 1st order penalty term
+        #             pen = alpha_pen1 * PenTerm1stO(y[self.curves[i:]])
+        #             # self.loss_1stOpen.append(pen.item())
+        #             self.loss += pen
+        #         self.loss.backward()
+        #         # lgg.drdmannturb_log.simple_optinfo(f"Loss = {self.loss.item()}")
+
+        #         # TODO -- reimplement nu value logging
+        #         # if hasattr(self.OPS, 'tauNet'):
+        #         #     if hasattr(self.OPS.tauNet.Ra.nu, 'item'):
+        #         #         print('-> nu = ', self.OPS.tauNet.Ra.nu.item())
+        #         self.kF_model_vals = y.clone().detach()
+
+        #         # self.plot(**kwargs, plt_dynamic=True,
+        #         #           model_vals=self.kF_model_vals.cpu().detach().numpy() if torch.is_tensor(self.kF_model_vals) else self.kF_model_vals)
+        #         return self.loss
+
+        #     for epoch in range(nepochs):
+        #         # lgg.drdmannturb_log.optinfo(f"Epoch {epoch}")
+        #         self.epoch_model_sizes[epoch] = self.eval_trainable_norm(
+        #             model_magnitude_order
+        #         )
+        #         optimizer.step(closure)
+        #         # TODO: refactor the scheduler things, plateau requires loss
+        #         # scheduler.step(self.loss) #if scheduler
+        #         scheduler.step()  # self.loss
+        #         # self.print_grad()
+
+        #         # lgg.drdmannturb_log.optinfo(self.print_parameters())
+
+        #         self.loss_history_epochs.append(self.loss_only)
+        #         if self.loss.item() < tol:
+        #             break
+
+        #         if np.isnan(self.loss.item()) or np.isinf(self.loss.item()):
+        #             lgg.drdmannturb_log.warning("LOSS IS NAN OR INF")
+        #             break
 
         # lgg.drdmannturb_log.optinfo(
         # f"Calibration terminated with loss = {self.loss.item()} at tol = {tol}",
