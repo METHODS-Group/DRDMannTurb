@@ -13,17 +13,42 @@ writer = SummaryWriter()
 
 
 class LossAggregator:
-    def __init__(
-        self, params: LossParameters, k1space: torch.Tensor, max_epochs: torch.Tensor
-    ):
-        """_summary_
+    def __init__(self, params: LossParameters, k1space: torch.Tensor):
+        """Combines all loss functions and evaluates each term for the optimizer.
+        The loss function for spectra fitting is determined by the following minimization problem:
 
-        Parameters
-        ----------
-        params : LossParameters
-            _description_
-        k1space : torch.Tensor
-            _description_
+        .. math::
+            \min _{\boldsymbol{\theta}}\left\{\operatorname{MSE}[\boldsymbol{\theta}]+\alpha \operatorname{Pen}[\boldsymbol{\theta}]+\beta \operatorname{Reg}\left[\boldsymbol{\theta}_{\mathrm{NN}}\right]\right\}
+
+        where the loss terms are defined as follows:
+
+
+        where :math:`L` is the number of data points :math:`f_j \in \mathcal{D}`. The data :math:`J_i (f_j)` is evaluated using the Kaimal spectra. The second-order penalization term is defined as
+
+        .. math::
+            \operatorname{Pen}_2[\boldsymbol{\theta}]:=\frac{1}{|\mathcal{D}|} \sum_{i=1}^4\left\|\operatorname{ReLU}\left(\frac{\partial^2 \log \left|\widetilde{J}_i(\cdot, \boldsymbol{\theta})\right|}{\left(\partial \log k_1\right)^2}\right)\right\|_{\mathcal{D}}^2,
+
+        and the first-order penalization term is defined as
+
+        .. math::
+            \operatorname{Pen}_1[\boldsymbol{\theta}]:=\frac{1}{|\mathcal{D}|} \sum_{i=1}^4\left\|\operatorname{ReLU}\left(\frac{\partial \log \left|\widetilde{J}_i(\cdot, \boldsymbol{\theta})\right|}{\partial \log k_1}\right)\right\|_{\mathcal{D}}^2.
+
+        Note that the norm :math:`||\cdot||_{\mathcal{D}}` is defined as
+
+        .. math::
+            \|g\|_{\mathcal{D}}^2:=\int_{\mathcal{D}}|g(f)|^2 \mathrm{~d}(\log f).
+
+        The regularization term is defined as
+
+        .. math::
+            \operatorname{Reg}\left[\boldsymbol{\theta}_{\mathrm{NN}}\right]:=\frac{1}{N} \sum_{i=1}^N \theta_{\mathrm{NN}, i}^2.
+
+                Parameters
+                ----------
+                params : LossParameters
+                    Dataclass with parameters that determine the loss function
+                k1space : torch.Tensor
+                    _description_
         """
         self.params = params
         self.k1space = k1space
@@ -31,51 +56,26 @@ class LossAggregator:
         self.h1 = torch.diff(self.logk1)
         self.h2 = torch.diff(0.5 * (self.logk1[:-1] + self.logk1[1:]))
 
-        # self.loss_func = lambda y, theta_NN, epoch: 0.0
         t_alphapen1 = (
             lambda y, theta_NN, epoch: self.params.alpha_pen1
             * self.Pen1stOrder(y, epoch)
             if self.params.alpha_pen1
             else 0.0
         )
-        # if self.params.alpha_pen1:
-        # t_alphapen1 = (
-        # lambda y, theta_NN, epoch: self.params.alpha_pen1
-        # * self.Pen1stOrder(y, epoch)
-        # )
-        # self.loss_func = (
-        # lambda y, theta_NN, epoch: self.loss_func(y, theta_NN, epoch) + self.params.alpha_pen1 * self.Pen1StOrder(y, epoch)
-        # )
+
         t_alphapen2 = (
             lambda y, theta_NN, epoch: self.params.alpha_pen2
             * self.Pen2ndOrder(y, epoch)
             if self.params.alpha_pen2
             else 0.0
         )
-        # if self.params.alpha_pen2:
-        # t_alphapen2 = (
-        # lambda y, theta_NN, epoch: self.params.alpha_pen2
-        # * self.Pen2ndOrder(y, epoch)
-        # )
-        # self.loss_func = (
-        # lambda y, theta_NN, epoch: self.loss_func(y, theta_NN, epoch) + self.params.alpha_pen2 * self.Pen2ndOrder(y, epoch)
-        # )
+
         t_beta_reg = (
             lambda y, theta_NN, epoch: self.params.beta_reg
             * self.Regularization(theta_NN, epoch)
             if self.params.beta_reg
             else 0.0
         )
-        #
-        # if self.params.beta_reg:
-        # t_beta_reg = (
-        # lambda y, theta_NN, epoch: self.params.beta_reg
-        # * self.Regularization(theta_NN, epoch)
-        # )
-        # self.loss_func = (
-        # lambda y, theta_NN, epoch: self.loss_func(y, theta_NN, epoch) + self.params.beta_reg
-        # * self.Regularization(theta_NN, epoch)
-        # )
 
         self.loss_func = (
             lambda y, theta_NN, epoch: t_alphapen1(y, theta_NN, epoch)
@@ -84,20 +84,25 @@ class LossAggregator:
         )
 
     def MSE_term(self, model: torch.Tensor, target: torch.Tensor, epoch: int):
-        """_summary_
+        """Evaluates the loss term
+        .. math::
+            \operatorname{MSE}[\boldsymbol{\theta}]:=\frac{1}{L} \sum_{i=1}^4 \sum_{j=1}^L\left(\log \left|J_i\left(f_j\right)\right|-\log \left|\widetilde{J}_i\left(f_j, \boldsymbol{\theta}\right)\right|\right)^2,
 
-        Parameters
-        ----------
-        model : torch.Tensor
-            _description_
-        target : torch.Tensor
-            _description_
+                Parameters
+                ----------
+                model : torch.Tensor
+                    _description_
+                target : torch.Tensor
+                    _description_
+                epoch : int
+                    Current epoch number.
 
-        Returns
-        -------
-        _type_
-            _description_
+                Returns
+                -------
+                _type_
+                    _description_
         """
+
         mse_loss = torch.mean(torch.log(torch.abs(model / target)).square())
         writer.add_scalar("MSE Loss", mse_loss, epoch)
 
@@ -109,6 +114,13 @@ class LossAggregator:
         Parameters
         ----------
         y : torch.Tensor
+            _description_
+        epoch : int
+            _description_
+
+        Returns
+        -------
+        _type_
             _description_
         """
         logy = torch.log(torch.abs(y))
@@ -127,7 +139,15 @@ class LossAggregator:
         ----------
         y : torch.Tensor
             _description_
+        epoch : int
+            _description_
+
+        Returns
+        -------
+        _type_
+            _description_
         """
+
         logy = torch.log(torch.abs(y))
         d1logy = torch.diff(logy, dim=-1) / self.h1
 
@@ -143,14 +163,20 @@ class LossAggregator:
         ----------
         theta_NN : torch.Tensor
             _description_
+        epoch : int
+            _description_
+
+        Returns
+        -------
+        _type_
+            _description_
         """
+
         reg_loss = theta_NN.square().mean()
 
         writer.add_scalar("Regularization", reg_loss, epoch)
 
         return reg_loss
-
-        # return theta_NN.square().mean()
 
     def eval(
         self,
@@ -171,6 +197,11 @@ class LossAggregator:
             _description_
         epoch : int
             _description_
+
+        Returns
+        -------
+        _type_
+            _description_
         """
         total_loss = self.MSE_term(y, y_data, epoch) + self.loss_func(
             y, theta_NN, epoch
@@ -179,59 +210,3 @@ class LossAggregator:
         writer.add_scalar("Total Loss", total_loss, epoch)
 
         return total_loss
-        # return self.MSE_term(y, y_data, epoch) + self.loss_func(y, theta_NN, epoch)
-
-
-# def PenTerm(y):
-#     """
-#     TODO: are these embedded functions necessary?
-#     """
-#     logy = torch.log(torch.abs(y))
-#     d2logy = torch.diff(torch.diff(logy, dim=-1) / h1, dim=-1) / h2
-#     # f = torch.nn.GELU()(d2logy) ** 2
-#     f = torch.relu(d2logy).square()
-#     # pen = torch.sum( f * h2 ) / D
-#     pen = torch.mean(f)
-#     return pen
-
-
-# def PenTerm1stO(y):
-#     """
-#     TODO: are these embedded functions necessary?
-#     """
-#     logy = torch.log(torch.abs(y))
-#     d1logy = torch.diff(logy, dim=-1) / h1
-#     # d2logy = torch.diff(torch.diff(logy, dim=-1)/h1, dim=-1)/h2
-#     # f = torch.nn.GELU()(d1logy) ** 2
-#     f = torch.relu(d1logy).square()
-#     # pen = torch.sum( f * h2 ) / D
-#     pen = torch.mean(f)
-#     return pen
-
-
-# def RegTerm():
-#     """
-#     TODO: are these embedded functions necessary?
-#     """
-#     reg = 0
-#     if self.OPS.type_EddyLifetime == "tauNet":
-#         theta_NN = parameters_to_vector(self.OPS.tauNet.NN.parameters())
-#         reg = theta_NN.square().mean()
-#     return reg
-
-
-# def loss_fn(model, target, weights):
-#     """
-#     TODO: are these embedded functions necessary?
-#     """
-#     # y = torch.abs((model-target)).square()
-
-#     y = torch.log(torch.abs(model / target)).square()
-
-#     # y = ( (model-target)/(target) ).square()
-#     # y = 0.5*(y[...,:-1]+y[...,1:])
-#     # loss = 0.5*torch.sum( y * h4 )
-#     # loss = torch.sum( y * h1 )
-
-#     loss = torch.mean(y)
-#     return loss
