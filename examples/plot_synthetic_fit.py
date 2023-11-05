@@ -102,8 +102,6 @@ with open(path_to_parameters, "rb") as file:
         loss_params,
         phys_params,
         model_params,
-        # loss_history_total,
-        # loss_history_epochs,
     ) = pickle.load(file)
 
 # %% [markdown]

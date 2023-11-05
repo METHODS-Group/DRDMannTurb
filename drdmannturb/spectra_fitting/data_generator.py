@@ -319,9 +319,7 @@ class OnePointSpectraDataGenerator:
             Provide original spectra and associated domains as a single stack of np.arrays, even if all x coordinates are matching.
 
         """
-
-        cmap = plt.get_cmap("Spectral", 4)
-        custom_palette = [mpl.colors.rgb2hex(cmap(i)) for i in range(cmap.N)]
+        custom_palette = ["royalblue", "crimson", "forestgreen", "mediumorchid"]
 
         if self.data_type == DataType.AUTO:
             if x_interp is None:
@@ -342,6 +340,7 @@ class OnePointSpectraDataGenerator:
             )
 
             with plt.style.context("bmh"):
+                plt.rcParams.update({"font.size": 8})
                 fig, ax = plt.subplots()
 
                 ax.plot(

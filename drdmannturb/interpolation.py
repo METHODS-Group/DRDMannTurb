@@ -97,13 +97,13 @@ def interpolate(
 
     # The below will plot the data along with the cubic spline interpolation
     if plot:
-        import matplotlib as mpl
         import matplotlib.pyplot as plt
 
-        cmap = plt.get_cmap("Spectral", 4)
-        custom_palette = [mpl.colors.rgb2hex(cmap(i)) for i in range(cmap.N)]
+        custom_palette = ["royalblue", "crimson", "forestgreen", "mediumorchid"]
 
         with plt.style.context("bmh"):
+            plt.rcParams.update({"font.size": 8})
+
             plt.plot(
                 x_coords_u,
                 u_spectra,

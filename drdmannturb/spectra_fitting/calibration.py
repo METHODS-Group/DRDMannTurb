@@ -5,7 +5,8 @@ This module implements the exposed CalibrationProblem class.
 import os
 import pickle
 from functools import partial
-from typing import Any, Dict, Optional, Union
+from pathlib import Path
+from typing import Any, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -316,20 +317,30 @@ class CalibrationProblem:
         self,
         data: tuple[Any, Any],  # TODO -- properly type this
         model_magnitude_order=1,
+        tb_comment: str = "",
         optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
     ):
-        """
-        Calibration method, which handles the main training loop and some
+        """Calibration method, which handles the main training loop and some
         data pre-processing.
 
         Parameters
         ----------
-        data
+        data : tuple[Any, Any]
+            _description_
+        tb_comment : str
+           Filename comment used by tensorboard; useful for distinguishing between architectures and hyperparameters. Refer to tensorboard documentation for examples of use. By default, the empty string, which results in default tensorboard filenames.
+        optimizer_class : torch.optim.Optimizer, optional
+           Choice of Torch optimizer, by default torch.optim.LBFGS
 
-        model_magnitude_order
+        Returns
+        -------
+        _type_
+            _description_
 
-        optimizer_class : torch.optim.Optimizer
-            User's choice of torch optimizer. By default, LBFGS
+        Raises
+        ------
+        RuntimeError
+            _description_
         """
 
         DataPoints, DataValues = data
@@ -345,7 +356,10 @@ class CalibrationProblem:
         self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
 
         self.LossAggregator = LossAggregator(
-            self.loss_params, self.k1_data_pts, self.logging_directory
+            self.loss_params,
+            self.k1_data_pts,
+            self.logging_directory,
+            tb_comment=tb_comment,
         )
 
         self.kF_data_vals = torch.cat(
@@ -399,11 +413,11 @@ class CalibrationProblem:
             y[self.curves], y_data[self.curves], theta_NN, 0
         )
 
-        print("=" * 30)
+        print("=" * 40)
 
         print(f"Initial loss: {self.loss.item()}")
 
-        print("=" * 30)
+        print("=" * 40)
 
         def closure():
             optimizer.zero_grad()
@@ -435,7 +449,7 @@ class CalibrationProblem:
                 )
                 break
 
-        print("=" * 30)
+        print("=" * 40)
         print(f"Spectra fitting concluded with final loss: {self.loss.item()}")
 
         return self.parameters
@@ -593,22 +607,22 @@ class CalibrationProblem:
                 file,
             )
 
-    def plot(self, **kwargs: Dict[str, Any]):
-        """
-        Handles all plotting
-        """
+    def plot(
+        self,
+        Data=None,
+        model_vals=None,
+        plot_tau: bool = True,
+        save: bool = False,
+        save_dir: Optional[Union[Path, str]] = None,
+    ):
 
-        Data = kwargs.get("Data")
+        clr = ["royalblue", "crimson", "forestgreen", "mediumorchid"]
+
         if Data is not None:
             DataPoints, DataValues = Data
-            self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[
-                :, 0
-            ].squeeze()
-            # create a single numpy.ndarray with numpy.array() and then convert to a porch tensor
-            # single_data_array=np.array( [DataValues[:, i, i] for i in range(
-            # 3)] + [DataValues[:, 0, 2]])
-            # self.kF_data_vals = torch.tensor(single_data_array, dtype=torch.float64)
-            self.kF_data_vals = torch.cat(
+            k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
+
+            kF_data_vals = torch.cat(
                 (
                     DataValues[:, 0, 0],
                     DataValues[:, 1, 1],
@@ -616,28 +630,40 @@ class CalibrationProblem:
                     DataValues[:, 0, 2],
                 )
             )
+        else:
+            if hasattr(self, "k1_data_pts") and self.k1_data_pts is not None:
+                k1_data_pts = self.k1_data_pts
+            else:
+                raise ValueError(
+                    "Must either provide k1space or re-use what was used for model calibration, neither is currently specified."
+                )
 
-        k1 = self.k1_data_pts
-        torch.stack([0 * k1, k1, 0 * k1], dim=-1)
+            if hasattr(self, "kF_data_vals") and self.kF_data_vals is not None:
+                kF_data_vals = self.kF_data_vals
+            else:
+                raise ValueError(
+                    "Must either provide data points or re-use what was used for model calibration, neither is currently specified."
+                )
 
-        plt_tau = kwargs.get("plt_tau", True)
-        if plt_tau:
+        kF_model_vals = model_vals if model_vals is not None else self.OPS(k1_data_pts)
+
+        kF_model_vals = kF_model_vals.cpu().detach()
+        k1_data_pts = k1_data_pts.cpu().detach()
+        kF_data_vals = kF_data_vals.cpu().detach()
+
+        if plot_tau:
             k_gd = torch.logspace(-3, 3, 50, dtype=torch.float64)
             k_1 = torch.stack([k_gd, 0 * k_gd, 0 * k_gd], dim=-1)
             k_2 = torch.stack([0 * k_gd, k_gd, 0 * k_gd], dim=-1)
             k_3 = torch.stack([0 * k_gd, 0 * k_gd, k_gd], dim=-1)
             k_4 = torch.stack([k_gd, k_gd, k_gd], dim=-1) / 3 ** (1 / 2)
-            # k_norm = torch.norm(k, dim=-1)
-
-        self.kF_model_vals = kwargs.get("model_vals", None)
-        if self.kF_model_vals is None:
-            self.kF_model_vals = self.OPS(k1).cpu().detach().numpy()
 
         if not hasattr(self, "fig"):
             nrows = 1
-            ncols = 2 if plt_tau else 1
+            ncols = 2 if plot_tau else 1
 
             with plt.style.context("bmh"):
+                plt.rcParams.update({"font.size": 8})
                 self.fig, self.ax = plt.subplots(
                     nrows=nrows,
                     ncols=ncols,
@@ -645,47 +671,44 @@ class CalibrationProblem:
                     clear=True,
                     figsize=[10, 5],
                 )
-                if not plt_tau:
+                if not plot_tau:
                     self.ax = [self.ax]
 
                 # Subplot 1: One-point spectra
                 self.ax[0].set_title("One-point spectra")
                 self.lines_SP_model = [None] * (self.vdim + 1)
                 self.lines_SP_data = [None] * (self.vdim + 1)
-                clr = ["red", "blue", "green", "magenta"]
                 for i in range(self.vdim):
                     (self.lines_SP_model[i],) = self.ax[0].plot(
-                        k1.cpu().detach().numpy(),
-                        self.kF_model_vals[i],
+                        k1_data_pts,
+                        kF_model_vals[i].numpy(),
+                        "--",
                         color=clr[i],
                         label=r"$F_{0:d}$ model".format(i + 1),
-                    )  #'o-'
+                    )
 
-                s = self.kF_data_vals.shape[0]
+                s = kF_data_vals.shape[0]
 
                 for i in range(self.vdim):
                     (self.lines_SP_data[i],) = self.ax[0].plot(
-                        k1.cpu().detach().numpy(),
-                        self.kF_data_vals.view(4, s // 4)[i].cpu().detach().numpy(),
-                        "--",
+                        k1_data_pts,
+                        kF_data_vals.view(4, s // 4)[i].numpy(),
+                        "o-",
                         color=clr[i],
                         label=r"$F_{0:d}$ data".format(i + 1),
                     )
                 if 3 in self.curves:
                     (self.lines_SP_model[self.vdim],) = self.ax[0].plot(
-                        k1.cpu().detach().numpy(),
-                        -self.kF_model_vals[self.vdim],
-                        "o-",
+                        k1_data_pts,
+                        -kF_model_vals[self.vdim].numpy(),
+                        "--",
                         color=clr[3],
                         label=r"$-F_{13}$ model",
                     )
                     (self.lines_SP_data[self.vdim],) = self.ax[0].plot(
-                        k1.cpu().detach().numpy(),
-                        -self.kF_data_vals.view(4, s // 4)[self.vdim]
-                        .cpu()
-                        .detach()
-                        .numpy(),
-                        "--",
+                        k1_data_pts,
+                        -kF_data_vals.view(4, s // 4)[self.vdim].numpy(),
+                        "o-",
                         color=clr[3],
                         label=r"$-F_{13}$ data",
                     )
@@ -695,18 +718,15 @@ class CalibrationProblem:
                 self.ax[0].set_xlabel(r"$k_1$")
                 self.ax[0].set_ylabel(r"$k_1 F_i /u_*^2$")
                 self.ax[0].grid(which="both")
-                # self.ax[0].set_aspect(1/2)
 
-                if plt_tau:
+                if plot_tau:
                     # Subplot 2: Eddy Lifetime
                     self.ax[1].set_title("Eddy lifetime")
                     self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
                     self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
                     self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
                     self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
-                    # self.tau_model1m= self.OPS.EddyLifetime(-k_1).detach().numpy()
-                    # self.tau_model2m= self.OPS.EddyLifetime(-k_2).detach().numpy()
-                    # self.tau_model3m= self.OPS.EddyLifetime(-k_3).detach().numpy()
+
                     self.tau_ref = (
                         3.9 * MannEddyLifetime(0.59 * k_gd).cpu().detach().numpy()
                     )
@@ -734,9 +754,7 @@ class CalibrationProblem:
                         "-",
                         label=r"$\tau_{model}(k,k,k)$",
                     )
-                    # self.lines_LT_model1m, = self.ax[1].plot(k_gd, self.tau_model1m, '-', label=r'$\tau_{model}(-k_1)$')
-                    # self.lines_LT_model2m, = self.ax[1].plot(k_gd, self.tau_model2m, '-', label=r'$\tau_{model}(-k_2)$')
-                    # self.lines_LT_model3m, = self.ax[1].plot(k_gd, self.tau_model3m, '-', label=r'$\tau_{model}(-k_3)$')
+
                     (self.lines_LT_ref,) = self.ax[1].plot(
                         k_gd.cpu().detach().numpy(),
                         self.tau_ref,
@@ -750,43 +768,29 @@ class CalibrationProblem:
                     self.ax[1].set_ylabel(r"$\tau$")
                     self.ax[1].grid(which="both")
 
-                    # plt.show()
-
-                # TODO clean up plotting things?
-                self.fig.canvas.draw()
-                # TODO: comment next out if to save
-                self.fig.canvas.flush_events()
-
             for i in range(self.vdim):
-                self.lines_SP_model[i].set_ydata(self.kF_model_vals[i])
+                self.lines_SP_model[i].set_ydata(kF_model_vals[i])
             if 3 in self.curves:
-                self.lines_SP_model[self.vdim].set_ydata(-self.kF_model_vals[self.vdim])
-            # self.ax[0].set_aspect(1)
+                self.lines_SP_model[self.vdim].set_ydata(-kF_model_vals[self.vdim])
 
-            if plt_tau:
+            if plot_tau:
                 self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
                 self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
                 self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
                 self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
-                # self.tau_model1m= self.OPS.EddyLifetime(-k_1).detach().numpy()
-                # self.tau_model2m= self.OPS.EddyLifetime(-k_2).detach().numpy()
-                # self.tau_model3m= self.OPS.EddyLifetime(-k_3).detach().numpy()
                 self.lines_LT_model1.set_ydata(self.tau_model1)
                 self.lines_LT_model2.set_ydata(self.tau_model2)
                 self.lines_LT_model3.set_ydata(self.tau_model3)
                 self.lines_LT_model4.set_ydata(self.tau_model4)
-                # self.lines_LT_model1m.set_ydata(self.tau_model1m)
-                # self.lines_LT_model2m.set_ydata(self.tau_model2m)
-                # self.lines_LT_model3m.set_ydata(self.tau_model3m)
 
-                # plt.show()
-                # TODO: uncomment next!
-                # print("="*30)
-                # print("SAVING FINAL SOLUTION RESULTS TO " + f'{self.output_directory+"/" + self.activfuncstr +"final_solution.png"}')
+            plt.show()
+            # TODO: uncomment next!
+            # print("="*30)
+            # print("SAVING FINAL SOLUTION RESULTS TO " + f'{self.output_directory+"/" + self.activfuncstr +"final_solution.png"}')
 
-                # self.fig.savefig(self.output_directory+"/" + self.activfuncstr + "final_solution.png", format='png', dpi=100)
+            # self.fig.savefig(self.output_directory+"/" + self.activfuncstr + "final_solution.png", format='png', dpi=100)
 
-                # plt.savefig(self.output_directory.resolve()+'Final_solution.png',format='png',dpi=100)
+            # plt.savefig(self.output_directory.resolve()+'Final_solution.png',format='png',dpi=100)
 
             # self.fig.savefig(self.output_directory, format='png', dpi=100)
             # self.fig.savefig(self.output_directory.resolve()+"final_solution.png", format='png', dpi=100)

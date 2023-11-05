@@ -12,7 +12,11 @@ from drdmannturb import LossParameters
 
 class LossAggregator:
     def __init__(
-        self, params: LossParameters, k1space: torch.Tensor, tb_log_dir: Optional[str]
+        self,
+        params: LossParameters,
+        k1space: torch.Tensor,
+        tb_log_dir: Optional[str] = None,
+        tb_comment: str = "",
     ):
         r"""Combines all loss functions and evaluates each term for the optimizer.
         The loss function for spectra fitting is determined by the following minimization problem:
@@ -33,9 +37,11 @@ class LossAggregator:
         k1space : torch.Tensor
             The spectra space for k1, this is assumed to be in logspace.
         tb_log_dir : Optional[str]
-            Logging directory for the TensorBoard logger. Conventions are those of TensorBoard, by default results in the creation of a ``runs`` subdirectory where the script is being run.
+            Logging directory for the TensorBoard logger. Conventions are those of TensorBoard, which by default result in the creation of a ``runs`` subdirectory where the script is being run if this parameter is left as None.
+        fn_comment : str
+            Filename comment used by tensorboard; useful for distinguishing between architectures and hyperparameters. Refer to tensorboard documentation for examples of use. By default, the empty string, which results in default tensorboard filenames.
         """
-        self.writer = SummaryWriter(log_dir=tb_log_dir)
+        self.writer = SummaryWriter(log_dir=tb_log_dir, comment=tb_comment)
         self.params = params
         self.k1space = k1space
         self.logk1 = torch.log(self.k1space)
