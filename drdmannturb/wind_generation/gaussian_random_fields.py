@@ -3,9 +3,8 @@ This module implements and exposes a Gaussian random field generator
 """
 
 import numpy as np
-from drdmannturb.wind_generation.sampling_methods import *
 
-import drdmannturb.loggers as lgg
+from drdmannturb.wind_generation.sampling_methods import *
 
 
 class GaussianRandomField:
@@ -24,6 +23,30 @@ class GaussianRandomField:
         verbose=0,
         **kwargs
     ):
+        """_summary_
+
+        Parameters
+        ----------
+        grid_level : _type_
+            _description_
+        grid_shape : _type_, optional
+            _description_, by default None
+        grid_dimensions : list, optional
+            _description_, by default [1.0, 1.0, 1.0]
+        ndim : int, optional
+            _description_, by default 2
+        window_margin : int, optional
+            _description_, by default 0
+        sampling_method : str, optional
+            _description_, by default "fft"
+        verbose : int, optional
+            _description_, by default 0
+
+        Raises
+        ------
+        ValueError
+            _description_
+        """
         self.verbose = verbose
         self.ndim = ndim  # dimension 2D or 3D
         self.all_axes = np.arange(self.ndim)
@@ -61,17 +84,24 @@ class GaussianRandomField:
         t = time()
         self.setSamplingMethod(sampling_method, **kwargs)
         if self.verbose:
-            lgg.drdmannturb_log.info(
-                "Init method {0:s}, time {1}".format(self.method, time() - t)
-            )
+            print("Init method {0:s}, time {1}".format(self.method, time() - t))
 
         # Pseudo-random number generator
         self.prng = np.random.RandomState()
         self.noise_std = np.sqrt(np.prod(h))
 
     def setSamplingMethod(self, method, **kwargs):
-        """
-        Initialize the sampling method
+        """Initialize the sampling method
+
+        Parameters
+        ----------
+        method : _type_
+            _description_
+
+        Raises
+        ------
+        Exception
+            _description_
         """
         self.method = method
 
@@ -121,7 +151,7 @@ class GaussianRandomField:
         t0 = time()
         field = self.Correlate(noise)
         if self.verbose >= 2:
-            lgg.drdmannturb_log.info("Convolution time: ", time() - t0)
+            print("Convolution time: ", time() - t0)
 
         return field
 
@@ -132,6 +162,13 @@ class VectorGaussianRandomField(GaussianRandomField):
     """
 
     def __init__(self, vdim=3, **kwargs):
+        """_summary_
+
+        Parameters
+        ----------
+        vdim : int, optional
+            _description_, by default 3
+        """
         super().__init__(**kwargs)
         self.vdim = vdim
         self.DomainSlice = tuple(list(self.DomainSlice) + [slice(None, None, None)])

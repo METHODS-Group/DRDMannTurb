@@ -13,7 +13,6 @@ import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 from tqdm import tqdm
 
-import drdmannturb.loggers as lgg
 from drdmannturb.common import MannEddyLifetime
 from drdmannturb.enums import EddyLifetimeType
 from drdmannturb.parameters import (
@@ -30,37 +29,6 @@ from .loss_functions import LossAggregator
 tqdm = partial(tqdm, position=0, leave=True)
 
 
-def generic_loss(
-    observed: Union[torch.Tensor, float],
-    actual: Union[torch.Tensor, float],
-    pen: Optional[float] = None,
-) -> torch.Tensor:
-    """
-    Generic loss function implementation
-
-    Parameters
-    ----------
-    observed : torch.Tensor
-        The observed value
-    actual : torch.Tensor
-        The expected value
-    pen : Optional[float], optional
-        Penalization term, if any, by default None
-
-    Returns
-    -------
-    torch.Tensor
-        Loss function evaluation
-    """
-
-    loss = 0.5 * torch.mean((torch.log(torch.abs(observed / actual))) ** 2)
-
-    if pen is not None:
-        loss += pen
-
-    return loss
-
-
 class CalibrationProblem:
     """
     Defines a calibration problem
@@ -74,7 +42,6 @@ class CalibrationProblem:
         loss_params: LossParameters,
         phys_params: PhysicalParameters,
         output_directory: str = "./results",
-        logging_level: int = lgg.log.ERROR,
     ):
         """Constructor for CalibrationProblem class. As depicted in the UML diagram, this class consists of 4 dataclasses.
 
@@ -100,7 +67,6 @@ class CalibrationProblem:
             TODO: add logging_level docs
         """
         self.init_device(device)
-        lgg.drdmannturb_log.setLevel(logging_level)
 
         self.nn_params = nn_params
         self.prob_params = prob_params
@@ -404,8 +370,6 @@ class CalibrationProblem:
             y_coh_data = torch.zeros_like(y_coh)
             y_coh_data[:] = DataValues_coh
 
-        self.loss_fn = generic_loss
-
         ########################################
         # Optimizer and Scheduler Initialization
         ########################################
@@ -653,8 +617,6 @@ class CalibrationProblem:
                     self.loss_params,
                     self.phys_params,
                     self.parameters,
-                    # self.loss_history_total,
-                    # self.loss_history_epochs,
                 ],
                 file,
             )
@@ -725,7 +687,7 @@ class CalibrationProblem:
                         k1.cpu().detach().numpy(),
                         self.kF_model_vals[i],
                         color=clr[i],
-                        label=r"$F{0:d}$ model".format(i + 1),
+                        label=r"$F_{0:d}$ model".format(i + 1),
                     )  #'o-'
 
                 print(
@@ -740,7 +702,7 @@ class CalibrationProblem:
                         self.kF_data_vals.view(4, s // 4)[i].cpu().detach().numpy(),
                         "--",
                         color=clr[i],
-                        label=r"$F{0:d}$ data".format(i + 1),
+                        label=r"$F_{0:d}$ data".format(i + 1),
                     )
                 if 3 in self.curves:
                     (self.lines_SP_model[self.vdim],) = self.ax[0].plot(
