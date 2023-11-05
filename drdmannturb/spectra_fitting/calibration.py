@@ -438,12 +438,6 @@ class CalibrationProblem:
         print("=" * 30)
         print(f"Spectra fitting concluded with final loss: {self.loss.item()}")
 
-        # TODO: this should change depending on chosen optimizer;
-        # wolfe iterations are only present for LBFGS --
-        # split into separate methods
-        if self.plot_loss_optim:
-            self.plot_loss_wolfe(beta_pen)
-
         return self.parameters
 
     # ------------------------------------------------
@@ -549,31 +543,6 @@ class CalibrationProblem:
             torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord
         )
 
-    def plot_loss_wolfe(self, beta_pen: float = 0.0) -> None:
-        """Plots the Wolfe Search loss against the iterations
-
-        Parameters
-        ----------
-        beta_pen : float, optional
-            The loss beta penalty term coefficient; by default, 0.0
-        """
-        plt.figure()
-        plt.plot(self.loss_2ndOpen, label="1st Order Penalty")
-        plt.plot(self.loss_reg, label="Regularization")
-        # plt.plot(self.loss_history_total, label="MSE")
-
-        if beta_pen != 0.0:
-            plt.plot(self.loss_1stOpen, label="2nd Order Penalty")
-
-        plt.title("Loss Term Values")
-
-        plt.ylabel("Value")
-        plt.xlabel("Wolfe Search Iterations")
-        plt.yscale("log")
-        plt.legend()
-        plt.grid("true")
-        plt.show()
-
     def save_model(self, save_dir: Optional[str] = None):
         """Saves model with current weights, model configuration, and training histories to file.
 
@@ -585,8 +554,6 @@ class CalibrationProblem:
             - PhysicalParameters
             - LossParameters
             - Optimized Parameters (.parameters field)
-            - Total Loss History
-            - Epoch-wise Loss History
 
         Parameters
         ----------
@@ -630,7 +597,6 @@ class CalibrationProblem:
         """
         Handles all plotting
         """
-        plt_dynamic = kwargs.get("plt_dynamic", False)
 
         Data = kwargs.get("Data")
         if Data is not None:
@@ -694,10 +660,6 @@ class CalibrationProblem:
                         color=clr[i],
                         label=r"$F_{0:d}$ model".format(i + 1),
                     )  #'o-'
-
-                print(
-                    f"k1.size: {k1.size()}   self.kF_data_vals: {self.kF_data_vals.size()}"
-                )
 
                 s = self.kF_data_vals.shape[0]
 
@@ -818,15 +780,6 @@ class CalibrationProblem:
                 # self.lines_LT_model3m.set_ydata(self.tau_model3m)
 
                 # plt.show()
-
-            if plt_dynamic:
-                for ax in self.ax:
-                    ax.relim()
-                    ax.autoscale_view()
-                self.fig.canvas.draw()
-                self.fig.canvas.flush_events()
-            else:
-                pass
                 # TODO: uncomment next!
                 # print("="*30)
                 # print("SAVING FINAL SOLUTION RESULTS TO " + f'{self.output_directory+"/" + self.activfuncstr +"final_solution.png"}')

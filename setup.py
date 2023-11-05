@@ -17,6 +17,7 @@ setup(
         "matplotlib",
         "pyevtk",
         "pyfftw",
+        "tensorboard",
     ],
     classifiers=[
         "Development Status :: 1 - Planning",

@@ -23,7 +23,7 @@ class GaussianRandomField:
         verbose=0,
         **kwargs
     ):
-        """_summary_
+        """Constructor for Gaussian Random Field generator in 1 dimension.
 
         Parameters
         ----------
@@ -45,7 +45,7 @@ class GaussianRandomField:
         Raises
         ------
         ValueError
-            _description_
+            ``grid_level`` and ``grid_shape`` must have the same dimensions.
         """
         self.verbose = verbose
         self.ndim = ndim  # dimension 2D or 3D
@@ -54,7 +54,7 @@ class GaussianRandomField:
         if np.isscalar(grid_level):
             if not np.isscalar(grid_shape):
                 raise ValueError(
-                    "grid_level and grid_shape must have the same dimensions"
+                    "grid_level and grid_shape must have the same dimensions."
                 )
             h = 1 / 2**grid_level
             self.grid_shape = np.array([grid_shape] * ndim)
@@ -124,8 +124,12 @@ class GaussianRandomField:
             raise Exception('Unknown sampling method "{0}".'.format(method))
 
     def reseed(self, seed=None):
-        """
-        Quick routine to seed the PRNG
+        """Sets a new seed for the class's PRNG.
+
+        Parameters
+        ----------
+        seed : _type_, optional
+            Seed value for PRNG, following np.RandomState() conventions, by default None
         """
         if seed is not None:
             self.prng.seed(seed)
@@ -162,12 +166,12 @@ class VectorGaussianRandomField(GaussianRandomField):
     """
 
     def __init__(self, vdim=3, **kwargs):
-        """_summary_
+        """Constructor for vector of GRFs.
 
         Parameters
         ----------
         vdim : int, optional
-            _description_, by default 3
+            Dimension count of vector of GRF, by default 3
         """
         super().__init__(**kwargs)
         self.vdim = vdim
