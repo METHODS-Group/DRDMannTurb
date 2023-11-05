@@ -14,7 +14,7 @@ writer = SummaryWriter()
 
 class LossAggregator:
     def __init__(self, params: LossParameters, k1space: torch.Tensor):
-        """Combines all loss functions and evaluates each term for the optimizer.
+        r"""Combines all loss functions and evaluates each term for the optimizer.
         The loss function for spectra fitting is determined by the following minimization problem:
 
         .. math::
@@ -69,7 +69,7 @@ class LossAggregator:
     def MSE_term(
         self, model: torch.Tensor, target: torch.Tensor, epoch: int
     ) -> torch.Tensor:
-        """Evaluates the loss term
+        r"""Evaluates the loss term
 
         .. math::
             \operatorname{MSE}[\boldsymbol{\theta}]:=\frac{1}{L} \sum_{i=1}^4 \sum_{j=1}^L\left(\log \left|J_i\left(f_j\right)\right|-\log \left|\widetilde{J}_i\left(f_j, \boldsymbol{\theta}\right)\right|\right)^2,
@@ -95,7 +95,7 @@ class LossAggregator:
         return mse_loss
 
     def Pen2ndOrder(self, y: torch.Tensor, epoch: int) -> torch.Tensor:
-        """Evaluates he second-order penalization term, defined as
+        r"""Evaluates he second-order penalization term, defined as
 
         .. math::
             \operatorname{Pen}_2[\boldsymbol{\theta}]:=\frac{1}{|\mathcal{D}|} \sum_{i=1}^4\left\|\operatorname{ReLU}\left(\frac{\partial^2 \log \left|\widetilde{J}_i(\cdot, \boldsymbol{\theta})\right|}{\left(\partial \log k_1\right)^2}\right)\right\|_{\mathcal{D}}^2,
@@ -122,7 +122,7 @@ class LossAggregator:
         return pen2ndorder_loss
 
     def Pen1stOrder(self, y: torch.Tensor, epoch: int) -> torch.Tensor:
-        """Evaluates the first-order penalization term,  defined as
+        r"""Evaluates the first-order penalization term,  defined as
 
         .. math::
             \operatorname{Pen}_1[\boldsymbol{\theta}]:=\frac{1}{|\mathcal{D}|} \sum_{i=1}^4\left\|\operatorname{ReLU}\left(\frac{\partial \log \left|\widetilde{J}_i(\cdot, \boldsymbol{\theta})\right|}{\partial \log k_1}\right)\right\|_{\mathcal{D}}^2.
@@ -151,7 +151,7 @@ class LossAggregator:
         return pen1storder_loss
 
     def Regularization(self, theta_NN: torch.Tensor, epoch: int) -> torch.Tensor:
-        """Evaluates the regularization term, defined as
+        r"""Evaluates the regularization term, defined as
 
         .. math::
             \operatorname{Reg}\left[\boldsymbol{\theta}_{\mathrm{NN}}\right]:=\frac{1}{N} \sum_{i=1}^N \theta_{\mathrm{NN}, i}^2.
