@@ -483,19 +483,6 @@ class CalibrationProblem:
     ### Post-treatment and Export
     # ------------------------------------------------
 
-    def print_parameters(self):
-        lgg.drdmannturb_log.warning("[print_parameters] seems deprecated")
-        # print(('Optimal NN parameters = [' + ', '.join(['{}'] *
-        #       len(self.parameters)) + ']\n').format(*self.parameters))
-        pass
-
-    def print_grad(self):
-        lgg.drdmannturb_log.warning("[print_grad] seems deprecated")
-        # self.grad = torch.cat([param.grad.view(-1)
-        #                       for param in self.OPS.parameters()]).detach().numpy()
-        # print('grad = ', self.grad)
-        pass
-
     def num_trainable_params(self) -> int:
         """Computes the number of trainable network parameters
             in the underlying model.
