@@ -41,6 +41,7 @@ class CalibrationProblem:
         prob_params: ProblemParameters,
         loss_params: LossParameters,
         phys_params: PhysicalParameters,
+        logging_directory: Optional[str] = None,
         output_directory: str = "./results",
     ):
         """Constructor for CalibrationProblem class. As depicted in the UML diagram, this class consists of 4 dataclasses.
@@ -95,7 +96,6 @@ class CalibrationProblem:
         self.log_dimensional_scales()
 
         self.vdim = 3
-        self.output_directory = output_directory
         self.fg_coherence = prob_params.fg_coherence
         if (
             self.fg_coherence
@@ -103,6 +103,9 @@ class CalibrationProblem:
             self.Coherence = SpectralCoherence(**kwargs)
 
         self.epoch_model_sizes = torch.empty((prob_params.nepochs,))
+
+        self.output_directory = output_directory
+        self.logging_directory = logging_directory
 
     # TODO: propagate device setting through this method
     def init_device(self, device: str):
@@ -341,7 +344,9 @@ class CalibrationProblem:
 
         self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
 
-        self.LossAggregator = LossAggregator(self.loss_params, self.k1_data_pts)
+        self.LossAggregator = LossAggregator(
+            self.loss_params, self.k1_data_pts, self.logging_directory
+        )
 
         self.kF_data_vals = torch.cat(
             (

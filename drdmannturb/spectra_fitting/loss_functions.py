@@ -9,11 +9,11 @@ from torch.utils.tensorboard import SummaryWriter
 
 from drdmannturb import LossParameters
 
-writer = SummaryWriter()
-
 
 class LossAggregator:
-    def __init__(self, params: LossParameters, k1space: torch.Tensor):
+    def __init__(
+        self, params: LossParameters, k1space: torch.Tensor, tb_log_dir: Optional[str]
+    ):
         r"""Combines all loss functions and evaluates each term for the optimizer.
         The loss function for spectra fitting is determined by the following minimization problem:
 
@@ -31,8 +31,11 @@ class LossAggregator:
         params : LossParameters
             Dataclass with parameters that determine the loss function
         k1space : torch.Tensor
-            The spectra space for k1, this is assumed ot be in logspace.
+            The spectra space for k1, this is assumed to be in logspace.
+        tb_log_dir : Optional[str]
+            Logging directory for the TensorBoard logger. Conventions are those of TensorBoard, by default results in the creation of a ``runs`` subdirectory where the script is being run.
         """
+        self.writer = SummaryWriter(log_dir=tb_log_dir)
         self.params = params
         self.k1space = k1space
         self.logk1 = torch.log(self.k1space)
@@ -90,7 +93,7 @@ class LossAggregator:
         """
 
         mse_loss = torch.mean(torch.log(torch.abs(model / target)).square())
-        writer.add_scalar("MSE Loss", mse_loss, epoch)
+        self.writer.add_scalar("MSE Loss", mse_loss, epoch)
 
         return mse_loss
 
@@ -117,7 +120,7 @@ class LossAggregator:
 
         pen2ndorder_loss = torch.mean(torch.relu(d2logy).square())
 
-        writer.add_scalar("2nd Order Penalty", pen2ndorder_loss, epoch)
+        self.writer.add_scalar("2nd Order Penalty", pen2ndorder_loss, epoch)
 
         return pen2ndorder_loss
 
@@ -146,7 +149,7 @@ class LossAggregator:
         d1logy = torch.diff(logy, dim=-1) / self.h1
 
         pen1storder_loss = torch.mean(torch.relu(d1logy).square())
-        writer.add_scalar("1st Order Penalty", pen1storder_loss, epoch)
+        self.writer.add_scalar("1st Order Penalty", pen1storder_loss, epoch)
 
         return pen1storder_loss
 
@@ -175,7 +178,7 @@ class LossAggregator:
 
         reg_loss = theta_NN.square().mean()
 
-        writer.add_scalar("Regularization", reg_loss, epoch)
+        self.writer.add_scalar("Regularization", reg_loss, epoch)
 
         return reg_loss
 
@@ -208,6 +211,6 @@ class LossAggregator:
             y, theta_NN, epoch
         )
 
-        writer.add_scalar("Total Loss", total_loss, epoch)
+        self.writer.add_scalar("Total Loss", total_loss, epoch)
 
         return total_loss
