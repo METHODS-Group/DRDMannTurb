@@ -48,7 +48,7 @@ pb = CalibrationProblem(
         nlayers=2, hidden_layer_sizes=[10, 10], activations=[nn.GELU(), nn.GELU()]
     ),
     prob_params=ProblemParameters(data_type=DataType.CUSTOM, tol=1e-9, nepochs=5),
-    loss_params=LossParameters(alpha_reg=1e-5),
+    loss_params=LossParameters(beta_reg=1e-5),
     phys_params=PhysicalParameters(
         L=L,
         Gamma=GAMMA,
@@ -80,14 +80,14 @@ optimal_parameters = pb.calibrate(data=Data)
 pb.plot(plt_dynamic=False)
 
 # %%
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
+# TODO: add tensorboard screenshots here  https://github.com/sphinx-gallery/sphinx-gallery/issues/5
+# plt.figure()
 
-plt.figure()
+# plt.plot(pb.loss_history_epochs, "o-", label="Epochs Loss History")
+# plt.legend()
+# plt.xlabel("Epoch Number")
+# plt.ylabel("MSE")
+# plt.yscale("log")
 
-plt.plot(pb.loss_history_epochs, "o-", label="Epochs Loss History")
-plt.legend()
-plt.xlabel("Epoch Number")
-plt.ylabel("MSE")
-plt.yscale("log")
-
-plt.show()
+# plt.show()

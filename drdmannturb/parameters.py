@@ -72,7 +72,7 @@ class PhysicalParameters:
     Fields
     ------
     L : float
-        _description_
+        Length scale of the problem used in nondimensionalization.
     Gamma
         _description_
     sigma
@@ -104,7 +104,7 @@ class PhysicalParameters:
 
 @dataclass
 class LossParameters:
-    """
+    r"""
     This class provides a convenient method of storing and passing around
     the loss function term coefficients; this also offers default values.
 

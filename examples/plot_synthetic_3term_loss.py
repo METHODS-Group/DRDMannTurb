@@ -59,14 +59,30 @@ optimal_parameters = pb.calibrate(data=Data)
 pb.plot(plt_dynamic=False)
 
 # %%
-import matplotlib.pyplot as plt
+# .. image:: /images/test.png
+from pathlib import Path
 
-plt.figure()
+print(Path().resolve())
 
-plt.plot(pb.loss_history_epochs, "o-", label="Epochs Loss History")
-plt.legend()
-plt.xlabel("Epoch Number")
-plt.ylabel("MSE")
-plt.yscale("log")
+# from IPython import get_ipython
+# import IPython
+# ip = IPython.get_ipython()
+#
+# if get_ipython():
+# if ip:
+# ip.magic(u'load_ext tensorboard')
+# ip.magic(u'tensorboard --logdir runs')
 
-plt.show()
+# %load_ext tensorboard
+# %tensorboard --logdir runs
+# import matplotlib.pyplot as plt
+
+# plt.figure()
+
+# plt.plot(pb.loss_history_epochs, "o-", label="Epochs Loss History")
+# plt.legend()
+# plt.xlabel("Epoch Number")
+# plt.ylabel("MSE")
+# plt.yscale("log")
+
+# plt.show()

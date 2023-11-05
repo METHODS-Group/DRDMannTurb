@@ -60,3 +60,16 @@ The LossParameters class correspondingly sets the weights of these terms.
 
 .. autoclass:: drdmannturb.LossParameters
     :members: 
+
+.. raw:: html
+
+    <hr>
+
+.. toctree::
+   :maxdepth: 2
+   
+   losses
+
+.. raw:: html
+
+    <hr>

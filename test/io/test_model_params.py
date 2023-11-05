@@ -84,8 +84,8 @@ def test_nnparams_load_trained_TAUNET():
             loss_params,
             phys_params,
             model_params,
-            _,
-            _,
+            # _,
+            # _,
         ) = pickle.load(file)
 
     pb_new = CalibrationProblem(
@@ -133,8 +133,8 @@ def test_nnparams_load_trained_CUSTOMMLP():
             loss_params,
             phys_params,
             model_params,
-            _,
-            _,
+            # _,
+            # _,
         ) = pickle.load(file)
 
     pb_new = CalibrationProblem(

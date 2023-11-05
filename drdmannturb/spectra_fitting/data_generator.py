@@ -9,7 +9,6 @@ import torch
 from scipy.optimize import curve_fit, differential_evolution
 
 from drdmannturb.enums import DataType
-import drdmannturb.loggers as lgg
 
 
 class OnePointSpectraDataGenerator:
@@ -82,7 +81,6 @@ class OnePointSpectraDataGenerator:
 
         elif self.data_type == DataType.CUSTOM:
             if spectra_file is not None:
-                lgg.drdmannturb_log.info(f'Reading spectra data file "{spectra_file}"')
                 self.CustomData = torch.tensor(
                     np.genfromtxt(spectra_file, skip_header=1, delimiter=",")
                 )
@@ -150,11 +148,6 @@ class OnePointSpectraDataGenerator:
                     RMSE = np.sqrt(MSE)  # Root Mean Squared Error, RMSE
                     Rsquared = 1.0 - (np.var(absError) / np.var(yData))
 
-                    # TODO -- is this the appropriate level?
-                    lgg.drdmannturb_log.debug(
-                        f"[AUTO type data generator] : RMSE {RMSE}, R-squared {Rsquared}"
-                    )
-
                     return fittedParameters
 
                 if self.spectra_values is not None:
@@ -165,22 +158,18 @@ class OnePointSpectraDataGenerator:
                     )
 
                 DataValues = np.zeros([len(self.DataPoints), 3, 3])
-                lgg.drdmannturb_log.info("Filtering provided spectra interpolation...")
-                lgg.drdmannturb_log.simple_optinfo("=" * 30)
+                print("Filtering provided spectra interpolation.")
+                print("=" * 30)
 
-                lgg.drdmannturb_log.sub_optinfo("fit u spectra")
                 fit1 = fitOPS(self.k1, Data_temp[:, 0], 1)
                 DataValues[:, 0, 0] = func124(self.k1, *fit1)
 
-                lgg.drdmannturb_log.sub_optinfo("fit v spectra")
                 fit2 = fitOPS(self.k1, Data_temp[:, 1], 2)
                 DataValues[:, 1, 1] = func124(self.k1, *fit2)
 
-                lgg.drdmannturb_log.sub_optinfo("fit w spectra")
                 fit3 = fitOPS(self.k1, Data_temp[:, 2], 4)
                 DataValues[:, 2, 2] = func124(self.k1, *fit3)
 
-                lgg.drdmannturb_log.sub_optinfo("fit uw spectra")
                 fit4 = fitOPS(self.k1, Data_temp[:, 3], 3)
                 DataValues[:, 0, 2] = -func3(self.k1, *fit4)
 
@@ -317,11 +306,18 @@ class OnePointSpectraDataGenerator:
         ----------
         x_interp : Optional[np.ndarray], optional
             _description_, by default None
+        spectra_full : Optional[np.ndarray], optional
+            _description_, by default None
+        x_coords_full : Optional[np.ndarray], optional
+            _description_, by default None
 
         Raises
         ------
         ValueError
-            _description_
+            Provide interpolation domain (normal space) for filtered plots.
+        ValueError
+            Provide original spectra and associated domains as a single stack of np.arrays, even if all x coordinates are matching.
+
         """
 
         cmap = plt.get_cmap("Spectral", 4)

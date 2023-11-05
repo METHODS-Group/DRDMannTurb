@@ -67,17 +67,17 @@ optimal_parameters = pb.calibrate(data=Data)
 pb.plot(plt_dynamic=False)
 
 # %%
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
-plt.figure()
+# plt.figure()
 
-plt.plot(pb.loss_history_epochs, "o-", label="Epochs Loss History")
-plt.legend()
-plt.xlabel("Epoch Number")
-plt.ylabel("MSE")
-plt.yscale("log")
+# plt.plot(pb.loss_history_epochs, "o-", label="Epochs Loss History")
+# plt.legend()
+# plt.xlabel("Epoch Number")
+# plt.ylabel("MSE")
+# plt.yscale("log")
 
-plt.show()
+# plt.show()
 
 
 # %% [markdown]
@@ -102,8 +102,8 @@ with open(path_to_parameters, "rb") as file:
         loss_params,
         phys_params,
         model_params,
-        loss_history_total,
-        loss_history_epochs,
+        # loss_history_total,
+        # loss_history_epochs,
     ) = pickle.load(file)
 
 # %% [markdown]

@@ -11,3 +11,4 @@ sphinxcontrib-jsmath
 nbsphinx
 sphinx-gallery
 myst_parser
+tensorboard
