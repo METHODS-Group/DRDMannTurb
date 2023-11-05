@@ -375,9 +375,7 @@ class CalibrationProblem:
 
         self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
 
-        self.LossAggregator = LossAggregator(
-            self.loss_params, self.k1_data_pts, self.prob_params.nepochs
-        )
+        self.LossAggregator = LossAggregator(self.loss_params, self.k1_data_pts)
 
         self.kF_data_vals = torch.cat(
             (
@@ -593,7 +591,7 @@ class CalibrationProblem:
         plt.figure()
         plt.plot(self.loss_2ndOpen, label="1st Order Penalty")
         plt.plot(self.loss_reg, label="Regularization")
-        plt.plot(self.loss_history_total, label="MSE")
+        # plt.plot(self.loss_history_total, label="MSE")
 
         if beta_pen != 0.0:
             plt.plot(self.loss_1stOpen, label="2nd Order Penalty")
@@ -655,8 +653,8 @@ class CalibrationProblem:
                     self.loss_params,
                     self.phys_params,
                     self.parameters,
-                    self.loss_history_total,
-                    self.loss_history_epochs,
+                    # self.loss_history_total,
+                    # self.loss_history_epochs,
                 ],
                 file,
             )

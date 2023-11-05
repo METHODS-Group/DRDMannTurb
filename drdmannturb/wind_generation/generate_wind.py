@@ -66,8 +66,6 @@ class GenerateWind:
                     loss_params,
                     phys_params,
                     model_params,
-                    loss_history_total,
-                    loss_history_epochs,
                 ) = pickle.load(file)
 
             pb = CalibrationProblem(

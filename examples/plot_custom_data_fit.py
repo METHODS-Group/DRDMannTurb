@@ -48,7 +48,7 @@ pb = CalibrationProblem(
         nlayers=2, hidden_layer_sizes=[10, 10], activations=[nn.GELU(), nn.GELU()]
     ),
     prob_params=ProblemParameters(data_type=DataType.CUSTOM, tol=1e-9, nepochs=5),
-    loss_params=LossParameters(alpha_reg=1e-5),
+    loss_params=LossParameters(beta_reg=1e-5),
     phys_params=PhysicalParameters(
         L=L,
         Gamma=GAMMA,

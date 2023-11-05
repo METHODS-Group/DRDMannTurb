@@ -72,7 +72,7 @@ class PhysicalParameters:
     Fields
     ------
     L : float
-        _description_
+        Length scale of the problem used in nondimensionalization.
     Gamma
         _description_
     sigma
