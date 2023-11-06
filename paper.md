@@ -29,10 +29,8 @@ bibliography: paper.bib
 
 # Summary
 
-Synthetic turbulence models (STM) are commonly used to generate realistic flow field to be used as input to a variety of models. Examples include the creation of inlet conditions for unsteady 
-computational fluid dynamics (CFD) models, inflow wind fields to aeroelastic models of wind turbines or tall building, amongst many others. One of the advantages of STMs 
-is their ability to generate fluctuations based on prescribed statistics which allows scientists and engineers to simulate and re-create an environment close to an observed one. The Mann model
-which is the basis of this package, allows for a prescription of three parameters: the lengthscale, $L$, the  
+Synthetic turbulence models (STM) are commonly used to generate realistic flow field to be used as input to a variety of models. Examples include the creation of inlet conditions for unsteady computational fluid dynamics (CFD) models, inflow wind fields to aeroelastic models of wind turbines or tall building, amongst many others. One of the advantages of STMs 
+is their ability to generate fluctuations based on prescribed statistics which allows scientists and engineers to simulate and re-create environmental conditions as close as possible to the observed ones. The Mann model \cite{mann_spatial_1994,} which is the basis of this package, allows for a prescription of three parameters: the Kolmogorov constant multiple with the rate of the viscous dissipation of specific turbulence kinetic energy to the two thirds, $\alpha \epsilon^{2/3}$, the length scale, $L$, the non-dimensional parameter related to the lifetime of the eddies, $\Gamma$.  
 
 # Statement of need
 
