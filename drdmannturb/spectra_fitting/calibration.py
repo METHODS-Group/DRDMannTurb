@@ -614,7 +614,34 @@ class CalibrationProblem:
         plot_tau: bool = True,
         save: bool = False,
         save_dir: Optional[Union[Path, str]] = None,
+        save_filename: str = "",
     ):
+        """Plotting method which visualizes the spectra fit as well as the learned eddy lifetime function, if plot_tau is True. By default, this operates on the data used in the fitting, but an alternative k1 domain can be provided and the trained model can be re-evaluated.
+
+        Parameters
+        ----------
+        Data : _type_, optional
+            _description_, by default None
+        model_vals : _type_, optional
+            _description_, by default None
+        plot_tau : bool, optional
+            Whether to plot the learned tau function, by default True
+        save : bool, optional
+            Whether to save the resulting figure, by default False
+        save_dir : Optional[Union[Path, str]], optional
+            Directory to save to, which is created safely if not already present. By default, this is the directory in which the code is run.
+        save_filename : str, optional
+            Filename to save the final figure to, by default drdmannturb_final_spectra_fit.png if no filename is provided here.
+
+        Raises
+        ------
+        ValueError
+            Must either provide k1space or re-use what was used for model calibration, neither is currently specified.
+        ValueError
+            Must either provide data points or re-use what was used for model calibration, neither is currently specified.
+        ValueError
+            Plot saving is not possible without specifying the save directory or output_directory for the class.
+        """
 
         clr = ["royalblue", "crimson", "forestgreen", "mediumorchid"]
 
@@ -658,139 +685,155 @@ class CalibrationProblem:
             k_3 = torch.stack([0 * k_gd, 0 * k_gd, k_gd], dim=-1)
             k_4 = torch.stack([k_gd, k_gd, k_gd], dim=-1) / 3 ** (1 / 2)
 
-        if not hasattr(self, "fig"):
-            nrows = 1
-            ncols = 2 if plot_tau else 1
+        nrows = 1
+        ncols = 2 if plot_tau else 1
 
-            with plt.style.context("bmh"):
-                plt.rcParams.update({"font.size": 8})
-                self.fig, self.ax = plt.subplots(
-                    nrows=nrows,
-                    ncols=ncols,
-                    num="Calibration",
-                    clear=True,
-                    figsize=[10, 5],
+        with plt.style.context("bmh"):
+            plt.rcParams.update({"font.size": 8})
+            self.fig, self.ax = plt.subplots(
+                nrows=nrows,
+                ncols=ncols,
+                num="Calibration",
+                clear=True,
+                figsize=[10, 5],
+            )
+            if not plot_tau:
+                self.ax = [self.ax]
+
+            # Subplot 1: One-point spectra
+            self.ax[0].set_title("One-point spectra")
+            self.lines_SP_model = [None] * (self.vdim + 1)
+            self.lines_SP_data = [None] * (self.vdim + 1)
+            for i in range(self.vdim):
+                (self.lines_SP_model[i],) = self.ax[0].plot(
+                    k1_data_pts,
+                    kF_model_vals[i].numpy(),
+                    "--",
+                    color=clr[i],
+                    label=r"$F_{0:d}$ model".format(i + 1),
                 )
-                if not plot_tau:
-                    self.ax = [self.ax]
 
-                # Subplot 1: One-point spectra
-                self.ax[0].set_title("One-point spectra")
-                self.lines_SP_model = [None] * (self.vdim + 1)
-                self.lines_SP_data = [None] * (self.vdim + 1)
-                for i in range(self.vdim):
-                    (self.lines_SP_model[i],) = self.ax[0].plot(
-                        k1_data_pts,
-                        kF_model_vals[i].numpy(),
-                        "--",
-                        color=clr[i],
-                        label=r"$F_{0:d}$ model".format(i + 1),
-                    )
-
-                s = kF_data_vals.shape[0]
-
-                for i in range(self.vdim):
-                    (self.lines_SP_data[i],) = self.ax[0].plot(
-                        k1_data_pts,
-                        kF_data_vals.view(4, s // 4)[i].numpy(),
-                        "o-",
-                        color=clr[i],
-                        label=r"$F_{0:d}$ data".format(i + 1),
-                    )
-                if 3 in self.curves:
-                    (self.lines_SP_model[self.vdim],) = self.ax[0].plot(
-                        k1_data_pts,
-                        -kF_model_vals[self.vdim].numpy(),
-                        "--",
-                        color=clr[3],
-                        label=r"$-F_{13}$ model",
-                    )
-                    (self.lines_SP_data[self.vdim],) = self.ax[0].plot(
-                        k1_data_pts,
-                        -kF_data_vals.view(4, s // 4)[self.vdim].numpy(),
-                        "o-",
-                        color=clr[3],
-                        label=r"$-F_{13}$ data",
-                    )
-                self.ax[0].legend()
-                self.ax[0].set_xscale("log")
-                self.ax[0].set_yscale("log")
-                self.ax[0].set_xlabel(r"$k_1$")
-                self.ax[0].set_ylabel(r"$k_1 F_i /u_*^2$")
-                self.ax[0].grid(which="both")
-
-                if plot_tau:
-                    # Subplot 2: Eddy Lifetime
-                    self.ax[1].set_title("Eddy lifetime")
-                    self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
-                    self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
-                    self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
-                    self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
-
-                    self.tau_ref = (
-                        3.9 * MannEddyLifetime(0.59 * k_gd).cpu().detach().numpy()
-                    )
-                    (self.lines_LT_model1,) = self.ax[1].plot(
-                        k_gd.cpu().detach().numpy(),
-                        self.tau_model1,
-                        "-",
-                        label=r"$\tau_{model}(k_1)$",
-                    )
-                    (self.lines_LT_model2,) = self.ax[1].plot(
-                        k_gd.cpu().detach().numpy(),
-                        self.tau_model2,
-                        "-",
-                        label=r"$\tau_{model}(k_2)$",
-                    )
-                    (self.lines_LT_model3,) = self.ax[1].plot(
-                        k_gd.cpu().detach().numpy(),
-                        self.tau_model3,
-                        "-",
-                        label=r"$\tau_{model}(k_3)$",
-                    )
-                    (self.lines_LT_model4,) = self.ax[1].plot(
-                        k_gd.cpu().detach().numpy(),
-                        self.tau_model4,
-                        "-",
-                        label=r"$\tau_{model}(k,k,k)$",
-                    )
-
-                    (self.lines_LT_ref,) = self.ax[1].plot(
-                        k_gd.cpu().detach().numpy(),
-                        self.tau_ref,
-                        "--",
-                        label=r"$\tau_{ref}=$Mann",
-                    )
-                    self.ax[1].legend()
-                    self.ax[1].set_xscale("log")
-                    self.ax[1].set_yscale("log")
-                    self.ax[1].set_xlabel(r"$k$")
-                    self.ax[1].set_ylabel(r"$\tau$")
-                    self.ax[1].grid(which="both")
+            s = kF_data_vals.shape[0]
 
             for i in range(self.vdim):
-                self.lines_SP_model[i].set_ydata(kF_model_vals[i])
+                (self.lines_SP_data[i],) = self.ax[0].plot(
+                    k1_data_pts,
+                    kF_data_vals.view(4, s // 4)[i].numpy(),
+                    "o-",
+                    color=clr[i],
+                    label=r"$F_{0:d}$ data".format(i + 1),
+                )
             if 3 in self.curves:
-                self.lines_SP_model[self.vdim].set_ydata(-kF_model_vals[self.vdim])
+                (self.lines_SP_model[self.vdim],) = self.ax[0].plot(
+                    k1_data_pts,
+                    -kF_model_vals[self.vdim].numpy(),
+                    "--",
+                    color=clr[3],
+                    label=r"$-F_{13}$ model",
+                )
+                (self.lines_SP_data[self.vdim],) = self.ax[0].plot(
+                    k1_data_pts,
+                    -kF_data_vals.view(4, s // 4)[self.vdim].numpy(),
+                    "o-",
+                    color=clr[3],
+                    label=r"$-F_{13}$ data",
+                )
+            self.ax[0].legend()
+            self.ax[0].set_xscale("log")
+            self.ax[0].set_yscale("log")
+            self.ax[0].set_xlabel(r"$k_1$")
+            self.ax[0].set_ylabel(r"$k_1 F_i /u_*^2$")
+            self.ax[0].grid(which="both")
 
             if plot_tau:
+                # Subplot 2: Eddy Lifetime
+                self.ax[1].set_title("Eddy lifetime")
                 self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
                 self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
                 self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
                 self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
-                self.lines_LT_model1.set_ydata(self.tau_model1)
-                self.lines_LT_model2.set_ydata(self.tau_model2)
-                self.lines_LT_model3.set_ydata(self.tau_model3)
-                self.lines_LT_model4.set_ydata(self.tau_model4)
 
-            plt.show()
-            # TODO: uncomment next!
-            # print("="*30)
-            # print("SAVING FINAL SOLUTION RESULTS TO " + f'{self.output_directory+"/" + self.activfuncstr +"final_solution.png"}')
+                self.tau_ref = (
+                    3.9 * MannEddyLifetime(0.59 * k_gd).cpu().detach().numpy()
+                )
+                (self.lines_LT_model1,) = self.ax[1].plot(
+                    k_gd.cpu().detach().numpy(),
+                    self.tau_model1,
+                    "-",
+                    label=r"$\tau_{model}(k_1)$",
+                )
+                (self.lines_LT_model2,) = self.ax[1].plot(
+                    k_gd.cpu().detach().numpy(),
+                    self.tau_model2,
+                    "-",
+                    label=r"$\tau_{model}(k_2)$",
+                )
+                (self.lines_LT_model3,) = self.ax[1].plot(
+                    k_gd.cpu().detach().numpy(),
+                    self.tau_model3,
+                    "-",
+                    label=r"$\tau_{model}(k_3)$",
+                )
+                (self.lines_LT_model4,) = self.ax[1].plot(
+                    k_gd.cpu().detach().numpy(),
+                    self.tau_model4,
+                    "-",
+                    label=r"$\tau_{model}(k,k,k)$",
+                )
 
-            # self.fig.savefig(self.output_directory+"/" + self.activfuncstr + "final_solution.png", format='png', dpi=100)
+                (self.lines_LT_ref,) = self.ax[1].plot(
+                    k_gd.cpu().detach().numpy(),
+                    self.tau_ref,
+                    "--",
+                    label=r"$\tau_{ref}=$Mann",
+                )
+                self.ax[1].legend()
+                self.ax[1].set_xscale("log")
+                self.ax[1].set_yscale("log")
+                self.ax[1].set_xlabel(r"$k$")
+                self.ax[1].set_ylabel(r"$\tau$")
+                self.ax[1].grid(which="both")
 
-            # plt.savefig(self.output_directory.resolve()+'Final_solution.png',format='png',dpi=100)
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
 
-            # self.fig.savefig(self.output_directory, format='png', dpi=100)
-            # self.fig.savefig(self.output_directory.resolve()+"final_solution.png", format='png', dpi=100)
+        for i in range(self.vdim):
+            self.lines_SP_model[i].set_ydata(kF_model_vals[i])
+        if 3 in self.curves:
+            self.lines_SP_model[self.vdim].set_ydata(-kF_model_vals[self.vdim])
+
+        if plot_tau:
+            self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
+            self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
+            self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
+            self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
+            self.lines_LT_model1.set_ydata(self.tau_model1)
+            self.lines_LT_model2.set_ydata(self.tau_model2)
+            self.lines_LT_model3.set_ydata(self.tau_model3)
+            self.lines_LT_model4.set_ydata(self.tau_model4)
+
+        if save:
+            if save_dir is not None:
+                save_dir = save_dir if type(save_dir) == Path else Path(save_dir)
+            elif self.output_directory is not None:
+                save_dir = (
+                    self.output_directory
+                    if type(self.output_directory) == Path
+                    else Path(self.output_directory)
+                )
+            else:
+                raise ValueError(
+                    "Plot saving is not possible without specifying the save directory or output_directory for the class."
+                )
+
+            if save_filename is not None:
+                save_path = save_dir / (save_filename + ".png")
+            else:
+                save_path = save_dir / "drdmannturb_final_spectra_fit.png"
+
+            if not os.path.isdir(save_dir):
+                os.makedirs(save_dir)
+
+            self.fig.savefig(save_path, format="png", dpi=100)
+
+        plt.show()
