@@ -68,7 +68,7 @@ pb.eval(k1_data_pts)
 optimal_parameters = pb.calibrate(data=Data)
 
 # %%
-pb.plot(plt_dynamic=False)
+pb.plot()
 
 # %%
 # import matplotlib.pyplot as plt

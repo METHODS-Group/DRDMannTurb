@@ -77,7 +77,7 @@ Data = OnePointSpectraDataGenerator(
 optimal_parameters = pb.calibrate(data=Data)
 
 # %%
-pb.plot(plt_dynamic=False)
+pb.plot()
 
 # %%
 # import matplotlib.pyplot as plt

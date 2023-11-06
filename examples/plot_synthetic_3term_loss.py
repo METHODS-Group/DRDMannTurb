@@ -56,7 +56,7 @@ pb.eval(k1_data_pts)
 optimal_parameters = pb.calibrate(data=Data)
 
 # %%
-pb.plot(plt_dynamic=False)
+pb.plot()
 
 # %%
 # .. image:: /images/test.png
