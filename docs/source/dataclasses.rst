@@ -3,6 +3,15 @@
 Dataclass Primitives
 ====================
 
+Data Types and Eddy Lifetime Functions
+--------------------------------------
+
+.. autoenum:: drdmannturb.DataType 
+    :members: 
+
+.. autoenum:: drdmannturb.EddyLifetimeType
+    :members: 
+
 Neural Network Parameters
 -------------------------
 
@@ -25,7 +34,7 @@ Problem/Training Parameters
 Loss Function Parameters
 ------------------------
 
-The loss function for spectra fitting is determined by the following minimization problem: 
+Also refer to :py:class:`LossAggregator` for loss function evaluation from these parameters. The loss function for spectra fitting is determined by the following minimization problem: 
  
 .. math:: 
     \min _{\boldsymbol{\theta}}\left\{\operatorname{MSE}[\boldsymbol{\theta}]+\alpha \operatorname{Pen}[\boldsymbol{\theta}]+\beta \operatorname{Reg}\left[\boldsymbol{\theta}_{\mathrm{NN}}\right]\right\}
@@ -60,15 +69,6 @@ The LossParameters class correspondingly sets the weights of these terms.
 
 .. autoclass:: drdmannturb.LossParameters
     :members: 
-
-.. raw:: html
-
-    <hr>
-
-.. toctree::
-   :maxdepth: 2
-   
-   losses
 
 .. raw:: html
 

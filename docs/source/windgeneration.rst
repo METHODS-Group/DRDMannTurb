@@ -3,6 +3,8 @@
 Wind Field Generation 
 =====================
 
+The other half of DRDMannTurb generates and visualizes 3D wind fields from spectra data. 
+
 .. autoclass:: drdmannturb.GenerateWind 
     :members: 
 
@@ -19,3 +21,26 @@ Plotting Utilities
 
 .. autofunction:: create_grid
 
+Gaussian Random Fields
+----------------------
+
+.. toctree::
+   :maxdepth: 2
+   
+   grf
+
+Covariance Kernels
+------------------
+
+.. toctree::
+   :maxdepth: 2
+
+   cov_kernels
+
+Sampling Methods
+----------------
+
+.. toctree::
+   :maxdepth: 1
+
+   sampling

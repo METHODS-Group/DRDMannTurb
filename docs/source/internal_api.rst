@@ -5,6 +5,22 @@ Internal API Reference
 
 Here is a documentation of methods internal to the package, which are subject to considerable change between releases. No promises of backwards compatibility are made with these methods.
 
+Spectra Fitting
+===============
+
+Forward-Facing Network Architecture Interfaces
+----------------------------------------------
+
+.. autoclass:: drdmannturb.TauNet 
+    :members:
+
+.. autoclass:: drdmannturb.CustomNet
+    :members:
+
+.. autoclass:: drdmannturb.TauResNet 
+    :members:
+
+
 Internal MLP and ResNet Interfaces
 ----------------------------------
 
@@ -20,6 +36,9 @@ Internal MLP and ResNet Interfaces
 .. autoclass:: drdmannturb.ResNetBlock
     :members:
 
+
+Random Field Generation
+=======================
 
 Covariance Kernels 
 ------------------
@@ -60,10 +79,3 @@ Covariance Sampling Methods
 
 .. autoclass:: drdmannturb.Sampling_DCT
     :members
-
-
-
-
-Loss Functions for Calibration Problems
----------------------------------------
-

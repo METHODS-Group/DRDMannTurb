@@ -41,6 +41,7 @@ extensions = [
     "nbsphinx",
     "sphinx.ext.mathjax",
     "myst_parser",
+    "enum_tools.autoenum",
     "sphinxcontrib.mermaid",  # https://github.com/mgaitan/sphinxcontrib-mermaid#building-pdfs-on-readthedocsio
 ]
 

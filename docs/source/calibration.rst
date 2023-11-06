@@ -1,7 +1,7 @@
 .. py:currentmodule:: drdmannturb
 
-DRD Calibration and Spectra Fitting
-===================================
+Spectra and Eddy Lifetime Function Learning
+===========================================
 
 CalibrationProblem
 ------------------
