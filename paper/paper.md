@@ -36,7 +36,7 @@ is their ability to generate fluctuations based on prescribed statistics which a
 
 `DRDMannTurb` is a package which aims to create an easy-to-use framework to automatically generate turbulent wind fields to be used by scientist and engineers in their applications domains. 
 
-`DRDMannTurb` is completely written in Python, with computationally powerful backend packages ('numpy', 'PyTorch') being used in its implementation. Our implementation allows for easy GPU-portability using `cuda`. This is an advantage compared to previously developed software packages that have implemented the Mann model but did not provide the source code (e.g. HAWC2). Finally, `DRDMannTurb` is designed to be more general-purpose, allowing it to be applied to a bronzer range of application, as well as be more accessible and with clear documentation. 
+`DRDMannTurb` is completely written in Python, with computationally powerful backend packages ('numpy', 'PyTorch') being used in its implementation. Our implementation allows for easy GPU-portability using `cuda`. This is an advantage compared to previously developed software packages that have implemented the Mann model but did not provide the source code (e.g. HAWC2). Finally, `DRDMannTurb` is designed to be more general-purpose, allowing it to be applied to a broader range of applications, as well as be more accessible and with clear documentation. 
 
 # Results
 
