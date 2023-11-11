@@ -7,8 +7,6 @@ Synthetic Data Fit
 import torch
 import torch.nn as nn
 
-# from drdmannturb.calibration import CalibrationProblem
-# from drdmannturb.data_generator import OnePointSpectraDataGenerator
 from drdmannturb.parameters import (
     LossParameters,
     NNParameters,

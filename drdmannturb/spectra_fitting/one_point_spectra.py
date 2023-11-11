@@ -22,13 +22,18 @@ class OnePointSpectra(nn.Module):
         nn_parameters: NNParameters = NNParameters(),
         learn_nu: bool = False,
     ):
-        """
-        __description__
+        """_summary_
 
         Parameters
         ----------
-
-
+        type_eddy_lifetime : EddyLifetimeType, optional
+            _description_, by default EddyLifetimeType.TWOTHIRD
+        type_power_spectra : PowerSpectraType, optional
+            _description_, by default PowerSpectraType.RDT
+        nn_parameters : NNParameters, optional
+            _description_, by default NNParameters()
+        learn_nu : bool, optional
+            _description_, by default False
         """
         super(OnePointSpectra, self).__init__()
 
@@ -62,7 +67,6 @@ class OnePointSpectra(nn.Module):
                 nn_parameters.n_modes,
                 learn_nu=learn_nu,
             )
-            # self.tauNet = tauNet(n_layers, hidden_layer_size, n_modes, learn_nu)
 
         elif self.type_EddyLifetime == EddyLifetimeType.CUSTOMMLP:
             """
@@ -75,7 +79,6 @@ class OnePointSpectra(nn.Module):
                 nn_parameters.n_modes,
                 learn_nu=learn_nu,
             )
-            # self.tauNet = customNet(n_layers, hidden_layer_size)
 
         elif self.type_EddyLifetime == EddyLifetimeType.TAURESNET:
             """
@@ -176,16 +179,10 @@ class OnePointSpectra(nn.Module):
             EddyLifetimeType.TAURESNET,
         ]:
             tau0 = self.InitialGuess_EddyLifetime(kL)
-            tau = tau0 + self.tauNet(
-                k * self.LengthScale
-            )  # This takes a vector as input
-        # elif self.type_EddyLifetime == 'customMLP':
-        #    tau0 = self.InitialGuess_EddyLifetime(kL)
-        #    tau = tau0 + self.tauNet(k * self.LengthScale)
-        # elif self.type_EddyLifetime == 'tauResNet':
-        #    tauResNet
+            tau = tau0 + self.tauNet(k * self.LengthScale)
         else:
             raise Exception("Wrong EddyLifetime model !")
+
         return self.TimeScale * tau
 
     @torch.jit.export

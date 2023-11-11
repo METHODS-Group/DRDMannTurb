@@ -407,7 +407,18 @@ class CalibrationProblem:
 
         self.e_count: int = 0
 
-        theta_NN = parameters_to_vector(self.OPS.tauNet.NN.parameters())
+        if self.OPS.type_EddyLifetime in [
+            EddyLifetimeType.TAUNET,
+            EddyLifetimeType.CUSTOMMLP,
+            EddyLifetimeType.TAURESNET,
+        ]:
+            self.gen_theta_NN = lambda: parameters_to_vector(
+                self.OPS.tauNet.NN.parameters()
+            )
+        else:
+            self.gen_theta_NN = lambda: 0.0
+
+        theta_NN = self.gen_theta_NN()
 
         self.loss = self.LossAggregator.eval(
             y[self.curves], y_data[self.curves], theta_NN, 0
@@ -422,10 +433,10 @@ class CalibrationProblem:
         def closure():
             optimizer.zero_grad()
             y = self.OPS(k1_data_pts)
-            theta_NN = parameters_to_vector(self.OPS.tauNet.NN.parameters())
+            # theta_NN = parameters_to_vector(self.OPS.tauNet.NN.parameters())
 
             self.loss = self.LossAggregator.eval(
-                y[self.curves], y_data[self.curves], theta_NN, self.e_count
+                y[self.curves], y_data[self.curves], self.gen_theta_NN(), self.e_count
             )
 
             self.loss.backward()
