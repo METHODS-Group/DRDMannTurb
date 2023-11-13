@@ -33,7 +33,7 @@ domain = torch.logspace(-1, 2, 20)
 
 @pytest.mark.parametrize(
     "eddylifetime",
-    [EddyLifetimeType.CUSTOMMLP, EddyLifetimeType.TAUNET, EddyLifetimeType.TAURESNET],
+    [EddyLifetimeType.CUSTOMMLP, EddyLifetimeType.TAUNET],
 )
 def test_network_paramcount(eddylifetime: EddyLifetimeType):
     pb = CalibrationProblem(

@@ -11,7 +11,7 @@ DataType = Enum(
 
 EddyLifetimeType = Enum(
     "EddyLifetimeType",
-    ["TWOTHIRD", "CUSTOMMLP", "TAUNET", "TAURESNET", "MANN", "MANN_APPROX", "CONST"],
+    ["TWOTHIRD", "CUSTOMMLP", "TAUNET", "MANN", "MANN_APPROX", "CONST"],
 )
 
 PowerSpectraType = Enum("PowerSpectraType", ["RDT"])

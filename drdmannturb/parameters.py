@@ -106,7 +106,10 @@ class PhysicalParameters:
 class LossParameters:
     r"""
     This class provides a convenient method of storing and passing around
-    the loss function term coefficients; this also offers default values.
+    the loss function term coefficients; this also offers default values, which result in the loss function consisting purely of an MSE loss.
+
+    .. note::
+        Using the regularization term :math:`\beta` requires a neural network-based approximation to the eddy lifetime function.
 
     Fields
     ------
@@ -140,7 +143,7 @@ class NNParameters:
     hidden_layer_size : int
         Determines widths of network layers if they are constant
     hidden_layer_sizes : List[int]
-        Determines widths of network layers (input-output pairs must match); used for CustomNet or ResNet models
+        Determines widths of network layers (input-output pairs must match); used for CustomNet
     activations : List[str]
         List of activation functions, matching TODO: why not make this a list of nn.modules?
     output_size: int
@@ -154,10 +157,9 @@ class NNParameters:
     hidden_layer_size: int = 3
     hidden_layer_sizes: List[int] = field(
         default_factory=list
-    )  # should be used for customnet or resnet
+    )  # should be used for customnet
     # [10, 10]
     activations: List[str] = field(default_factory=list)
     # ["relu", "relu"]
-    n_modes: int = 10
 
     output_size: int = 3

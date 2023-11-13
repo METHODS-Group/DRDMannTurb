@@ -135,8 +135,10 @@ def plot_velocity_components(spacing, wind_field, surface_count=25, reshape=True
     return fig
 
 
-def plot_velocity_magnitude(spacing, wind_field, surf_count=75, reshape=True):
-    """Plots velocity magnitude field from provided 3-component wind field over the provided spacing.
+def plot_velocity_magnitude(
+    spacing, wind_field, surf_count=75, reshape=True
+) -> go.Figure:
+    """_summary_
 
     Parameters
     ----------
@@ -144,8 +146,15 @@ def plot_velocity_magnitude(spacing, wind_field, surf_count=75, reshape=True):
         _description_
     wind_field : _type_
         _description_
-    surf_count : int
-        number of surfaces to be used
+    surf_count : int, optional
+        Number of surfaces to be used, by default 75
+    reshape : bool, optional
+        _description_, by default True
+
+    Returns
+    -------
+    go.Figure
+        Plotly Figure object to be used in visualization.
     """
 
     X, Y, Z = create_grid(spacing, wind_field.shape)
