@@ -3,26 +3,30 @@ This module contains all the implementations PyTorch nn.Module subclasses
 used throughout.
 """
 
-__all__ = ["TauResNet", "TauNet", "CustomNet"]
+__all__ = ["TauNet", "CustomNet"]
 
-from typing import Any, Callable, List, Union
+from typing import Callable, List, Union
 
 import torch
 import torch.nn as nn
 
-"""
-Learnable functions
-"""
-
 
 class Rational(nn.Module):
     """
-    Learnable rational kernel
+    Learnable rational kernel.
     """
 
-    def __init__(self, nModes: int, learn_nu: bool = True) -> None:
-        """
-        Constructor for Rational
+    def __init__(self, learn_nu: bool = True) -> None:
+        r"""
+        Constructor for neural network that learns the rational function
+
+        .. math::
+            \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}),
+
+        specifically, the neural network part of the augmented wavevector
+
+        .. math::
+            \mathrm{NN}(\operatorname{abs}(\boldsymbol{k})).
 
         Parameters
         ----------
@@ -31,7 +35,6 @@ class Rational(nn.Module):
             also; by default True
         """
         super().__init__()
-        self.nModes = nModes
         self.fg_learn_nu = learn_nu
         self.nu = -1.0 / 3.0
         if self.fg_learn_nu:
@@ -51,11 +54,12 @@ class Rational(nn.Module):
         torch.Tensor
             Network output
         """
+
         a = self.nu - 2 / 3
         b = self.nu
         out = torch.abs(x)
         out = out**a / (1 + out**2) ** (b / 2)
-        return out  # * self.scale**2
+        return out
 
 
 class SimpleNN(nn.Module):
@@ -63,7 +67,7 @@ class SimpleNN(nn.Module):
         self, nlayers: int = 2, inlayer: int = 3, hlayer: int = 3, outlayer: int = 3
     ) -> None:
         """
-        Constructor for SimpleNN
+        A simple feed-forward neural network consisting of n layers with a ReLU activation function. The default initialization is to random noise of magnitude 1e-9.
 
         Parameters
         ----------
@@ -119,18 +123,18 @@ class CustomMLP(nn.Module):
     def __init__(
         self,
         hlayers: list[int],
-        activations: list[Callable],
+        activations: list[nn.Module],
         inlayer: int = 3,
         outlayer: int = 3,
     ) -> None:
         """
-        Constructor for CustomMLP
+        Feed-forward neural network with variable widths of layers and activation functions. Useful for DNN configurations and experimentation with different activation functions.
 
         Parameters
         ----------
         hlayers : list
             list specifying widths of hidden layers in NN
-        activations : _type_
+        activations : list[nn.Module]
             list specifying activation functions for each hidden layer
         inlayer : int, optional
             Number of input features, by default 3
@@ -184,195 +188,35 @@ class CustomMLP(nn.Module):
 Learnable eddy lifetime models
 """
 
-
-class ResNetBlock(nn.Module):
-    def __init__(self, inlayer=3, outlayer=3):
-        super(ResNetBlock, self).__init__()
-
-        self.fc1 = nn.Sequential(
-            nn.Linear(inlayer, outlayer, bias=False).double(),
-            # nn.LayerNorm(outlayer),
-            nn.ReLU(),
-        )
-
-        self.fc2 = nn.Sequential(
-            nn.Linear(outlayer, outlayer, bias=False).double(),
-            # nn.LayerNorm(outlayer),
-            # nn.ReLU()
-        )
-
-        self.outlayer = outlayer
-        self.relu = nn.ReLU()
-
-    def _forward_impl(self, x):
-        # This exists since TorchScript doesn't support inheritance, so the superclass method
-        # (this one) needs to have a name other than `forward` that can be accessed in a subclass
-
-        residual = x
-
-        output = self.fc1(x)
-
-        output = self.fc2(output)
-
-        output += residual
-        output = self.relu(output)
-        # output = nn.ReLU()(output)
-
-        return output
-
-    def forward(self, x):
-        return self._forward_impl(x)
-
-
-class ResNet(nn.Module):
-    """
-    ResNet implementation
-    """
-
-    def __init__(
-        self, n_layers: list[int], inlayer: int = 3, outlayer: int = 3
-    ) -> None:
-        super(ResNet, self).__init__()
-        self.indims = 10  # not of the data but after the first layer upward
-
-        # this serves as a substitute for the initial conv
-        # present in resnets for image-based tasks
-        self.layer0 = nn.Sequential(
-            nn.Linear(inlayer, self.indims, bias=False).double(), nn.ReLU()
-        )
-
-        # TODO: need to downsample if not 4...??????
-        self.block1 = self._make_layer(n_layers[0], self.indims)
-        self.block2 = self._make_layer(n_layers[1], self.indims)
-
-        self.fc = nn.Linear(self.indims, outlayer).double()
-
-    def _make_layer(self, blocks, indims):
-        layers = []
-        layers.append(ResNetBlock(self.indims, indims))
-
-        self.indims = indims
-
-        for _ in range(1, blocks):
-            layers.append(ResNetBlock(inlayer=self.indims, outlayer=indims))
-
-        return nn.Sequential(*layers)
-
-    def _forward_impl(self, x):
-        # This exists since TorchScript doesn't support inheritance, so the superclass method
-        # (this one) needs to have a name other than `forward` that can be accessed in a subclass
-        x = self.layer0(x)
-        x = self.block1(x)
-        x = self.block2(x)
-        x = self.fc(x)
-
-        return x
-
-    def forward(self, x):
-        return self._forward_impl(x)
-
-
 ##############################################################################
 # Below here are exposed.
 ##############################################################################
 
 
-class TauResNet(nn.Module):
-    """
-    tauResNet implementation
-
-    Consists of ResNet and Rational
-    """
-
-    def __init__(
-        self,
-        hidden_layer_sizes: List[int] = [10, 10],
-        n_modes: int = 10,
-        learn_nu: bool = True,
-    ):
-        """
-        Constructor for res-net implementation of the learnable eddy lifetime model
-
-        Parameters
-        ----------
-        hidden_layer_sizes : List[int], optional
-            List of integers greater than zero each describing the size of the
-            respectively indexed , by default [10, 10]
-        n_modes : int, optional
-            _description_, by default 10
-        learn_nu : bool, optional
-            _description_, by default True
-        """
-        super(TauResNet, self).__init__()
-
-        self.hlayers = hidden_layer_sizes
-
-        self.n_modes = n_modes
-        self.fg_learn_nu = learn_nu
-
-        # TODO: change activations list here and propagate through to resnet blocks
-        self.NN = ResNet(n_layers=self.hlayers, inlayer=3, outlayer=3)
-        self.Ra = Rational(nModes=self.n_modes, learn_nu=self.fg_learn_nu)
-
-        self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
-
-    def sym(
-        self, f: Callable[[torch.Tensor], torch.Tensor], k: torch.Tensor
-    ) -> torch.Tensor:
-        """
-        TODO -- what exactly?
-
-        Parameters
-        ----------
-        f : Callable[[torch.Tensor], torch.Tensor]
-            A function that takes a tensor and returns a tensor
-        k : torch.Tensor
-            _description_
-
-            # TODO -- wave numbers?
-
-        Returns
-        -------
-        torch.Tensor
-            # TODO -- what???
-        """
-        return 0.5 * (f(k) + f(k * self.sign))
-
-    def forward(self, k: torch.Tensor) -> torch.Tensor:
-        """
-        Forward method implementation
-
-        Parameters
-        ----------
-        k : torch.Tensor
-            TODO -- greater meaning... wave numbers?
-
-        Returns
-        -------
-        torch.Tensor
-            TODO -- greater meaning ???
-        """
-        k_mod = self.NN(k.abs()).norm(dim=-1)
-        tau = self.Ra(k_mod)
-
-        return tau
-
-
 class TauNet(nn.Module):
-    """
-    TauNet implementation
+    r"""
+    Classical implementation of neural network that learns the eddy lifetime function :math:`\tau{\boldsymbol{k}}`. A SimpleNN and Rational network comprise this class. The network widths are determined by a single integer and thereafter the networks have hidden layers of only that width.
 
-    Consists of a SimpleNN and a Rational
+    The objective is to learn the function
+
+    .. math::
+            \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}),
+
+    where
+
+    .. math::
+        \boldsymbol{a}(\boldsymbol{k}) = \operatorname{abs}(\boldsymbol{k} \mathrm{NN}(\operatorname{abs}(\boldsymbol{k})).
+
+    This class implements the simplest architectures which solve this problem.
     """
 
     def __init__(
         self,
         n_layers: int = 2,
         hidden_layer_size: int = 3,
-        n_modes: int = 10,
         learn_nu: bool = True,
     ):
-        """
+        r"""
         Constructor for TauNet
 
         Parameters
@@ -381,47 +225,26 @@ class TauNet(nn.Module):
             Number of hidden layers, by default 2
         hidden_layer_size : int, optional
             Size of the hidden layers, by default 3
-        n_modes : int, optional
-            Number of wave modes, by default 10
         learn_nu : bool, optional
-            If true, learns also the exponent Nu, by default True
+            If true, learns also the exponent :math:`\nu`, by default True
         """
 
         super(TauNet, self).__init__()
 
         self.n_layers = n_layers
         self.hidden_layer_size = hidden_layer_size
-        self.n_modes = n_modes
         self.fg_learn_nu = learn_nu
 
         self.NN = SimpleNN(
             nlayers=self.n_layers, inlayer=3, hlayer=self.hidden_layer_size, outlayer=3
         )
-        self.Ra = Rational(nModes=self.n_modes, learn_nu=self.fg_learn_nu)
+        self.Ra = Rational(learn_nu=self.fg_learn_nu)
 
         self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
 
-    def sym(self, f: Callable, k: torch.Tensor) -> torch.Tensor:
-        """
-        TODO -- what is this?
-
-        Parameters
-        ----------
-        f : Callable
-            _description_
-        k : torch.Tensor
-            _description_
-
-        Returns
-        -------
-        torch.Tensor
-            _description_
-        """
-        return 0.5 * (f(k) + f(k * self.sign))
-
     def forward(self, k: torch.Tensor) -> torch.Tensor:
         """
-        Forward method implementation.
+        Forward method implementation. Evaluates
 
         Parameters
         ----------
@@ -431,7 +254,7 @@ class TauNet(nn.Module):
         Returns
         -------
         torch.Tensor
-            _description_
+            Output of forward pass of neural network.
         """
         k_mod = self.NN(k.abs()).norm(dim=-1)
         tau = self.Ra(k_mod)
@@ -439,42 +262,34 @@ class TauNet(nn.Module):
 
 
 class CustomNet(nn.Module):
-    """
-    CustomNet implementation. Consists of a CustomMLP and
-    Rational module.
+    r"""
+    A more versatile version of the tauNet. The objective is the same: to learn the eddy lifetime function :math:`\tau{\boldsymbol{k}}` in the same way. This class allows for neural networks of variable widths and different kinds of activation functions used between layers.
     """
 
     def __init__(
         self,
         n_layers: int = 2,
         hidden_layer_sizes: Union[int, list[int]] = [10, 10],
-        activations: List[Callable] = [nn.ReLU(), nn.ReLU()],
-        n_modes: int = 10,
+        activations: List[nn.Module] = [nn.ReLU(), nn.ReLU()],
         learn_nu: bool = True,
     ):
-        """
+        r"""
         Constructor for the customNet
 
         Parameters
         ----------
         n_layers : int, optional
             Number of hidden layers, by default 2
-        activations : List[Any], optional
+        activations : List[nn.Module], optional
             List of activation functions to use, by default [nn.ReLU(), nn.ReLU()]
-
-            TODO -- type hint this properly
-        n_modes : int, optional
-            Number of wave modes, by default 10
         learn_nu : bool, optional
-            Determines whether or not the exponent Nu is also learned, by default True
+            If true, learns also the exponent :math:`\nu`, by default True
         """
-
         super().__init__()
 
         self.n_layers = n_layers
         self.activations = activations
 
-        self.n_modes = n_modes
         self.fg_learn_nu = learn_nu
 
         hls = None
@@ -486,29 +301,9 @@ class CustomNet(nn.Module):
         self.NN = CustomMLP(
             hlayers=hls, activations=self.activations, inlayer=3, outlayer=3
         )
-        self.Ra = Rational(nModes=self.n_modes, learn_nu=self.fg_learn_nu)
+        self.Ra = Rational(learn_nu=self.fg_learn_nu)
 
         self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
-
-    def sym(
-        self, f: Callable[[torch.Tensor], torch.Tensor], k: torch.Tensor
-    ) -> torch.Tensor:
-        """
-        TODO -- figure out what exactly this is
-
-        Parameters
-        ----------
-        f : Callable[[torch.Tensor], torch.Tensor]
-            A function that takes a Tensor and produces a Tensor
-        k : torch.Tensor
-            TODO -- greater meaning
-
-        Returns
-        -------
-        torch.Tensor
-            TODO -- greater meaning
-        """
-        return 0.5 * (f(k) + f(k * self.sign))
 
     def forward(self, k: torch.Tensor) -> torch.Tensor:
         """
@@ -517,12 +312,12 @@ class CustomNet(nn.Module):
         Parameters
         ----------
         k : torch.Tensor
-            _description_
+            Input wavevector domain.
 
         Returns
         -------
         torch.Tensor
-            _description_
+            Output of forward pass of neural network
         """
         k_mod = self.NN(k.abs()).norm(dim=-1)
         tau = self.Ra(k_mod)

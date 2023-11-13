@@ -1,16 +1,7 @@
 from .common import Mann_linear_exponential_approx, MannEddyLifetime, VKEnergySpectrum
 from .enums import DataType, EddyLifetimeType, PowerSpectraType
 from .interpolation import extract_x_spectra, interp_spectra, interpolate
-from .nn_modules import (
-    CustomMLP,
-    CustomNet,
-    Rational,
-    ResNet,
-    ResNetBlock,
-    SimpleNN,
-    TauNet,
-    TauResNet,
-)
+from .nn_modules import CustomMLP, CustomNet, Rational, SimpleNN, TauNet
 from .parameters import (
     LossParameters,
     NNParameters,

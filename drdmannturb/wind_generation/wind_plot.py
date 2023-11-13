@@ -1,22 +1,28 @@
+"""
+Common utilities and Plotly integration for visualizing generated wind field. 
+"""
+
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 
-def create_grid(spacing, shape):
-    """_summary_
+def create_grid(
+    spacing: tuple[float, float, float], shape: tuple[int, int, int]
+) -> np.ndarray:
+    """Creates a 3D grid (meshgrid) from given spacing between grid points and desired shape (which should match the shape of the generated wind field, for example).
 
     Parameters
     ----------
-    spacing : _type_
-        _description_
-    shape : _type_
-        _description_
+    spacing : tuple[float, float, float]
+        Spacing array that determines the spacing of points to be used in each dimension of the 3D field. Typically, of the form grid_dimensions (a 3x1 vector representing the dimensions of the domain) divided by the grid_levels, which determine the resolution of the wind field in each respective dimension.
+    shape : tuple[int, int, int]
+        Number of points in each dimension.
 
     Returns
     -------
-    _type_
-        _description_
+    np.ndarray
+       np.meshgrid object consisting of points at the provided spacing and with the specified counts in each dimension.
     """
     x = np.array([spacing[0] * n for n in range(shape[0])])
     y = np.array([spacing[1] * n for n in range(shape[1])])
@@ -25,31 +31,48 @@ def create_grid(spacing, shape):
     return np.meshgrid(x, y, z)
 
 
-def format_wind_field(wind_field):
-    """_summary_
+def format_wind_field(
+    wind_field: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Creates a copy of the given wind-field that has a C-layout; this is a wrapper around np.copy.
 
     Parameters
     ----------
-    wind_field : _type_
-        _description_
+    wind_field : np.ndarray
+        3D wind field, typically of shape (Nx, Ny, Nz, 3) (not C-layout, to be reshaped).
+
 
     Returns
     -------
-    _type_
-        _description_
+    tuple[np.ndarray, np.ndarray, np.ndarray]
+        Triple consisting of wind field values in each x, y, z directions.
     """
     return tuple([np.copy(wind_field[..., i], order="C") for i in range(3)])
 
 
-def plot_velocity_components(spacing, wind_field, surface_count=25, reshape=True):
-    """Plots x, y, z components of given wind field over provided spacing.
+def plot_velocity_components(
+    spacing: tuple[float, float, float],
+    wind_field: np.ndarray,
+    surface_count=25,
+    reshape=True,
+) -> go.Figure:
+    """Plots x, y, z components of given wind field over provided spacing. Note that the same spacing is used for all 3 velocity components.
 
     Parameters
     ----------
-    spacing : _type_
-        _description_
-    wind_field : _type_
-        _description_
+    spacing : tuple[float, float, float]
+        Spacing array that determines the spacing of points to be used in each dimension of the 3D field. Typically, of the form grid_dimensions (a 3x1 vector representing the dimensions of the domain) divided by the grid_levels, which determine the resolution of the wind field in each respective dimension.
+    wind_field : np.ndarray
+        3D wind field, typically of shape (Nx, Ny, Nz, 3) (not C-layout, to be reshaped).
+    surface_count : int, optional
+        Number of surfaces to be used for each velocity component, by default 25
+    reshape : bool, optional
+        Whether to re-format the given wind field into C-order, typically the desirable choice to match the order of entries of the wind field and the provided spacing, by default True
+
+    Returns
+    -------
+    go.Figure
+        Plotly Figure object to be used in visualization.
     """
 
     X, Y, Z = create_grid(spacing, wind_field.shape)
@@ -135,17 +158,29 @@ def plot_velocity_components(spacing, wind_field, surface_count=25, reshape=True
     return fig
 
 
-def plot_velocity_magnitude(spacing, wind_field, surf_count=75, reshape=True):
-    """Plots velocity magnitude field from provided 3-component wind field over the provided spacing.
+def plot_velocity_magnitude(
+    spacing: tuple[float, float, float],
+    wind_field: np.ndarray,
+    surf_count=75,
+    reshape=True,
+) -> go.Figure:
+    """Produces a 3D plot of the wind velocity magnitude in a specified domain. This returns a Plotly figure for use of downstream visualization.
 
     Parameters
     ----------
-    spacing : _type_
-        _description_
-    wind_field : _type_
-        _description_
-    surf_count : int
-        number of surfaces to be used
+    spacing : tuple[float, float, float]
+        Spacing array that determines the spacing of points to be used in each dimension of the 3D field. Typically, of the form grid_dimensions (a 3x1 vector representing the dimensions of the domain) divided by the grid_levels, which determine the resolution of the wind field in each respective dimension.
+    wind_field : np.ndarray
+            3D wind field, typically of shape (Nx, Ny, Nz, 3) (not C-layout, to be reshaped).
+    surf_count : int, optional
+        Number of surfaces to be used, by default 75
+    reshape : bool, optional
+        Whether to re-format the given wind field into C-order, typically the desirable choice to match the order of entries of the wind field and the provided spacing, by default True
+
+    Returns
+    -------
+    go.Figure
+        Plotly Figure object to be used in visualization.
     """
 
     X, Y, Z = create_grid(spacing, wind_field.shape)

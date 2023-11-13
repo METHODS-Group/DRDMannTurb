@@ -66,7 +66,6 @@ class CalibrationProblem:
             arguments. By default, calls the constructor PhysicalParameters(L=0.59, Gamma=3.9, sigma=3.4).
         output_directory : str, optional
             The directory to write output to; by default "./results"
-            TODO: add logging_level docs
         """
         self.init_device(device)
 
@@ -89,7 +88,13 @@ class CalibrationProblem:
             type_eddy_lifetime=self.prob_params.eddy_lifetime,
             type_power_spectra=self.prob_params.power_spectra,
             nn_parameters=self.nn_params,
+            learn_nu=self.prob_params.learn_nu,
         )
+
+        if self.prob_params.eddy_lifetime == EddyLifetimeType.MANN_APPROX:
+            self.OPS.set_scales(
+                self.phys_params.L, self.phys_params.Gamma, self.phys_params.sigma
+            )
 
         if self.init_with_noise:
             self.initialize_parameters_with_noise()
@@ -166,20 +171,20 @@ class CalibrationProblem:
         Raises
         ------
         ValueError
-            "Parameter vector must contain at least 3 dimensionless scale quantities (L, Gamma, sigma) as well as network parameters, if using one of TAUNET, CUSTOMMLP, or TAURESNET."
+            "Parameter vector must contain at least 3 dimensionless scale quantities (L, Gamma, sigma) as well as network parameters, if using one of TAUNET, CUSTOMMLP."
         ValueError
-            "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP, or TAURESNET. Check the architecture being imported against the currently constructed architecture if this mismatch occurs."
+            "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported against the currently constructed architecture if this mismatch occurs."
         ValueError
-            "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP, or TAURESNET. Check the architecture being imported against the currently constructed architecture if this mismatch occurs."
+            "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported against the currently constructed architecture if this mismatch occurs."
         """
         if len(param_vec) < 3:
             raise ValueError(
-                "Parameter vector must contain at least 3 dimensionless scale quantities (L, Gamma, sigma) as well as network parameters, if using one of TAUNET, CUSTOMMLP, or TAURESNET."
+                "Parameter vector must contain at least 3 dimensionless scale quantities (L, Gamma, sigma) as well as network parameters, if using one of TAUNET, CUSTOMMLP."
             )
 
         if len(param_vec) != len(list(self.parameters)):
             raise ValueError(
-                "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP, or TAURESNET. Check the architecture being imported against the currently constructed architecture if this mismatch occurs."
+                "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported against the currently constructed architecture if this mismatch occurs."
             )
 
         if (
@@ -187,12 +192,11 @@ class CalibrationProblem:
             in [
                 EddyLifetimeType.TAUNET,
                 EddyLifetimeType.CUSTOMMLP,
-                EddyLifetimeType.TAURESNET,
             ]
             and len(param_vec[3:]) != self.num_trainable_params()
         ):
             raise ValueError(
-                "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP, or TAURESNET. Check the architecture being imported against the currently constructed architecture if this mismatch occurs."
+                "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported against the currently constructed architecture if this mismatch occurs."
             )
 
         if not torch.is_tensor(param_vec):
@@ -410,7 +414,6 @@ class CalibrationProblem:
         if self.OPS.type_EddyLifetime in [
             EddyLifetimeType.TAUNET,
             EddyLifetimeType.CUSTOMMLP,
-            EddyLifetimeType.TAURESNET,
         ]:
             self.gen_theta_NN = lambda: parameters_to_vector(
                 self.OPS.tauNet.NN.parameters()
@@ -477,7 +480,6 @@ class CalibrationProblem:
             a network surrogate for the eddy lifetime:
                 - TAUNET
                 - CUSTOMMLP
-                - TAURESNET
 
         Returns
         -------
@@ -487,15 +489,14 @@ class CalibrationProblem:
         Raises
         ------
         ValueError
-            If the OPS was not initialized to one of TAUNET, CUSTOMMLP, or TAURESNET.
+            If the OPS was not initialized to one of TAUNET, CUSTOMMLP
         """
         if self.OPS.type_EddyLifetime not in [
             EddyLifetimeType.TAUNET,
             EddyLifetimeType.CUSTOMMLP,
-            EddyLifetimeType.TAURESNET,
         ]:
             raise ValueError(
-                "Not using trainable model for approximation, must be TAUNET, CUSTOMMLP, or TAURESNET."
+                "Not using trainable model for approximation, must be TAUNET, CUSTOMMLP."
             )
 
         return sum(p.numel() for p in self.OPS.tauNet.parameters())
@@ -508,7 +509,6 @@ class CalibrationProblem:
             a network surrogate for the eddy lifetime:
                 - TAUNET
                 - CUSTOMMLP
-                - TAURESNET
 
         Parameters
         ----------
@@ -518,16 +518,15 @@ class CalibrationProblem:
         Raises
         ------
         ValueError
-            If the OPS was not initialized to one of TAUNET, CUSTOMMLP, or TAURESNET.
+            If the OPS was not initialized to one of TAUNET, CUSTOMMLPT.
 
         """
         if self.OPS.type_EddyLifetime not in [
             EddyLifetimeType.TAUNET,
             EddyLifetimeType.CUSTOMMLP,
-            EddyLifetimeType.TAURESNET,
         ]:
             raise ValueError(
-                "Not using trainable model for approximation, must be TAUNET, CUSTOMMLP, or TAURESNET."
+                "Not using trainable model for approximation, must be TAUNET, CUSTOMMLP."
             )
 
         return torch.norm(
@@ -542,7 +541,6 @@ class CalibrationProblem:
             a network surrogate for the eddy lifetime:
                 - TAUNET
                 - CUSTOMMLP
-                - TAURESNET
 
         Parameters
         ----------
@@ -552,16 +550,15 @@ class CalibrationProblem:
         Raises
         ------
         ValueError
-            If the OPS was not initialized to one of TAUNET, CUSTOMMLP, or TAURESNET.
+            If the OPS was not initialized to one of TAUNET, CUSTOMMLP.
 
         """
         if self.OPS.type_EddyLifetime not in [
             EddyLifetimeType.TAUNET,
             EddyLifetimeType.CUSTOMMLP,
-            EddyLifetimeType.TAURESNET,
         ]:
             raise ValueError(
-                "Not using trainable model for approximation, must be TAUNET, CUSTOMMLP, or TAURESNET."
+                "Not using trainable model for approximation, must be TAUNET, CUSTOMMLP."
             )
 
         return torch.norm(
@@ -686,7 +683,6 @@ class CalibrationProblem:
         kF_model_vals = model_vals if model_vals is not None else self.OPS(k1_data_pts)
 
         kF_model_vals = kF_model_vals.cpu().detach()
-        k1_data_pts = k1_data_pts.cpu().detach()
         kF_data_vals = kF_data_vals.cpu().detach()
 
         if plot_tau:
@@ -695,6 +691,8 @@ class CalibrationProblem:
             k_2 = torch.stack([0 * k_gd, k_gd, 0 * k_gd], dim=-1)
             k_3 = torch.stack([0 * k_gd, 0 * k_gd, k_gd], dim=-1)
             k_4 = torch.stack([k_gd, k_gd, k_gd], dim=-1) / 3 ** (1 / 2)
+
+        k1_data_pts = k1_data_pts.cpu().detach()
 
         nrows = 1
         ncols = 2 if plot_tau else 1
@@ -765,7 +763,8 @@ class CalibrationProblem:
                 self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
 
                 self.tau_ref = (
-                    3.9 * MannEddyLifetime(0.59 * k_gd).cpu().detach().numpy()
+                    self.phys_params.Gamma
+                    * MannEddyLifetime(self.phys_params.L * k_gd).cpu().detach().numpy()
                 )
                 (self.lines_LT_model1,) = self.ax[1].plot(
                     k_gd.cpu().detach().numpy(),
@@ -801,7 +800,7 @@ class CalibrationProblem:
                 self.ax[1].legend()
                 self.ax[1].set_xscale("log")
                 self.ax[1].set_yscale("log")
-                self.ax[1].set_xlabel(r"$k$")
+                self.ax[1].set_xlabel(r"$f$")
                 self.ax[1].set_ylabel(r"$\tau$")
                 self.ax[1].grid(which="both")
 

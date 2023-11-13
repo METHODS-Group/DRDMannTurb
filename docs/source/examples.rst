@@ -44,6 +44,15 @@ Find out how to get started with the package using the provided examples:
 
     <hr>
 
+.. toctree::
+   :maxdepth: 2
+   
+   auto_examples/plot_mann_linear_regression
+
+.. raw:: html
+
+    <hr>
+
 
 .. toctree::
    :maxdepth: 2

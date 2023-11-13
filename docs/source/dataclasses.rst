@@ -12,6 +12,8 @@ Data Types and Eddy Lifetime Functions
 .. autoenum:: drdmannturb.EddyLifetimeType
     :members: 
 
+.. autoenum:: drdmannturb.PowerSpectraType
+
 The associated eddy lifetime functions are as follows: 
 
 .. py:currentmodule:: drdmannturb.common

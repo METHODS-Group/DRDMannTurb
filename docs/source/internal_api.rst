@@ -17,11 +17,8 @@ Forward-Facing Network Architecture Interfaces
 .. autoclass:: drdmannturb.CustomNet
     :members:
 
-.. autoclass:: drdmannturb.TauResNet 
-    :members:
 
-
-Internal MLP and ResNet Interfaces
+Internal Neural Network Interfaces
 ----------------------------------
 
 .. autoclass:: drdmannturb.SimpleNN
@@ -31,9 +28,6 @@ Internal MLP and ResNet Interfaces
     :members:
 
 .. autoclass:: drdmannturb.CustomMLP
-    :members:
-
-.. autoclass:: drdmannturb.ResNetBlock
     :members:
 
 

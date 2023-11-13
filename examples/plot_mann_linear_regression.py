@@ -1,15 +1,13 @@
 """
-=====================================
-Changing MLP Architecture and Fitting
-=====================================
-
+====================================
+Mann Eddy Lifetime Linear Regression
+====================================
 """
-import numpy as np
+# %%
 import torch
 import torch.nn as nn
 
-from drdmannturb.common import MannEddyLifetime
-from drdmannturb.enums import DataType, EddyLifetimeType, PowerSpectraType
+from drdmannturb import EddyLifetimeType
 from drdmannturb.parameters import (
     LossParameters,
     NNParameters,
@@ -26,6 +24,9 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
+
+# %%
+
 L = 0.59
 
 Gamma = 3.9
@@ -36,15 +37,18 @@ domain = torch.logspace(-1, 2, 20)
 # %%
 pb = CalibrationProblem(
     nn_params=NNParameters(
-        nlayers=5,
-        hidden_layer_sizes=[5, 10, 20, 10, 5],
-        activations=[nn.GELU(), nn.ReLU(), nn.GELU(), nn.ReLU(), nn.GELU()],
+        nlayers=2,
+        hidden_layer_sizes=[10, 10],
+        activations=[nn.GELU(), nn.GELU()],
     ),
-    prob_params=ProblemParameters(nepochs=5, wolfe_iter_count=30, learn_nu=True),
+    prob_params=ProblemParameters(
+        nepochs=10, eddy_lifetime=EddyLifetimeType.MANN_APPROX
+    ),
     loss_params=LossParameters(),
     phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, domain=domain),
     device=device,
 )
+# %%
 
 # %%
 k1_data_pts = domain

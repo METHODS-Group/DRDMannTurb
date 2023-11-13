@@ -33,7 +33,7 @@ domain = torch.logspace(-1, 2, 20)
 
 @pytest.mark.parametrize(
     "eddylifetime",
-    [EddyLifetimeType.CUSTOMMLP, EddyLifetimeType.TAUNET, EddyLifetimeType.TAURESNET],
+    [EddyLifetimeType.CUSTOMMLP, EddyLifetimeType.TAUNET],
 )
 def test_network_paramcount(eddylifetime: EddyLifetimeType):
     pb = CalibrationProblem(
@@ -48,10 +48,6 @@ def test_network_paramcount(eddylifetime: EddyLifetimeType):
         assert pb.num_trainable_params() == 160
     elif eddylifetime == EddyLifetimeType.TAUNET:
         assert pb.num_trainable_params() == 27
-    else:
-        assert (
-            pb.num_trainable_params() == 4063
-        )  # questionable intialization, TODO: check blocks
 
 
 @pytest.mark.slow
