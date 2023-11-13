@@ -46,10 +46,12 @@ pb = CalibrationProblem(
         activations=[nn.ReLU(), nn.ReLU()],
     ),
     prob_params=ProblemParameters(
-        nepochs=5, learn_nu=True, eddy_lifetime=EddyLifetimeType.TAUNET
+        nepochs=2, learn_nu=False, eddy_lifetime=EddyLifetimeType.TAUNET
     ),
-    loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1.0e-2),
-    phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, domain=domain),
+    loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1.0e-5),
+    phys_params=PhysicalParameters(
+        L=L, Gamma=Gamma, sigma=sigma, Uref=21.0, domain=domain
+    ),
     device=device,
 )
 
@@ -63,7 +65,6 @@ Data = OnePointSpectraDataGenerator(data_points=DataPoints).Data
 # %%
 pb.eval(k1_data_pts)
 optimal_parameters = pb.calibrate(data=Data)
-
 # %%
 pb.plot()
 
@@ -94,7 +95,7 @@ pb.save_model("../results/")
 import pickle
 
 # TODO: fix this data load and parameter equivalence check
-path_to_parameters = "../results/EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl"
+path_to_parameters = "../results/EddyLifetimeType.TAUNET_DataType.KAIMAL.pkl"
 
 with open(path_to_parameters, "rb") as file:
     (
@@ -119,4 +120,6 @@ pb_new = CalibrationProblem(
 
 pb_new.parameters = model_params
 
-assert (pb.parameters == pb_new.parameters).all()
+import numpy as np
+
+assert np.ma.allequal(pb.parameters, pb_new.parameters)

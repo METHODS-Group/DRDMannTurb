@@ -51,7 +51,7 @@ class Rational(nn.Module):
         torch.Tensor
             Network output
         """
-        print(self.nu)
+        # print(self.nu)
 
         a = self.nu - 2 / 3
         b = self.nu

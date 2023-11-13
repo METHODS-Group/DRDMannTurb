@@ -4,7 +4,6 @@ from typing import Optional, Union
 import numpy as np
 import torch
 import torch.nn as nn
-from scipy.special import hyp2f1
 from sklearn.linear_model import LinearRegression
 
 from drdmannturb.common import (
@@ -102,10 +101,12 @@ class OnePointSpectra(nn.Module):
         elif self.type_EddyLifetime == EddyLifetimeType.MANN_APPROX:
             self.init_mann_linear_approx = False
 
-    def set_scales(self, LengthScale, TimeScale, Magnitude: torch.float64):
-        self.LengthScale = LengthScale
-        self.TimeScale = TimeScale
-        self.Magnitude = Magnitude
+    def set_scales(
+        self, LengthScale: np.float64, TimeScale: np.float64, Magnitude: np.float64
+    ):
+        self.LengthScale_scalar = LengthScale
+        self.TimeScale_scalar = TimeScale
+        self.Magnitude_scalar = Magnitude
 
     def exp_scales(self) -> tuple[float, float, float]:
         """
@@ -154,7 +155,7 @@ class OnePointSpectra(nn.Module):
         kF = torch.stack([k1_input * self.quad23(Phi) for Phi in self.Phi])
         return kF
 
-    def init_mann_approximation(self, kL: Union[torch.Tensor, np.ndarray]):
+    def init_mann_approximation(self):
         """Initializes Mann eddy lifetime function approximation by performing a linear regression in log-log space on
         a given wave space and the true output of
 
@@ -162,17 +163,14 @@ class OnePointSpectra(nn.Module):
            \frac{x^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-x^{-2}\right)}}
 
         This operation is performed once on the CPU.
-
-        Parameters
-        ----------
-        kL : Union[torch.Tensor, np.ndarray]
-            _description_
         """
-        if torch.is_tensor(kL):
-            kL_temp = kL.detach().cpu().numpy() if kL.is_cuda else kL.detach().numpy()
+
+        kL_temp = np.logspace(-3, 3, 50)
 
         kL_temp = kL_temp.reshape(-1, 1)
-        tau_true = np.log(self.TimeScale * MannEddyLifetime(self.LengthScale * kL_temp))
+        tau_true = np.log(
+            self.TimeScale_scalar * MannEddyLifetime(self.LengthScale_scalar * kL_temp)
+        )
 
         kL_temp_log = np.log(kL_temp)
 
@@ -180,15 +178,13 @@ class OnePointSpectra(nn.Module):
         # fits in log-log space since tau is nearly linear in log-log
         regressor.fit(kL_temp_log, tau_true)
 
-        print(regressor.intercept_, regressor.coef_)
-
-        print("=" * 50)
+        print("=" * 40)
 
         print(
             f"Mann Linear Approximation R2 Score in log-log space: {regressor.score(kL_temp_log, tau_true)}"
         )
 
-        print("=" * 50)
+        print("=" * 40)
 
         self.tau_approx_coeff_ = torch.tensor(regressor.coef_.flatten())
         self.tau_approx_intercept_ = torch.tensor(regressor.intercept_)
@@ -226,7 +222,7 @@ class OnePointSpectra(nn.Module):
             hasattr(self, "init_mann_linear_approx")
             and self.init_mann_linear_approx is False
         ):  # Mann approximation chosen but not initialized
-            self.init_mann_approximation(kL)
+            self.init_mann_approximation()
 
         if self.type_EddyLifetime == EddyLifetimeType.CONST:
             tau = torch.ones_like(kL)

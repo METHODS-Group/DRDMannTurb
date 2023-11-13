@@ -452,7 +452,6 @@ class CalibrationProblem:
             return self.loss
 
         for _ in tqdm(range(1, nepochs + 1)):
-            print(self.OPS.tauNet.Ra.nu)
             optimizer.step(closure)
             scheduler.step()
 
@@ -693,7 +692,6 @@ class CalibrationProblem:
         kF_model_vals = model_vals if model_vals is not None else self.OPS(k1_data_pts)
 
         kF_model_vals = kF_model_vals.cpu().detach()
-        k1_data_pts = k1_data_pts.cpu().detach()
         kF_data_vals = kF_data_vals.cpu().detach()
 
         if plot_tau:
@@ -702,6 +700,8 @@ class CalibrationProblem:
             k_2 = torch.stack([0 * k_gd, k_gd, 0 * k_gd], dim=-1)
             k_3 = torch.stack([0 * k_gd, 0 * k_gd, k_gd], dim=-1)
             k_4 = torch.stack([k_gd, k_gd, k_gd], dim=-1) / 3 ** (1 / 2)
+
+        k1_data_pts = k1_data_pts.cpu().detach()
 
         nrows = 1
         ncols = 2 if plot_tau else 1
@@ -772,7 +772,8 @@ class CalibrationProblem:
                 self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
 
                 self.tau_ref = (
-                    3.9 * MannEddyLifetime(0.59 * k_gd).cpu().detach().numpy()
+                    self.phys_params.Gamma
+                    * MannEddyLifetime(self.phys_params.L * k_gd).cpu().detach().numpy()
                 )
                 (self.lines_LT_model1,) = self.ax[1].plot(
                     k_gd.cpu().detach().numpy(),
