@@ -44,7 +44,12 @@ is their ability to generate fluctuations based on prescribed statistics which a
 
 # Package Features
 
+- Generate synthetic turbulence fields using the Classic Mann model
+- Calibrate Mann model parameters using reference ``textbook'' or in-situ spectra and co-spectra
+- Calibrate Mann model using deep neural networks and rapid-distortion theory
+- Fast wind field generation using domain decomposition
 
+# References
 
 # Acknowledgements
 
