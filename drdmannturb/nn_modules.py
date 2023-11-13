@@ -5,7 +5,7 @@ used throughout.
 
 __all__ = ["TauResNet", "TauNet", "CustomNet"]
 
-from typing import Any, Callable, List, Union
+from typing import Callable, List, Union
 
 import torch
 import torch.nn as nn
@@ -51,6 +51,8 @@ class Rational(nn.Module):
         torch.Tensor
             Network output
         """
+        print(self.nu)
+
         a = self.nu - 2 / 3
         b = self.nu
         out = torch.abs(x)

@@ -39,7 +39,7 @@ if torch.cuda.is_available():
 L = 0.59
 
 Gamma = 3.9
-sigma = 3.4
+sigma = 3.2
 
 domain = torch.logspace(-1, 2, 20)
 
@@ -50,7 +50,7 @@ pb = CalibrationProblem(
         hidden_layer_sizes=[5, 10, 20, 10, 5],
         activations=[nn.GELU(), nn.ReLU(), nn.GELU(), nn.ReLU(), nn.GELU()],
     ),
-    prob_params=ProblemParameters(nepochs=5, wolfe_iter_count=30),
+    prob_params=ProblemParameters(nepochs=5, wolfe_iter_count=30, learn_nu=True),
     loss_params=LossParameters(),
     phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, domain=domain),
     device=device,

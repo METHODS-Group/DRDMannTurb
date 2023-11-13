@@ -28,7 +28,7 @@ if torch.cuda.is_available():
 L = 0.59
 
 Gamma = 3.9
-sigma = 3.4
+sigma = 3.2
 
 domain = torch.logspace(-1, 2, 20)
 

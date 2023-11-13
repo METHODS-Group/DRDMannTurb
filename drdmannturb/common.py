@@ -91,4 +91,4 @@ def Mann_linear_exponential_approx(
         Exponential approximation to the Mann eddy lifetime function output.
     """
 
-    return torch.exp(coefficient * kL + intercept)
+    return torch.exp(coefficient * torch.log(kL) + intercept)

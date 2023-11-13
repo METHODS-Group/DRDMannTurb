@@ -1,5 +1,5 @@
 """
-This module defines the Enums for quality of life
+This module defines the Enums determining the fundamental datatypes and choices of models available in the package. 
 """
 __all__ = ["DataType", "EddyLifetimeType", "PowerSpectraType"]
 
@@ -11,7 +11,7 @@ DataType = Enum(
 
 EddyLifetimeType = Enum(
     "EddyLifetimeType",
-    ["TWOTHIRD", "CUSTOMMLP", "TAUNET", "TAURESNET", "MANN", "CONST"],
+    ["TWOTHIRD", "CUSTOMMLP", "TAUNET", "TAURESNET", "MANN", "MANN_APPROX", "CONST"],
 )
 
 PowerSpectraType = Enum("PowerSpectraType", ["RDT"])

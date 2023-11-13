@@ -7,6 +7,7 @@ Synthetic Data Fit
 import torch
 import torch.nn as nn
 
+from drdmannturb import EddyLifetimeType
 from drdmannturb.parameters import (
     LossParameters,
     NNParameters,
@@ -33,7 +34,7 @@ if torch.cuda.is_available():
 L = 0.59
 
 Gamma = 3.9
-sigma = 3.4
+sigma = 3.2
 
 domain = torch.logspace(-1, 2, 20)
 
@@ -42,10 +43,12 @@ pb = CalibrationProblem(
     nn_params=NNParameters(
         nlayers=2,
         hidden_layer_sizes=[10, 10],
-        activations=[nn.GELU(), nn.GELU()],
+        activations=[nn.ReLU(), nn.ReLU()],
     ),
-    prob_params=ProblemParameters(nepochs=5),
-    loss_params=LossParameters(),
+    prob_params=ProblemParameters(
+        nepochs=5, learn_nu=True, eddy_lifetime=EddyLifetimeType.TAUNET
+    ),
+    loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1.0e-2),
     phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, domain=domain),
     device=device,
 )

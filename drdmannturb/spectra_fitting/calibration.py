@@ -89,7 +89,13 @@ class CalibrationProblem:
             type_eddy_lifetime=self.prob_params.eddy_lifetime,
             type_power_spectra=self.prob_params.power_spectra,
             nn_parameters=self.nn_params,
+            learn_nu=self.prob_params.learn_nu,
         )
+
+        if self.prob_params.eddy_lifetime == EddyLifetimeType.MANN_APPROX:
+            self.OPS.set_scales(
+                self.phys_params.L, self.phys_params.Gamma, self.phys_params.sigma
+            )
 
         if self.init_with_noise:
             self.initialize_parameters_with_noise()
@@ -446,6 +452,7 @@ class CalibrationProblem:
             return self.loss
 
         for _ in tqdm(range(1, nepochs + 1)):
+            print(self.OPS.tauNet.Ra.nu)
             optimizer.step(closure)
             scheduler.step()
 
@@ -801,7 +808,7 @@ class CalibrationProblem:
                 self.ax[1].legend()
                 self.ax[1].set_xscale("log")
                 self.ax[1].set_yscale("log")
-                self.ax[1].set_xlabel(r"$k$")
+                self.ax[1].set_xlabel(r"$f$")
                 self.ax[1].set_ylabel(r"$\tau$")
                 self.ax[1].grid(which="both")
 
