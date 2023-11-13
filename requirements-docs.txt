@@ -2,7 +2,7 @@ ipython
 numpydoc
 pydocstyle
 Sphinx>=1.8.3
-pydata-sphinx-theme>=0.13.0
+pydata-sphinx-theme>=0.14.2
 sphinx-panels
 sphinx-notfound-page
 sphinx-copybutton

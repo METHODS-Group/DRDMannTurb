@@ -1,4 +1,4 @@
-from .common import MannEddyLifetime, VKEnergySpectrum
+from .common import Mann_linear_exponential_approx, MannEddyLifetime, VKEnergySpectrum
 from .enums import DataType, EddyLifetimeType, PowerSpectraType
 from .interpolation import extract_x_spectra, interp_spectra, interpolate
 from .nn_modules import (

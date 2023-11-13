@@ -12,6 +12,16 @@ Data Types and Eddy Lifetime Functions
 .. autoenum:: drdmannturb.EddyLifetimeType
     :members: 
 
+The associated eddy lifetime functions are as follows: 
+
+.. py:currentmodule:: drdmannturb.common
+
+.. autofunction:: MannEddyLifetime 
+
+.. autofunction:: Mann_linear_exponential_approx
+
+.. autofunction:: VKEnergySpectrum
+
 Neural Network Parameters
 -------------------------
 
