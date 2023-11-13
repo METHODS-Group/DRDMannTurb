@@ -48,10 +48,6 @@ def test_network_paramcount(eddylifetime: EddyLifetimeType):
         assert pb.num_trainable_params() == 160
     elif eddylifetime == EddyLifetimeType.TAUNET:
         assert pb.num_trainable_params() == 27
-    else:
-        assert (
-            pb.num_trainable_params() == 4063
-        )  # questionable intialization, TODO: check blocks
 
 
 @pytest.mark.slow

@@ -138,12 +138,12 @@ def plot_velocity_components(spacing, wind_field, surface_count=25, reshape=True
 def plot_velocity_magnitude(
     spacing, wind_field, surf_count=75, reshape=True
 ) -> go.Figure:
-    """_summary_
+    """Produces a 3D plot of the wind velocity magnitude in a specified domain. This returns a Plotly figure for use of downstream visualization.
 
     Parameters
     ----------
     spacing : _type_
-        _description_
+        Spacing array that determines the number of points to be used in each dimension of the 3D field. Typically, of the form grid_dimensions (a 3x1 vector representing the dimensions of the domain) divided by the grid_levels, which determine the resolution of the wind field in each respective dimension.
     wind_field : _type_
         _description_
     surf_count : int, optional

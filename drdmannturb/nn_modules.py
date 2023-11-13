@@ -59,7 +59,7 @@ class Rational(nn.Module):
         b = self.nu
         out = torch.abs(x)
         out = out**a / (1 + out**2) ** (b / 2)
-        return out  # * self.scale**2
+        return out
 
 
 class SimpleNN(nn.Module):
@@ -232,24 +232,6 @@ class TauNet(nn.Module):
 
         self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
 
-    def sym(self, f: Callable, k: torch.Tensor) -> torch.Tensor:
-        """
-        TODO -- what is this?
-
-        Parameters
-        ----------
-        f : Callable
-            _description_
-        k : torch.Tensor
-            _description_
-
-        Returns
-        -------
-        torch.Tensor
-            _description_
-        """
-        return 0.5 * (f(k) + f(k * self.sign))
-
     def forward(self, k: torch.Tensor) -> torch.Tensor:
         """
         Forward method implementation.
@@ -316,26 +298,6 @@ class CustomNet(nn.Module):
         self.Ra = Rational(learn_nu=self.fg_learn_nu)
 
         self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
-
-    def sym(
-        self, f: Callable[[torch.Tensor], torch.Tensor], k: torch.Tensor
-    ) -> torch.Tensor:
-        """
-        TODO -- figure out what exactly this is
-
-        Parameters
-        ----------
-        f : Callable[[torch.Tensor], torch.Tensor]
-            A function that takes a Tensor and produces a Tensor
-        k : torch.Tensor
-            TODO -- greater meaning
-
-        Returns
-        -------
-        torch.Tensor
-            TODO -- greater meaning
-        """
-        return 0.5 * (f(k) + f(k * self.sign))
 
     def forward(self, k: torch.Tensor) -> torch.Tensor:
         """
