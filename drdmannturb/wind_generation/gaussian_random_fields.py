@@ -21,6 +21,7 @@ class GaussianRandomField:
         window_margin=0,
         sampling_method="fft",
         verbose=0,
+        laplace: bool = False,
         **kwargs
     ):
         """Constructor for Gaussian Random Field generator in 1 dimension.
@@ -41,6 +42,9 @@ class GaussianRandomField:
             _description_, by default "fft"
         verbose : int, optional
             _description_, by default 0
+        laplace : bool, optional
+            If true, uses noise from a Laplace distribution instead of
+            Gaussian, by default False
 
         Raises
         ------
@@ -89,19 +93,20 @@ class GaussianRandomField:
         # Pseudo-random number generator
         self.prng = np.random.RandomState()
         self.noise_std = np.sqrt(np.prod(h))
+        self.distribution = self.prng.laplace if laplace else self.prng.normal
 
     def setSamplingMethod(self, method, **kwargs):
         """Initialize the sampling method
 
         Parameters
         ----------
-        method : _type_
-            _description_
+        method : str
+            One of "fft", "dst", "dct", "fftw", "vf_fftw"; see Sampling methods.
 
         Raises
         ------
         Exception
-            _description_
+            If method is not one of the above
         """
         self.method = method
 
@@ -121,15 +126,15 @@ class GaussianRandomField:
             self.Correlate = Sampling_VF_FFTW(self)
 
         else:
-            raise Exception('Unknown sampling method "{0}".'.format(method))
+            raise Exception(f'Unknown sampling method "{method}".')
 
     def reseed(self, seed=None):
         """Sets a new seed for the class's PRNG.
 
         Parameters
         ----------
-        seed : _type_, optional
-            Seed value for PRNG, following np.RandomState() conventions, by default None
+        seed : Seed value for PRNG, following np.RandomState() conventions, 
+            by default None
         """
         if seed is not None:
             self.prng.seed(seed)
@@ -139,9 +144,11 @@ class GaussianRandomField:
     ### Sample noise
     def sample_noise(self, grid_shape=None):
         if grid_shape is None:
-            noise = self.prng.normal(0, 1, self.ext_grid_shape)
+            # noise = self.prng.normal(0, 1, self.ext_grid_shape)
+            noise = self.distribution(0, 1, self.ext_grid_shape)
         else:
-            noise = self.prng.normal(0, 1, grid_shape)
+            # noise = self.prng.normal(0, 1, grid_shape)
+            noise = self.distribution(0, 1, grid_shape)
         noise *= self.noise_std
         return noise
 
