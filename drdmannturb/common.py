@@ -1,7 +1,5 @@
 """
-This module contains implementations of common functions required a few times throughout
-
-TODO -- possibly move this elsewhere/ somewhere more appropriate than here
+This module contains implementations of common functions, specifically the Mann eddy lifetime function and the von Karman energy spectrum. 
 """
 
 __all__ = ["VKEnergySpectrum", "MannEddyLifetime", "Mann_linear_exponential_approx"]
@@ -15,13 +13,16 @@ from scipy.special import hyp2f1
 
 @torch.jit.script
 def VKEnergySpectrum(kL: torch.Tensor) -> torch.Tensor:
-    """
-    Von Karman energy spectrum (without scaling)
+    r"""
+    Von Karman energy spectrum without scaling by viscous dissipation:
+
+    .. math::
+        \left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3}.
 
     Parameters
     ----------
     kL : torch.Tensor
-        Scaled wave number
+        Scaled wave number domain.
 
     Returns
     -------

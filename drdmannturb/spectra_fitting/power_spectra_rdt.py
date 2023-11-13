@@ -1,8 +1,7 @@
 """
-This module implements the RDT PowerSpectra type
+This module implements the RDT Power Spectra.  
 """
 
-import numpy as np
 import torch
 
 Tensor = torch.Tensor
@@ -10,26 +9,34 @@ Tensor = torch.Tensor
 
 @torch.jit.script
 def PowerSpectraRDT(
-    k: Tensor, beta: Tensor, E0
+    k: Tensor, beta: Tensor, E0: Tensor
 ) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
-    """
-    Classical rapid distortion spectra
+    r"""Classical rapid distortion spectra, which is the solution to
+
+    .. math::
+        \frac{\bar{D} \mathrm{~d} Z_j(\boldsymbol{k}, t)}{\bar{D} t}=\frac{\partial U_{\ell}}{\partial x_k}\left(2 \frac{k_j k_{\ell}}{k^2}-\delta_{j \ell}\right) \mathrm{d} Z_k(\boldsymbol{k}, t)
+
+    given by
+
+    .. math::
+        \mathrm{d} \mathbf{Z}(\boldsymbol{k}(t), t)=\boldsymbol{D}_\tau(\boldsymbol{k}) \mathrm{d} \mathbf{Z}\left(\boldsymbol{k}_0, 0\right).
+
+    Refer to the original DRD paper, Section III, subsection B for a full expansion.
 
     Parameters
     ----------
     k : torch.Tensor
-        Wave vector input
+        Wave vector domain.
     beta : torch.Tensor
-        _description_
-    E0 : _type_
-        _description_
+        Evaluated eddy lifetime function.
+    E0 : torch.Tensor
+        Evaluated and non-dimensionalized von Karman energy spectrum.
 
     Returns
     -------
-    tuple[torch.Tensor, ...]
-        6-tuple of the components of the velocity-spectrum tensor
+    tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]
+        6-tuple of the components of the velocity-spectrum tensor in the order: :math:`\Phi_{11}, \Phi_{22}, \Phi_{33}, \Phi_{13}, \Phi_{12}, \Phi_{23}`.
     """
-
     k1, k2, k3 = k[..., 0], k[..., 1], k[..., 2]
 
     k30 = k3 + beta * k1
@@ -45,13 +52,9 @@ def PowerSpectraRDT(
         * torch.atan2(beta * k1 * torch.sqrt(s), kk0 - k30 * k1 * beta)
     )
 
-    # arg1 = k30/torch.sqrt(s)
-    # arg2 = k3 /torch.sqrt(s)
-    # C2  = k2 * kk0 / torch.sqrt(s**3) * (torch.atan(arg1) - torch.atan(arg2))
-
     zeta1 = C1 - k2 / k1 * C2
     zeta2 = C1 * k2 / k1 + C2
-    E0 /= 4 * np.pi
+    E0 /= 4 * torch.pi
     Phi11 = (
         E0
         / (kk0**2)

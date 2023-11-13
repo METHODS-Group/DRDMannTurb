@@ -20,3 +20,10 @@ OnePointSpectra
 
 .. autoclass:: drdmannturb.OnePointSpectra
     :members:
+
+Rapid Distortion Power Spectra
+------------------------------
+
+.. currentmodule:: drdmannturb.spectra_fitting.power_spectra_rdt
+
+.. autofunction:: PowerSpectraRDT
