@@ -1,59 +1,77 @@
+"""
+This module implements the wind generation
+"""
+
+
 import pickle
 from os import PathLike
 from time import time
 from typing import Union
+from torch.cuda import is_available
 
 import numpy as np
 
 from drdmannturb.spectra_fitting import CalibrationProblem
 
-from .covariance_kernels import MannCovariance, VonKarmanCovariance
-from .gaussian_random_fields import *
-from .nn_covariance import NNCovariance
+from drdmannturb.wind_generation.covariance_kernels import MannCovariance, VonKarmanCovariance
+from drdmannturb.wind_generation.gaussian_random_fields import *
+from drdmannturb.wind_generation.nn_covariance import NNCovariance
 
 
 class GenerateWind:
+    """
+    Wind generation based on a pre-fit ``DRDMannTurb`` model from ``spectra_fitting``.
+    """
+
     def __init__(
         self,
-        friction_velocity,
-        reference_height,
+        friction_velocity: float,
+        reference_height: float,
         grid_dimensions,
         grid_levels,
         model: str,
         path_to_parameters: Union[str, PathLike],
-        seed=None,
+        seed: int = None,
         blend_num=10,
     ):
-        """_summary_
+        """Wind generator constructor
 
         Parameters
         ----------
-        friction_velocity : _type_
-            _description_
-        reference_height : _type_
-            _description_
-        grid_dimensions : _type_
-            _description_
-        grid_levels : _type_
-            _description_
+        friction_velocity : float
+            The reference wind friction velocity :math:`u_*`
+        reference_height : float
+            Reference height :math:`L`
+        grid_dimensions : np.ndarray
+            Numpy array denoting the grid size
+        grid_levels : np.ndarray
+            Numpy array denoting the grid levels
         model : str
-            _description_
+            One of ``"NN"``, ``"VK"``, ``"FPDE_RDT"``, or ``"Mann"`` denoting
+            "Neural Network," "Von Karman," "fractional PDE - RDT", and "Mann model"
+            respectively used in the ``spectra_fitting`` portion of the workload.
         path_to_parameters : Union[str, PathLike]
-            _description_
-        seed : _type_, optional
-            _description_, by default None
+            File path (string or ``Pathlib.Path()``)
+        seed : int, optional
+            Pseudo-random number generator seed, by default None. See ``np.random.RandomState``.
         blend_num : int, optional
             _description_, by default 10
+
+        Notes
+        -----
+        FPDE RDT methods were deprecated from a previous Zenodo direct release for
+        what now comprises ``spectra_fitting`` but have not been removed completely
+        from ``wind_generation``.
 
         Raises
         ------
         ValueError
-            _description_
+            If ``model`` doesn't match one of the 4 permitted options.
         """
 
         if model not in ["NN", "VK", "FPDE_RDT", "Mann"]:
             raise ValueError(
-                "Provided model type not supported, must be one of NN, VK, FPDT_RDT, MANN"
+                "Provided model type not supported, must be one of NN, VK, FPDT_RDT, Mann"
             )
 
         # # Parameters taken from pg 13 of M. Andre's dissertation
@@ -67,6 +85,8 @@ class GenerateWind:
                     phys_params,
                     model_params,
                 ) = pickle.load(file)
+
+            device = "cuda" if is_available() else "cpu"
 
             pb = CalibrationProblem(
                 nn_params=nn_params,
@@ -160,6 +180,7 @@ class GenerateWind:
                 sampling_method="vf_fftw",
                 grid_shape=self.noise_shape[:-1],
                 Covariance=self.Covariance,
+                # laplace=True
             )
         elif model == "Mann":
             self.Covariance = MannCovariance(ndim=3, length_scale=L, E0=E0, Gamma=Gamma)
@@ -171,6 +192,7 @@ class GenerateWind:
                 sampling_method="vf_fftw",
                 grid_shape=self.noise_shape[:-1],
                 Covariance=self.Covariance,
+                # laplace=True
             )
         elif model == "FPDE_RDT":
             self.Covariance = None
@@ -182,7 +204,8 @@ class GenerateWind:
                 grid_dimensions=grid_dimensions,
                 sampling_method="vf_rat_halfspace_rapid_distortion",
                 grid_shape=self.noise_shape[:-1],
-                Covariance=self.Covariance
+                Covariance=self.Covariance,
+                # laplace=True
             )
         elif model == "NN":
             self.Covariance = NNCovariance(
@@ -201,6 +224,7 @@ class GenerateWind:
                 sampling_method="vf_fftw",
                 grid_shape=self.noise_shape[:-1],
                 Covariance=self.Covariance,
+                # laplace=True
             )
 
         self.RF.reseed(self.seed)

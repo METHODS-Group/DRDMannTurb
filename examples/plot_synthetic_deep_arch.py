@@ -19,6 +19,7 @@ from drdmannturb.parameters import (
 from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 
 # %%
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # v2: torch.set_default_device('cuda:0')

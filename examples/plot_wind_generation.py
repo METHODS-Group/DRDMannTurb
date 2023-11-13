@@ -18,7 +18,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-# from drdmannturb.wind_generation.generate_wind import GenerateWind
 from drdmannturb.wind_generation import (
     GenerateWind,
     plot_velocity_components,
@@ -68,6 +67,7 @@ wind = GenerateWind(
     model=Type_Model,
     path_to_parameters=path_to_parameters,
     seed=seed,
+    # laplace=True
 )
 for _ in range(nBlocks):
     wind()
@@ -137,3 +137,5 @@ imageToVTK(filename, cellData=cellData, spacing=spacing)
 fig_magnitude = plot_velocity_magnitude(spacing, wind_field)
 
 fig_magnitude
+
+# %%
