@@ -7,6 +7,7 @@ from typing import List
 
 import numpy as np
 import torch
+import torch.nn as nn
 
 from drdmannturb.enums import DataType, EddyLifetimeType, PowerSpectraType
 
@@ -24,7 +25,7 @@ class ProblemParameters:
     learning_rate : float
         Learning rate for optimizer.
     tol : float
-        Tolerance for solution error (training terminates once this is reached)
+        Tolerance for solution error (training terminates if this is reached before the maximum number of epochs allowed)
     nepochs : int
         Number of epochs to train for
     init_with_noise : bool
@@ -42,7 +43,7 @@ class ProblemParameters:
     wolfe_iter_count : int
         Sets the number of Wolfe iterations that each step of LBFGS uses
     learn_nu : bool
-        TODO: check this
+        If true, learns also the exponent :math:`\nu`, by default True
     """
 
     learning_rate: float = 1e-1
@@ -139,27 +140,22 @@ class NNParameters:
     nlayers : int
         Number of layers to be used in neural network model
     input_size : int
-        Size of input spectra vector (typically just 3)
+        Size of input spectra vector (typically just 3).
     hidden_layer_size : int
-        Determines widths of network layers if they are constant
+        Determines widths of network layers if they are constant.
     hidden_layer_sizes : List[int]
         Determines widths of network layers (input-output pairs must match); used for CustomNet
-    activations : List[str]
-        List of activation functions, matching TODO: why not make this a list of nn.modules?
+    activations : List[torch.Module]
+        List of activation functions. The list should have the same length as the number of layers, otherwise the activation functions begin to repeat from the beginning of the list.
     output_size: int
-
+        Dimensionality of the output vector (typically 3 for spectra-fitting tasks).
     """
 
     nlayers: int = 2
     input_size: int = 3
 
-    # TODO -- better way of doing this?
-    hidden_layer_size: int = 3
-    hidden_layer_sizes: List[int] = field(
-        default_factory=list
-    )  # should be used for customnet
-    # [10, 10]
-    activations: List[str] = field(default_factory=list)
-    # ["relu", "relu"]
+    hidden_layer_size: int = 10
+    hidden_layer_sizes: List[int] = field(default_factory=list)
+    activations: List[nn.Module] = field(default_factory=list)  # [nn.ReLU(), nn.ReLU()]
 
     output_size: int = 3

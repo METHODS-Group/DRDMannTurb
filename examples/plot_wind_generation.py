@@ -25,12 +25,6 @@ from drdmannturb.wind_generation import (
     plot_velocity_magnitude,
 )
 
-# from drdmannturb.interfaces.generate_wind import GenerateWind
-# from drdmannturb.interfaces.wind_plot import (
-# plot_velocity_components,
-# plot_velocity_magnitude,
-# )
-
 path = Path().resolve()
 
 device = "cuda" if torch.cuda.is_available() else "cpu"

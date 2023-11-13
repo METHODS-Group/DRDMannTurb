@@ -66,7 +66,6 @@ class CalibrationProblem:
             arguments. By default, calls the constructor PhysicalParameters(L=0.59, Gamma=3.9, sigma=3.4).
         output_directory : str, optional
             The directory to write output to; by default "./results"
-            TODO: add logging_level docs
         """
         self.init_device(device)
 

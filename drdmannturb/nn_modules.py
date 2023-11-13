@@ -123,7 +123,7 @@ class CustomMLP(nn.Module):
     def __init__(
         self,
         hlayers: list[int],
-        activations: list[Callable],
+        activations: list[nn.Module],
         inlayer: int = 3,
         outlayer: int = 3,
     ) -> None:
@@ -134,7 +134,7 @@ class CustomMLP(nn.Module):
         ----------
         hlayers : list
             list specifying widths of hidden layers in NN
-        activations : _type_
+        activations : list[nn.Module]
             list specifying activation functions for each hidden layer
         inlayer : int, optional
             Number of input features, by default 3
@@ -194,10 +194,20 @@ Learnable eddy lifetime models
 
 
 class TauNet(nn.Module):
-    """
-    TauNet implementation
+    r"""
+    Classical implementation of neural network that learns the eddy lifetime function :math:`\tau{\boldsymbol{k}}`. A SimpleNN and Rational network comprise this class. The network widths are determined by a single integer and thereafter the networks have hidden layers of only that width.
 
-    Consists of a SimpleNN and a Rational
+    The objective is to learn the function
+
+    .. math::
+            \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}),
+
+    where
+
+    .. math::
+        \boldsymbol{a}(\boldsymbol{k}) = \operatorname{abs}(\boldsymbol{k} \mathrm{NN}(\operatorname{abs}(\boldsymbol{k})).
+
+    This class implements the simplest architectures which solve this problem.
     """
 
     def __init__(
@@ -206,7 +216,7 @@ class TauNet(nn.Module):
         hidden_layer_size: int = 3,
         learn_nu: bool = True,
     ):
-        """
+        r"""
         Constructor for TauNet
 
         Parameters
@@ -216,7 +226,7 @@ class TauNet(nn.Module):
         hidden_layer_size : int, optional
             Size of the hidden layers, by default 3
         learn_nu : bool, optional
-            If true, learns also the exponent Nu, by default True
+            If true, learns also the exponent :math:`\nu`, by default True
         """
 
         super(TauNet, self).__init__()
@@ -234,7 +244,7 @@ class TauNet(nn.Module):
 
     def forward(self, k: torch.Tensor) -> torch.Tensor:
         """
-        Forward method implementation.
+        Forward method implementation. Evaluates
 
         Parameters
         ----------
@@ -244,7 +254,7 @@ class TauNet(nn.Module):
         Returns
         -------
         torch.Tensor
-            _description_
+            Output of forward pass of neural network.
         """
         k_mod = self.NN(k.abs()).norm(dim=-1)
         tau = self.Ra(k_mod)
@@ -252,33 +262,29 @@ class TauNet(nn.Module):
 
 
 class CustomNet(nn.Module):
-    """
-    CustomNet implementation. Consists of a CustomMLP and
-    Rational module.
+    r"""
+    A more versatile version of the tauNet. The objective is the same: to learn the eddy lifetime function :math:`\tau{\boldsymbol{k}}` in the same way. This class allows for neural networks of variable widths and different kinds of activation functions used between layers.
     """
 
     def __init__(
         self,
         n_layers: int = 2,
         hidden_layer_sizes: Union[int, list[int]] = [10, 10],
-        activations: List[Callable] = [nn.ReLU(), nn.ReLU()],
+        activations: List[nn.Module] = [nn.ReLU(), nn.ReLU()],
         learn_nu: bool = True,
     ):
-        """
+        r"""
         Constructor for the customNet
 
         Parameters
         ----------
         n_layers : int, optional
             Number of hidden layers, by default 2
-        activations : List[Any], optional
+        activations : List[nn.Module], optional
             List of activation functions to use, by default [nn.ReLU(), nn.ReLU()]
-
-            TODO -- type hint this properly
         learn_nu : bool, optional
-            Determines whether or not the exponent Nu is also learned, by default True
+            If true, learns also the exponent :math:`\nu`, by default True
         """
-
         super().__init__()
 
         self.n_layers = n_layers
@@ -306,12 +312,12 @@ class CustomNet(nn.Module):
         Parameters
         ----------
         k : torch.Tensor
-            _description_
+            Input wavevector domain.
 
         Returns
         -------
         torch.Tensor
-            _description_
+            Output of forward pass of neural network
         """
         k_mod = self.NN(k.abs()).norm(dim=-1)
         tau = self.Ra(k_mod)
