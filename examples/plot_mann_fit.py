@@ -52,6 +52,5 @@ Data = OnePointSpectraDataGenerator(data_points=DataPoints).Data
 pb.eval(k1_data_pts)
 optimal_parameters = pb.calibrate(data=Data)
 
-#%%
 # %%
 pb.plot()

@@ -82,12 +82,3 @@ pb.plot()
 # %%
 # import matplotlib.pyplot as plt
 # TODO: add tensorboard screenshots here  https://github.com/sphinx-gallery/sphinx-gallery/issues/5
-# plt.figure()
-
-# plt.plot(pb.loss_history_epochs, "o-", label="Epochs Loss History")
-# plt.legend()
-# plt.xlabel("Epoch Number")
-# plt.ylabel("MSE")
-# plt.yscale("log")
-
-# plt.show()

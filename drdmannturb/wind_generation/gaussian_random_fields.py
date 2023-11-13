@@ -1,5 +1,10 @@
 """
-This module implements and exposes a Gaussian random field generator
+This module implements a random field generator.
+
+Notes
+-----
+
+This should not be directly used but is needed by ``GenerateWind``.
 """
 
 import numpy as np
@@ -24,27 +29,32 @@ class GaussianRandomField:
         laplace: bool = False,
         **kwargs
     ):
-        """Constructor for Gaussian Random Field generator in 1 dimension.
+        """Constructor for Gaussian Random Field generator
 
         Parameters
         ----------
-        grid_level : _type_
-            _description_
+        grid_level : np.ndarray
+            
         grid_shape : _type_, optional
-            _description_, by default None
+            _description_, by default ``None``
         grid_dimensions : list, optional
-            _description_, by default [1.0, 1.0, 1.0]
+            _description_, by default ``[1.0, 1.0, 1.0]``
         ndim : int, optional
-            _description_, by default 2
+            Denotes either 2d or 3d, by default 2
         window_margin : int, optional
             _description_, by default 0
         sampling_method : str, optional
-            _description_, by default "fft"
+            _description_, by default ``"fft"``
         verbose : int, optional
-            _description_, by default 0
+            , by default 0
         laplace : bool, optional
             If true, uses noise from a Laplace distribution instead of
-            Gaussian, by default False
+            Gaussian, by default ``False``.
+
+        Warning
+        -------
+        The Laplace distribution option ``laplace`` is not supported
+        and does not lead to physically sound results.
 
         Raises
         ------
@@ -63,6 +73,9 @@ class GaussianRandomField:
             h = 1 / 2**grid_level
             self.grid_shape = np.array([grid_shape] * ndim)
         else:
+            assert len(grid_dimensions) == 3
+            assert len(grid_level) == 3
+
             h = np.array(
                 [
                     grid_dimensions[0] / (2 ** grid_level[0] + 1),
@@ -88,7 +101,7 @@ class GaussianRandomField:
         t = time()
         self.setSamplingMethod(sampling_method, **kwargs)
         if self.verbose:
-            print("Init method {0:s}, time {1}".format(self.method, time() - t))
+            print(f"Init method {self.method}, time {time()-t}")
 
         # Pseudo-random number generator
         self.prng = np.random.RandomState()
@@ -142,18 +155,31 @@ class GaussianRandomField:
             self.prng.seed()
 
     ### Sample noise
-    def sample_noise(self, grid_shape=None):
+    def sample_noise(self, grid_shape=None) -> np.ndarray:
+        """
+        Sample
+
+        Args:
+            grid_shape (_type_, optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """        
+
         if grid_shape is None:
             # noise = self.prng.normal(0, 1, self.ext_grid_shape)
             noise = self.distribution(0, 1, self.ext_grid_shape)
         else:
-            # noise = self.prng.normal(0, 1, grid_shape)
+            # noise = self.prng.normal(0, 1, grid_shape)]
             noise = self.distribution(0, 1, grid_shape)
         noise *= self.noise_std
         return noise
 
     ### Sample GRF
     def sample(self, noise=None):
+        """
+        Gaussian Random Field sampler
+        """
         if noise is None:
             noise = self.sample_noise()
 

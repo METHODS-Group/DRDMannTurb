@@ -102,14 +102,3 @@ optimal_parameters = pb.calibrate(data=Data)
 
 # %%
 pb.plot()
-
-# %%
-# plt.figure()
-
-# plt.plot(pb.loss_history_epochs, "o-", label="Epochs Loss History")
-# plt.legend()
-# plt.xlabel("Epoch Number")
-# plt.ylabel("MSE")
-# plt.yscale("log")
-
-# plt.show()

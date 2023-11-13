@@ -42,7 +42,7 @@ class ProblemParameters:
     wolfe_iter_count : int
         Sets the number of Wolfe iterations that each step of LBFGS uses
     learn_nu : bool
-        TODO: check this
+        If true, rational exponent nu is considered a learnable parameter; default false
     """
 
     learning_rate: float = 1e-1
