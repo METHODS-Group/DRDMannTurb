@@ -35,7 +35,7 @@ if torch.cuda.is_available():
 ##########################################
 # Having set-up the necessary parameters for the domain, we now generate the wind field.
 # %%
-Type_Model = "NN"  ### 'FPDE_RDT', 'Mann', 'VK', 'NN'
+Type_Model = "Mann"  ### 'FPDE_RDT', 'Mann', 'VK', 'NN'
 nBlocks = 3
 
 normalize = True
@@ -63,6 +63,9 @@ gen = GenerateFluctuationField(
     reference_height,
     grid_dimensions,
     grid_levels,
+    length_scale=0.59,
+    time_scale=3.9,
+    energy_spectrum_scale=3.2,
     model=Type_Model,
     path_to_parameters=path_to_parameters,
     seed=seed,

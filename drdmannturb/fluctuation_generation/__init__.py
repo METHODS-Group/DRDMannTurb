@@ -21,8 +21,8 @@ __all__ = [
 ]
 
 from .covariance_kernels import Covariance, MannCovariance, VonKarmanCovariance
+from .fluctuation_field_generator import GenerateFluctuationField
 from .gaussian_random_fields import GaussianRandomField, VectorGaussianRandomField
-from .generate_wind import GenerateFluctuationField
 from .nn_covariance import NNCovariance
 from .sampling_methods import (
     FourierOfGaussian,

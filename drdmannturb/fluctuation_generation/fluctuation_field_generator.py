@@ -63,6 +63,9 @@ class GenerateFluctuationField:
         grid_dimensions,
         grid_levels,
         model: str,
+        length_scale: float,
+        time_scale: float,
+        energy_spectrum_scale: float,
         path_to_parameters: Union[str, PathLike],
         seed: int = None,
         blend_num=10,
@@ -127,10 +130,13 @@ class GenerateFluctuationField:
             L = L * reference_height
             Gamma = T
         else:
-            E0 = 3.2 * friction_velocity**2 * reference_height ** (-2 / 3)
-            L = 0.59 * reference_height
-            # L = 95 # why should the length scale depend on the reference height???????
-            Gamma = 3.9
+            E0 = (
+                energy_spectrum_scale
+                * friction_velocity**2
+                * reference_height ** (-2 / 3)
+            )
+            L = length_scale
+            Gamma = time_scale
 
         # define margins and buffer
         time_buffer = 3 * Gamma * L
