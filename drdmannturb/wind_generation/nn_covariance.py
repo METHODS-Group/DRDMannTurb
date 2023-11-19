@@ -6,21 +6,67 @@ neural network models.
 import numpy as np
 import torch
 
+from drdmannturb.spectra_fitting.one_point_spectra import OnePointSpectra
 from drdmannturb.wind_generation.covariance_kernels import Covariance
 
 
-# TODO -- this still has kwargs...
 class NNCovariance(Covariance):
-    """
-    Neural Network Covariance class
+    r"""
+    Neural Network covariance kernel. Like other covariance kernel implementations, this evaluates the :math:`G(\boldsymbol{k})` which satisfies :math:`G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k}, \tau(\boldsymbol{k}))` where the spectral tensor is defined through the eddy lifetime function learned by the neural network as well as the fitted spectra. Here, 
+
+    .. math::
+            \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k})
+
+    satisfies 
+
+    .. math:: 
+        :nowrap: 
+
+        \begin{align}
+            \Phi(\boldsymbol{k}, \tau) & =\left\langle\widehat{\mathbf{u}}(\boldsymbol{k}) \widehat{\mathbf{u}}^*(\boldsymbol{k})\right\rangle \\
+            & =\mathbf{D}_\tau(\boldsymbol{k}) \boldsymbol{G}_0\left(\boldsymbol{k}_0\right)\left\langle\widehat{\boldsymbol{\xi}}\left(\boldsymbol{k}_0\right) \widehat{\boldsymbol{\xi}}^*\left(\boldsymbol{k}_0\right)\right\rangle \boldsymbol{G}_0^*\left(\boldsymbol{k}_0\right) \mathbf{D}_\tau^*(\boldsymbol{k}) \\
+            & =\mathbf{D}_\tau(\boldsymbol{k}) \boldsymbol{G}_0\left(\boldsymbol{k}_0\right) \boldsymbol{G}_0^*\left(\boldsymbol{k}_0\right) \mathbf{D}_\tau^*(\boldsymbol{k}) \\
+            & =\mathbf{D}_\tau(\boldsymbol{k}) \Phi^{\mathrm{VK}}\left(\boldsymbol{k}_0\right) \mathbf{D}_\tau^*(\boldsymbol{k}) .
+        \end{align}
+
+    For more detailed definitions of individual terms, refer to section III B (specifically pages 4 and 5) of the original DRD paper. 
     """
 
-    def __init__(self, ndim, length_scale, E0, Gamma, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        ndim: int,
+        length_scale: float,
+        E0: float,
+        Gamma: float,
+        ops: OnePointSpectra,
+        h_ref: float,
+    ):
+        """
+        Parameters
+        ----------
+        ndim : int, optional
+            Number of dimensions for kernel to operate over.
+        length_scale : float, optional
+            Length scale non-dimensionalizing constant.
+        E0 : float, optional
+            Energy spectrum.
+        Gamma : float, optional
+            Time scale.
+        ops : OnePointSpectra
+            Pre-trained OnePointSpectra object with a neural network representing the eddy lifetime function and containing the non-dimensionalizing scales, which are also learned by the DRD model.
+        h_ref : float
+            Reference height (this is not a parameter learned by the DRD model).
+
+        Raises
+        ------
+        ValueError
+            ndim must be 3 for NN covariance.
+        """
+        super().__init__()
 
         ### Spatial dimensions
         if ndim != 3:
-            raise ValueError("ndim MUST BE 3")
+            raise ValueError("ndim must be 3 for NN covariance.")
 
         self.ndim = 3
 
@@ -28,20 +74,30 @@ class NNCovariance(Covariance):
         self.E0 = E0
         self.Gamma = Gamma
 
-        self.OPS = kwargs.get("OnePointSpectra", None)
-        self.h_ref = kwargs.get("h_ref", None)
-        ### NOTE: NN implicitely involves the lengthscales (it is associated with non-dimensional internal L)
-        ### NOTE: However, here we scale L with the reference_height - the latter has to be taken into account
+        self.OPS = ops
+        self.h_ref = h_ref
+        ### NOTE: NN implicitly involves the length scales (it is associated with non-dimensional internal L)
+        ### NOTE: However, here we scale L with the reference_height - the latter has to be taken into account from the physical setting
 
-    def precompute_Spectrum(self, Frequences):
+    def precompute_Spectrum(self, Frequencies: np.ndarray) -> np.ndarray:
+        """Evaluation method which pre-computes the square-root of the associated spectrum tensor in the complex domain.
+
+        Parameters
+        ----------
+        Frequencies : np.ndarray
+            Frequency domain in 3D over which to compute the square-root of the spectral tensor.
+
+        Returns
+        -------
+        np.ndarray
+            Square-root of the spectral tensor evaluated in the frequency domain; note that these are complex values.
         """
-        Compute the power spectrum
-        """
-        Nd = [Frequences[j].size for j in range(self.ndim)]
+
+        Nd = [Frequencies[j].size for j in range(self.ndim)]
         SqrtSpectralTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
         tmpTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
 
-        k = np.array(list(np.meshgrid(*Frequences, indexing="ij")))
+        k = np.array(list(np.meshgrid(*Frequencies, indexing="ij")))
         kk = np.sum(k**2, axis=0)
 
         with np.errstate(divide="ignore", invalid="ignore"):
@@ -52,7 +108,6 @@ class NNCovariance(Covariance):
                 if beta_torch.is_cuda
                 else beta_torch.detach().numpy()
             )
-            # beta = self.Gamma * (kk * self.L**2)**(-1/3) / np.sqrt( hyp2f1(1/3, 17/6, 4/3, -1/(kk*self.L**2)) )
             beta[np.where(kk == 0)] = 0
 
             k1 = k[0, ...]

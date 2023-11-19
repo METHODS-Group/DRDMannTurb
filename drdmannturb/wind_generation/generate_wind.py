@@ -38,6 +38,9 @@ class GenerateFluctuationField:
         .. math::
             \tau^{\mathrm{IEC}}(k)=\frac{T B^{-1}(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}
 
+    and the full spectral tensor can be found in the following reference:
+        J. Mann, “The spatial structure of neutral atmospheric surfacelayer turbulence,” Journal of fluid mechanics 273, 141-168 (1994)
+
     #. DRD model, which utilizes a learned eddy lifetime function and requires a pre-trained DRD model. The eddy lifetime function is given by
 
         .. math::
@@ -86,7 +89,7 @@ class GenerateFluctuationField:
         seed : int, optional
             Pseudo-random number generator seed, by default None. See ``np.random.RandomState``.
         blend_num : int, optional
-            _description_, by default 10
+           Number of grid points in the y-z plane to use as buffer regions between successive blocks of fluctuation; see figures 7 and 8 of the original DRD paper, by default 10. Note that at the boundary of each block, points are often correlated, so if the resulting field has undesirably high correlation, increasing this number may mitigate some of these effects.
 
         Raises
         ------
@@ -96,7 +99,7 @@ class GenerateFluctuationField:
 
         if model not in ["NN", "VK", "Mann"]:
             raise ValueError(
-                "Provided model type not supported, must be one of NN, VK, FPDT_RDT, Mann"
+                "Provided model type not supported, must be one of NN, VK, Mann"
             )
 
         if model == "NN":
