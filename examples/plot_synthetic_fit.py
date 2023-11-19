@@ -24,8 +24,8 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
+# Scales associated with Kaimal spectrum
 L = 0.59
-
 Gamma = 3.9
 sigma = 3.2
 

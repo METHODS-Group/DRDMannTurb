@@ -8,7 +8,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from drdmannturb.common import MannEddyLifetime
 from drdmannturb.enums import DataType, EddyLifetimeType, PowerSpectraType
 from drdmannturb.parameters import (
     LossParameters,
@@ -26,8 +25,8 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
+# Scales associated with Kaimal spectrum
 L = 0.59
-
 Gamma = 3.9
 sigma = 3.2
 
@@ -41,7 +40,7 @@ pb = CalibrationProblem(
         activations=[nn.GELU(), nn.ReLU(), nn.GELU(), nn.ReLU(), nn.GELU()],
     ),
     prob_params=ProblemParameters(nepochs=5, wolfe_iter_count=30, learn_nu=True),
-    loss_params=LossParameters(),
+    loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1.0e-5),
     phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, domain=domain),
     logging_directory="runs/synthetic_fit_deep_arch",
     device=device,

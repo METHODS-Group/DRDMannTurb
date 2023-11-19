@@ -27,8 +27,8 @@ if torch.cuda.is_available():
 
 # %%
 
+# Scales associated with Kaimal spectrum
 L = 0.59
-
 Gamma = 3.9
 sigma = 3.2
 

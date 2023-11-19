@@ -84,7 +84,6 @@ for _ in range(nBlocks):
 if normalize == True:
     sd = np.sqrt(np.mean(wind_field**2))
     wind_field = wind_field / sd
-    # wind_field *= 4.26  # rescale to match Mann model
 
 log_law = lambda z, z_0, u_ast: u_ast * np.log(z / z_0 + 1.0) / 0.41
 
@@ -97,8 +96,6 @@ mean_profile[..., 0] = np.tile(
 )
 
 wind_field += mean_profile
-
-# wind_field *= 40 / 63
 
 # %%
 spacing = tuple(grid_dimensions / (2.0**grid_levels + 1))

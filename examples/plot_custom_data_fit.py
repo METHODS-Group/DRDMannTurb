@@ -2,14 +2,11 @@
 # %%
 from pathlib import Path
 
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
 
-from drdmannturb.common import MannEddyLifetime
-from drdmannturb.enums import DataType, EddyLifetimeType, PowerSpectraType
+from drdmannturb.enums import DataType
 from drdmannturb.parameters import (
     LossParameters,
     NNParameters,
@@ -26,12 +23,6 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
-# %%
-# spectra_file = (
-# path / "../docs/source/data/Spectra_interp.dat"
-# if path.name == "examples"
-# else path / "../data/Spectra_interp.dat"
-# )
 
 spectra_file = (
     path / "../docs/source/data/Spectra.dat"
@@ -42,10 +33,9 @@ spectra_file = (
 
 domain = torch.logspace(-1, 2, 20)
 
-# Constants determined by Kaimal spectrum don't really work that well here...
-L = 70  ##0.59 #70 #0.59 # 70 ????
-GAMMA = 3.7  # 3.9 #3.7
-SIGMA = 0.04  # 3.2#0.04 # 3.2 #0.04 ???
+L = 70
+GAMMA = 3.7
+SIGMA = 0.04
 
 Uref = 21
 zref = 1

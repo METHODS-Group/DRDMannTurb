@@ -6,9 +6,6 @@ Interpolating Spectra Data and Fitting
 """
 from pathlib import Path
 
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-
 # %%
 import numpy as np
 import torch
@@ -82,7 +79,7 @@ pb = CalibrationProblem(
         activations=[nn.ReLU(), nn.ReLU()],
     ),
     prob_params=ProblemParameters(nepochs=5),
-    loss_params=LossParameters(),
+    loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1e-5),
     phys_params=PhysicalParameters(
         L=L, Gamma=Gamma, sigma=sigma, Uref=Uref, domain=domain
     ),
