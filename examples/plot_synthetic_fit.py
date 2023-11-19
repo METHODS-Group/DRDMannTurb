@@ -39,12 +39,13 @@ pb = CalibrationProblem(
         activations=[nn.ReLU(), nn.ReLU()],
     ),
     prob_params=ProblemParameters(
-        nepochs=2, learn_nu=False, eddy_lifetime=EddyLifetimeType.TAUNET
+        nepochs=10, learn_nu=False, eddy_lifetime=EddyLifetimeType.TAUNET
     ),
     loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1.0e-5),
     phys_params=PhysicalParameters(
         L=L, Gamma=Gamma, sigma=sigma, Uref=21.0, domain=domain
     ),
+    logging_directory="runs/synthetic_fit",
     device=device,
 )
 
@@ -60,7 +61,17 @@ pb.eval(k1_data_pts)
 optimal_parameters = pb.calibrate(data=Data)
 # %%
 pb.plot()
+# %%
+# from os import listdir
 
+# log_fpath = listdir(pb.logging_directory)[0]
+# full_fpath = pb.logging_directory + log_fpath
+
+# from drdmannturb import plot_loss_logs
+
+# plot_loss_logs(full_fpath)
+
+pb.plot_losses(run_number=1)
 # %% [markdown]
 # ### Save Model with Problem Metadata
 

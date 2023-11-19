@@ -40,9 +40,9 @@ Type_Model = "NN"  ### 'FPDE_RDT', 'Mann', 'VK', 'NN'
 nBlocks = 3
 
 normalize = True
-friction_velocity = 2.683479938442173
+friction_velocity = 2.683479938442173  # 0.45
 reference_height = 180.0
-roughness_height = 0.75
+roughness_height = 0.75  # 0.0001
 grid_dimensions = np.array([1200.0, 864.0, 576.0])
 grid_levels = np.array([5, 3, 5])
 seed = None  # 9000

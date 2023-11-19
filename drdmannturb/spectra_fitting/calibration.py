@@ -847,3 +847,20 @@ class CalibrationProblem:
             self.fig.savefig(save_path, format="png", dpi=100)
 
         plt.show()
+
+    def plot_losses(self, run_number: int):
+        """A wrapper method around the plot_loss_logs helper, which plots out the loss function terms, multiplied by their associated hyperparameters
+
+        Parameters
+        ----------
+        run_number : int
+            The number of the run in the logging directory to plot out. This is 0-indexed.
+        """
+        from os import listdir, path
+
+        log_fpath = listdir(self.logging_directory)[run_number]
+        full_fpath = path.join(self.logging_directory, log_fpath)
+
+        from drdmannturb import plot_loss_logs
+
+        plot_loss_logs(full_fpath)

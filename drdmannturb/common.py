@@ -6,7 +6,7 @@ __all__ = ["VKEnergySpectrum", "MannEddyLifetime", "Mann_linear_exponential_appr
 
 from dataclasses import astuple
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Dict, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -105,8 +105,9 @@ def plot_loss_logs(log_file: Union[str, Path]):
     Parameters
     ----------
     log_file : Union[str, Path]
-        Full path to training log to be visualized.
+       Full path to training log to be visualized.
     """
+
     event_acc = EventAccumulator(log_file)
     event_acc.Reload()
 

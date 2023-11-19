@@ -49,22 +49,19 @@ class LossAggregator:
         self.h2 = torch.diff(0.5 * (self.logk1[:-1] + self.logk1[1:]))
 
         t_alphapen1 = (
-            lambda y, theta_NN, epoch: self.params.alpha_pen1
-            * self.Pen1stOrder(y, epoch)
+            lambda y, theta_NN, epoch: self.Pen1stOrder(y, epoch)
             if self.params.alpha_pen1
             else 0.0
         )
 
         t_alphapen2 = (
-            lambda y, theta_NN, epoch: self.params.alpha_pen2
-            * self.Pen2ndOrder(y, epoch)
+            lambda y, theta_NN, epoch: self.Pen2ndOrder(y, epoch)
             if self.params.alpha_pen2
             else 0.0
         )
 
         t_beta_reg = (
-            lambda y, theta_NN, epoch: self.params.beta_reg
-            * self.Regularization(theta_NN, epoch)
+            lambda y, theta_NN, epoch: self.Regularization(theta_NN, epoch)
             if self.params.beta_reg
             else 0.0
         )
@@ -124,7 +121,9 @@ class LossAggregator:
         logy = torch.log(torch.abs(y))
         d2logy = torch.diff(torch.diff(logy, dim=-1) / self.h1, dim=-1) / self.h2
 
-        pen2ndorder_loss = torch.mean(torch.relu(d2logy).square())
+        pen2ndorder_loss = self.params.alpha_pen2 * torch.mean(
+            torch.relu(d2logy).square()
+        )
 
         self.writer.add_scalar("2nd Order Penalty", pen2ndorder_loss, epoch)
 
@@ -154,7 +153,9 @@ class LossAggregator:
         logy = torch.log(torch.abs(y))
         d1logy = torch.diff(logy, dim=-1) / self.h1
 
-        pen1storder_loss = torch.mean(torch.relu(d1logy).square())
+        pen1storder_loss = self.params.alpha_pen1 * torch.mean(
+            torch.relu(d1logy).square()
+        )
         self.writer.add_scalar("1st Order Penalty", pen1storder_loss, epoch)
 
         return pen1storder_loss
@@ -182,7 +183,7 @@ class LossAggregator:
                 "Regularization loss requires a neural network model to be used. Set the regularization hyperparameter (beta_reg) to 0 if using a non-neural network model."
             )
 
-        reg_loss = theta_NN.square().mean()
+        reg_loss = self.params.beta_reg * theta_NN.square().mean()
 
         self.writer.add_scalar("Regularization", reg_loss, epoch)
 
