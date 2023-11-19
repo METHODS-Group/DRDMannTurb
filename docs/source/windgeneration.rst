@@ -1,9 +1,9 @@
 .. py:currentmodule:: drdmannturb
 
-Wind Field Generation 
-=====================
+Fluctuation Field Generation 
+============================
 
-The other half of DRDMannTurb generates and visualizes 3D wind fields from spectra data. 
+DRDMannTurb provides generic methods for generating fluctuation fields from specified spectra models. Please refer to :doc:`the UML diagram <./uml_fluct_gen>` to see the class hierarchy. 
 
 .. autoclass:: drdmannturb.GenerateFluctuationField 
     :members: 
@@ -11,7 +11,7 @@ The other half of DRDMannTurb generates and visualizes 3D wind fields from spect
 Plotting Utilities 
 ------------------
 
-.. currentmodule:: drdmannturb.wind_generation.wind_plot
+.. currentmodule:: drdmannturb.fluctuation_generation.wind_plot
 
 .. autofunction:: plot_velocity_magnitude
 
