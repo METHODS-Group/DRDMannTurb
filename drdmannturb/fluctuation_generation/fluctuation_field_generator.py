@@ -60,8 +60,8 @@ class GenerateFluctuationField:
         self,
         friction_velocity: float,
         reference_height: float,
-        grid_dimensions,
-        grid_levels,
+        grid_dimensions: np.ndarray,
+        grid_levels: np.ndarray,
         model: str,
         length_scale: Optional[float] = None,
         time_scale: Optional[float] = None,
@@ -78,9 +78,9 @@ class GenerateFluctuationField:
         reference_height : float
             Reference height :math:`L`
         grid_dimensions : np.ndarray
-            Numpy array denoting the grid size
+            Numpy array denoting the grid size; the real dimensions of the domain of interest.
         grid_levels : np.ndarray
-            Numpy array denoting the grid levels
+            Numpy array denoting the grid levels; number of discretization points used in each dimension, which evaluates as 2^k for each dimension for FFT-based sampling methods.
         model : str
             One of ``"NN"``, ``"VK"``, or ``"Mann"`` denoting
             "Neural Network," "Von Karman," and "Mann model".

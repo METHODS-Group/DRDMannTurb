@@ -7,63 +7,57 @@ Notes
 This should not be directly used but is needed by ``GenerateFluctuationField``.
 """
 
-from time import time
+from typing import Optional
 
 import numpy as np
 
+from .covariance_kernels import Covariance as covariance_metaclass
 from .sampling_methods import *
 
 
 class GaussianRandomField:
-    """
-    Gaussian Random Field generator class
+    r"""
+    Generator for a discrete Gaussian random field: a random Gaussian variable at each point in a domain. Several sampling methods are provided by default:
+
+    #. fft - usual Fast Fourier Transform
+    #. fftw - "Fastest Fourier Transform in the West"
+    #. vf_fftw - vector field version of Fastest Fourier Transform in the West
+    #. dst - Discrete Sine Transform
+    #. dct - Discrete Cosine Transform
+
+    Please refer to the sampling methods documentation for more details on each of these methods.
     """
 
     def __init__(
         self,
-        grid_level,
-        grid_shape=None,
-        grid_dimensions=[1.0, 1.0, 1.0],
-        ndim=2,
-        window_margin=0,
-        sampling_method="fft",
-        verbose=0,
-        laplace: bool = False,
-        **kwargs,
+        Covariance: covariance_metaclass,
+        grid_level: np.ndarray,
+        grid_shape: np.ndarray = None,
+        grid_dimensions: np.ndarray = [1.0, 1.0, 1.0],
+        ndim: int = 3,
+        sampling_method: str = "fft",
     ):
-        """Constructor for Gaussian Random Field generator
-
+        """
         Parameters
         ----------
+        Covariance : Covariance
+            An instantiation of one of the Covariance classes (VonKarman, Mann, or NN) provided in the package that subclass from the Covariance metaclass.
         grid_level : np.ndarray
-
-        grid_shape : _type_, optional
-            _description_, by default ``None``
-        grid_dimensions : list, optional
-            _description_, by default ``[1.0, 1.0, 1.0]``
+            Numpy array denoting the grid levels; number of discretization points used in each dimension, which evaluates as 2^k for each dimension for FFT-based sampling methods.
+        grid_shape : np.ndarray, optional
+            _description_, by default None
+        grid_dimensions : np.ndarray, optional
+            Numpy array denoting the grid size; the real dimensions of the domain of interest, by default [1.0, 1.0, 1.0]
         ndim : int, optional
-            Denotes either 2d or 3d, by default 2
-        window_margin : int, optional
-            _description_, by default 0
+           Number of dimensions of the random field, by default 3, which is currently forced (only 3D field generation is implemented).
         sampling_method : str, optional
-            _description_, by default ``"fft"``
-        verbose : int, optional
-            , by default 0
-        laplace : bool, optional
-            If true, uses noise from a Laplace distribution instead of
-            Gaussian, by default ``False``.
-
-        Warning
-        -------
-        The Laplace distribution option ``laplace`` is not supported
-        and does not lead to physically sound results.
+            Sampling method to be used in correlating with field generated from underlying distribution (Gaussian), by default "fft"
 
         Raises
         ------
         ValueError
             ``grid_level`` and ``grid_shape`` must have the same dimensions.
         """
-        self.verbose = verbose
         self.ndim = ndim  # dimension 2D or 3D
         self.all_axes = np.arange(self.ndim)
 
@@ -96,21 +90,18 @@ class GaussianRandomField:
             [slice(N_margin, N_margin + self.grid_shape[j]) for j in range(self.ndim)]
         )
 
-        ### Covariance
-        self.Covariance = kwargs["Covariance"]
+        ### Covariance kernel
+        self.Covariance = Covariance
 
         ### Sampling method
-        t = time()
-        self.setSamplingMethod(sampling_method, **kwargs)
-        if self.verbose:
-            print(f"Init method {self.method}, time {time()-t}")
+        self.setSamplingMethod(sampling_method)
 
         # Pseudo-random number generator
         self.prng = np.random.RandomState()
         self.noise_std = np.sqrt(np.prod(h))
-        self.distribution = self.prng.laplace if laplace else self.prng.normal
+        self.distribution = self.prng.normal
 
-    def setSamplingMethod(self, method, **kwargs):
+    def setSamplingMethod(self, method: str):
         """Initialize the sampling method
 
         Parameters
@@ -121,7 +112,7 @@ class GaussianRandomField:
         Raises
         ------
         Exception
-            If method is not one of the above
+            If method is not one of the above.
         """
         self.method = method
 
@@ -148,7 +139,7 @@ class GaussianRandomField:
 
         Parameters
         ----------
-        seed : Seed value for PRNG, following np.RandomState() conventions,
+        seed : Seed value for PRNG, following ``np.RandomState()`` conventions,
             by default None
         """
         if seed is not None:
@@ -157,40 +148,56 @@ class GaussianRandomField:
             self.prng.seed()
 
     ### Sample noise
-    def sample_noise(self, grid_shape=None) -> np.ndarray:
-        """
-        Sample
+    def sample_noise(self, grid_shape: Optional[np.ndarray] = None) -> np.ndarray:
+        """Samples random grid from specified distribution (currently only a Gaussian).
 
-        Args:
-            grid_shape (_type_, optional): _description_. Defaults to None.
+        Parameters
+        ----------
+        grid_shape : Optional[np.ndarray], optional
+            Number of grid points in each dimension, by default None, which results in a field over the grid determined during construction of this object.
 
-        Returns:
-            _type_: _description_
+        Returns
+        -------
+        np.ndarray
+            Sampled random values from underlying distribution of size matching the given grid shape.
         """
 
         if grid_shape is None:
-            # noise = self.prng.normal(0, 1, self.ext_grid_shape)
             noise = self.distribution(0, 1, self.ext_grid_shape)
         else:
-            # noise = self.prng.normal(0, 1, grid_shape)]
             noise = self.distribution(0, 1, grid_shape)
+
         noise *= self.noise_std
         return noise
 
     ### Sample GRF
-    def sample(self, noise=None):
+    def sample(self, noise: Optional[np.ndarray] = None) -> np.ndarray:
         """
-        Gaussian Random Field sampler
+        Samples the Gaussian Random Field with specified sampling method. Note this is not just what is sampled from the distribution; this field is also correlated with the covariance kernel provided during construction.
+
+        Parameters
+        ----------
+        noise : Optional[np.ndarray], optional
+            Random field from underlying distribution, by default None, which results in an additional sampling of the domain from the distribution.
+
+        Returns
+        -------
+        np.ndarray
+            Sampled grid from distribution.
+
+        Raises
+        ------
+        Exception
+            If Sampling method has not been set already.
         """
+
+        if not hasattr(self, "Correlate"):
+            raise Exception("Sampling method not set.")
+
         if noise is None:
             noise = self.sample_noise()
 
-        # noise *= self.noise_std
-
-        t0 = time()
         field = self.Correlate(noise)
-        if self.verbose >= 2:
-            print("Convolution time: ", time() - t0)
 
         return field
 
@@ -201,7 +208,7 @@ class VectorGaussianRandomField(GaussianRandomField):
     """
 
     def __init__(self, vdim=3, **kwargs):
-        """Constructor for vector of GRFs.
+        """Constructor for vector of GRFs in specified number of dimensions (presently only 3). ``kwargs`` must contain all information required by :py:class:`GaussianRandomField`.
 
         Parameters
         ----------

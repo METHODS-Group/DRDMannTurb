@@ -12,13 +12,8 @@ import torch.nn as nn
 
 
 class Rational(nn.Module):
-    """
-    Learnable rational kernel.
-    """
-
-    def __init__(self, learn_nu: bool = True) -> None:
-        r"""
-        Constructor for neural network that learns the rational function
+    r"""
+    Learnable rational kernel; a neural network that learns the rational function
 
         .. math::
             \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}),
@@ -27,7 +22,10 @@ class Rational(nn.Module):
 
         .. math::
             \mathrm{NN}(\operatorname{abs}(\boldsymbol{k})).
+    """
 
+    def __init__(self, learn_nu: bool = True) -> None:
+        """
         Parameters
         ----------
         learn_nu : bool, optional
@@ -63,12 +61,14 @@ class Rational(nn.Module):
 
 
 class SimpleNN(nn.Module):
+    """
+    A simple feed-forward neural network consisting of n layers with a ReLU activation function. The default initialization is to random noise of magnitude 1e-9.
+    """
+
     def __init__(
         self, nlayers: int = 2, inlayer: int = 3, hlayer: int = 3, outlayer: int = 3
     ) -> None:
         """
-        A simple feed-forward neural network consisting of n layers with a ReLU activation function. The default initialization is to random noise of magnitude 1e-9.
-
         Parameters
         ----------
         nlayers : int, optional
@@ -120,6 +120,10 @@ class SimpleNN(nn.Module):
 
 
 class CustomMLP(nn.Module):
+    """
+    Feed-forward neural network with variable widths of layers and activation functions. Useful for DNN configurations and experimentation with different activation functions.
+    """
+
     def __init__(
         self,
         hlayers: list[int],
@@ -128,8 +132,6 @@ class CustomMLP(nn.Module):
         outlayer: int = 3,
     ) -> None:
         """
-        Feed-forward neural network with variable widths of layers and activation functions. Useful for DNN configurations and experimentation with different activation functions.
-
         Parameters
         ----------
         hlayers : list
@@ -217,8 +219,6 @@ class TauNet(nn.Module):
         learn_nu: bool = True,
     ):
         r"""
-        Constructor for TauNet
-
         Parameters
         ----------
         n_layers : int, optional
@@ -274,12 +274,12 @@ class CustomNet(nn.Module):
         learn_nu: bool = True,
     ):
         r"""
-        Constructor for the customNet
-
         Parameters
         ----------
         n_layers : int, optional
             Number of hidden layers, by default 2
+        hidden_layer_sizes : Union[int, list[int]]
+            Sizes of each layer; by default [10, 10].
         activations : List[nn.Module], optional
             List of activation functions to use, by default [nn.ReLU(), nn.ReLU()]
         learn_nu : bool, optional
