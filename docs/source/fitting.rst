@@ -42,5 +42,12 @@ The package has `Tensorboard <https://pytorch.org/docs/stable/tensorboard.html>`
    interpolation 
 
 
-  
+  .. raw:: html
 
+    <hr>
+
+
+.. toctree::
+   :maxdepth: 2
+
+   tb_loss 

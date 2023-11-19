@@ -7,13 +7,15 @@ import pickle
 from os import PathLike
 from time import time
 from typing import Union
-from torch.cuda import is_available
 
 import numpy as np
+from torch.cuda import is_available
 
 from drdmannturb.spectra_fitting import CalibrationProblem
-
-from drdmannturb.wind_generation.covariance_kernels import MannCovariance, VonKarmanCovariance
+from drdmannturb.wind_generation.covariance_kernels import (
+    MannCovariance,
+    VonKarmanCovariance,
+)
 from drdmannturb.wind_generation.gaussian_random_fields import *
 from drdmannturb.wind_generation.nn_covariance import NNCovariance
 
@@ -228,7 +230,6 @@ class GenerateWind:
             )
 
         self.RF.reseed(self.seed)
-        # self.RS = np.random.RandomState(seed=self.seed)
 
     def __call__(self):
         noise_shape = self.noise_shape
@@ -245,9 +246,7 @@ class GenerateWind:
             noise[tuple(new_part)] = self.RF.sample_noise(new_part_shape)
         self.noise = noise
 
-        t = time()
         wind_block = self.RF.sample(noise)
-        # print("block computation:", time() - t)
         wind = wind_block[tuple(central_part)]
         if self.blend_num > 0:
             self.blend_region = wind[-self.blend_num :, ...].copy()
@@ -256,7 +255,6 @@ class GenerateWind:
         if self.blend_num > 1:
             wind = wind[: -(self.blend_num - 1), ...]
 
-        # NOTE: COMMENT THIS LINE TO SAVE MEMORY  -- THAT'S FUNNY )
         self.total_wind = np.concatenate((self.total_wind, wind), axis=0)
 
         return wind

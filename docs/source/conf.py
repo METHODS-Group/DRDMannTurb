@@ -62,7 +62,8 @@ napoleon_type_aliases = {
     "NDArray[Union[np.float64, np.int64]]": "~numpy.ndarray",
 }
 napoleon_use_admonition_for_notes = True
-autodoc_typehints = "none"
+autodoc_typehints = "both"
+autoclass_content = "both"
 napoleon_use_param = True
 napoleon_use_rtype = False
 
