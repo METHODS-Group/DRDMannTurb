@@ -75,9 +75,6 @@ class OnePointSpectraDataGenerator:
         elif self.data_type == DataType.KAIMAL:
             self.eval = self.eval_Kaimal
 
-        elif self.data_type == DataType.IEC:
-            self.eval = self.eval_IEC
-
         elif self.data_type == DataType.CUSTOM:
             if spectra_file is not None:
                 self.CustomData = torch.tensor(
@@ -255,8 +252,20 @@ class OnePointSpectraDataGenerator:
         return k1 * F
 
     def eval_Kaimal(self, k1: float, z: float = 1.0) -> torch.Tensor:
-        """
-        eval implementation for Kaimal data type
+        r"""
+        Evaluates the one-point spectra as proposed by `Kaimal et al <https://apps.dtic.mil/sti/tr/pdf/AD0748543.pdf>` in 1972. Clasically motivated by measurements taken over a flat homogeneous terrain in Kansas, the one-point spectra were proposed as 
+
+        .. math:: 
+            :nowrap:
+            \begin{align}
+                & \frac{k_1 F_{11}\left(k_1 z\right)}{u_*^2}=J_1(f):=\frac{52.5 f}{(1+33 f)^{5 / 3}} \\
+                & \frac{k_1 F_{22}\left(k_1 z\right)}{u_*^2}=J_2(f):=\frac{8.5 f}{(1+9.5 f)^{5 / 3}} \\
+                & \frac{k_1 F_{33}\left(k_1 z\right)}{u_*^2}=J_3(f):=\frac{1.05 f}{1+5.3 f^{5 / 3}} \\
+                & -\frac{k_1 F_{13}\left(k_1 z\right)}{u_*^2}=J_4(f):=\frac{7 f}{(1+9.6 f)^{12 / 5}}, 
+            \end{align}
+
+        with :math:`F_{12}=F_{23}=0`. This method returns a :math:`3\times 3` matrix whose entries are determined by the above equations. 
+
 
         Parameters
         ----------
@@ -268,7 +277,7 @@ class OnePointSpectraDataGenerator:
         Returns
         -------
         torch.Tensor
-            Result of the evaluation
+            The :math:`3 \times 3` matrix with entries determined by the Kaimal one-point spectra. 
         """
         z = self.zref
         n = 1 / (2 * np.pi) * k1 * z
@@ -277,20 +286,6 @@ class OnePointSpectraDataGenerator:
         F[1, 1] = 17 * n / (1 + 9.5 * n) ** (5 / 3)
         F[2, 2] = 2.1 * n / (1 + 5.3 * n ** (5 / 3))
         F[0, 2] = -12 * n / (1 + 9.6 * n) ** (7.0 / 3.0)
-        return F
-
-    def eval_IEC(self, **_) -> torch.Tensor:
-        """
-        Eval implementation for IEC data type. Returns constant
-        3x3 of zeros.
-
-        Returns
-        -------
-        torch.Tensor
-            Result of the evaluation; constant 3x3 zeros tensor
-        """
-
-        F = torch.zeros([3, 3])
         return F
 
     def plot(

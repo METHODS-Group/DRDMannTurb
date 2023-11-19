@@ -1,7 +1,7 @@
 """
-==================================================
+===================================================
 Fluctuation Field Generation from Trained DRD Model
-==================================================
+===================================================
 
 This example demonstrates the utilities for generating fluctuation fields from a pre-trained DRD model. DRDMannTurb provides several utilities for plotting the resulting fields as well through Plotly. Moreover, the resulting fields can be readily saved to VTK to be visualized in Paraview. 
 
