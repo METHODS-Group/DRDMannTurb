@@ -7,8 +7,6 @@ Find out how to get started with the package using the provided examples:
    :maxdepth: 2
    :caption: Contents:
 
-   auto_examples/plot_image
-
    auto_examples/plot_synthetic_fit
     
 .. raw:: html

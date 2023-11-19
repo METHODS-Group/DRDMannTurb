@@ -86,6 +86,7 @@ pb = CalibrationProblem(
     phys_params=PhysicalParameters(
         L=L, Gamma=Gamma, sigma=sigma, Uref=Uref, domain=domain
     ),
+    logging_directory="runs/interpolating_and_fitting",
     device=device,
 )
 
@@ -102,3 +103,6 @@ optimal_parameters = pb.calibrate(data=Data)
 
 # %%
 pb.plot()
+
+# %%
+pb.plot_losses(run_number=0)

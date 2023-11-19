@@ -123,7 +123,7 @@ def plot_loss_logs(log_file: Union[str, Path]):
 
     with plt.style.context("bmh"):
         plt.rcParams.update({"font.size": 8})
-        fig, ax = plt.subplots(1, vals_tot.__len__(), figsize=(16, 4), sharex=True)
+        fig, ax = plt.subplots(1, vals_tot.__len__(), figsize=(12, 8), sharex=True)
         for idx, (scalar_tag, vals) in enumerate(reversed(vals_tot.items())):
             ax[idx].plot(vals[1:])
             ax[idx].set_yscale("log")

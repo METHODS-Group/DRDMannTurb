@@ -41,6 +41,7 @@ pb = CalibrationProblem(
     prob_params=ProblemParameters(nepochs=5),
     loss_params=LossParameters(alpha_pen2=1.0, alpha_pen1=1.0e-5, beta_reg=2e-4),
     phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, domain=domain),
+    logging_directory="runs/synthetic_3term",
     device=device,
 )
 
@@ -59,30 +60,4 @@ optimal_parameters = pb.calibrate(data=Data)
 pb.plot()
 
 # %%
-# .. image:: /images/test.png
-from pathlib import Path
-
-print(Path().resolve())
-
-# from IPython import get_ipython
-# import IPython
-# ip = IPython.get_ipython()
-#
-# if get_ipython():
-# if ip:
-# ip.magic(u'load_ext tensorboard')
-# ip.magic(u'tensorboard --logdir runs')
-
-# %load_ext tensorboard
-# %tensorboard --logdir runs
-# import matplotlib.pyplot as plt
-
-# plt.figure()
-
-# plt.plot(pb.loss_history_epochs, "o-", label="Epochs Loss History")
-# plt.legend()
-# plt.xlabel("Epoch Number")
-# plt.ylabel("MSE")
-# plt.yscale("log")
-
-# plt.show()
+pb.plot_losses(run_number=0)

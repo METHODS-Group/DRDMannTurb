@@ -43,6 +43,7 @@ pb = CalibrationProblem(
     prob_params=ProblemParameters(nepochs=5, wolfe_iter_count=30, learn_nu=True),
     loss_params=LossParameters(),
     phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, domain=domain),
+    logging_directory="runs/synthetic_fit_deep_arch",
     device=device,
 )
 
@@ -59,3 +60,6 @@ optimal_parameters = pb.calibrate(data=Data)
 
 # %%
 pb.plot()
+
+# %%
+pb.plot_losses(run_number=0)

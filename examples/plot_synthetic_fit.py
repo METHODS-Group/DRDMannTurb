@@ -62,16 +62,8 @@ optimal_parameters = pb.calibrate(data=Data)
 # %%
 pb.plot()
 # %%
-# from os import listdir
 
-# log_fpath = listdir(pb.logging_directory)[0]
-# full_fpath = pb.logging_directory + log_fpath
-
-# from drdmannturb import plot_loss_logs
-
-# plot_loss_logs(full_fpath)
-
-pb.plot_losses(run_number=1)
+pb.plot_losses(run_number=0)
 # %% [markdown]
 # ### Save Model with Problem Metadata
 

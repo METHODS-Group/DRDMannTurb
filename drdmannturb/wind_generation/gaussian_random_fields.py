@@ -27,14 +27,14 @@ class GaussianRandomField:
         sampling_method="fft",
         verbose=0,
         laplace: bool = False,
-        **kwargs
+        **kwargs,
     ):
         """Constructor for Gaussian Random Field generator
 
         Parameters
         ----------
         grid_level : np.ndarray
-            
+
         grid_shape : _type_, optional
             _description_, by default ``None``
         grid_dimensions : list, optional
@@ -146,7 +146,7 @@ class GaussianRandomField:
 
         Parameters
         ----------
-        seed : Seed value for PRNG, following np.RandomState() conventions, 
+        seed : Seed value for PRNG, following np.RandomState() conventions,
             by default None
         """
         if seed is not None:
@@ -164,7 +164,7 @@ class GaussianRandomField:
 
         Returns:
             _type_: _description_
-        """        
+        """
 
         if grid_shape is None:
             # noise = self.prng.normal(0, 1, self.ext_grid_shape)

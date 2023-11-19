@@ -57,6 +57,7 @@ pb = CalibrationProblem(
         Uref=Uref,
         zref=zref,
     ),
+    logging_directory="runs/custom_data",
     device=device,
 )
 
@@ -80,5 +81,4 @@ optimal_parameters = pb.calibrate(data=Data)
 pb.plot()
 
 # %%
-# import matplotlib.pyplot as plt
-# TODO: add tensorboard screenshots here  https://github.com/sphinx-gallery/sphinx-gallery/issues/5
+pb.plot_losses(run_number=0)
