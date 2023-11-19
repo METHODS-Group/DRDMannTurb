@@ -5,6 +5,7 @@ This module implements the wind generation
 
 import pickle
 from os import PathLike
+from pathlib import Path
 from time import time
 from typing import Union
 
@@ -180,6 +181,9 @@ class GenerateFluctuationField:
         else:
             new_part[0] = slice(2 * n_buffer, None)
 
+        self.grid_dimensions = grid_dimensions
+        self.grid_levels = grid_levels
+
         self.new_part = new_part
         self.Nx = Nx
         self.blend_num = blend_num
@@ -191,7 +195,9 @@ class GenerateFluctuationField:
         self.n_marginz = n_marginz
         self.seed = seed
         self.noise = None
-        self.total_wind = np.zeros(wind_shape)
+        self.total_fluctuation = np.zeros(wind_shape)
+
+        self.log_law = lambda z, z_0, u_ast: u_ast * np.log(z / z_0 + 1.0) / 0.41
 
         ### Random field object
 
@@ -225,7 +231,7 @@ class GenerateFluctuationField:
                 length_scale=L,
                 E0=E0,
                 Gamma=Gamma,
-                OnePointSpectra=pb.OPS,
+                ops=pb.OPS,
                 h_ref=reference_height,
             )
             self.RF = VectorGaussianRandomField(
@@ -240,6 +246,129 @@ class GenerateFluctuationField:
             )
 
         self.RF.reseed(self.seed)
+
+    def _generate_block(self) -> np.ndarray:
+        """Generates a single block of the fluctuation field.
+
+        Returns
+        -------
+        np.ndarray
+            A single block of the fluctuation field, to be concatenated with the total field.
+        """
+        if self.noise is None:
+            noise = self.RF.sample_noise(self.noise_shape)
+        else:
+            noise = np.roll(self.noise, -self.Nx, axis=0)
+            noise[tuple(self.new_part)] = self.RF.sample_noise(self.new_part_shape)
+        self.noise = noise
+
+        wind_block = self.RF.sample(noise)
+        wind = wind_block[tuple(self.central_part)]
+        if self.blend_num > 0:
+            self.blend_region = wind[-self.blend_num :, ...].copy()
+        else:
+            self.blend_region = None
+        if self.blend_num > 1:
+            wind = wind[: -(self.blend_num - 1), ...]
+
+        return wind
+
+    def generate(self, num_blocks: int) -> np.ndarray:
+        """Generates the full fluctuation field in blocks. The resulting field is stored as the ``total_fluctuation`` field of this object, allowing for all metadata of the object to be stored safely with the fluctuation field, and also reducing data duplication for post-processing; all operations can be performed on this public variable.
+
+        .. warning::
+            If this method is called twice in the same object, additional fluctuation field blocks will be appended to the field generated from the first call. If this is undesirable behavior, instantiate a new object.
+
+        Parameters
+        ----------
+        num_blocks : int
+            Number of blocks to use in fluctuation field generation.
+
+        Returns
+        -------
+        np.ndarray
+            The full fluctuation field, which is also stored as the ``total_fluctuation`` field.
+        """
+        if np.any(self.total_fluctuation):
+            import warnings
+
+            warnings.warn(
+                "Fluctuation field has already been generated, additional blocks will be appended to existing field. If this is undesirable behavior, instantiate a new object."
+            )
+
+        for _ in range(num_blocks):
+            self.total_fluctuation = np.concatenate(
+                (self.total_fluctuation, self._generate_block()), axis=0
+            )
+
+        return self.total_fluctuation
+
+    def normalize(
+        self, roughness_height: float, friction_velocity: float
+    ) -> np.ndarray:
+        r"""Normalizes the generated field by the logarithmic profile
+
+        .. math ::
+
+            \left\langle U_1(z)\right\rangle=\frac{u_*}{\kappa} \ln \left(\frac{z}{z_0}+1\right)
+
+        where :math:`u_*` is the friction velocity and :math:`z_0` is the roughness height. More information on this normalization can be found in
+            J. JCSS, “Probabilistic model code,” Joint Committee on Structural Safety (2001).
+
+        Parameters
+        ----------
+        roughness_height : float
+            Roughness height :math:`z_0`.
+        friction_velocity : float
+            Ground friction velocity :math:`u_*`.
+
+        Returns
+        -------
+        np.ndarray
+            Fluctuation field normalized by the logarithmic profile.
+        """
+        if not np.any(self.total_fluctuation):
+            raise ValueError(
+                "No fluctuation field has been generated, call the .generate() method first!"
+            )
+
+        sd = np.sqrt(np.mean(self.total_fluctuation**2))
+        self.total_fluctuation /= sd
+
+        z_space = np.linspace(
+            0.0, self.grid_dimensions[2], 2 ** (self.grid_levels[2]) + 1
+        )
+        mean_profile_z = self.log_law(z_space, roughness_height, friction_velocity)
+
+        mean_profile = np.zeros_like(self.total_fluctuation)
+        mean_profile[..., 0] = np.tile(
+            mean_profile_z.T, (mean_profile.shape[0], mean_profile.shape[1], 1)
+        )
+
+        return self.total_fluctuation + mean_profile
+
+    def save_to_vtk(self, filepath: Union[str, Path] = "./"):
+        """Saves generated fluctuation field in VTK format to specified filepath.
+
+        Parameters
+        ----------
+        filepath : Union[str, Path]
+           Filepath to which to save generated fluctuation field.
+        """
+        from pyevtk.hl import imageToVTK
+
+        spacing = tuple(self.grid_dimensions / (2.0**self.grid_levels + 1))
+
+        wind_field_vtk = tuple(
+            [np.copy(self.total_fluctuation[..., i], order="C") for i in range(3)]
+        )
+
+        cellData = {
+            "grid": np.zeros_like(self.total_fluctuation[..., 0]),
+            "wind": wind_field_vtk,
+        }
+
+        imageToVTK(filepath, cellData=cellData, spacing=spacing)
 
     def __call__(self):
         noise_shape = self.noise_shape

@@ -18,7 +18,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from drdmannturb.wind_generation import (
+from drdmannturb.fluctuation_generation import (
     GenerateFluctuationField,
     plot_velocity_components,
     plot_velocity_magnitude,
@@ -69,11 +69,9 @@ wind = GenerateFluctuationField(
     seed=seed,
     # laplace=True
 )
-wind.generate(nBlocks)
-wind_field = wind.total_fluctuation
-# for _ in range(nBlocks):
-# wind()
-# wind_field = wind.total_fluctuation
+for _ in range(nBlocks):
+    wind()
+    wind_field = wind.total_wind
 
 # TODO: these should be moved into a GenerateWind method...?
 ##########################################
@@ -83,32 +81,30 @@ wind_field = wind.total_fluctuation
 ##########################################
 # %%
 
-# if normalize == True:
-#     sd = np.sqrt(np.mean(wind_field**2))
-#     wind_field = wind_field / sd
+if normalize == True:
+    sd = np.sqrt(np.mean(wind_field**2))
+    wind_field = wind_field / sd
 
-# log_law = lambda z, z_0, u_ast: u_ast * np.log(z / z_0 + 1.0) / 0.41
+log_law = lambda z, z_0, u_ast: u_ast * np.log(z / z_0 + 1.0) / 0.41
 
-# z = np.linspace(0.0, grid_dimensions[2], 2 ** (grid_levels[2]) + 1)
-# mean_profile_z = log_law(z, roughness_height, friction_velocity)
+z = np.linspace(0.0, grid_dimensions[2], 2 ** (grid_levels[2]) + 1)
+mean_profile_z = log_law(z, roughness_height, friction_velocity)
 
-# mean_profile = np.zeros_like(wind_field)
-# mean_profile[..., 0] = np.tile(
-#     mean_profile_z.T, (mean_profile.shape[0], mean_profile.shape[1], 1)
-# )
+mean_profile = np.zeros_like(wind_field)
+mean_profile[..., 0] = np.tile(
+    mean_profile_z.T, (mean_profile.shape[0], mean_profile.shape[1], 1)
+)
 
-# wind_field += mean_profile
-
-wind_field = wind.normalize(roughness_height, friction_velocity)
+wind_field += mean_profile
 
 # %%
 spacing = tuple(grid_dimensions / (2.0**grid_levels + 1))
 
-# wind_field_vtk = tuple([np.copy(wind_field[..., i], order="C") for i in range(3)])
+wind_field_vtk = tuple([np.copy(wind_field[..., i], order="C") for i in range(3)])
 
-# cellData = {"grid": np.zeros_like(wind_field[..., 0]), "wind": wind_field_vtk}
+cellData = {"grid": np.zeros_like(wind_field[..., 0]), "wind": wind_field_vtk}
 
-# # %%
+# %%
 from pyevtk.hl import imageToVTK
 
 filename = str(
@@ -116,8 +112,7 @@ filename = str(
     if path.name == "examples"
     else path / "../results/fluctuation_simple"
 )
-wind.save_to_vtk(filename)
-# imageToVTK(filename, cellData=cellData, spacing=spacing)
+imageToVTK(filename, cellData=cellData, spacing=spacing)
 
 # %%
 # fig_components = plot_velocity_components(spacing, wind_field)
@@ -127,6 +122,6 @@ wind.save_to_vtk(filename)
 # %%
 fig_magnitude = plot_velocity_magnitude(spacing, wind_field)
 
-fig_magnitude.show("browser")
+fig_magnitude.show
 
 # %%
