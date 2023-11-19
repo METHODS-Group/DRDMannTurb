@@ -195,7 +195,7 @@ Learnable eddy lifetime models
 
 class TauNet(nn.Module):
     r"""
-    Classical implementation of neural network that learns the eddy lifetime function :math:`\tau{\boldsymbol{k}}`. A SimpleNN and Rational network comprise this class. The network widths are determined by a single integer and thereafter the networks have hidden layers of only that width.
+    Classical implementation of neural network that learns the eddy lifetime function :math:`\tau(\boldsymbol{k})`. A SimpleNN and Rational network comprise this class. The network widths are determined by a single integer and thereafter the networks have hidden layers of only that width.
 
     The objective is to learn the function
 

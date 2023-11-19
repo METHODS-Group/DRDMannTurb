@@ -4,8 +4,9 @@ Examples
 Find out how to get started with the package using the provided examples:
 
 .. toctree::
-   :maxdepth: 2
-   
+   :maxdepth: 1
+   :caption: Contents:
+
    auto_examples/plot_mann_fit
 
 .. raw:: html
@@ -13,8 +14,7 @@ Find out how to get started with the package using the provided examples:
     <hr>
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 1
 
    auto_examples/plot_synthetic_fit
     
@@ -24,7 +24,7 @@ Find out how to get started with the package using the provided examples:
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    
 
    auto_examples/plot_synthetic_3term_loss
@@ -34,7 +34,7 @@ Find out how to get started with the package using the provided examples:
     <hr>
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    
 
    auto_examples/plot_synthetic_deep_arch
@@ -45,7 +45,7 @@ Find out how to get started with the package using the provided examples:
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    auto_examples/plot_custom_data_fit
 
@@ -55,7 +55,7 @@ Find out how to get started with the package using the provided examples:
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    
 
    auto_examples/plot_interpolating_and_fitting
@@ -66,7 +66,7 @@ Find out how to get started with the package using the provided examples:
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    auto_examples/plot_wind_generation
 
@@ -76,7 +76,7 @@ Find out how to get started with the package using the provided examples:
    
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    
    auto_examples/plot_mann_linear_regression
 

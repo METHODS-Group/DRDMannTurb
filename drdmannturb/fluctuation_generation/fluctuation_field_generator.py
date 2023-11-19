@@ -6,7 +6,7 @@ import pickle
 from math import ceil
 from os import PathLike
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 from torch.cuda import is_available
@@ -63,10 +63,10 @@ class GenerateFluctuationField:
         grid_dimensions,
         grid_levels,
         model: str,
-        length_scale: float,
-        time_scale: float,
-        energy_spectrum_scale: float,
-        path_to_parameters: Union[str, PathLike],
+        length_scale: Optional[float] = None,
+        time_scale: Optional[float] = None,
+        energy_spectrum_scale: Optional[float] = None,
+        path_to_parameters: Optional[Union[str, PathLike]] = None,
         seed: int = None,
         blend_num=10,
     ):
@@ -84,6 +84,12 @@ class GenerateFluctuationField:
         model : str
             One of ``"NN"``, ``"VK"``, or ``"Mann"`` denoting
             "Neural Network," "Von Karman," and "Mann model".
+        length_scale : Optional[float]
+            The length scale :math:`L:`, used only if non-DRD model is used. By default, None.
+        time_scale : Optional[float]
+            The time scale :math:`T`, used only if non-DRD model is used. By default, None.
+        energy_spectrum_scale : Optional[float]
+            Scaling of energy spectrum, used only if non-DRD model is used. By default, None.
         path_to_parameters : Union[str, PathLike]
             File path (string or ``Pathlib.Path()``)
         seed : int, optional
@@ -100,6 +106,18 @@ class GenerateFluctuationField:
         if model not in ["NN", "VK", "Mann"]:
             raise ValueError(
                 "Provided model type not supported, must be one of NN, VK, Mann"
+            )
+
+        if model == "NN" and path_to_parameters is None:
+            raise ValueError(
+                "Please provide the path to saved pre-trained DRD model, or else choose a different model type."
+            )
+
+        if model in ["VK", "Mann"] and any(
+            [length_scale is None, time_scale is None, energy_spectrum_scale is None]
+        ):
+            raise ValueError(
+                "Must provide all physical scalar quantities (length, time, energy spectrum scales) to use current model type."
             )
 
         if model == "NN":
