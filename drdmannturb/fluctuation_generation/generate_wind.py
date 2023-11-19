@@ -12,13 +12,13 @@ from typing import Union
 import numpy as np
 from torch.cuda import is_available
 
-from drdmannturb.spectra_fitting import CalibrationProblem
-from drdmannturb.wind_generation.covariance_kernels import (
+from drdmannturb.fluctuation_generation.covariance_kernels import (
     MannCovariance,
     VonKarmanCovariance,
 )
-from drdmannturb.wind_generation.gaussian_random_fields import *
-from drdmannturb.wind_generation.nn_covariance import NNCovariance
+from drdmannturb.fluctuation_generation.gaussian_random_fields import *
+from drdmannturb.fluctuation_generation.nn_covariance import NNCovariance
+from drdmannturb.spectra_fitting import CalibrationProblem
 
 
 class GenerateFluctuationField:
@@ -369,31 +369,3 @@ class GenerateFluctuationField:
         }
 
         imageToVTK(filepath, cellData=cellData, spacing=spacing)
-
-    def __call__(self):
-        noise_shape = self.noise_shape
-        central_part = self.central_part
-        new_part = self.new_part
-        new_part_shape = self.new_part_shape
-        Nx = self.Nx
-
-        ### update noise
-        if self.noise is None:
-            noise = self.RF.sample_noise(noise_shape)
-        else:
-            noise = np.roll(self.noise, -Nx, axis=0)
-            noise[tuple(new_part)] = self.RF.sample_noise(new_part_shape)
-        self.noise = noise
-
-        wind_block = self.RF.sample(noise)
-        wind = wind_block[tuple(central_part)]
-        if self.blend_num > 0:
-            self.blend_region = wind[-self.blend_num :, ...].copy()
-        else:
-            self.blend_region = None
-        if self.blend_num > 1:
-            wind = wind[: -(self.blend_num - 1), ...]
-
-        self.total_wind = np.concatenate((self.total_wind, wind), axis=0)
-
-        return wind

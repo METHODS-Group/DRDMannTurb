@@ -9,7 +9,7 @@ This should not be directly used but is needed by ``GenerateFluctuationField``.
 
 import numpy as np
 
-from drdmannturb.wind_generation.sampling_methods import *
+from drdmannturb.fluctuation_generation.sampling_methods import *
 
 
 class GaussianRandomField:

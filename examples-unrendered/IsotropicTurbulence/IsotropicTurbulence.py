@@ -9,12 +9,12 @@ import numpy as np
 from pyevtk.hl import imageToVTK
 
 # from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectra
-from drdmannturb.wind_generation.covariance_kernels import (
+from drdmannturb.fluctuation_generation.covariance_kernels import (
     MannCovariance,
     VonKarmanCovariance,
 )
-from drdmannturb.wind_generation.gaussian_random_fields import *
-from drdmannturb.wind_generation.nn_covariance import NNCovariance
+from drdmannturb.fluctuation_generation.gaussian_random_fields import *
+from drdmannturb.fluctuation_generation.nn_covariance import NNCovariance
 
 
 class GenerateWindTurbulence:
