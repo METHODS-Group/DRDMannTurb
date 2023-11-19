@@ -9,7 +9,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from drdmannturb.enums import DataType, EddyLifetimeType, PowerSpectraType
+from .enums import DataType, EddyLifetimeType, PowerSpectraType
 
 __all__ = ["ProblemParameters", "PhysicalParameters", "NNParameters", "LossParameters"]
 

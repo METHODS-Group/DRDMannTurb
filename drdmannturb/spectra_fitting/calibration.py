@@ -14,18 +14,17 @@ import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 from tqdm import tqdm
 
-from drdmannturb.common import MannEddyLifetime
-from drdmannturb.enums import EddyLifetimeType
-from drdmannturb.parameters import (
+from ..common import MannEddyLifetime
+from ..enums import EddyLifetimeType
+from ..parameters import (
     LossParameters,
     NNParameters,
     PhysicalParameters,
     ProblemParameters,
 )
-from drdmannturb.spectra_fitting.one_point_spectra import OnePointSpectra
-from drdmannturb.spectra_fitting.spectral_coherence import SpectralCoherence
-
 from .loss_functions import LossAggregator
+from .one_point_spectra import OnePointSpectra
+from .spectral_coherence import SpectralCoherence
 
 tqdm = partial(tqdm, position=0, leave=True)
 

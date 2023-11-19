@@ -1,12 +1,12 @@
 """
-============================================
-Wind Field Generation from Trained DRD Model
-============================================
+==================================================
+Fluctuation Field Generation from Trained DRD Model
+==================================================
 
-This example demonstrates the utilities for generating wind fields from a pre-trained DRD model. DRDMannTurb provides several utilities for plotting the resulting fields as well, though the resulting fields can be readily saved to VTK to be visualized in Paraview. 
+This example demonstrates the utilities for generating fluctuation fields from a pre-trained DRD model. DRDMannTurb provides several utilities for plotting the resulting fields as well through Plotly. Moreover, the resulting fields can be readily saved to VTK to be visualized in Paraview. 
 
 .. warning:: 
-    This example may take some time to load. Please be patient, Plotly requires some time to pre-render. 
+    This example may take a few seconds to load. Please be patient, Plotly requires some time to render 3D graphics. 
 """
 
 # %%
@@ -18,8 +18,10 @@ import numpy as np
 import torch
 
 from drdmannturb.fluctuation_generation import (
+    plot_velocity_components,  # utility function for plotting each velocity component in the field, not used in this example
+)
+from drdmannturb.fluctuation_generation import (
     GenerateFluctuationField,
-    plot_velocity_components,
     plot_velocity_magnitude,
 )
 

@@ -1,7 +1,6 @@
 """Utilities for interpolating spectra provided in .csv format."""
 import csv
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 from scipy.interpolate import CubicSpline

@@ -6,15 +6,11 @@ import torch
 import torch.nn as nn
 from sklearn.linear_model import LinearRegression
 
-from drdmannturb.common import (
-    Mann_linear_exponential_approx,
-    MannEddyLifetime,
-    VKEnergySpectrum,
-)
-from drdmannturb.enums import EddyLifetimeType, PowerSpectraType
-from drdmannturb.nn_modules import CustomNet, TauNet
-from drdmannturb.parameters import NNParameters
-from drdmannturb.spectra_fitting.power_spectra_rdt import PowerSpectraRDT
+from ..common import Mann_linear_exponential_approx, MannEddyLifetime, VKEnergySpectrum
+from ..enums import EddyLifetimeType, PowerSpectraType
+from ..nn_modules import CustomNet, TauNet
+from ..parameters import NNParameters
+from .power_spectra_rdt import PowerSpectraRDT
 
 
 class OnePointSpectra(nn.Module):

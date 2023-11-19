@@ -6,8 +6,8 @@ neural network models.
 import numpy as np
 import torch
 
-from drdmannturb.fluctuation_generation.covariance_kernels import Covariance
-from drdmannturb.spectra_fitting.one_point_spectra import OnePointSpectra
+from ..spectra_fitting import OnePointSpectra
+from .covariance_kernels import Covariance
 
 
 class NNCovariance(Covariance):
