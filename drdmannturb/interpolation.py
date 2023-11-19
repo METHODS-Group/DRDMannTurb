@@ -86,7 +86,7 @@ def interpolate(
     x_coords_u, u_spectra = extract_x_spectra(datapath / "u_spectra.csv")
     x_coords_v, v_spectra = extract_x_spectra(datapath / "v_spectra.csv")
     x_coords_w, w_spectra = extract_x_spectra(datapath / "w_spectra.csv")
-    x_coords_uw, uw_cospectra = extract_x_spectra(datapath / "uw_cospectra.csv", True)
+    x_coords_uw, uw_cospectra = extract_x_spectra(datapath / "uw_cospectra.csv")
 
     x_interp = np.linspace(min(x_coords_w), max(x_coords_w), num_k1_points)
 

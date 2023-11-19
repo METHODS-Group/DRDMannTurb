@@ -27,28 +27,35 @@ if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
 # %%
+# spectra_file = (
+# path / "../docs/source/data/Spectra_interp.dat"
+# if path.name == "examples"
+# else path / "../data/Spectra_interp.dat"
+# )
+
 spectra_file = (
-    path / "../docs/source/data/Spectra_interp.dat"
+    path / "../docs/source/data/Spectra.dat"
     if path.name == "examples"
-    else path / "../data/Spectra_interp.dat"
+    else path / "../data/Spectra.dat"
 )
 
 
 domain = torch.logspace(-1, 2, 20)
 
-L = 70
-GAMMA = 3.7
-SIGMA = 0.04
+# Constants determined by Kaimal spectrum don't really work that well here...
+L = 70  ##0.59 #70 #0.59 # 70 ????
+GAMMA = 3.7  # 3.9 #3.7
+SIGMA = 0.04  # 3.2#0.04 # 3.2 #0.04 ???
 
 Uref = 21
 zref = 1
 
 pb = CalibrationProblem(
     nn_params=NNParameters(
-        nlayers=2, hidden_layer_sizes=[10, 10], activations=[nn.GELU(), nn.GELU()]
+        nlayers=2, hidden_layer_sizes=[10, 10], activations=[nn.ReLU(), nn.ReLU()]
     ),
     prob_params=ProblemParameters(data_type=DataType.CUSTOM, tol=1e-9, nepochs=5),
-    loss_params=LossParameters(beta_reg=1e-5),
+    loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1e-5),
     phys_params=PhysicalParameters(
         L=L,
         Gamma=GAMMA,
@@ -70,6 +77,8 @@ k1_data_pts = 2 * torch.pi * f / Uref
 DataPoints = [(k1, 1) for k1 in k1_data_pts]
 Data = OnePointSpectraDataGenerator(
     data_points=DataPoints,
+    data_type=DataType.CUSTOM,
+    spectra_file=spectra_file,
     k1_data_points=k1_data_pts.data.cpu().numpy(),
 ).Data
 

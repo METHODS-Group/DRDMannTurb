@@ -40,9 +40,9 @@ if torch.cuda.is_available():
 
 # %%
 # for interpolation, log10-scaled k1 is used, regular values of the domain used for fitting
-L = 0.59
-Gamma = 3.9
-sigma = 3.2
+L = 70  # 0.59
+Gamma = 3.7  # 3.9
+sigma = 0.04  # 3.2
 Uref = 21.0
 
 x_coords_u, u_spectra = extract_x_spectra(datapath / "u_spectra.csv")
@@ -79,7 +79,7 @@ pb = CalibrationProblem(
     nn_params=NNParameters(
         nlayers=2,
         hidden_layer_sizes=[10, 10],
-        activations=[nn.GELU(), nn.GELU()],
+        activations=[nn.ReLU(), nn.ReLU()],
     ),
     prob_params=ProblemParameters(nepochs=5),
     loss_params=LossParameters(),

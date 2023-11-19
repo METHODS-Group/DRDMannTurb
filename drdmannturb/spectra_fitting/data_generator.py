@@ -86,7 +86,7 @@ class OnePointSpectraDataGenerator:
                 )
             else:
                 raise ValueError(
-                    "Indicated custom data type, but did not provide a " "spectra_file"
+                    "Indicated custom data type, but did not provide a spectra_file argument."
                 )
 
         elif self.data_type == DataType.AUTO:
@@ -159,7 +159,7 @@ class OnePointSpectraDataGenerator:
 
                 DataValues = np.zeros([len(self.DataPoints), 3, 3])
                 print("Filtering provided spectra interpolation.")
-                print("=" * 30)
+                print("=" * 50)
 
                 fit1 = fitOPS(self.k1, Data_temp[:, 0], 1)
                 DataValues[:, 0, 0] = func124(self.k1, *fit1)
@@ -208,7 +208,7 @@ class OnePointSpectraDataGenerator:
             DataValues[:, 0, 0] = self.CustomData[:, 1]
             DataValues[:, 1, 1] = self.CustomData[:, 2]
             DataValues[:, 2, 2] = self.CustomData[:, 3]
-            DataValues[:, 0, 2] = -self.CustomData[:, 4]
+            DataValues[:, 0, 2] = -self.CustomData[:, 4]  # -
 
         else:
             # TODO -- there should be a way to vectorize this operation
@@ -408,4 +408,4 @@ class OnePointSpectraDataGenerator:
                 ax.set_ylabel(r"$k_1 F_i /u_*^2$")
                 ax.legend()
 
-                fig.show()
+            plt.show()

@@ -20,9 +20,40 @@ from drdmannturb.wind_generation.gaussian_random_fields import *
 from drdmannturb.wind_generation.nn_covariance import NNCovariance
 
 
-class GenerateWind:
-    """
-    Wind generation based on a pre-fit ``DRDMannTurb`` model from ``spectra_fitting``.
+class GenerateFluctuationField:
+    r"""
+    Class for generating a fluctuation field either from a Mann model or a pre-fit DRD model that generates the field spectra.
+
+    Turbulent fluctuations can be formally written as a convolution of a covariance kernel with Gaussian noise :math:`\boldsymbol{\xi}` in the physical domain:
+
+    .. math::
+        \mathbf{u}=\mathcal{F}^{-1} \mathcal{G} \widehat{\boldsymbol{\xi}}=\mathcal{F}^{-1} \mathcal{G} \mathcal{F} \boldsymbol{\xi},
+
+    where :math:`\mathcal{F}` is the Fourier transform and the operator :math:`\mathcal{G}` is the point-wise multiplication by :math:G(\boldsymbol{k})`, which is any positive-definite "square-root" of the spectral tensor and satisfies :math:`G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k})`.
+
+    This is determined by which :math:`\Phi(\boldsymbol{k}, \tau(\boldsymbol{k}))` is used. The following are provided:
+
+    #. Mann, which utilizes the Mann eddy lifetime function
+
+        .. math::
+            \tau^{\mathrm{IEC}}(k)=\frac{T B^{-1}(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}
+
+    #. DRD model, which utilizes a learned eddy lifetime function and requires a pre-trained DRD model. The eddy lifetime function is given by
+
+        .. math::
+            \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k})
+
+    #. Von Karman model,
+
+        .. math::
+            \Phi_{i j}^{\mathrm{VK}}(\boldsymbol{k})=\frac{E(k)}{4 \pi k^2}\left(\delta_{i j}-\frac{k_i k_j}{k^2}\right)
+
+        which utilizes the energy spectrum function
+
+        .. math::
+            E(k)=c_0^2 \varepsilon^{2 / 3} k^{-5 / 3}\left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3},
+
+        where :math:`\varepsilon` is the viscous dissipation of the turbulent kinetic energy, :math:`L` is the length scale parameter and :math:`c_0^2 \approx 1.7` is an empirical constant.
     """
 
     def __init__(
@@ -36,8 +67,7 @@ class GenerateWind:
         seed: int = None,
         blend_num=10,
     ):
-        """Wind generator constructor
-
+        r"""
         Parameters
         ----------
         friction_velocity : float
@@ -49,9 +79,8 @@ class GenerateWind:
         grid_levels : np.ndarray
             Numpy array denoting the grid levels
         model : str
-            One of ``"NN"``, ``"VK"``, ``"FPDE_RDT"``, or ``"Mann"`` denoting
-            "Neural Network," "Von Karman," "fractional PDE - RDT", and "Mann model"
-            respectively used in the ``spectra_fitting`` portion of the workload.
+            One of ``"NN"``, ``"VK"``, or ``"Mann"`` denoting
+            "Neural Network," "Von Karman," and "Mann model".
         path_to_parameters : Union[str, PathLike]
             File path (string or ``Pathlib.Path()``)
         seed : int, optional
@@ -59,24 +88,16 @@ class GenerateWind:
         blend_num : int, optional
             _description_, by default 10
 
-        Notes
-        -----
-        FPDE RDT methods were deprecated from a previous Zenodo direct release for
-        what now comprises ``spectra_fitting`` but have not been removed completely
-        from ``wind_generation``.
-
         Raises
         ------
         ValueError
-            If ``model`` doesn't match one of the 4 permitted options.
+            If ``model`` doesn't match one of the 3 available models: NN, VK and Mann.
         """
 
-        if model not in ["NN", "VK", "FPDE_RDT", "Mann"]:
+        if model not in ["NN", "VK", "Mann"]:
             raise ValueError(
                 "Provided model type not supported, must be one of NN, VK, FPDT_RDT, Mann"
             )
-
-        # # Parameters taken from pg 13 of M. Andre's dissertation
 
         if model == "NN":
             with open(path_to_parameters, "rb") as file:
@@ -100,7 +121,6 @@ class GenerateWind:
             pb.parameters = model_params
             L, T, M = pb.OPS.exp_scales()
 
-            # L, T, M = pb.OPS.update_scales()
             M = (4 * np.pi) * L ** (-5 / 3) * M
             print("Scales: ", [L, T, M])
             E0 = M * friction_velocity**2 * reference_height ** (-2 / 3)
@@ -192,19 +212,6 @@ class GenerateWind:
                 grid_level=grid_levels,
                 grid_dimensions=grid_dimensions,
                 sampling_method="vf_fftw",
-                grid_shape=self.noise_shape[:-1],
-                Covariance=self.Covariance,
-                # laplace=True
-            )
-        elif model == "FPDE_RDT":
-            self.Covariance = None
-            kwargs = {"correlation_length": L, "E0": E0}
-            self.RF = VectorGaussianRandomField(
-                **kwargs,
-                ndim=3,
-                grid_level=grid_levels,
-                grid_dimensions=grid_dimensions,
-                sampling_method="vf_rat_halfspace_rapid_distortion",
                 grid_shape=self.noise_shape[:-1],
                 Covariance=self.Covariance,
                 # laplace=True

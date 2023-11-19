@@ -4,7 +4,7 @@ This module implements a random field generator.
 Notes
 -----
 
-This should not be directly used but is needed by ``GenerateWind``.
+This should not be directly used but is needed by ``GenerateFluctuationField``.
 """
 
 import numpy as np

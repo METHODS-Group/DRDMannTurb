@@ -25,7 +25,7 @@ from .wind_generation import (
     Covariance,
     FourierOfGaussian,
     GaussianRandomField,
-    GenerateWind,
+    GenerateFluctuationField,
     MannCovariance,
     NNCovariance,
     Sampling_DCT,

@@ -63,7 +63,7 @@ class CalibrationProblem:
         phys_params : PhysicalParameters, optional
             A PhysicalParameters dataclass instance, which defines the physical constants governing the
             problem setting; note that the PhysicalParameters constructor requires three positional
-            arguments. By default, calls the constructor PhysicalParameters(L=0.59, Gamma=3.9, sigma=3.4).
+            arguments.
         output_directory : str, optional
             The directory to write output to; by default "./results"
         """
@@ -731,6 +731,7 @@ class CalibrationProblem:
                     "o-",
                     color=clr[i],
                     label=r"$F_{0:d}$ data".format(i + 1),
+                    alpha=0.5,
                 )
             if 3 in self.curves:
                 (self.lines_SP_model[self.vdim],) = self.ax[0].plot(
@@ -746,6 +747,7 @@ class CalibrationProblem:
                     "o-",
                     color=clr[3],
                     label=r"$-F_{13}$ data",
+                    alpha=0.5,
                 )
             self.ax[0].legend()
             self.ax[0].set_xscale("log")

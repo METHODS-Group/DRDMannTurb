@@ -5,7 +5,7 @@ Wind Field Generation
 
 The other half of DRDMannTurb generates and visualizes 3D wind fields from spectra data. 
 
-.. autoclass:: drdmannturb.GenerateWind 
+.. autoclass:: drdmannturb.GenerateFluctuationField 
     :members: 
 
 Plotting Utilities 

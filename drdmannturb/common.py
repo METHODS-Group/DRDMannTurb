@@ -18,7 +18,7 @@ from tensorboard.backend.event_processing.event_accumulator import EventAccumula
 @torch.jit.script
 def VKEnergySpectrum(kL: torch.Tensor) -> torch.Tensor:
     r"""
-    Von Karman energy spectrum without scaling by viscous dissipation:
+    Von Karman energy spectrum without scaling:
 
     .. math::
         \left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3}.
@@ -123,7 +123,7 @@ def plot_loss_logs(log_file: Union[str, Path]):
 
     with plt.style.context("bmh"):
         plt.rcParams.update({"font.size": 8})
-        fig, ax = plt.subplots(1, vals_tot.__len__(), figsize=(12, 8), sharex=True)
+        fig, ax = plt.subplots(1, vals_tot.__len__(), figsize=(12, 6), sharex=True)
         for idx, (scalar_tag, vals) in enumerate(reversed(vals_tot.items())):
             ax[idx].plot(vals[1:])
             ax[idx].set_yscale("log")
