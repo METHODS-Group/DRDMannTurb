@@ -2,23 +2,19 @@
 This module implements the wind generation
 """
 
-
 import pickle
+from math import ceil
 from os import PathLike
 from pathlib import Path
-from time import time
 from typing import Union
 
 import numpy as np
 from torch.cuda import is_available
 
-from drdmannturb.fluctuation_generation.covariance_kernels import (
-    MannCovariance,
-    VonKarmanCovariance,
-)
-from drdmannturb.fluctuation_generation.gaussian_random_fields import *
-from drdmannturb.fluctuation_generation.nn_covariance import NNCovariance
-from drdmannturb.spectra_fitting import CalibrationProblem
+from ..spectra_fitting import CalibrationProblem
+from .covariance_kernels import MannCovariance, VonKarmanCovariance
+from .gaussian_random_fields import VectorGaussianRandomField
+from .nn_covariance import NNCovariance
 
 
 class GenerateFluctuationField:
@@ -204,26 +200,22 @@ class GenerateFluctuationField:
         if model == "VK":
             self.Covariance = VonKarmanCovariance(ndim=3, length_scale=L, E0=E0)
             self.RF = VectorGaussianRandomField(
-                # **kwargs,
                 ndim=3,
                 grid_level=grid_levels,
                 grid_dimensions=grid_dimensions,
                 sampling_method="vf_fftw",
                 grid_shape=self.noise_shape[:-1],
                 Covariance=self.Covariance,
-                # laplace=True
             )
         elif model == "Mann":
             self.Covariance = MannCovariance(ndim=3, length_scale=L, E0=E0, Gamma=Gamma)
             self.RF = VectorGaussianRandomField(
-                # **kwargs,
                 ndim=3,
                 grid_level=grid_levels,
                 grid_dimensions=grid_dimensions,
                 sampling_method="vf_fftw",
                 grid_shape=self.noise_shape[:-1],
                 Covariance=self.Covariance,
-                # laplace=True
             )
         elif model == "NN":
             self.Covariance = NNCovariance(
@@ -235,14 +227,12 @@ class GenerateFluctuationField:
                 h_ref=reference_height,
             )
             self.RF = VectorGaussianRandomField(
-                # **kwargs,
                 ndim=3,
                 grid_level=grid_levels,
                 grid_dimensions=grid_dimensions,
                 sampling_method="vf_fftw",
                 grid_shape=self.noise_shape[:-1],
                 Covariance=self.Covariance,
-                # laplace=True
             )
 
         self.RF.reseed(self.seed)

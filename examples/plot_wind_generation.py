@@ -16,7 +16,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import torch.nn as nn
 
 from drdmannturb.fluctuation_generation import (
     GenerateFluctuationField,

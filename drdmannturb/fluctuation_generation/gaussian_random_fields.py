@@ -7,9 +7,11 @@ Notes
 This should not be directly used but is needed by ``GenerateFluctuationField``.
 """
 
+from time import time
+
 import numpy as np
 
-from drdmannturb.fluctuation_generation.sampling_methods import *
+from .sampling_methods import *
 
 
 class GaussianRandomField:

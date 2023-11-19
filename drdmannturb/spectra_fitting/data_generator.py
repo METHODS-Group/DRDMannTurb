@@ -2,13 +2,12 @@ import warnings
 from pathlib import Path
 from typing import Any, Optional
 
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from scipy.optimize import curve_fit, differential_evolution
 
-from drdmannturb.enums import DataType
+from ..enums import DataType
 
 
 class OnePointSpectraDataGenerator:

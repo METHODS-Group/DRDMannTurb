@@ -7,7 +7,7 @@ from typing import Optional
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from drdmannturb import LossParameters
+from ..parameters import LossParameters
 
 
 class LossAggregator:
