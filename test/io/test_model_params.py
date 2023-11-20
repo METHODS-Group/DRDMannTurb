@@ -36,6 +36,13 @@ domain = torch.logspace(-1, 2, 20)
     [EddyLifetimeType.CUSTOMMLP, EddyLifetimeType.TAUNET],
 )
 def test_network_paramcount(eddylifetime: EddyLifetimeType):
+    """Test the number of trainable parameters in different neural network-based eddy lifetime function DRD models. These are static values; note that the first 3 parameters are always the length, time, and spectrum amplitude quantities.
+
+    Parameters
+    ----------
+    eddylifetime : EddyLifetimeType
+        Type of neural network used.
+    """
     pb = CalibrationProblem(
         nn_params=NNParameters(hidden_layer_sizes=[10, 10]),
         prob_params=ProblemParameters(nepochs=5, eddy_lifetime=eddylifetime),
@@ -80,8 +87,6 @@ def test_nnparams_load_trained_TAUNET():
             loss_params,
             phys_params,
             model_params,
-            # _,
-            # _,
         ) = pickle.load(file)
 
     pb_new = CalibrationProblem(
@@ -129,8 +134,6 @@ def test_nnparams_load_trained_CUSTOMMLP():
             loss_params,
             phys_params,
             model_params,
-            # _,
-            # _,
         ) = pickle.load(file)
 
     pb_new = CalibrationProblem(
@@ -147,5 +150,5 @@ def test_nnparams_load_trained_CUSTOMMLP():
 
 
 if __name__ == "__main__":
-    # test_nnparams_load_trained_TAUNET()
-    test_nnparams_load_trained_CUSTOMMLP()
+    test_nnparams_load_trained_TAUNET()
+    # test_nnparams_load_trained_CUSTOMMLP()
