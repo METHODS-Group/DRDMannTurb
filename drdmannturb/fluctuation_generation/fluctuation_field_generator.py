@@ -26,7 +26,7 @@ class GenerateFluctuationField:
     .. math::
         \mathbf{u}=\mathcal{F}^{-1} \mathcal{G} \widehat{\boldsymbol{\xi}}=\mathcal{F}^{-1} \mathcal{G} \mathcal{F} \boldsymbol{\xi},
 
-    where :math:`\mathcal{F}` is the Fourier transform and the operator :math:`\mathcal{G}` is the point-wise multiplication by :math:G(\boldsymbol{k})`, which is any positive-definite "square-root" of the spectral tensor and satisfies :math:`G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k})`.
+    where :math:`\mathcal{F}` is the Fourier transform and the operator :math:`\mathcal{G}` is the point-wise multiplication by :math:`G(\boldsymbol{k})`, which is any positive-definite "square-root" of the spectral tensor and satisfies :math:`G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k})`.
 
     This is determined by which :math:`\Phi(\boldsymbol{k}, \tau(\boldsymbol{k}))` is used. The following are provided:
 
@@ -324,17 +324,19 @@ class GenerateFluctuationField:
 
         .. math ::
 
-            \left\langle U_1(z)\right\rangle=\frac{u_*}{\kappa} \ln \left(\frac{z}{z_0}+1\right)
+            \left\langle U_1(z)\right\rangle=\frac{u_{\ast}}{\kappa} \ln \left(\frac{z}{z_0}+1\right)
 
-        where :math:`u_*` is the friction velocity and :math:`z_0` is the roughness height. More information on this normalization can be found in
-            J. JCSS, “Probabilistic model code,” Joint Committee on Structural Safety (2001).
+
+        where :math:`u_{\ast}` is the friction velocity and :math:`z_0` is the roughness height. More information on this normalization can be found in
+
+        J. JCSS, “Probabilistic model code,” Joint Committee on Structural Safety (2001).
 
         Parameters
         ----------
         roughness_height : float
             Roughness height :math:`z_0`.
         friction_velocity : float
-            Ground friction velocity :math:`u_*`.
+            Ground friction velocity :math:`u_{\ast}`.
 
         Returns
         -------
@@ -383,3 +385,55 @@ class GenerateFluctuationField:
         }
 
         imageToVTK(filepath, cellData=cellData, spacing=spacing)
+
+    def evaluate_divergence(
+        self, spacing: Union[tuple, np.ndarray], field: Optional[np.ndarray] = None
+    ) -> np.ndarray:
+        r"""Evaluates the point-wise divergence of a generated fluctuation vector (!) field on a given grid. The underlying method is numpy's ``gradient`` function, which is computed with second-order central difference methods.
+
+        .. note::
+
+            If the generated field has been normalized with ``.normalize()``, it must be passed into this method as the ``field`` argument. The default evaluation of this method is on the ``total_fluctuation`` attribute of this object.
+
+        This method will approximate
+
+        .. math::
+            \operatorname{div} \boldsymbol{F} = \frac{\partial \boldsymbol{F}_x}{\partial x} + \frac{\partial \boldsymbol{F}_y}{\partial y} + \frac{\partial \boldsymbol{F}_z}{\partial z}.
+
+        Note that the vector field is assumed to be 3D.
+
+        Parameters
+        ----------
+        spacing : Union[tuple, np.ndarray]
+            The spacing of the grid on which the fluctuation field has been generated. This is necessary for derivatives to be computed properly.
+        field : Optional[np.ndarray], optional
+            The fluctuation field containing all field components, of the shape :math:`(x, y, z, 3)`, by default None, which evaluates the divergence of the non-normalized field stored in ``total_fluctuation``.
+
+        Returns
+        -------
+        np.ndarray
+            Point-wise divergence of the vector field, this will be of shape (x, y, z). To gather further information about the divergence, consider using ``.max()``, ``.sum()`` or ``.mean()`` to determine the maximum, total, or average point-wise divergence of the generated field.
+
+        Raises
+        ------
+        ValueError
+            Spacing must contain 3 scalars determining the spacing of evaluation points of the field for each dimension.
+        ValueError
+            Last dimension of vector field must be 3, consider reshaping your vector field.
+        """
+        if len(spacing) != 3:
+            raise ValueError(
+                "Spacing must contain 3 scalars determining the spacing of evaluation points of the field for each dimension."
+            )
+
+        if field is None:
+            field = self.total_fluctuation
+
+        if field.shape[-1] != 3:
+            raise ValueError(
+                "Last dimension of vector field must be 3, consider reshaping your vector field."
+            )
+
+        return np.ufunc.reduce(
+            np.add, [np.gradient(field[..., i], spacing[i], axis=i) for i in range(3)]
+        )

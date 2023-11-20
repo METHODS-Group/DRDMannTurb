@@ -3,7 +3,7 @@
 Fluctuation Field Generation
 ============================
 
-This example demonstrates the utilities for generating fluctuation fields, which can be either from a pre-trained DRD model, or based on some well-known spectra models. DRDMannTurb provides several utilities for plotting the resulting fields through Plotly, which can be done in several contexts as well as utilities for saving to VTK for downstream analysis. 
+This example demonstrates the utilities for generating fluctuation fields, which can be either from a pre-trained DRD model, or based on some well-known spectra models. ``DRDMannTurb`` provides several utilities for plotting the resulting fields through Plotly, which can be done in several contexts as well as utilities for saving to VTK for downstream analysis. 
 
 .. warning:: 
     This example may take a few seconds to load. Please be patient, Plotly requires some time to render 3D graphics. 
@@ -100,12 +100,13 @@ fig_magnitude_mann  # .show("browser")
 # We now generate a similar fluctuation field in the same physical setting and domain but using a pre-trained DRD model. This model is the result of
 # fitting the Mann model with a Kaimal spectrum, showcased in an earlier example, so we anticipate the resulting fluctuation fields to be similar. Note
 # that since DRD models learn the scales, these are taken from the saved object, which has these values as parameters.
+# sphinx_gallery_start_ignore
 path_to_parameters = (
     path / "../docs/source/results/EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl"
     if path.name == "examples"
     else path / "../results/EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl"
 )
-
+# sphinx_gallery_end_ignore
 Type_Model = "NN"  ### 'Mann', 'VK', 'NN'
 nBlocks = 3
 
@@ -123,8 +124,20 @@ fluctuation_field_drd = gen_drd.generate(nBlocks)
 
 fluctuation_field_drd = gen_drd.normalize(roughness_height, friction_velocity)
 
+
+#######################################################################################
+# Evaluating Divergence Properties and Plotting
+# ---------------------------------------------
+# ``DRDMannTurb`` provides utilities for computing the divergence of the resulting fluctuation field as well as
+# visualizing results. At the continuum level, the DRD model should yield an approximately divergence-free fluctuation
+# field, which we observe to within a reasonable tolerance. Also, the divergence is expected to decrease as the
+#  resolution of the fluctuation field is improved.
 spacing = tuple(grid_dimensions / (2.0**grid_levels + 1))
 
+gen_drd.evaluate_divergence(spacing, fluctuation_field_drd).max()
+
+#######################################################################################
+# We now visualize the output fluctuation field.
 fig_magnitude_drd = plot_velocity_magnitude(spacing, fluctuation_field_drd)
 
 # this is a Plotly figure, which can be visualized with the ``.show()`` method in different contexts.

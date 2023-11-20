@@ -13,12 +13,10 @@ class Covariance:
 
     for different choices of the spectral tensor :math:`\Phi(\boldsymbol{k})`.
 
-    Subclasses only require two fields: ``verbose`` and ``ndim``, which specify whether loggin information is to be printed for kernel-specific computations and the number of dimensions in which the generated kernels operate, respectively. For now, all fields and kernels operate in 3D, though functionality for 2D may be added readily. Finally, if a generic evaluation function is desired for a subclass, it may be set with ``eval_func`` in the constructor, as well as any associated arguments.
+    Subclasses only require one field ``ndim``, which specifies the number of dimensions in which the generated kernels operate, respectively. For now, all fields and kernels operate in 3D, though functionality for 2D may be added readily. Finally, if a generic evaluation function is desired for a subclass, it may be set with ``eval_func`` in the constructor, as well as any associated arguments.
     """
 
-    def __init__(self, ndim=2, verbose=0, **kwargs):
-        self.verbose = verbose
-
+    def __init__(self, ndim=2, **kwargs):
         self.ndim = ndim  # dimension 2D or 3D
 
         if "func" in kwargs:

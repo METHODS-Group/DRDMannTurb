@@ -34,12 +34,12 @@ def create_grid(
 def format_wind_field(
     wind_field: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Creates a copy of the given wind-field that has a C-layout; this is a wrapper around np.copy.
+    r"""Creates a copy of the given wind-field that has a C-layout; this is a wrapper around np.copy.
 
     Parameters
     ----------
     wind_field : np.ndarray
-        3D wind field, typically of shape (Nx, Ny, Nz, 3) (not C-layout, to be reshaped).
+        3D wind field, typically of shape :math:`(Nx, Ny, Nz, 3)` (not C-layout, to be reshaped).
 
 
     Returns

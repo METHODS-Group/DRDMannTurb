@@ -27,7 +27,6 @@ def FourierOfGaussian(noise):
 
 class Sampling_method_base:
     def __init__(self, RandomField):
-        self.verbose = RandomField.verbose
         self.L, self.Nd, self.ndim = (
             RandomField.L,
             RandomField.ext_grid_shape,
