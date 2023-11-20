@@ -6,7 +6,6 @@ __all__ = [
     "VectorGaussianRandomField",
     "GenerateFluctuationField",
     "NNCovariance",
-    "FourierOfGaussian",
     "Sampling_method_base",
     "Sampling_method_freq",
     "Sampling_FFTW",
@@ -25,7 +24,6 @@ from .fluctuation_field_generator import GenerateFluctuationField
 from .gaussian_random_fields import GaussianRandomField, VectorGaussianRandomField
 from .nn_covariance import NNCovariance
 from .sampling_methods import (
-    FourierOfGaussian,
     Sampling_DCT,
     Sampling_DST,
     Sampling_FFT,

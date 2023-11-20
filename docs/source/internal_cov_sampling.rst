@@ -23,7 +23,3 @@ Covariance Sampling Methods
 
 .. autoclass:: drdmannturb.Sampling_DCT
     :members
-
-.. currentmodule:: drdmannturb.fluctuation_generation.sampling_methods
-
-.. autofunction:: FourierOfGaussian 

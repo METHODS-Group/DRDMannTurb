@@ -68,7 +68,7 @@ class VonKarmanCovariance(Covariance):
         self.E0 = E0
 
     def precompute_Spectrum(self, Frequencies: np.ndarray) -> np.ndarray:
-        """Evaluation method which pre-computes the square-root of the associated spectrum tensor in the complex domain.
+        """Evaluation method which pre-computes the square-root of the associated spectral tensor in the frequency domain.
 
         Parameters
         ----------
@@ -147,7 +147,7 @@ class MannCovariance(Covariance):
         self.Gamma = Gamma
 
     def precompute_Spectrum(self, Frequencies: np.ndarray) -> np.ndarray:
-        """Evaluation method which pre-computes the square-root of the associated spectrum tensor in the complex domain.
+        """Evaluation method which pre-computes the square-root of the associated spectral tensor in the frequency domain.
 
         Parameters
         ----------

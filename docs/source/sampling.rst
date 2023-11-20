@@ -2,7 +2,6 @@
 
 .. currentmodule:: drdmannturb.fluctuation_generation.sampling_methods
 
-.. autofunction:: FourierOfGaussian 
 
 
 .. autoclass:: drdmannturb.Sampling_method_base

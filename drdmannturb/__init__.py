@@ -7,7 +7,6 @@ from .common import (
 from .enums import DataType, EddyLifetimeType, PowerSpectraType
 from .fluctuation_generation import (
     Covariance,
-    FourierOfGaussian,
     GaussianRandomField,
     GenerateFluctuationField,
     MannCovariance,
