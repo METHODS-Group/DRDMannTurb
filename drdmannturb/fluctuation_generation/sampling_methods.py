@@ -16,6 +16,18 @@ METHOD_VF_FFTW = "vf_fftw"
 
 
 def FourierOfGaussian(noise):
+    """_summary_
+
+    Parameters
+    ----------
+    noise : _type_
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
     a, b = noise, noise
     for j in range(noise.ndim):
         b = np.roll(np.flip(b, axis=j), 1, axis=j)
@@ -26,7 +38,16 @@ def FourierOfGaussian(noise):
 
 
 class Sampling_method_base:
+    """test"""
+
     def __init__(self, RandomField):
+        """_summary_
+
+        Parameters
+        ----------
+        RandomField : _type_
+            _description_
+        """
         self.L, self.Nd, self.ndim = (
             RandomField.L,
             RandomField.ext_grid_shape,

@@ -3,14 +3,14 @@
 Covariance Kernels
 ==================
 
-.. autoclass:: drdmannturb.Covariance
+.. autoclass:: drdmannturb.Covariance 
     :members: 
 
 .. autoclass:: drdmannturb.VonKarmanCovariance
-    :members: 
+    :members:
 
 .. autoclass:: drdmannturb.MannCovariance
-    :members: 
+    :members:
 
 .. autoclass:: drdmannturb.NNCovariance
-    :members: 
+    :members:

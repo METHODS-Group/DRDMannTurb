@@ -41,10 +41,9 @@ The package has `Tensorboard <https://pytorch.org/docs/stable/tensorboard.html>`
 
    interpolation 
 
+.. raw:: html
 
-  .. raw:: html
-
-    <hr>
+   <hr>
 
 
 .. toctree::

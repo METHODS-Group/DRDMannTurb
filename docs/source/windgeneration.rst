@@ -9,7 +9,7 @@ DRDMannTurb provides generic methods for generating fluctuation fields from spec
     :members: 
 
 Plotting Utilities 
-------------------
+==================
 
 .. currentmodule:: drdmannturb.fluctuation_generation.wind_plot
 
@@ -20,27 +20,3 @@ Plotting Utilities
 .. autofunction:: format_wind_field 
 
 .. autofunction:: create_grid
-
-Gaussian Random Fields
-----------------------
-
-.. toctree::
-   :maxdepth: 2
-   
-   grf
-
-Covariance Kernels
-------------------
-
-.. toctree::
-   :maxdepth: 2
-
-   cov_kernels
-
-Sampling Methods
-----------------
-
-.. toctree::
-   :maxdepth: 1
-
-   sampling

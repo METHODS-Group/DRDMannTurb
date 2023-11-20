@@ -263,7 +263,7 @@ class TauNet(nn.Module):
 
 class CustomNet(nn.Module):
     r"""
-    A more versatile version of the tauNet. The objective is the same: to learn the eddy lifetime function :math:`\tau{\boldsymbol{k}}` in the same way. This class allows for neural networks of variable widths and different kinds of activation functions used between layers.
+    A more versatile version of the tauNet. The objective is the same: to learn the eddy lifetime function :math:`\tau(\boldsymbol{k})` in the same way. This class allows for neural networks of variable widths and different kinds of activation functions used between layers.
     """
 
     def __init__(

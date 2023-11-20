@@ -8,68 +8,27 @@ Here is a documentation of methods internal to the package, which are subject to
 Spectra Fitting
 ===============
 
-Forward-Facing Network Architecture Interfaces
-----------------------------------------------
+.. toctree::
+    :maxdepth: 1
 
-.. autoclass:: drdmannturb.TauNet 
-    :members:
+    internal_nets
 
-.. autoclass:: drdmannturb.CustomNet
-    :members:
-
-
-Internal Neural Network Interfaces
-----------------------------------
-
-.. autoclass:: drdmannturb.SimpleNN
-    :members:
-
-.. autoclass:: drdmannturb.Rational
-    :members:
-
-.. autoclass:: drdmannturb.CustomMLP
-    :members:
+    internal_rdt_ps
 
 
 Random Field Generation
 =======================
 
-Covariance Kernels 
-------------------
+Please refer to :doc:`the UML diagram <./uml_fluct_gen>` to see the class hierarchy. 
 
-.. autoclass:: drdmannturb.Covariance 
-    :members: 
+.. toctree::
+    :maxdepth: 1
 
-.. autoclass:: drdmannturb.VonKarmanCovariance
-    :members
+    internal_cov 
 
-.. autoclass:: drdmannturb.MannCovariance
-    :members
+    internal_cov_sampling 
 
-.. autoclass:: drdmannturb.NNCovariance
-    :members
+    grf
+   
 
 
-Covariance Sampling Methods
----------------------------
-
-.. autoclass:: drdmannturb.Sampling_method_base
-    :members
-
-.. autoclass:: drdmannturb.Sampling_method_freq
-    :members
-
-.. autoclass:: drdmannturb.Sampling_FFTW
-    :members
-
-.. autoclass:: drdmannturb.Sampling_VF_FFTW
-    :members
-
-.. autoclass:: drdmannturb.Sampling_FFT
-    :members
-
-.. autoclass:: drdmannturb.Sampling_DST
-    :members
-
-.. autoclass:: drdmannturb.Sampling_DCT
-    :members
