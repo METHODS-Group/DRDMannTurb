@@ -3,26 +3,7 @@
 Dataclass Primitives
 ====================
 
-Data Types and Eddy Lifetime Functions
---------------------------------------
-
-.. autoenum:: drdmannturb.DataType 
-    :members: 
-
-.. autoenum:: drdmannturb.EddyLifetimeType
-    :members: 
-
-.. autoenum:: drdmannturb.PowerSpectraType
-
-The associated eddy lifetime functions are as follows: 
-
-.. py:currentmodule:: drdmannturb.common
-
-.. autofunction:: MannEddyLifetime 
-
-.. autofunction:: Mann_linear_exponential_approx
-
-.. autofunction:: VKEnergySpectrum
+``DRDMannTurb`` operates with four fundamental data classes that configure the DRD model to be used, physical parameters of the scenario, training data generation, and loss functions. Please refer to :doc:`this UML diagram <./uml_drd>` to see how these are composed to inform the :py:class:`CalibrationProblem` and :py:class:`OnePointSpectraDataGenerator` classes. 
 
 Neural Network Parameters
 -------------------------
@@ -36,6 +17,7 @@ Physical Parameters
 
 .. autoclass:: drdmannturb.PhysicalParameters
     :members: 
+
 
 Problem/Training Parameters 
 ---------------------------
@@ -81,7 +63,3 @@ The LossParameters class correspondingly sets the weights of these terms.
 
 .. autoclass:: drdmannturb.LossParameters
     :members: 
-
-.. raw:: html
-
-    <hr>

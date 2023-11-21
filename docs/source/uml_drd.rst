@@ -1,9 +1,17 @@
+.. py:currentmodule:: drdmannturb
 
+UML Diagram for Spectra Fitting Data Classes
+============================================
+
+Here is an UML diagram representing the interoperability between several internal classes of the package that comprise the fluctuation generator :py:class:`CalibrationProblem` and :py:class:`OnePointSpectra`. Please refer to specific class documentations for details. The following diagram is interactive -- try zooming and panning to resize for your convenience. 
+
+These interactive UML diagrams have an issue with rendering the correct arrow types in dark mode, please consider switching to light mode.
 
 .. mermaid:: 
     :zoom:
-
+  
     classDiagram
+    direction LR
         class CalibrationProblem {
             <<class>>
             - output_directory : Path
@@ -77,10 +85,9 @@
             get_div()
         }
 
-        CalibrationProblem o-- NNParameters
-        CalibrationProblem o-- ProblemParameters
-        CalibrationProblem o-- PhysicalParameters
-        CalibrationProblem o-- LossParameters
-        CalibrationProblem o-- OnePointSpectra
-        OnePointSpectra o--  ProblemParameters
-        OnePointSpectra  o-- NNParameters
+        CalibrationProblem ..> ProblemParameters
+        CalibrationProblem ..> PhysicalParameters
+        OnePointSpectra ..> LossParameters
+        CalibrationProblem ..> OnePointSpectra
+        OnePointSpectra ..>  ProblemParameters
+        OnePointSpectra  ..> NNParameters

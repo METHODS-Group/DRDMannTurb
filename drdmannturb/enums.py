@@ -5,7 +5,15 @@ __all__ = ["DataType", "EddyLifetimeType", "PowerSpectraType"]
 
 from enum import Enum
 
-DataType = Enum("DataType", ["KAIMAL", "CUSTOM", "AUTO", "VK", "IEC"])
+DataType = Enum(
+    "DataType",
+    [
+        "KAIMAL",
+        "CUSTOM",
+        "AUTO",
+        "VK",
+    ],
+)
 
 EddyLifetimeType = Enum(
     "EddyLifetimeType",

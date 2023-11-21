@@ -16,14 +16,14 @@ __all__ = ["ProblemParameters", "PhysicalParameters", "NNParameters", "LossParam
 
 @dataclass
 class ProblemParameters:
-    """
+    r"""
     This class provides a convenient method of storing and passing around
     generic numerical parameters; this also offers default values
 
     Fields
     ------
     learning_rate : float
-        Learning rate for optimizer.
+        Initial earning rate for optimizer.
     tol : float
         Tolerance for solution error (training terminates if this is reached before the maximum number of epochs allowed)
     nepochs : int
@@ -65,7 +65,7 @@ class ProblemParameters:
 
 @dataclass
 class PhysicalParameters:
-    """
+    r"""
     This class provides a convenient method of storing and passing around
     the physical parameters required to define a problem; this also offers
     generic default values.
@@ -130,7 +130,7 @@ class LossParameters:
 
 @dataclass
 class NNParameters:
-    """
+    r"""
     This class provides a generic and convenient method of storing and passing
     around values required for the definition of the different neural networks
     that are implemented in this package; this also offers default values.

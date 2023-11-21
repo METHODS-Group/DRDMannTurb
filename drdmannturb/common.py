@@ -21,7 +21,7 @@ def VKEnergySpectrum(kL: torch.Tensor) -> torch.Tensor:
     Von Karman energy spectrum without scaling:
 
     .. math::
-        \left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3}.
+        \widetilde{E}(\boldsymbol{k}) = \left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3}.
 
     Parameters
     ----------

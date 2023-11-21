@@ -5,6 +5,8 @@ UML Diagram for Fluctuation Field Generation
 
 Here is an UML diagram representing the interoperability between several internal classes of the package that comprise the fluctuation generator :py:class:`GenerateFluctuationField`. Please refer to specific class documentations for details. The following diagram is interactive -- try zooming and panning to resize for your convenience. 
 
+These interactive UML diagrams have an issue with rendering the correct arrow types in dark mode, please consider switching to light mode.
+
 .. mermaid:: 
     :zoom:
 

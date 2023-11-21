@@ -16,7 +16,7 @@ This is the main reference for the forward-facing interface.
     <hr>
 
 .. toctree:: 
-    :maxdepth: 1 
+    :maxdepth: 2 
 
     windgeneration
 
