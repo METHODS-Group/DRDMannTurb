@@ -1,6 +1,6 @@
 import warnings
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Iterable, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,36 +11,58 @@ from ..enums import DataType
 
 
 class OnePointSpectraDataGenerator:
-    """
-    One point spectra data generator
+    r"""
+    The one point spectra data generator, which evaluates one of a few spectral tensor models across a grid of :math:`k_1` wavevector points which is used as data in the fitting done in the :py:class:`OnePointSpectra` class. 
 
-    TODO -- better introduction/ description of its purpose in the code
+    The type of spectral tensor is determined by the :py:enum:`DataType` argument, which determines one of the following models:  
+
+    #. ``DataType.KAIMAL``, which is the Kaimal spectra.  
+
+    #. ``DataType.VK``, which is the von Karman spectra model.
+    
+    #. ``DataType.CUSTOM``, usually used for data that is processed from real-world data. The spectra values are to be provided as the ``spectra_values`` field, or else to be loaded from a provided ``spectra_file``. The result is that the provided data are matched on the wavevector domain. 
+
+    #. ``DataType.AUTO``, which generates a filtered version of provided spectra data. The filtering is based on differential evolution to perform a non-linear fit onto functions of the following form: 
+
+    .. math:: 
+        :nowrap:
+
+        \begin{align}
+            & \frac{k_1 F_{11}\left(k_1 z\right)}{u_*^2}=J_1(f):=\frac{a_1 f}{(1+b_1 f)^{c_1}} \\
+            & \frac{k_1 F_{22}\left(k_1 z\right)}{u_*^2}=J_2(f):=\frac{a_2 f}{(1+b_2 f)^{c_2}} \\
+            & \frac{k_1 F_{33}\left(k_1 z\right)}{u_*^2}=J_3(f):=\frac{a_3 f}{1+ b_3 f^{ c_3}} \\
+            & -\frac{k_1 F_{13}\left(k_1 z\right)}{u_*^2}=J_4(f):=\frac{a_4 f}{(1+ b_4 f)^{c_4}}, 
+        \end{align}
+
+    with :math:`F_{12}=F_{23}=0`. Here, :math:`f = (2\pi)^{-1} k_1 z`. In the above, the :math:`a_i, b_i, c_i` are free parameters which are optimized by differential evolution. The result is a spectra model that is similar in form to the Kaimal spectra and which filters/smooths the spectra data from the real world and eases fitting by DRD models. This option is highly suggested in cases where spectra data have large deviations. 
+
+    .. note:: 
+        The one-point spectra for :math:`F_{13}` are NOT to be pre-multiplied with a negative, this data generator automatically performs this step both when using ``DataType.CUSTOM`` and ``DataType.AUTO``.  
+
     """
 
     def __init__(
         self,
-        data_points: Optional[Any] = None,
+        data_points: Optional[Iterable[Tuple[torch.tensor, float]]] = None,
         data_type: DataType = DataType.KAIMAL,
-        k1_data_points: Optional[Any] = None,  # TODO: properly type
-        spectra_values: Optional[Any] = None,  # TODO: properly type
-        spectra_file: Optional[Path] = None,
+        k1_data_points: Optional[torch.Tensor] = None,
+        spectra_values: Optional[torch.Tensor] = None,
+        spectra_file: Optional[Union[Path, str]] = None,
         zref: float = 1.0,
         seed: int = 3,
     ):
-        """
-        TODO -- This needs a better introduction
-
+        r"""
         Parameters
         ----------
-        data_points : Optional[Any], optional
-            _description_, by default None
+        data_points : Iterable[Tuple[torch.tensor, float]], optional
+            Observed spectra data points at each of the :math:`k_1` coordinates, paired with the associated reference height (typically kept at 1, but may depend on applications).
         data_type : DataType, optional
             Indicates the data format to generate and operate with, by
-            default DataType.KAIMAL
+            default ``DataType.KAIMAL``
         k1_data_points : Optional[Any], optional
-            _description_, by default None
+            Wavevector domain of :math:`k_1`, by default None
         spectra_file : Optional[Path], optional
-            If using DataType.CUSTOM or DataType.AUTO, this
+            If using ``DataType.CUSTOM`` or ``DataType.AUTO``, this
             is used to indicate the data file (a .dat) to read
             from. Since it is not used by others, it is by
             default None
@@ -50,14 +72,14 @@ class OnePointSpectraDataGenerator:
         Raises
         ------
         ValueError
-            In the case that DataType.CUSTOM is indicated, but no spectra_file
+            In the case that ``DataType.CUSTOM`` is indicated, but no spectra_file
             is provided
         ValueError
-            In the case that DataType.AUTO data is indicated, but no k1_data_pts
+            In the case that ``DataType.AUTO`` data is indicated, but no k1_data_pts
             is provided
+        ValueError
+            Did not provide DataPoints during initialization for DataType method requiring spectra data.
         """
-        # TODO -- Note the Any annotations above; need to figure out what type should be given
-
         self.DataPoints = data_points
         self.data_type = data_type
         self.k1 = k1_data_points
@@ -135,15 +157,6 @@ class OnePointSpectraDataGenerator:
                         func, xData, yData, geneticParameters, maxfev=50_000
                     )
 
-                    modelPredictions = func(xData, *fittedParameters)
-
-                    absError = modelPredictions - yData
-
-                    SE = np.square(absError)  # squared errors
-                    MSE = np.mean(SE)  # mean squared errors
-                    RMSE = np.sqrt(MSE)  # Root Mean Squared Error, RMSE
-                    Rsquared = 1.0 - (np.var(absError) / np.var(yData))
-
                     return fittedParameters
 
                 if self.spectra_values is not None:
@@ -181,22 +194,35 @@ class OnePointSpectraDataGenerator:
 
         if self.DataPoints is not None and self.data_type != DataType.AUTO:
             self.generate_Data(self.DataPoints)
+        else:
+            raise ValueError(
+                "Did not provide DataPoints during initialization for DataType method requiring spectra data."
+            )
 
         return
 
-    def generate_Data(self, DataPoints) -> tuple[torch.Tensor, torch.Tensor]:
-        """
-        TODO -- documentation
+    def generate_Data(
+        self, DataPoints: Iterable[Tuple[torch.tensor, float]]
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        r"""Generates a single spectral tensor from provided data or from a surrogate model. The resulting tensor is of shape (number of :math:`k_1` points):math:`\times 3 \times 3`, ie the result consists of the spectral tensor evaluated across the provided range of :math:`k_1` points. The spectra model is set during object instantiation.
+
+        .. note::
+            The ``DataType.CUSTOM`` type results in replication of the provided spectra data.
 
         Parameters
         ----------
-        DataPoints : torch.Tensor
-            _description_
+        DataPoints : Iterable[Tuple[torch.tensor, float]]
+            Observed spectra data points at each of the :math:`k_1` coordinates, paired with the associated reference height (typically kept at 1, but may depend on applications).
 
         Returns
         -------
         tuple[torch.Tensor, torch.Tensor]
-            Tuple of the input DataPoints and generated DataValues
+            Evaluated spectral tensor on each of the provided grid points depending on the ``DataType`` selected.
+
+        Raises
+        ------
+        ValueError
+            DataType set such that an iterable set of spectra values and heights is required. This is for any DataType other than ``CUSTOM`` and ``AUTO``.
         """
         DataValues = torch.zeros([len(DataPoints), 3, 3])
 
@@ -204,10 +230,14 @@ class OnePointSpectraDataGenerator:
             DataValues[:, 0, 0] = self.CustomData[:, 1]
             DataValues[:, 1, 1] = self.CustomData[:, 2]
             DataValues[:, 2, 2] = self.CustomData[:, 3]
-            DataValues[:, 0, 2] = -self.CustomData[:, 4]  # -
+            DataValues[:, 0, 2] = -self.CustomData[:, 4]
 
         else:
-            # TODO -- there should be a way to vectorize this operation
+            if DataPoints is None:
+                raise ValueError(
+                    f"DataType set to {self.data_type}, which requires an iterable set of spectra values and heights."
+                )
+
             for i, Point in enumerate(DataPoints):
                 DataValues[i] = self.eval(*Point)
 
@@ -215,20 +245,30 @@ class OnePointSpectraDataGenerator:
         return self.Data
 
     def eval_VK(self, k1: float, z: float = 1.0) -> torch.Tensor:
-        """
-        eval implementation for VK data type
+        r"""
+        Evaluation of von Karman spectral tensor given in the form
+
+        .. math::
+                \Phi_{i j}^{\mathrm{VK}}(\boldsymbol{k})=\frac{E(k)}{4 \pi k^2}\left(\delta_{i j}-\frac{k_i k_j}{k^2}\right)
+
+        which utilizes the energy spectrum function
+
+        .. math::
+            E(k)=c_0^2 \varepsilon^{2 / 3} k^{-5 / 3}\left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3},
+
+        where :math:`\varepsilon` is the viscous dissipation of the turbulent kinetic energy, :math:`L` is the length scale parameter and :math:`c_0^2 \approx 1.7` is an empirical constant. Here, the physical constants are taken to be :math:``L = 0.59``.
 
         Parameters
         ----------
         k1 : torch.Tensor
-            _description_
+            First dimension of the wavevector :math:`k_1`, this is a single coordinate of the domain over which the associated spectra are defined.
         z : int, optional
-            _description_, by default 1
+            Height above ground, by default 1
 
         Returns
         -------
         torch.Tensor
-            Result of the evaluation
+            The :math:`3 \times 3` matrix with entries determined by the von Karman spectra.
         """
 
         C = 3.2
@@ -253,10 +293,11 @@ class OnePointSpectraDataGenerator:
 
     def eval_Kaimal(self, k1: float, z: float = 1.0) -> torch.Tensor:
         r"""
-        Evaluates the one-point spectra as proposed by `Kaimal et al <https://apps.dtic.mil/sti/tr/pdf/AD0748543.pdf>` in 1972. Clasically motivated by measurements taken over a flat homogeneous terrain in Kansas, the one-point spectra were proposed as 
+        Evaluates the one-point spectra as proposed by `Kaimal et al <https://apps.dtic.mil/sti/tr/pdf/AD0748543.pdf>`__ in 1972. Clasically motivated by measurements taken over a flat homogeneous terrain in Kansas, the one-point spectra were proposed as 
 
         .. math:: 
             :nowrap:
+
             \begin{align}
                 & \frac{k_1 F_{11}\left(k_1 z\right)}{u_*^2}=J_1(f):=\frac{52.5 f}{(1+33 f)^{5 / 3}} \\
                 & \frac{k_1 F_{22}\left(k_1 z\right)}{u_*^2}=J_2(f):=\frac{8.5 f}{(1+9.5 f)^{5 / 3}} \\
@@ -264,15 +305,15 @@ class OnePointSpectraDataGenerator:
                 & -\frac{k_1 F_{13}\left(k_1 z\right)}{u_*^2}=J_4(f):=\frac{7 f}{(1+9.6 f)^{12 / 5}}, 
             \end{align}
 
-        with :math:`F_{12}=F_{23}=0`. This method returns a :math:`3\times 3` matrix whose entries are determined by the above equations. 
+        with :math:`F_{12}=F_{23}=0`. Here, :math:`f = (2\pi)^{-1} k_1 z`. This method returns a :math:`3\times 3` matrix whose entries are determined by the above equations. 
 
 
         Parameters
         ----------
         k1 : torch.Tensor
-            _description_
+            First dimension of the wavevector :math:`k_1`, this is the domain over which the associated spectra are defined. 
         z : int, optional
-            _description_, by default 1
+            Height above ground, by default 1
 
         Returns
         -------
@@ -294,16 +335,16 @@ class OnePointSpectraDataGenerator:
         spectra_full: Optional[np.ndarray] = None,
         x_coords_full: Optional[np.ndarray] = None,
     ):
-        """_summary_
+        r"""Utility for plotting current spectra data over the wavevector domain. Note that if the datatype is chosen to be ``DataType.AUTO``, the interpolation coordinates in the frequency space must be provided again to determine the domain over which to plot filtered spectra.
 
         Parameters
         ----------
         x_interp : Optional[np.ndarray], optional
-            _description_, by default None
+           Interpolation domain in normal space (not log-space), if used ``DataType.AUTO``, by default None
         spectra_full : Optional[np.ndarray], optional
-            _description_, by default None
+            Full tensor of spectra data, by default None
         x_coords_full : Optional[np.ndarray], optional
-            _description_, by default None
+           Full :math:`k_1` log-space coordinates, by default None
 
         Raises
         ------

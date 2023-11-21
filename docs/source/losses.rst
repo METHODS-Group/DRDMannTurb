@@ -1,10 +1,10 @@
 .. py:currentmodule:: drdmannturb
 
-Parameters for the loss function are set in :py:class:`LossParameters`.
-
 
 Loss Function Evaluation
 ========================
+
+Parameters for the loss function are set in :py:class:`LossParameters`.
 
 .. autoclass:: drdmannturb.LossAggregator
     :members:

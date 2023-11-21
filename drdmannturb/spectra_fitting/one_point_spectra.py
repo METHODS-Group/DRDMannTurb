@@ -28,7 +28,7 @@ class OnePointSpectra(nn.Module):
         r"""Initialization of the one point spectra class. This requires the type of eddy lifetime function to use, the power spectra type (currently only the von Karman spectra is implemented), the neural network parameters to use if a DRD model is selected, and whether or not to learn :math:`\nu` in
 
         .. math::
-            \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}.
+            \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}).
 
         Here,
 
@@ -132,10 +132,11 @@ class OnePointSpectra(nn.Module):
         """
         Exponentiates the length, time, and spectrum amplitude scales,
 
-        NOTE: The first 3 parameters of self.parameters() are exactly
-            - LengthScale
-            - TimeScale
-            - SpectrumAmplitude
+        .. note::
+            The first 3 parameters of self.parameters() are exactly
+                - LengthScale
+                - TimeScale
+                - SpectrumAmplitude
 
         Returns
         -------
