@@ -1,5 +1,17 @@
-"""# Custom Data Fit"""
-# %%
+"""
+===============
+Custom Data Fit
+===============
+
+In this example, we use ``drdmannturb`` to fit a simple neural network model to real-world data.
+"""
+
+##############################################################################
+# Import packages
+# ---------------
+#
+# First, we import the packages needed for this example, obtain the current
+# working directory and dataset path, and choose to use CUDA if it is available.
 from pathlib import Path
 
 import numpy as np
@@ -30,6 +42,11 @@ spectra_file = (
     else path / "../data/Spectra.dat"
 )
 
+##############################################################################
+# Setting Physical Parameters
+# ---------------------------
+# Here, we define our charateristic scales :math:`L, \Gamma, \sigma`, the
+# log-scale domain, and the reference height `zref` and velocity `Uref`.
 
 domain = torch.logspace(-1, 2, 20)
 

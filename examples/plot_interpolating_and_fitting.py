@@ -3,6 +3,10 @@
 Interpolating Spectra Data and Fitting
 ======================================
 
+In this example, we're using real-world data, but importantly the data points are not over
+the same spatial coordinates. Since that congruency is required, we need to interpolate the
+data values and obtain them over a common set of points. ``DRDMannTurb`` has built-in
+utilities for handling this.
 """
 from pathlib import Path
 
