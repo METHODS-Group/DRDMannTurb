@@ -61,6 +61,7 @@ domain = torch.logspace(-1, 2, 20)
 # neural network is used in learning the :math:`\tau` function. Additionally, the physical parameters
 # are taken from the reference values for the Kaimal spectra. Finally, in this scenario the regression
 # occurs as an MSE fit to the spectra, which are generated from Mann turbulence (i.e. a synthetic data fit).
+# The ``EddyLifetimeType.MANN`` argument determines the type of eddy lifetime function to use.
 pb = CalibrationProblem(
     nn_params=NNParameters(),
     prob_params=ProblemParameters(eddy_lifetime=EddyLifetimeType.MANN, nepochs=2),
