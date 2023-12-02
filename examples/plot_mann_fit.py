@@ -90,15 +90,15 @@ Data = OnePointSpectraDataGenerator(data_points=DataPoints).Data
 # The model is now "calibrated" to the provided spectra from the synthetic
 # data generated from ``OnePointSpectraDataGenerator``.
 #
-# .. note::
-#   The Mann eddy lifetime function relies on evaluating a hypergeometric function,
-#   which only has a CPU implementation through ``Scipy``. When using this function
-#   with a neural network task, consider either learning this function as well or
-#   using a linear approximation from your data that provides a GPU kernel for
-#   fast evaluation of a similar model. See a later example.
-# %%
+# The Mann eddy lifetime function relies on evaluating a hypergeometric function,
+# which only has a CPU implementation through ``Scipy``. When using this function
+# with a neural network task, consider either learning this function as well or
+# using a linear approximation from your data that provides a GPU kernel for
+# fast evaluation of a similar model. See a later example.
 #
-# Having the necessary components, the model is "fit" and we conclude with a plot.
+# Having the necessary components, the model is "calibrated" (fit) to the provided spectra
+# and we conclude with a plot.
+
 optimal_parameters = pb.calibrate(data=Data)
 
 ##############################################################################
