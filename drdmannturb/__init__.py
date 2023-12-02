@@ -39,5 +39,4 @@ from .spectra_fitting import (
     OnePointSpectra,
     OnePointSpectraDataGenerator,
     PowerSpectraRDT,
-    SpectralCoherence,
 )

@@ -7,7 +7,7 @@ import pickle
 from collections.abc import Iterable
 from functools import partial
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -453,6 +453,9 @@ class CalibrationProblem:
 
         print("=" * 40)
         print(f"Spectra fitting concluded with final loss: {self.loss.item()}")
+
+        if self.prob_params.learn_nu and hasattr(self.OPS, "tauNet"):
+            print(f"Learned nu value: {self.OPS.tauNet.Ra.nu.item()}")
 
         return self.parameters
 

@@ -69,7 +69,8 @@ domain = torch.logspace(-1, 2, 20)
 #
 # Using the ``ProblemParameters`` dataclass, we indicate the eddy lifetime function
 # :math:`\tau` substitution, that we do not intend to learn the exponent :math:`\nu`,
-# and that we would like to train for 10 epochs.
+# and that we would like to train for 10 epochs, or until the tolerance ``tol`` loss (0.001 by default),
+# whichever is reached first.
 #
 # Having set our physical parameters above, we need only pass these to the
 # ``PhysicalParameters`` dataclass just as is done below.
@@ -131,7 +132,9 @@ pb.plot()
 
 ##############################################################################
 # This plots out the loss function terms as specified, each multiplied by the
-# respective coefficient hyperparameter.
+# respective coefficient hyperparameter. The training logs can be accessed from the logging directory
+# with Tensorboard utilities, but we also provide a simple internal utility for a single
+# training log plot.
 pb.plot_losses(run_number=0)
 ##############################################################################
 # Save Model with Problem Metadata

@@ -4,8 +4,10 @@ Adding Regularization and Penalty Terms to Fitting
 ==================================================
 
 This example is nearly identical to the Synthetic Data fit, however we
-use a more sophisticated loss function, introducing now a regularization
-term.
+use a more sophisticated loss function, introducing an additional first-order 
+penalty term. The previous synthetic fit relied only on MSE loss and a second-order penalty. 
+All other models remain the same: Mann turbulence under the Kaimal spectra. 
+
 
 See again the `original DRD paper <https://arxiv.org/abs/2107.11046>`_.
 """
@@ -17,7 +19,6 @@ See again the `original DRD paper <https://arxiv.org/abs/2107.11046>`_.
 # First, we import the packages we need for this example. Additionally, we choose to use
 # CUDA if it is available.
 
-import numpy as np
 import torch
 import torch.nn as nn
 
@@ -27,7 +28,6 @@ from drdmannturb.parameters import (
     PhysicalParameters,
     ProblemParameters,
 )
-
 from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -68,7 +68,6 @@ pb = CalibrationProblem(
 )
 
 ##############################################################################
-# %%
 # In the following cell, we construct our :math:`k_1` data points grid and
 # generate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.
 # It is worth noting that the second element of each tuple in ``DataPoints`` is the
@@ -79,18 +78,25 @@ DataPoints = [(k1, 1) for k1 in k1_data_pts]
 Data = OnePointSpectraDataGenerator(data_points=DataPoints).Data
 
 ##############################################################################
-# %%
-# Now, we fit our model. ``CalibrationProblem.calibrate()`` takes the tuple ``Data``
+# Calibration
+# -----------
+# Now, we fit our model. ``CalibrationProblem.calibrate`` takes the tuple ``Data``
 # which we just constructed and performs a typical training loop.
 optimal_parameters = pb.calibrate(data=Data)
 
 ##############################################################################
-# %%
-# Lastly, we'll used built-in plotting utilities to see the fit result.
+# Plotting
+# --------
+# ``DRDMannTurb`` offers built-in plotting utilities and Tensorboard integration
+# which make visualizing results and various aspects of training performance
+# very simple. The training logs can be accessed from the logging directory
+# with Tensorboard utilities, but we also provide a simple internal utility for a single
+# training log plot.
+#
+# The following will plot our fit.
 pb.plot()
 
 ##############################################################################
-# %%
-# This plots the loss function terms as specified, each multiplied by the
+# This plots out the loss function terms as specified, each multiplied by the
 # respective coefficient hyperparameter.
 pb.plot_losses(run_number=0)

@@ -1,6 +1,6 @@
 import warnings
 from pathlib import Path
-from typing import Any, Iterable, Optional, Tuple, Union
+from typing import Iterable, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np

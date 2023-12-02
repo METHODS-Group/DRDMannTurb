@@ -4,7 +4,12 @@ Changing MLP Architecture and Fitting
 =====================================
 
 This example is nearly identical to the Synthetic Data fit, however we use
-a more complicated neural network architecture.
+a different neural network architecture in hopes of obtaining a better spectra fitting.
+The same set-up using the Mann model under the Kaimal spectra is used here as in other synthetic 
+data fitting examples. The only difference here is in the neural network architecture. 
+Although certain combinations of activation functions, such as ``GELU`` result in considerably
+improved spectra fitting and terminal loss values, the resulting eddy lifetime functions are 
+usually non-physical. 
 
 See again the `original DRD paper <https://arxiv.org/abs/2107.11046>`_.
 """
@@ -16,11 +21,9 @@ See again the `original DRD paper <https://arxiv.org/abs/2107.11046>`_.
 #
 # First, we import the packages we need for this example. Additionally, we choose to use
 # CUDA if it is available.
-import numpy as np
 import torch
 import torch.nn as nn
 
-from drdmannturb.enums import DataType, EddyLifetimeType, PowerSpectraType
 from drdmannturb.parameters import (
     LossParameters,
     NNParameters,
@@ -28,7 +31,6 @@ from drdmannturb.parameters import (
     ProblemParameters,
 )
 from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
-
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -57,17 +59,21 @@ domain = torch.logspace(-1, 2, 20)
 #
 # Compared to the first Synthetic Fit example, as noted already, we are using
 # a more complicated neural network architecture. This time, specifically, our
-# network will have 5 layers of width 5, 10, 20, 10, 5 respectively, and we
-# alternate between ``GELU`` and ``RELU`` activations. Additionally, we have
+# network will have 4 layers of width 5, 10, 20, 10, 5 respectively, and we
+# alternate between ``GELU`` and ``RELU`` activations. We have
 # prescribed more Wolfe iterations.
+# Finally, this task is considerably more difficult than before since the exponent of
+# the eddy lifetime function :math:`\nu` is to be learned. Much more training
+# may be necessary to obtain a close fit approximating :math:`\nu = -1/3`.
 
 pb = CalibrationProblem(
     nn_params=NNParameters(
-        nlayers=5,
-        hidden_layer_sizes=[5, 10, 20, 10, 5],
-        activations=[nn.GELU(), nn.ReLU(), nn.GELU(), nn.ReLU(), nn.GELU()],
+        nlayers=4,
+        # Specifying the activations is done similarly.
+        hidden_layer_sizes=[20, 20, 20, 20],
+        activations=[nn.ReLU(), nn.GELU(), nn.GELU(), nn.ReLU()],
     ),
-    prob_params=ProblemParameters(nepochs=5, wolfe_iter_count=30, learn_nu=True),
+    prob_params=ProblemParameters(nepochs=20, wolfe_iter_count=50, learn_nu=True),
     loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1.0e-5),
     phys_params=PhysicalParameters(
         L=L, Gamma=Gamma, sigma=sigma, Uref=Uref, domain=domain
@@ -103,7 +109,7 @@ pb.plot()
 
 ##############################################################################
 # This plots the loss function terms as specified, each multiplied by the
-# respective coefficient hyperparameter.
-
-
+# respective coefficient hyperparameter. The training logs can be accessed from the logging directory
+# with Tensorboard utilities, but we also provide a simple internal utility for a single
+# training log plot.
 pb.plot_losses(run_number=0)

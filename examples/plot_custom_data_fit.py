@@ -96,5 +96,7 @@ optimal_parameters = pb.calibrate(data=Data)
 # %%
 pb.plot()
 
-# %%
+# The training logs can be accessed from the logging directory
+# with Tensorboard utilities, but we also provide a simple internal utility for a single
+# training log plot.
 pb.plot_losses(run_number=0)
