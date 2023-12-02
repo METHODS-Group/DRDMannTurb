@@ -4,10 +4,10 @@ This module implements the exposed CalibrationProblem class.
 
 import os
 import pickle
+from collections.abc import Iterable
 from functools import partial
 from pathlib import Path
 from typing import Any, Optional, Union
-from collections.abc import Iterable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -39,7 +39,7 @@ class CalibrationProblem:
     type are indicated, the user will need to generate the OPS data using ``OnePointSpectraDataGenerator``,
     after which the model can be fit with ``CalibrationProblem.calibrate``.
 
-    Using the ``device`` argument (first positional), 
+    Using the ``device`` argument (first positional),
     """
 
     def __init__(
@@ -510,7 +510,7 @@ class CalibrationProblem:
     def eval_trainable_norm(self, ord: Optional[Union[float, str]] = "fro"):
         """Evaluates the magnitude (or other norm) of the trainable parameters in the model.
 
-        .. note:: 
+        .. note::
             The ``EddyLifetimeType`` must be set to one of ``TAUNET`` or ``CUSTOMMLP``, which involve
             a network surrogate for the eddy lifetime.
 
@@ -619,14 +619,14 @@ class CalibrationProblem:
 
     def plot(
         self,
-        Data: Optional[tuple[Iterable[float], torch.Tensor]]=None,
-        model_vals: torch.Tensor=None,
+        Data: Optional[tuple[Iterable[float], torch.Tensor]] = None,
+        model_vals: torch.Tensor = None,
         plot_tau: bool = True,
         save: bool = False,
         save_dir: Optional[Union[Path, str]] = None,
         save_filename: str = "",
     ):
-        """Plotting method which visualizes the spectra fit as well as the learned eddy lifetime 
+        """Plotting method which visualizes the spectra fit as well as the learned eddy lifetime
         function, if plot_tau is True. By default, this operates on the data used in the fitting,
         but an alternative k1 domain can be provided and the trained model can be re-evaluated.
 
@@ -644,7 +644,7 @@ class CalibrationProblem:
         save : bool, optional
             Whether to save the resulting figure, by default ``False``
         save_dir : Optional[Union[Path, str]], optional
-            Directory to save to, which is created safely if not already present. By default, 
+            Directory to save to, which is created safely if not already present. By default,
             this is the current working directory.
         save_filename : str, optional
             Filename to save the final figure to, by default ``drdmannturb_final_spectra_fit.png``
@@ -652,7 +652,7 @@ class CalibrationProblem:
         Raises
         ------
         ValueError
-            Must either provide ``k1space`` or re-use what was used for model calibration; 
+            Must either provide ``k1space`` or re-use what was used for model calibration;
             thrown in the case neither is specified.
         ValueError
             Must either provide data points or re-use what was used for model calibration;

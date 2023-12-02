@@ -13,7 +13,6 @@ This example demonstrates the usage of ``drdmannturb``'s pure Mann model impleme
 # a handful of necessary physical constants, including the length scale and domain.
 # Moreover, we choose to use CUDA if it is available.
 import torch
-import torch.nn as nn
 
 from drdmannturb import EddyLifetimeType
 from drdmannturb.parameters import (

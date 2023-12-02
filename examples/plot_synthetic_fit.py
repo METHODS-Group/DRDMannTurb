@@ -33,7 +33,6 @@ from drdmannturb.parameters import (
 )
 from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 
-
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # v2: torch.set_default_device('cuda:0')
@@ -45,9 +44,9 @@ if torch.cuda.is_available():
 # ---------------------------
 # The following cell sets the necessary physical constants, including the characteristic
 # scales for non-dimensionalization, the reference velocity, and the domain.
-# 
+#
 # :math:`L` is our characteristic length scale, :math:`Gamma` is our characteristic
-# time scale, and :math:`sigma` 
+# time scale, and :math:`sigma`
 
 
 # Characteristic scales associated with Kaimal spectrum
@@ -63,7 +62,7 @@ domain = torch.logspace(-1, 2, 20)
 #######################################################################################
 # ``CalibrationProblem`` construction
 # -----------------------------------
-# 
+#
 # We'll use a simple neural network consisting of two layers with :math:`10` neurons each,
 # connected by a ReLU activation function. The parameters determining the network
 # architecture can conveniently be set through the ``NNParameters`` dataclass.
@@ -84,7 +83,7 @@ pb = CalibrationProblem(
     nn_params=NNParameters(
         nlayers=2,
         # Specifying the hidden layer sizes is done by passing a list of integers, as seen here.
-        hidden_layer_sizes=[10, 10],  
+        hidden_layer_sizes=[10, 10],
         # Specifying the activations is done similarly.
         activations=[nn.ReLU(), nn.ReLU()],
     ),
@@ -92,7 +91,7 @@ pb = CalibrationProblem(
         nepochs=10, learn_nu=False, eddy_lifetime=EddyLifetimeType.TAUNET
     ),
     # Note that we have not activated the first order term, but this can be done by passing a value for ``alpha_pen1``
-    loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1.0e-5), 
+    loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1.0e-5),
     phys_params=PhysicalParameters(
         L=L, Gamma=Gamma, sigma=sigma, Uref=Uref, domain=domain
     ),
@@ -126,7 +125,7 @@ optimal_parameters = pb.calibrate(data=Data)
 # ``DRDMannTurb`` offers built-in plotting utilities and Tensorboard integration
 # which make visualizing results and various aspects of training performance
 # very simple.
-# 
+#
 # The following will plot our fit.
 pb.plot()
 

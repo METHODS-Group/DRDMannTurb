@@ -206,7 +206,7 @@ class OnePointSpectraDataGenerator:
         self, DataPoints: Iterable[Tuple[torch.tensor, float]]
     ) -> tuple[torch.Tensor, torch.Tensor]:
         r"""Generates a single spectral tensor from provided data or from a surrogate model.
-        The resulting tensor is of shape (number of :math:`k_1` points):math:`\times 3 \times 3`, 
+        The resulting tensor is of shape (number of :math:`k_1` points):math:`\times 3 \times 3`,
         ie the result consists of the spectral tensor evaluated across the provided range of
         :math:`k_1` points. The spectra model is set during object instantiation.
 
