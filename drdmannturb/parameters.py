@@ -32,8 +32,6 @@ class ProblemParameters:
         Whether or not to initialize with random noise TODO: check this
     noise_magnitude : float
         Magnitude of aforementioned noise contribution
-    fg_coherence : bool
-        description here TODO: check this
     data_type : DataType
         Type of TODO: check this
     eddy_lifetime : EddyLifetimeType
@@ -53,7 +51,6 @@ class ProblemParameters:
     init_with_noise: bool = False
     noise_magnitude: float = 1e-3
 
-    fg_coherence: bool = False
     data_type: DataType = DataType.KAIMAL
     eddy_lifetime: EddyLifetimeType = EddyLifetimeType.CUSTOMMLP
     power_spectra: PowerSpectraType = PowerSpectraType.RDT

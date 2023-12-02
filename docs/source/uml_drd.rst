@@ -40,7 +40,6 @@ These interactive UML diagrams have an issue with rendering the correct arrow ty
             - nepochs : int 
             - init_with_noise : bool 
             - noise_magnitude : float
-            - fg_coherence : bool 
             - data_type : DataType
             - eddy_lifetime : EddyLifetimeType 
             - power_spectra : PowerSpectraType 

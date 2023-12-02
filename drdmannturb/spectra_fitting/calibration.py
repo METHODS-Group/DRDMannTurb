@@ -25,7 +25,6 @@ from ..parameters import (
 )
 from .loss_functions import LossAggregator
 from .one_point_spectra import OnePointSpectra
-from .spectral_coherence import SpectralCoherence
 
 tqdm = partial(tqdm, position=0, leave=True)
 
@@ -109,11 +108,6 @@ class CalibrationProblem:
         self.log_dimensional_scales()
 
         self.vdim = 3
-        self.fg_coherence = prob_params.fg_coherence
-        if (
-            self.fg_coherence
-        ):  # TODO -- Spectral Coherence needs to be updated with new parameter dataclasses
-            self.Coherence = SpectralCoherence(**kwargs)
 
         self.epoch_model_sizes = torch.empty((prob_params.nepochs,))
 
@@ -386,18 +380,6 @@ class CalibrationProblem:
         y = self.OPS(k1_data_pts)
         y_data = torch.zeros_like(y)
         y_data[:4, ...] = y_data0.view(4, y_data0.shape[0] // 4)
-
-        # The case with the coherence formatting the data
-
-        if self.fg_coherence:  # NOTE: CURRENTLY NOT REACHED B/C ALWAYS FALSE FOR NOW
-            DataPoints_coh, DataValues_coh = kwargs.get("Data_Coherence")
-            k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts = DataPoints_coh
-            k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts = torch.meshgrid(
-                k1_data_pts_coh, Delta_y_data_pts, Delta_z_data_pts, indexing="ij"
-            )
-            y_coh = self.Coherence(k1_data_pts, Delta_y_data_pts, Delta_z_data_pts)
-            y_coh_data = torch.zeros_like(y_coh)
-            y_coh_data[:] = DataValues_coh
 
         ########################################
         # Optimizer and Scheduler Initialization
