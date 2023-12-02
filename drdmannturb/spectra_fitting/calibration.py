@@ -4,6 +4,7 @@ This module implements the exposed CalibrationProblem class.
 
 import os
 import pickle
+from collections.abc import Iterable
 from functools import partial
 from pathlib import Path
 from typing import Any, Optional, Union
@@ -30,8 +31,15 @@ tqdm = partial(tqdm, position=0, leave=True)
 
 
 class CalibrationProblem:
-    """
-    Defines a calibration problem
+    r"""
+    .. _calibration-problem-reference:
+    Class for calibrating an eddy lifetime function :math:`\tau` replacement.
+
+    After instantiating ``CalibrationProblem``, wherein the problem and eddy lifetime function substitution
+    type are indicated, the user will need to generate the OPS data using ``OnePointSpectraDataGenerator``,
+    after which the model can be fit with ``CalibrationProblem.calibrate``.
+
+    Using the ``device`` argument (first positional),
     """
 
     def __init__(
@@ -42,29 +50,29 @@ class CalibrationProblem:
         loss_params: LossParameters,
         phys_params: PhysicalParameters,
         logging_directory: Optional[str] = None,
-        output_directory: str = "./results",
+        output_directory: Union[Path, str] = Path().resolve() / "results",
     ):
-        """Constructor for CalibrationProblem class. As depicted in the UML diagram, this class consists of 4 dataclasses.
+        """Constructor for ``CalibrationProblem`` class. As depicted in the UML diagram, this requires of 4 dataclasses.
 
         Parameters
         ----------
         device: str,
-            One of the strings "cpu", "cuda", "mps" indicating the torch device to use
+            One of the strings ``"cpu", "cuda", "mps"`` indicating the torch device to use
         nn_params : NNParameters, optional
-            A NNParameters (for Neural Network) dataclass instance, which defines values of interest
+            A ``NNParameters`` (for Neural Network) dataclass instance, which defines values of interest
             eg. size and depth. By default, calls constructor using default values.
         prob_params : ProblemParameters, optional
-            A ProblemParameters dataclass instance, which is used to determine the conditional branching
+            A ``ProblemParameters`` dataclass instance, which is used to determine the conditional branching
             and computations required, among other things. By default, calls constructor using default values
         loss_params : LossParameters, optional
-            A LossParameters dataclass instance, which defines the loss function terms and related coefficients.
-            By default, calls the constructor LossParameters() using the default values.
+            A ``LossParameters`` dataclass instance, which defines the loss function terms and related coefficients.
+            By default, calls constructor using the default values.
         phys_params : PhysicalParameters, optional
-            A PhysicalParameters dataclass instance, which defines the physical constants governing the
-            problem setting; note that the PhysicalParameters constructor requires three positional
+            A ``PhysicalParameters`` dataclass instance, which defines the physical constants governing the
+            problem setting; note that the ``PhysicalParameters`` constructor requires three positional
             arguments.
-        output_directory : str, optional
-            The directory to write output to; by default "./results"
+        output_directory : Union[Path, str], optional
+            The directory to write output to; by default ``"./results"``
         """
         self.init_device(device)
 
@@ -231,7 +239,7 @@ class CalibrationProblem:
 
     def initialize_parameters_with_noise(self):
         """
-        TODO -- docstring
+        Simple routine to introduce additive white noise to the OPS parameters.
         """
         noise = torch.tensor(
             self.noise_magnitude * torch.randn(*self.parameters.shape),
@@ -243,36 +251,36 @@ class CalibrationProblem:
 
         vector_to_parameters(noise.abs(), self.OPS.Corrector.parameters())
 
-    def eval(self, k1):
-        """TODO -- docstring
+    def eval(self, k1: torch.Tensor) -> np.ndarray:
+        """Calls the calibrated model on ``k1``
 
         Parameters
         ----------
-        k1 : _type_
-            _description_
+        k1 : torch.Tensor
+            Tensor of :math:`k_1` data
 
         Returns
         -------
-        _type_
-            _description_
+        np.ndarray
+            Evaluation of the model represented in a Numpy array (CPU bound)
         """
         Input = self.format_input(k1)
         with torch.no_grad():
             Output = self.OPS(Input)
         return self.format_output(Output)
 
-    def eval_grad(self, k1):
-        """TODO -- docstring
+    def eval_grad(self, k1: torch.Tensor):
+        """Evaluates gradient of ``k1`` via Autograd
 
         Parameters
         ----------
-        k1 : _type_
-            _description_
+        k1 : torch.Tensor
+            Tensor of :math:`k_1` data
 
         Returns
         -------
-        _type_
-            _description_
+        np.ndarray
+            Numpy array of resultant gradient (CPU bound)
         """
         self.OPS.zero_grad()
         Input = self.format_input(k1)
@@ -280,18 +288,18 @@ class CalibrationProblem:
         grad = torch.cat([param.grad.view(-1) for param in self.OPS.parameters()])
         return self.format_output(grad)
 
-    def format_input(self, k1: torch.Tensor):
-        """Wrapper around clone and cast k1 to torch.float64
+    def format_input(self, k1: torch.Tensor) -> torch.Tensor:
+        """Wrapper around clone and cast `k1` to torch.float64
 
         Parameters
         ----------
         k1 : torch.Tensor
-            Tensor to be formatted
+            Tensor of :math:`k_1`
 
         Returns
         -------
         torch.Tensor
-            Tensor of float64
+            Copy of `k1` casted to doubles
         """
         formatted_k1 = k1.clone().detach()
         formatted_k1.requires_grad = k1.requires_grad
@@ -305,12 +313,12 @@ class CalibrationProblem:
         Parameters
         ----------
         out : torch.Tensor
-            Tensor to be brought to CPU and converted to an np.ndarray
+            Tensor to be brought to CPU and converted to an `np.ndarray`
 
         Returns
         -------
         np.ndarray
-            numpy representation of the input tensor
+            Numpy array of the input tensor
         """
         return out.cpu().numpy()
 
@@ -318,18 +326,17 @@ class CalibrationProblem:
 
     def calibrate(
         self,
-        data: tuple[Any, Any],  # TODO -- properly type this
-        model_magnitude_order=1,
+        data: tuple[Iterable[float], torch.Tensor],  # TODO -- properly type this
         tb_comment: str = "",
         optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
-    ):
+    ) -> np.ndarray:
         """Calibration method, which handles the main training loop and some
         data pre-processing.
 
         Parameters
         ----------
-        data : tuple[Any, Any]
-            _description_
+        data : tuple[Iterable[float], torch.Tensor]
+            Tuple of data points and values, respectively, to be used in calibration.
         tb_comment : str
            Filename comment used by tensorboard; useful for distinguishing between architectures and hyperparameters. Refer to tensorboard documentation for examples of use. By default, the empty string, which results in default tensorboard filenames.
         optimizer_class : torch.optim.Optimizer, optional
@@ -337,13 +344,13 @@ class CalibrationProblem:
 
         Returns
         -------
-        _type_
-            _description_
+        np.ndarray
+            Problem parameters as a Numpy array
 
         Raises
         ------
         RuntimeError
-            _description_
+            Thrown in the case that the current loss is not finite.
         """
 
         DataPoints, DataValues = data
@@ -501,13 +508,11 @@ class CalibrationProblem:
         return sum(p.numel() for p in self.OPS.tauNet.parameters())
 
     def eval_trainable_norm(self, ord: Optional[Union[float, str]] = "fro"):
-        """Evaluates the magnitude (or other norm) of the
-            trainable parameters in the model.
+        """Evaluates the magnitude (or other norm) of the trainable parameters in the model.
 
-            NOTE: The EddyLifetimeType must be set to one of the following, which involve
-            a network surrogate for the eddy lifetime:
-                - TAUNET
-                - CUSTOMMLP
+        .. note::
+            The ``EddyLifetimeType`` must be set to one of ``TAUNET`` or ``CUSTOMMLP``, which involve
+            a network surrogate for the eddy lifetime.
 
         Parameters
         ----------
@@ -517,7 +522,7 @@ class CalibrationProblem:
         Raises
         ------
         ValueError
-            If the OPS was not initialized to one of TAUNET, CUSTOMMLPT.
+            If the OPS was not initialized to one of ``TAUNET``, ``CUSTOMMLP``.
 
         """
         if self.OPS.type_EddyLifetime not in [
@@ -536,10 +541,9 @@ class CalibrationProblem:
         """Evaluates the magnitude (or other norm) of the
             trainable parameters in the model.
 
-            NOTE: The EddyLifetimeType must be set to one of the following, which involve
-            a network surrogate for the eddy lifetime:
-                - TAUNET
-                - CUSTOMMLP
+        .. note::
+            The ``EddyLifetimeType`` must be set to one of ``TAUNET`` or ``CUSTOMMLP``, which involve
+            a network surrogate for the eddy lifetime.
 
         Parameters
         ----------
@@ -549,7 +553,7 @@ class CalibrationProblem:
         Raises
         ------
         ValueError
-            If the OPS was not initialized to one of TAUNET, CUSTOMMLP.
+            If the OPS was not initialized to one of ``TAUNET``, ``CUSTOMMLP``.
 
         """
         if self.OPS.type_EddyLifetime not in [
@@ -566,15 +570,14 @@ class CalibrationProblem:
 
     def save_model(self, save_dir: Optional[str] = None):
         """Saves model with current weights, model configuration, and training histories to file.
+        The written filename is of the form ``save_dir/<EddyLifetimeType>_<DataType>.pkl``
 
-        File output is of the form save_dir/type_EddyLifetime_data_type.pkl
-
-        Fields that are stored are:
-            - NNParameters
-            - ProblemParameters
-            - PhysicalParameters
-            - LossParameters
-            - Optimized Parameters (.parameters field)
+        This routine stores
+            - ``NNParameters``
+            - ``ProblemParameters``
+            - ``PhysicalParameters``
+            - ``LossParameters``
+            - Optimized Parameters (``self.parameters`` field)
 
         Parameters
         ----------
@@ -616,38 +619,47 @@ class CalibrationProblem:
 
     def plot(
         self,
-        Data=None,
-        model_vals=None,
+        Data: Optional[tuple[Iterable[float], torch.Tensor]] = None,
+        model_vals: torch.Tensor = None,
         plot_tau: bool = True,
         save: bool = False,
         save_dir: Optional[Union[Path, str]] = None,
         save_filename: str = "",
     ):
-        """Plotting method which visualizes the spectra fit as well as the learned eddy lifetime function, if plot_tau is True. By default, this operates on the data used in the fitting, but an alternative k1 domain can be provided and the trained model can be re-evaluated.
+        """Plotting method which visualizes the spectra fit as well as the learned eddy lifetime
+        function, if plot_tau is True. By default, this operates on the data used in the fitting,
+        but an alternative k1 domain can be provided and the trained model can be re-evaluated.
 
         Parameters
         ----------
-        Data : _type_, optional
-            _description_, by default None
-        model_vals : _type_, optional
-            _description_, by default None
+        Data : tuple[Iterable[float], torch.Tensor], optional
+            Tuple of data points and corresponding values, by default ``None``
+        model_vals : torch.Tensor, optional
+            Evaluation of the OPS on the data, by default None in which case
+            ``Data`` must provided (since the function will call OPS on the provided
+            ``Data``)
         plot_tau : bool, optional
-            Whether to plot the learned tau function, by default True
+            Indicates whether to plot the learned eddy lifetime function or not,
+            by default ``True``
         save : bool, optional
-            Whether to save the resulting figure, by default False
+            Whether to save the resulting figure, by default ``False``
         save_dir : Optional[Union[Path, str]], optional
-            Directory to save to, which is created safely if not already present. By default, this is the directory in which the code is run.
+            Directory to save to, which is created safely if not already present. By default,
+            this is the current working directory.
         save_filename : str, optional
-            Filename to save the final figure to, by default drdmannturb_final_spectra_fit.png if no filename is provided here.
+            Filename to save the final figure to, by default ``drdmannturb_final_spectra_fit.png``
 
         Raises
         ------
         ValueError
-            Must either provide k1space or re-use what was used for model calibration, neither is currently specified.
+            Must either provide ``k1space`` or re-use what was used for model calibration;
+            thrown in the case neither is specified.
         ValueError
-            Must either provide data points or re-use what was used for model calibration, neither is currently specified.
+            Must either provide data points or re-use what was used for model calibration;
+            thrown in the case neither is specified.
         ValueError
-            Plot saving is not possible without specifying the save directory or output_directory for the class.
+            Thrown in the case that ``save`` is true but neither the ``save_dir`` or ``output_directory``
+            are provided.
         """
 
         clr = ["royalblue", "crimson", "forestgreen", "mediumorchid"]
@@ -850,7 +862,8 @@ class CalibrationProblem:
         plt.show()
 
     def plot_losses(self, run_number: int):
-        """A wrapper method around the plot_loss_logs helper, which plots out the loss function terms, multiplied by their associated hyperparameters
+        """A wrapper method around the ``plot_loss_logs`` helper, which plots out the loss
+        function terms, multiplied by their associated hyperparameters
 
         Parameters
         ----------

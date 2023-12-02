@@ -73,10 +73,10 @@ class PhysicalParameters:
     Fields
     ------
     L : float
-        Length scale of the problem used in nondimensionalization; 0.59 for Kaimal
-    Gamma
-        Time scale of the problem used in nondimensionalization; 3.9 for Kaimal
-    sigma
+        Characteristic length scale of the problem; 0.59 for Kaimal
+    Gamma : float
+        Characteristic time scale of the problem; 3.9 for Kaimal
+    sigma : float
         Spectrum amplitude; 3.2 for Kaimal
     Uref : float, optional
         Reference velocity value at hub height (m/s)

@@ -51,7 +51,12 @@ sigma = 3.2  # energy spectrum scale
 
 domain = torch.logspace(-1, 2, 20)
 
-# %%
+##############################################################################
+# ``CalibrationProblem`` Construction
+# -----------------------------------
+# The following cell defines the ``CalibrationProblem`` using default values
+# for the ``NNParameters`` and ``LossParameters`` dataclasses. Importantly,
+# these lines may be elided, but are included here for clarity.
 pb = CalibrationProblem(
     nn_params=NNParameters(),
     prob_params=ProblemParameters(eddy_lifetime=EddyLifetimeType.MANN, nepochs=2),
@@ -60,15 +65,27 @@ pb = CalibrationProblem(
     device=device,
 )
 
-#%%
+##############################################################################
+# Data Generation
+# ---------------
+# The following cell generates the dataset required for calibration.
+#
+# The first two lines are required to construct the spatial grid of points.
+# Specifically, ``DataPoints`` is a list of tuples of the observed spectra data
+# points at each of the :math:`k_1`
+# coordinates and the reference height (in our case, this is just :math:`1`).
+#
+# Lastly, we collect ``Data = (<data points>, <data values>)`` to be used in calibration.
+
 k1_data_pts = domain
 DataPoints = [(k1, 1) for k1 in k1_data_pts]
 
-# %%
 Data = OnePointSpectraDataGenerator(data_points=DataPoints).Data
 
+##############################################################################
 # %%
-pb.eval(k1_data_pts)
+#
+# Having the necessary components, the model is "fit" and we conclude with a plot.
 optimal_parameters = pb.calibrate(data=Data)
 
 # %%

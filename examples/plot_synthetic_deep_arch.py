@@ -3,7 +3,19 @@
 Changing MLP Architecture and Fitting
 =====================================
 
+This example is nearly identical to the Synthetic Data fit, however we use
+a more complicated neural network architecture.
+
+See again the `original DRD paper <https://arxiv.org/abs/2107.11046>`_.
 """
+
+
+#######################################################################################
+# Import packages
+# ---------------
+#
+# First, we import the packages we need for this example. Additionally, we choose to use
+# CUDA if it is available.
 import numpy as np
 import torch
 import torch.nn as nn
@@ -17,22 +29,38 @@ from drdmannturb.parameters import (
 )
 from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 
-# %%
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# v2: torch.set_default_device('cuda:0')
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
+#######################################################################################
+# %%
+# The following cell sets the necessary physical constants, including the characteristic
+# scales for non-dimensionalization, the reference velocity, and the domain.
 
 # Scales associated with Kaimal spectrum
 L = 0.59
 Gamma = 3.9
 sigma = 3.2
 
+# Reference velocity
+Uref = 21.0
+
+# We consider the range :math:`\mathcal{D} = [0.1, 100]` and sample the data points
+# :math:`f_j \in \mathcal{D}` using a logarithmic grid of :math:`20` nodes.
 domain = torch.logspace(-1, 2, 20)
 
+##############################################################################
 # %%
+# Now, we construct our ``CalibrationProblem``.
+#
+# Compared to the first Synthetic Fit example, as noted already, we are using
+# a more complicated neural network architecture. This time, specifically, our
+# network will have 5 layers of width 5, 10, 20, 10, 5 respectively, and we
+# alternate between ``GELU`` and ``RELU`` activations. Additionally, we have
+# prescribed more Wolfe iterations.
+
 pb = CalibrationProblem(
     nn_params=NNParameters(
         nlayers=5,
@@ -41,24 +69,41 @@ pb = CalibrationProblem(
     ),
     prob_params=ProblemParameters(nepochs=5, wolfe_iter_count=30, learn_nu=True),
     loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1.0e-5),
-    phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, domain=domain),
+    phys_params=PhysicalParameters(
+        L=L, Gamma=Gamma, sigma=sigma, Uref=Uref, domain=domain
+    ),
     logging_directory="runs/synthetic_fit_deep_arch",
     device=device,
 )
 
-# %%
+##############################################################################
+# Data Generation
+# ---------------
+# In the following cell, we construct our :math:`k_1` data points grid and
+# generate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.
+# It is worth noting that the second element of each tuple in ``DataPoints`` is the
+# corresponding reference height, which we have chosen to be uniformly :math:`1`.
 k1_data_pts = domain
 DataPoints = [(k1, 1) for k1 in k1_data_pts]
 
-# %%
 Data = OnePointSpectraDataGenerator(data_points=DataPoints).Data
 
-# %%
-pb.eval(k1_data_pts)
+##############################################################################
+# Training
+# --------
+# Now, we fit our model. ``CalibrationProblem.calibrate()`` takes the tuple ``Data``
+# which we just constructed and performs a typical training loop.
 optimal_parameters = pb.calibrate(data=Data)
 
-# %%
+##############################################################################
+# Plotting
+# --------
+# Lastly, we'll use built-in plotting utilities to see the fit result.
 pb.plot()
 
-# %%
+##############################################################################
+# This plots the loss function terms as specified, each multiplied by the
+# respective coefficient hyperparameter.
+
+
 pb.plot_losses(run_number=0)

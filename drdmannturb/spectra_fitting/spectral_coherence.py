@@ -8,11 +8,11 @@ import torch
 import torch.nn as nn
 from numpy import log
 
-from drdmannturb.nn_modules import TauNet
-from drdmannturb.spectra_fitting.power_spectra_rdt import PowerSpectraRDT
 from drdmannturb.common import MannEddyLifetime, VKEnergySpectrum
 from drdmannturb.enums import EddyLifetimeType, PowerSpectraType
+from drdmannturb.nn_modules import TauNet
 from drdmannturb.parameters import NNParameters
+from drdmannturb.spectra_fitting.power_spectra_rdt import PowerSpectraRDT
 
 
 class SpectralCoherence(nn.Module):
@@ -164,8 +164,7 @@ class SpectralCoherence(nn.Module):
         Parameters
         ----------
         f : torch.Tensor
-            Tensor to be integrated;
-            TODO -- finish this docstring
+            Integrand for trapezoid rule.
 
         Returns
         -------

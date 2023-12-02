@@ -22,4 +22,4 @@ Covariance Sampling Methods
     :members:
 
 .. autoclass:: drdmannturb.Sampling_DCT
-    :members
+    :members:

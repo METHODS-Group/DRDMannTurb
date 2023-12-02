@@ -192,19 +192,23 @@ class OnePointSpectraDataGenerator:
                     "Indicated DataType.AUTO, but did not provide k1_data_points"
                 )
 
-        if self.DataPoints is not None and self.data_type != DataType.AUTO:
-            self.generate_Data(self.DataPoints)
-        else:
-            raise ValueError(
-                "Did not provide DataPoints during initialization for DataType method requiring spectra data."
-            )
+        if self.data_type != DataType.AUTO:
+            if self.DataPoints is not None:
+                self.generate_Data(self.DataPoints)
+            else:
+                raise ValueError(
+                    "Did not provide DataPoints during initialization for DataType method requiring spectra data."
+                )
 
         return
 
     def generate_Data(
         self, DataPoints: Iterable[Tuple[torch.tensor, float]]
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        r"""Generates a single spectral tensor from provided data or from a surrogate model. The resulting tensor is of shape (number of :math:`k_1` points):math:`\times 3 \times 3`, ie the result consists of the spectral tensor evaluated across the provided range of :math:`k_1` points. The spectra model is set during object instantiation.
+        r"""Generates a single spectral tensor from provided data or from a surrogate model.
+        The resulting tensor is of shape (number of :math:`k_1` points):math:`\times 3 \times 3`,
+        ie the result consists of the spectral tensor evaluated across the provided range of
+        :math:`k_1` points. The spectra model is set during object instantiation.
 
         .. note::
             The ``DataType.CUSTOM`` type results in replication of the provided spectra data.
