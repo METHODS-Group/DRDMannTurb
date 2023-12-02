@@ -37,9 +37,10 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 #######################################################################################
-# %%
 # The following cell sets the necessary physical constants, including the characteristic
 # scales for non-dimensionalization, the reference velocity, and the domain.
+# We consider the range :math:`\mathcal{D} = [0.1, 100]` and sample the data points
+# :math:`f_j \in \mathcal{D}` using a logarithmic grid of :math:`20` nodes.
 
 # Scales associated with Kaimal spectrum
 L = 0.59
@@ -49,8 +50,7 @@ sigma = 3.2
 # Reference velocity
 Uref = 21.0
 
-# We consider the range :math:`\mathcal{D} = [0.1, 100]` and sample the data points
-# :math:`f_j \in \mathcal{D}` using a logarithmic grid of :math:`20` nodes.
+
 domain = torch.logspace(-1, 2, 20)
 
 ##############################################################################
@@ -75,7 +75,7 @@ pb = CalibrationProblem(
         hidden_layer_sizes=[10, 20, 20, 10],
         activations=[nn.ReLU(), nn.GELU(), nn.GELU(), nn.ReLU()],
     ),
-    prob_params=ProblemParameters(nepochs=20, wolfe_iter_count=50, learn_nu=True),
+    prob_params=ProblemParameters(nepochs=25, wolfe_iter_count=20),
     loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1.0e-5),
     phys_params=PhysicalParameters(
         L=L, Gamma=Gamma, sigma=sigma, Uref=Uref, domain=domain

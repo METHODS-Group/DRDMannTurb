@@ -84,6 +84,7 @@ zref = 1
 # network parameter regularization term with weight
 # :math:`\beta=10^{-5}` to our MSE loss function.
 #
+# Note that :math:`\nu` is learned here.
 
 pb = CalibrationProblem(
     nn_params=NNParameters(
