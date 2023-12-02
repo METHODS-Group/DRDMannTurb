@@ -2,6 +2,18 @@
 ====================================
 Mann Eddy Lifetime Linear Regression
 ====================================
+
+This example demonstrates the a simple configuration of ``DRDMannTurb`` to spectra fitting while using a linear approximation to the Mann eddy lifetime function under the Kaimal one-point spectra.
+
+For reference, the full Mann eddy lifetime function is given by 
+
+.. math::
+
+    \tau^{\mathrm{IEC}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}
+
+where the hypergeometric function can only be evaluated on the CPU. The purpose of this example is to show how a GPU kernel of a linear approximation (in log-log space) of the Mann eddy lifetime can be generated automatically to speed up tasks that require the GPU. As before, the Kaimal spectra is used for the one-point-spectra model. 
+
+The external API works the same as with other models, but the following may speed up some tasks that rely exclusively on the Mann eddy lifetime function. 
 """
 # %%
 import torch

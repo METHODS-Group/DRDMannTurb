@@ -11,7 +11,7 @@ For reference, the full Mann eddy lifetime function is given by
 
     \tau^{\mathrm{IEC}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}
 
-and the Kaimal one-point spectra is defined as in :func:`~drdmannturb.OnePointSpectraDataGenerator.eval_Kaimal`. This set of models has classically been most useful for flat homogeneous terrains. 
+and the Kaimal one-point spectra. This set of models has classically been most useful for flat homogeneous terrains. 
 
 Also, the resulting fitting can be used directly to generate a 3D Mann fluctuation field, as demonstrated in our wind generation example. 
 
@@ -56,7 +56,11 @@ domain = torch.logspace(-1, 2, 20)
 # -----------------------------------
 # The following cell defines the ``CalibrationProblem`` using default values
 # for the ``NNParameters`` and ``LossParameters`` dataclasses. Importantly,
-# these lines may be elided, but are included here for clarity.
+# these data classes are not necessary, see their respective documentations for the default values.
+# The current set-up involves using the Mann model for the eddy lifetime function, meaning no
+# neural network is used in learning the :math:`\tau` function. Additionally, the physical parameters
+# are taken from the reference values for the Kaimal spectra. Finally, in this scenario the regression
+# occurs as an MSE fit to the spectra, which are generated from Mann turbulence (i.e. a synthetic data fit).
 pb = CalibrationProblem(
     nn_params=NNParameters(),
     prob_params=ProblemParameters(eddy_lifetime=EddyLifetimeType.MANN, nepochs=2),
@@ -83,10 +87,21 @@ DataPoints = [(k1, 1) for k1 in k1_data_pts]
 Data = OnePointSpectraDataGenerator(data_points=DataPoints).Data
 
 ##############################################################################
+# The model is now "calibrated" to the provided spectra from the synthetic
+# data generated from ``OnePointSpectraDataGenerator``.
+#
+# .. note::
+#   The Mann eddy lifetime function relies on evaluating a hypergeometric function,
+#   which only has a CPU implementation through ``Scipy``. When using this function
+#   with a neural network task, consider either learning this function as well or
+#   using a linear approximation from your data that provides a GPU kernel for
+#   fast evaluation of a similar model. See a later example.
 # %%
 #
 # Having the necessary components, the model is "fit" and we conclude with a plot.
 optimal_parameters = pb.calibrate(data=Data)
 
-# %%
+##############################################################################
+# The following plot shows the best fit to the synthetic Mann data. Notice that
+# the eddy lifetime function is precisely the Mann model.
 pb.plot()

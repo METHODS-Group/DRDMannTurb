@@ -70,10 +70,11 @@ napoleon_use_rtype = False
 nbsphinx_execute = "always"  # make sure that notebooks are always executed
 nbsphinx_requirejs_path = ""  # for mermaid js to work
 
-nbsphinx_execute_arguments = [
-    "--InlineBackend.figure_formats={'svg', 'pdf'}",
-    "--InlineBackend.rc={'figure.dpi': 96}",
-]
+# NOTE: these settings result in warnings for plots from the traitlets module.
+# nbsphinx_execute_arguments = [
+# "--InlineBackend.figure_formats={'svg', 'pdf'}",
+# "--InlineBackend.rc={'figure.dpi': 96}",
+# ]
 
 templates_path = ["_templates"]
 exclude_patterns = []
