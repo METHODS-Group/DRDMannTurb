@@ -32,13 +32,22 @@ tqdm = partial(tqdm, position=0, leave=True)
 class CalibrationProblem:
     r"""
     .. _calibration-problem-reference:
-    Class for calibrating an eddy lifetime function :math:`\tau` replacement.
+
+    Class which manages the spectra fitting and eddy lifetime function learning based on the deep rapid distortion model developed
+    in `Keith, Khristenko, Wohlmuth (2021) <https://arxiv.org/pdf/2107.11046.pdf>`_.
+
+    This class manages the operator regression task which characterizes the best fitting candidate
+    in a family of nonlocal covariance kernels that are parametrized by a neural network.
+
+    This class can also be used independently of neural networks via the ``EddyLifetimeType`` used for classical spectra fitting tasks, for instance, using
+    the ``EddyLifetimeType.MANN`` results in a fit that completely relies on the Mann eddy lifetime function. If a neural network model is used, Torch's ``LBFGS`` optimizer is used with cosine annealing for learning rate scheduling. Parameters for these components of the training process are set in ``LossParameters`` and ``ProblemParameters`` during initialization.
 
     After instantiating ``CalibrationProblem``, wherein the problem and eddy lifetime function substitution
     type are indicated, the user will need to generate the OPS data using ``OnePointSpectraDataGenerator``,
     after which the model can be fit with ``CalibrationProblem.calibrate``.
 
-    Using the ``device`` argument (first positional),
+    After training, this class can be used in conjunction with the fluctuation generation utilities in this package to generate
+    realistic turbulence fields based on the learned spectra and eddy lifetimes.
     """
 
     def __init__(
@@ -51,22 +60,22 @@ class CalibrationProblem:
         logging_directory: Optional[str] = None,
         output_directory: Union[Path, str] = Path().resolve() / "results",
     ):
-        """Constructor for ``CalibrationProblem`` class. As depicted in the UML diagram, this requires of 4 dataclasses.
+        r"""Constructor for ``CalibrationProblem`` class. As depicted in the UML diagram, this requires of 4 dataclasses.
 
         Parameters
         ----------
         device: str,
             One of the strings ``"cpu", "cuda", "mps"`` indicating the torch device to use
-        nn_params : NNParameters, optional
+        nn_params : NNParameters
             A ``NNParameters`` (for Neural Network) dataclass instance, which defines values of interest
             eg. size and depth. By default, calls constructor using default values.
-        prob_params : ProblemParameters, optional
+        prob_params : ProblemParameters
             A ``ProblemParameters`` dataclass instance, which is used to determine the conditional branching
             and computations required, among other things. By default, calls constructor using default values
-        loss_params : LossParameters, optional
+        loss_params : LossParameters
             A ``LossParameters`` dataclass instance, which defines the loss function terms and related coefficients.
             By default, calls constructor using the default values.
-        phys_params : PhysicalParameters, optional
+        phys_params : PhysicalParameters
             A ``PhysicalParameters`` dataclass instance, which defines the physical constants governing the
             problem setting; note that the ``PhysicalParameters`` constructor requires three positional
             arguments.
@@ -134,10 +143,13 @@ class CalibrationProblem:
     def parameters(self) -> np.ndarray:
         """Returns all parameters of the One Point Spectra surrogate model as a single vector.
 
-        NOTE: The first 3 parameters of self.parameters() are exactly
-            - LengthScale
-            - TimeScale
-            - Magnitude
+        .. note:: The first 3 parameters of self.parameters() are exactly
+            #.  LengthScale
+
+            #.  TimeScale
+
+            #.  Spectrum Amplitude
+
         Returns
         -------
         np.ndarray
@@ -159,10 +171,14 @@ class CalibrationProblem:
     def parameters(self, param_vec: Union[np.ndarray, torch.tensor]) -> None:
         """Setter method for loading in model parameters from a given vector.
 
-        NOTE: The first 3 parameters of self.parameters() are exactly
-            - LengthScale
-            - TimeScale
-            - Magnitude
+        .. note:: The first 3 parameters of self.parameters() are exactly
+
+            #.  LengthScale
+
+            #.  TimeScale
+
+            #.  Spectrum Amplitude
+
 
         Parameters
         ----------
@@ -210,10 +226,13 @@ class CalibrationProblem:
     def log_dimensional_scales(self) -> None:
         """Sets the quantities for non-dimensionalization in log-space.
 
-        NOTE: The first 3 parameters of self.parameters() are exactly
-            - LengthScale
-            - TimeScale
-            - Magnitude
+        .. note:: The first 3 parameters of self.parameters() are exactly
+
+            #.  LengthScale
+
+            #.  TimeScale
+
+            #.  Spectrum Amplitude
         """
         if (
             self.phys_params.L > 0
@@ -246,7 +265,7 @@ class CalibrationProblem:
         vector_to_parameters(noise.abs(), self.OPS.Corrector.parameters())
 
     def eval(self, k1: torch.Tensor) -> np.ndarray:
-        """Calls the calibrated model on ``k1``
+        r"""Calls the calibrated model on :math:`k_1`. This can be done after training or after loading trained model parameters from file.
 
         Parameters
         ----------
@@ -264,12 +283,12 @@ class CalibrationProblem:
         return self.format_output(Output)
 
     def eval_grad(self, k1: torch.Tensor):
-        """Evaluates gradient of ``k1`` via Autograd
+        r"""Evaluates gradient of :math:`k_1` via Autograd
 
         Parameters
         ----------
         k1 : torch.Tensor
-            Tensor of :math:`k_1` data
+            Tensor of :math::math:`k_1` data
 
         Returns
         -------
@@ -283,7 +302,7 @@ class CalibrationProblem:
         return self.format_output(grad)
 
     def format_input(self, k1: torch.Tensor) -> torch.Tensor:
-        """Wrapper around clone and cast `k1` to torch.float64
+        r"""Wrapper around clone and cast :math:`k_1` to ``torch.float64``
 
         Parameters
         ----------
@@ -293,7 +312,7 @@ class CalibrationProblem:
         Returns
         -------
         torch.Tensor
-            Copy of `k1` casted to doubles
+            Copy of `:math:`k_1` casted to doubles
         """
         formatted_k1 = k1.clone().detach()
         formatted_k1.requires_grad = k1.requires_grad
@@ -302,7 +321,7 @@ class CalibrationProblem:
 
     def format_output(self, out: torch.Tensor) -> np.ndarray:
         """
-        Wrapper around `out.cpu().numpy()`
+        Wrapper around torch's ``out.cpu().numpy()``. Returns a CPU tensor.
 
         Parameters
         ----------
@@ -320,12 +339,15 @@ class CalibrationProblem:
 
     def calibrate(
         self,
-        data: tuple[Iterable[float], torch.Tensor],  # TODO -- properly type this
+        data: tuple[Iterable[float], torch.Tensor],
         tb_comment: str = "",
         optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
     ) -> np.ndarray:
-        """Calibration method, which handles the main training loop and some
-        data pre-processing.
+        r"""Calibration method, which handles the main training loop and some
+        data pre-processing. Currently the only supported optimizer is Torch's ``LBFGS``
+        and the learning rate scheduler uses cosine annealing. Parameters for these
+        components of the training process are set in ``LossParameters`` and ``ProblemParameters``
+        during initialization.
 
         Parameters
         ----------
@@ -424,7 +446,6 @@ class CalibrationProblem:
         def closure():
             optimizer.zero_grad()
             y = self.OPS(k1_data_pts)
-            # theta_NN = parameters_to_vector(self.OPS.tauNet.NN.parameters())
 
             self.loss = self.LossAggregator.eval(
                 y[self.curves], y_data[self.curves], self.gen_theta_NN(), self.e_count
@@ -469,8 +490,10 @@ class CalibrationProblem:
 
             The EddyLifetimeType must be set to one of the following, which involve
             a network surrogate for the eddy lifetime:
-                - TAUNET
-                - CUSTOMMLP
+
+                #.  ``TAUNET``
+
+                #.  ``CUSTOMMLP``
 
         Returns
         -------
@@ -558,11 +581,16 @@ class CalibrationProblem:
         The written filename is of the form ``save_dir/<EddyLifetimeType>_<DataType>.pkl``
 
         This routine stores
-            - ``NNParameters``
-            - ``ProblemParameters``
-            - ``PhysicalParameters``
-            - ``LossParameters``
-            - Optimized Parameters (``self.parameters`` field)
+
+            #.  ``NNParameters``
+
+            #.  ``ProblemParameters``
+
+            #.  ``PhysicalParameters``
+
+            #.  ``LossParameters``
+
+            #.  Optimized Parameters (``self.parameters`` field)
 
         Parameters
         ----------
@@ -611,9 +639,9 @@ class CalibrationProblem:
         save_dir: Optional[Union[Path, str]] = None,
         save_filename: str = "",
     ):
-        """Plotting method which visualizes the spectra fit as well as the learned eddy lifetime
-        function, if plot_tau is True. By default, this operates on the data used in the fitting,
-        but an alternative k1 domain can be provided and the trained model can be re-evaluated.
+        r"""Plotting method which visualizes the spectra fit as well as the learned eddy lifetime
+        function, if ``plot_tau=True``. By default, this operates on the data used in the fitting,
+        but an alternative :math:`k_1` domain can be provided and the trained model can be re-evaluated.
 
         Parameters
         ----------

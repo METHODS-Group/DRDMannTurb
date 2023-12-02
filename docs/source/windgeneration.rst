@@ -9,7 +9,7 @@ DRDMannTurb provides generic methods for generating fluctuation fields from spec
     :members: 
 
 Plotting Utilities 
-------------------
+==================
 
 .. currentmodule:: drdmannturb.fluctuation_generation.wind_plot
 
