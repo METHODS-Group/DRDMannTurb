@@ -1,7 +1,7 @@
 Examples
 ========
 
-Find out how to get started with the package using the provided examples:
+The examples below give 
 
 .. toctree::
    :maxdepth: 1

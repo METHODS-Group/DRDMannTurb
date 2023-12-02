@@ -3,7 +3,7 @@
 Data Types and Eddy Lifetime Functions
 ======================================
 
-``DRDMannTurb`` uses several enumerations to set information regarding the type of spectra data being used, the eddy lifetime model to use, and the power spectra law (there is currently only one implemented: the power spectra). The following is an exhaustive list of their labels and values, with individual discussion further below. 
+``DRDMannTurb`` uses several enumerations to set information regarding the type of spectra data being used, the eddy lifetime model to use, and the power spectra law (there is currently only one implemented: the RDT power spectra). The following is an exhaustive list of their labels and values, with individual discussion further below. 
 
 .. autoenum:: drdmannturb.DataType 
     :members: 

@@ -1,5 +1,5 @@
 """
-This module implements the wind generation
+This module implements the wind generation functionality forward facing API
 """
 
 import pickle
@@ -19,6 +19,7 @@ from .nn_covariance import NNCovariance
 
 class GenerateFluctuationField:
     r"""
+    .. _generate-fluctuation-field-reference:
     Class for generating a fluctuation field either from a Mann model or a pre-fit DRD model that generates the field spectra.
 
     Turbulent fluctuations can be formally written as a convolution of a covariance kernel with Gaussian noise :math:`\boldsymbol{\xi}` in the physical domain:
