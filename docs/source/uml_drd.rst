@@ -53,12 +53,6 @@ These interactive UML diagrams have an issue with rendering the correct arrow ty
             - Uref : float 
             - zref : float 
             - Iref : float 
-            - sigma1 : float 
-            - Lambda1 : float 
-            - z0 : float 
-            - Lambda1 : float 
-            - z0: float 
-            - ustar : float 
             - domain : torch.Tensor
         }
         class LossParameters {

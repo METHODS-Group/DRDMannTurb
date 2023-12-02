@@ -20,8 +20,8 @@ class ProblemParameters:
     This class provides a convenient method of storing and passing around
     generic numerical parameters; this also offers default values
 
-    Fields
-    ------
+    Args
+    ----
     learning_rate : float
         Initial earning rate for optimizer.
     tol : float
@@ -29,13 +29,13 @@ class ProblemParameters:
     nepochs : int
         Number of epochs to train for
     init_with_noise : bool
-        Whether or not to initialize with random noise TODO: check this
+        Whether or not to initialize learnable parameters with random noise; by default, neural network parameters are initialized with the Kaiming initialization while physical parameters are initialized with 0.
     noise_magnitude : float
         Magnitude of aforementioned noise contribution
     data_type : DataType
-        Type of TODO: check this
+        Type of spectra data used. These can be generated from the Kaimal spectra, provided raw as CUSTOM data, interpolated, filtered with AUTO, or use the Von Karman model.
     eddy_lifetime : EddyLifetimeType
-        Type of model to use for eddy lifetime function
+        Type of model to use for eddy lifetime function. This determines whether a neural network is to be used to learn to approximate the function, or if a known model, such as the Mann eddy lifetime is to be used.
     power_spectra : PowerSpectraType
         Type of model to use for power spectra
     wolfe_iter_count : int
@@ -62,13 +62,14 @@ class ProblemParameters:
 
 @dataclass
 class PhysicalParameters:
+
     r"""
     This class provides a convenient method of storing and passing around
     the physical parameters required to define a problem; this also offers
     generic default values.
 
-    Fields
-    ------
+    Args
+    ----
     L : float
         Characteristic length scale of the problem; 0.59 for Kaimal
     Gamma : float
@@ -81,6 +82,8 @@ class PhysicalParameters:
         Reference height value; should be measured at hub height (meters)
     Iref : float, optional
         Longitudinal turbulence scale parameter at hub height (meters)
+    domain : torch.Tensor
+        :math:`k_1` domain over which spectra data are defined.
     """
 
     L: float
@@ -90,12 +93,6 @@ class PhysicalParameters:
     Uref: float = 10.0
     zref: float = 1.0
     Iref: float = 0.14
-
-    sigma1: float = Iref * (0.75 * Uref + 5.6)
-    Lambda1: float = 42.0
-
-    z0: float = 0.01
-    ustar: float = 0.41 * Uref / np.log(zref / z0)
 
     domain: torch.Tensor = torch.logspace(-1, 2, 20)
 
@@ -109,8 +106,8 @@ class LossParameters:
     .. note::
         Using the regularization term :math:`\beta` requires a neural network-based approximation to the eddy lifetime function.
 
-    Fields
-    ------
+    Args
+    ----
     alpha_pen1 : float
         Set the first-order penalization term coefficient :math:`\alpha_1`, by default 0.0
     alpha_pen2 : float
@@ -132,8 +129,8 @@ class NNParameters:
     around values required for the definition of the different neural networks
     that are implemented in this package; this also offers default values.
 
-    Fields
-    ------
+    Args
+    ----
     nlayers : int
         Number of layers to be used in neural network model
     input_size : int
@@ -153,6 +150,6 @@ class NNParameters:
 
     hidden_layer_size: int = 10
     hidden_layer_sizes: List[int] = field(default_factory=list)
-    activations: List[nn.Module] = field(default_factory=list)  # [nn.ReLU(), nn.ReLU()]
+    activations: List[nn.Module] = field(default_factory=list)
 
     output_size: int = 3
