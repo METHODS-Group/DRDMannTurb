@@ -1,7 +1,7 @@
 Examples
 ========
 
-The examples below give 
+The examples below give introductions to the framework and the utilities provided in this package. 
 
 .. toctree::
    :maxdepth: 1
