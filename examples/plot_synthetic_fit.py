@@ -153,7 +153,6 @@ pb.save_model("../results/")
 # %%
 import pickle
 
-# TODO: fix this data load and parameter equivalence check
 path_to_parameters = "../results/EddyLifetimeType.TAUNET_DataType.KAIMAL.pkl"
 
 with open(path_to_parameters, "rb") as file:
@@ -167,8 +166,8 @@ with open(path_to_parameters, "rb") as file:
 
 # %% [markdown]
 # ### Recovering Old Model Configuration and Old Parameters
-
-# %%
+# We can also load the old model configuration from file and create a new ``CalibrationProblem`` object from the
+# stored network parameters and metadata.
 pb_new = CalibrationProblem(
     nn_params=nn_params,
     prob_params=prob_params,
