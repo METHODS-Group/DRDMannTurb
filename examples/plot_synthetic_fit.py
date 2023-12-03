@@ -45,8 +45,8 @@ if torch.cuda.is_available():
 # The following cell sets the necessary physical constants, including the characteristic
 # scales for non-dimensionalization, the reference velocity, and the domain.
 #
-# :math:`L` is our characteristic length scale, :math:`Gamma` is our characteristic
-# time scale, and :math:`sigma`
+# :math:`L` is our characteristic length scale, :math:`\Gamma` is our characteristic
+# time scale, and :math:`\sigma` is the spectrum amplitude.
 
 
 # Characteristic scales associated with Kaimal spectrum
