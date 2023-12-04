@@ -91,10 +91,8 @@ class Sampling_VF_FFTW(Sampling_method_freq):
         import pyfftw
 
         n_cpu = 4
-        try:
-            n_cpu = int(os.environ["OMP_NUM_THREADS"])
-        except:
-            pass
+        n_cpu = int(os.environ["OMP_NUM_THREADS"])
+
         shpR = RandomField.ext_grid_shape
         shpC = shpR.copy()
         shpC[-1] = int(shpC[-1] // 2) + 1

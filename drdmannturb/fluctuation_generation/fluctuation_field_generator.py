@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 import numpy as np
-from torch.cuda import is_available
+# from torch.cuda import is_available
 
 from ..spectra_fitting import CalibrationProblem
 from .covariance_kernels import MannCovariance, VonKarmanCovariance
@@ -131,8 +131,6 @@ class GenerateFluctuationField:
                     model_params,
                 ) = pickle.load(file)
 
-            device = "cuda" if is_available() else "cpu"
-
             pb = CalibrationProblem(
                 nn_params=nn_params,
                 prob_params=prob_params,
@@ -161,10 +159,8 @@ class GenerateFluctuationField:
         time_buffer = 3 * Gamma * L
         spatial_margin = 1 * L
 
-        try:
-            grid_levels = [grid_levels[i].GetInt() for i in range(3)]
-        except:
-            pass
+        grid_levels = [grid_levels[i].GetInt() for i in range(3)]
+
         Nx = 2 ** grid_levels[0] + 1
         Ny = 2 ** grid_levels[1] + 1
         Nz = 2 ** grid_levels[2] + 1
