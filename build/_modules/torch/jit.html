@@ -1,0 +1,687 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>torch.jit &#8212; DRDMannTurb 0.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=365ca57ee442770a23c6" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=365ca57ee442770a23c6" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=365ca57ee442770a23c6" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=365ca57ee442770a23c6" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=362ab14a" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css?v=61a4c737" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=365ca57ee442770a23c6" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=365ca57ee442770a23c6" />
+  <script src="../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=365ca57ee442770a23c6"></script>
+
+    <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="https://unpkg.com/mermaid@10.2.0/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="https://unpkg.com/d3/dist/d3.min.js"></script>
+    <script>
+            window.addEventListener("load", function () {
+              var svgs = d3.selectAll(".mermaid svg");
+              svgs.each(function() {
+                var svg = d3.select(this);
+                svg.html("<g>" + svg.html() + "</g>");
+                var inner = svg.select("g");
+                var zoom = d3.zoom().on("zoom", function(event) {
+                  inner.attr("transform", event.transform);
+                });
+                svg.call(zoom);
+              });
+            });
+            </script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/torch/jit';</script>
+    <script src="../../_static/require.min.js?v=8a87acde"></script>
+    <script src="../../_static/custom.js?v=9aa989ff"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">DRDMannTurb 0.1 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../getting-started.html">
+                        Getting Started
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../forward_api.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../internal_api.html">
+                        Internal API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../getting-started.html">
+                        Getting Started
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../forward_api.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../internal_api.html">
+                        Internal API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">torch.jit</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for torch.jit</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">torch._C</span>
+
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">torch.utils</span> <span class="kn">import</span> <span class="n">set_module</span>
+
+<span class="c1"># These are imported so users can access them from the `torch.jit` module</span>
+<span class="kn">from</span> <span class="nn">torch._jit_internal</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Final</span><span class="p">,</span>
+    <span class="n">Future</span><span class="p">,</span>
+    <span class="n">_IgnoreContextManager</span><span class="p">,</span>
+    <span class="n">_overload</span><span class="p">,</span>
+    <span class="n">_overload_method</span><span class="p">,</span>
+    <span class="n">ignore</span><span class="p">,</span>
+    <span class="n">_isinstance</span><span class="p">,</span>
+    <span class="n">is_scripting</span><span class="p">,</span>
+    <span class="n">export</span><span class="p">,</span>
+    <span class="n">unused</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">torch.jit._script</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">script</span><span class="p">,</span>
+    <span class="n">Attribute</span><span class="p">,</span>
+    <span class="n">ScriptModule</span><span class="p">,</span>
+    <span class="n">script_method</span><span class="p">,</span>
+    <span class="n">RecursiveScriptClass</span><span class="p">,</span>
+    <span class="n">RecursiveScriptModule</span><span class="p">,</span>
+    <span class="n">ScriptWarning</span><span class="p">,</span>
+    <span class="n">interface</span><span class="p">,</span>
+    <span class="n">CompilationUnit</span><span class="p">,</span>
+    <span class="n">ScriptFunction</span><span class="p">,</span>
+    <span class="n">_ScriptProfile</span><span class="p">,</span>
+    <span class="n">_unwrap_optional</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">torch.jit._trace</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">trace</span><span class="p">,</span>
+    <span class="n">trace_module</span><span class="p">,</span>
+    <span class="n">TracedModule</span><span class="p">,</span>
+    <span class="n">TracerWarning</span><span class="p">,</span>
+    <span class="n">TracingCheckError</span><span class="p">,</span>
+    <span class="n">is_tracing</span><span class="p">,</span>
+    <span class="n">ONNXTracedModule</span><span class="p">,</span>
+    <span class="n">TopLevelTracedModule</span><span class="p">,</span>
+    <span class="n">_unique_state_dict</span><span class="p">,</span>
+    <span class="n">_flatten</span><span class="p">,</span>
+    <span class="n">_script_if_tracing</span><span class="p">,</span>
+    <span class="n">_get_trace_graph</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">torch.jit._async</span> <span class="kn">import</span> <span class="n">fork</span><span class="p">,</span> <span class="n">wait</span>
+<span class="kn">from</span> <span class="nn">torch.jit._decomposition_utils</span> <span class="kn">import</span> <span class="n">_register_decomposition</span>
+<span class="kn">from</span> <span class="nn">torch.jit._serialization</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">save</span><span class="p">,</span>
+    <span class="n">load</span><span class="p">,</span>
+    <span class="n">jit_module_from_flatbuffer</span><span class="p">,</span>
+    <span class="n">save_jit_module_to_flatbuffer</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">torch.jit._fuser</span> <span class="kn">import</span> <span class="n">optimized_execution</span><span class="p">,</span> <span class="n">fuser</span><span class="p">,</span> <span class="n">last_executed_optimized_graph</span><span class="p">,</span> <span class="n">set_fusion_strategy</span>
+<span class="kn">from</span> <span class="nn">torch.jit._freeze</span> <span class="kn">import</span> <span class="n">freeze</span><span class="p">,</span> <span class="n">optimize_for_inference</span><span class="p">,</span> <span class="n">run_frozen_optimizations</span>
+<span class="kn">from</span> <span class="nn">torch.jit._ir_utils</span> <span class="kn">import</span> <span class="n">_InsertPoint</span>
+
+<span class="c1"># For backwards compatibility</span>
+<span class="n">_fork</span> <span class="o">=</span> <span class="n">fork</span>
+<span class="n">_wait</span> <span class="o">=</span> <span class="n">wait</span>
+<span class="n">_set_fusion_strategy</span> <span class="o">=</span> <span class="n">set_fusion_strategy</span>
+
+
+<span class="k">def</span> <span class="nf">export_opnames</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates new bytecode for a Script module and returns what the op list</span>
+<span class="sd">        would be for a Script Module based off the current code base. If you</span>
+<span class="sd">        have a LiteScriptModule and want to get the currently present</span>
+<span class="sd">        list of ops call _export_operator_list instead.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">_export_opnames</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">_c</span><span class="p">)</span>
+
+
+<span class="c1"># torch.jit.Error</span>
+<span class="n">Error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">JITException</span>
+<span class="n">set_module</span><span class="p">(</span><span class="n">Error</span><span class="p">,</span> <span class="s2">&quot;torch.jit&quot;</span><span class="p">)</span>
+<span class="c1"># This is not perfect but works in common cases</span>
+<span class="n">Error</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="s2">&quot;Error&quot;</span>
+<span class="n">Error</span><span class="o">.</span><span class="vm">__qualname__</span> <span class="o">=</span> <span class="s2">&quot;Error&quot;</span>
+
+<span class="c1"># for use in python if using annotate</span>
+<span class="k">def</span> <span class="nf">annotate</span><span class="p">(</span><span class="n">the_type</span><span class="p">,</span> <span class="n">the_value</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This method is a pass-through function that returns `the_value`, used to hint TorchScript</span>
+<span class="sd">    compiler the type of `the_value`. It is a no-op when running outside of TorchScript.</span>
+
+<span class="sd">    Though TorchScript can infer correct type for most Python expressions, there are some cases where</span>
+<span class="sd">    type inference can be wrong, including:</span>
+
+<span class="sd">    - Empty containers like `[]` and `{}`, which TorchScript assumes to be container of `Tensor`</span>
+<span class="sd">    - Optional types like `Optional[T]` but assigned a valid value of type `T`, TorchScript would assume</span>
+<span class="sd">      it is type `T` rather than `Optional[T]`</span>
+
+<span class="sd">    Note that `annotate()` does not help in `__init__` method of `torch.nn.Module` subclasses because it</span>
+<span class="sd">    is executed in eager mode. To annotate types of `torch.nn.Module` attributes,</span>
+<span class="sd">    use :meth:`~torch.jit.Annotate` instead.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    .. testcode::</span>
+
+<span class="sd">        import torch</span>
+<span class="sd">        from typing import Dict</span>
+
+<span class="sd">        @torch.jit.script</span>
+<span class="sd">        def fn():</span>
+<span class="sd">            # Telling TorchScript that this empty dictionary is a (str -&gt; int) dictionary</span>
+<span class="sd">            # instead of default dictionary type of (str -&gt; Tensor).</span>
+<span class="sd">            d = torch.jit.annotate(Dict[str, int], {})</span>
+
+<span class="sd">            # Without `torch.jit.annotate` above, following statement would fail because of</span>
+<span class="sd">            # type mismatch.</span>
+<span class="sd">            d[&quot;name&quot;] = 20</span>
+
+<span class="sd">    .. testcleanup::</span>
+
+<span class="sd">        del fn</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        the_type: Python type that should be passed to TorchScript compiler as type hint for `the_value`</span>
+<span class="sd">        the_value: Value or expression to hint type for.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        `the_value` is passed back as return value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">the_value</span>
+
+
+<span class="k">def</span> <span class="nf">script_if_tracing</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compiles ``fn`` when it is first called during tracing. ``torch.jit.script``</span>
+<span class="sd">    has a non-negligible start up time when it is first called due to</span>
+<span class="sd">    lazy-initializations of many compiler builtins. Therefore you should not use</span>
+<span class="sd">    it in library code. However, you may want to have parts of your library work</span>
+<span class="sd">    in tracing even if they use control flow. In these cases, you should use</span>
+<span class="sd">    ``@torch.jit.script_if_tracing`` to substitute for</span>
+<span class="sd">    ``torch.jit.script``.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        fn: A function to compile.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        If called during tracing, a :class:`ScriptFunction` created by `torch.jit.script` is returned.</span>
+<span class="sd">        Otherwise, the original function `fn` is returned.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">_script_if_tracing</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+
+
+<span class="c1"># for torch.jit.isinstance</span>
+<span class="k">def</span> <span class="nf">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">target_type</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function provides for container type refinement in TorchScript. It can refine</span>
+<span class="sd">    parameterized containers of the List, Dict, Tuple, and Optional types. E.g. ``List[str]``,</span>
+<span class="sd">    ``Dict[str, List[torch.Tensor]]``, ``Optional[Tuple[int,str,int]]``. It can also</span>
+<span class="sd">    refine basic types such as bools and ints that are available in TorchScript.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        obj: object to refine the type of</span>
+<span class="sd">        target_type: type to try to refine obj to</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        ``bool``: True if obj was successfully refined to the type of target_type,</span>
+<span class="sd">            False otherwise with no new type refinement</span>
+
+
+<span class="sd">    Example (using ``torch.jit.isinstance`` for type refinement):</span>
+<span class="sd">    .. testcode::</span>
+
+<span class="sd">        import torch</span>
+<span class="sd">        from typing import Any, Dict, List</span>
+
+<span class="sd">        class MyModule(torch.nn.Module):</span>
+<span class="sd">            def __init__(self):</span>
+<span class="sd">                super(MyModule, self).__init__()</span>
+
+<span class="sd">            def forward(self, input: Any): # note the Any type</span>
+<span class="sd">                if torch.jit.isinstance(input, List[torch.Tensor]):</span>
+<span class="sd">                    for t in input:</span>
+<span class="sd">                        y = t.clamp(0, 0.5)</span>
+<span class="sd">                elif torch.jit.isinstance(input, Dict[str, str]):</span>
+<span class="sd">                    for val in input.values():</span>
+<span class="sd">                        print(val)</span>
+
+<span class="sd">        m = torch.jit.script(MyModule())</span>
+<span class="sd">        x = [torch.rand(3,3), torch.rand(4,3)]</span>
+<span class="sd">        m(x)</span>
+<span class="sd">        y = {&quot;key1&quot;:&quot;val1&quot;,&quot;key2&quot;:&quot;val2&quot;}</span>
+<span class="sd">        m(y)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">target_type</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">strict_fusion</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class errors if not all nodes have been fused in</span>
+<span class="sd">    inference, or symbolically differentiated in training.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    Forcing fusion of additions.</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        @torch.jit.script</span>
+<span class="sd">        def foo(x):</span>
+<span class="sd">            with torch.jit.strict_fusion():</span>
+<span class="sd">                return x + x + x</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">_jit_internal</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Only works in script mode&quot;</span><span class="p">)</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">tb</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+<span class="c1"># Context manager for globally hiding source ranges when printing graphs.</span>
+<span class="c1"># Note that these functions are exposed to Python as static members of the</span>
+<span class="c1"># Graph class, so mypy checks need to be skipped.</span>
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">_hide_source_ranges</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
+    <span class="n">old_enable_source_ranges</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">Graph</span><span class="o">.</span><span class="n">global_print_source_ranges</span>  <span class="c1"># type: ignore[attr-defined]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">Graph</span><span class="o">.</span><span class="n">set_global_print_source_ranges</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># type: ignore[attr-defined]</span>
+        <span class="k">yield</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">Graph</span><span class="o">.</span><span class="n">set_global_print_source_ranges</span><span class="p">(</span><span class="n">old_enable_source_ranges</span><span class="p">)</span>  <span class="c1"># type: ignore[attr-defined]</span>
+
+<span class="k">def</span> <span class="nf">enable_onednn_fusion</span><span class="p">(</span><span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Enables or disables onednn JIT fusion based on the parameter `enabled`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">_jit_set_llga_enabled</span><span class="p">(</span><span class="n">enabled</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">onednn_fusion_enabled</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns whether onednn JIT fusion is enabled</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">_jit_llga_enabled</span><span class="p">()</span>
+
+<span class="k">del</span> <span class="n">Any</span>
+
+<span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">_jit_init</span><span class="p">():</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;JIT initialization failed&quot;</span><span class="p">)</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  <!-- Previous / next buttons -->
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=365ca57ee442770a23c6"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=365ca57ee442770a23c6"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright Alexey Izmailov, Matthew Meeker.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.5.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.3.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

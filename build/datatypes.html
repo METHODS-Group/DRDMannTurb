@@ -1,0 +1,740 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Data Types and Eddy Lifetime Functions &#8212; DRDMannTurb 0.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=365ca57ee442770a23c6" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=365ca57ee442770a23c6" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=365ca57ee442770a23c6" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=365ca57ee442770a23c6" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=362ab14a" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery.css?v=61a4c737" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=365ca57ee442770a23c6" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=365ca57ee442770a23c6" />
+  <script src="_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=365ca57ee442770a23c6"></script>
+
+    <script src="_static/documentation_options.js?v=2709fde1"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'datatypes';</script>
+    <script src="_static/require.min.js?v=8a87acde"></script>
+    <script src="_static/custom.js?v=9aa989ff"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Spectra and Eddy Lifetime Function Learning" href="calibration.html" />
+    <link rel="prev" title="Dataclass Primitives" href="dataclasses.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">DRDMannTurb 0.1 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="getting-started.html">
+                        Getting Started
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="forward_api.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="internal_api.html">
+                        Internal API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="getting-started.html">
+                        Getting Started
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="forward_api.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="internal_api.html">
+                        Internal API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="fitting.html">Spectra Fitting with DRD Calibration</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="data_types_and_classes.html">Data Types and Data Classes</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="dataclasses.html">Dataclass Primitives</a></li>
+<li class="toctree-l3 current active"><a class="current reference internal" href="#">Data Types and Eddy Lifetime Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="calibration.html">Spectra and Eddy Lifetime Function Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="losses.html">Loss Function Evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interpolation.html">Spectra Interpolation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tb_loss.html">Visualizing Training</a></li>
+</ul>
+</li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="windgeneration.html">Fluctuation Field Generation</a></li>
+
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="forward_api.html" class="nav-link">API Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><i class="fa-solid fa-ellipsis"></i></li>
+    
+    
+    <li class="breadcrumb-item"><a href="data_types_and_classes.html" class="nav-link">Data Types and Data Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Data Types...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="data-types-and-eddy-lifetime-functions">
+<h1>Data Types and Eddy Lifetime Functions<a class="headerlink" href="#data-types-and-eddy-lifetime-functions" title="Link to this heading">#</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">DRDMannTurb</span></code> uses several enumerations to set information regarding the type of spectra data being used, the eddy lifetime model to use, and the power spectra law (there is currently only one implemented: the RDT power spectra). The following is an exhaustive list of their labels and values, with individual discussion further below.</p>
+<section id="data-types">
+<h2>Data Types<a class="headerlink" href="#data-types" title="Link to this heading">#</a></h2>
+<p>The type of spectral tensor is determined by the <a class="reference internal" href="#drdmannturb.DataType" title="drdmannturb.DataType"><code class="xref py py-enum docutils literal notranslate"><span class="pre">DataType</span></code></a> enum, which determines one of the following models:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">DataType.KAIMAL</span></code>, which is the Kaimal spectra.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DataType.VK</span></code>, which is the von Karman spectra model.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DataType.CUSTOM</span></code>, usually used for data that is processed from real-world data. The spectra values are to be provided as the <code class="docutils literal notranslate"><span class="pre">spectra_values</span></code> field, or else to be loaded from a provided <code class="docutils literal notranslate"><span class="pre">spectra_file</span></code>. The result is that the provided data are matched on the wavevector domain.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DataType.AUTO</span></code>, which generates a filtered version of provided spectra data. The filtering is based on differential evolution to perform a non-linear fit onto functions of the following form:</p></li>
+</ol>
+<div class="math notranslate nohighlight">
+\begin{align}
+    &amp; \frac{k_1 F_{11}\left(k_1 z\right)}{u_*^2}=J_1(f):=\frac{a_1 f}{(1+b_1 f)^{c_1}} \\
+    &amp; \frac{k_1 F_{22}\left(k_1 z\right)}{u_*^2}=J_2(f):=\frac{a_2 f}{(1+b_2 f)^{c_2}} \\
+    &amp; \frac{k_1 F_{33}\left(k_1 z\right)}{u_*^2}=J_3(f):=\frac{a_3 f}{1+ b_3 f^{ c_3}} \\
+    &amp; -\frac{k_1 F_{13}\left(k_1 z\right)}{u_*^2}=J_4(f):=\frac{a_4 f}{(1+ b_4 f)^{c_4}},
+\end{align}</div><p>with <span class="math notranslate nohighlight">\(F_{12}=F_{23}=0\)</span>. Here, <span class="math notranslate nohighlight">\(f = (2\pi)^{-1} k_1 z\)</span>. In the above, the <span class="math notranslate nohighlight">\(a_i, b_i, c_i\)</span> are free parameters which are optimized by differential evolution. The result is a spectra model that is similar in form to the Kaimal spectra and which filters/smooths the spectra data from the real world and eases fitting by DRD models. This option is highly suggested in cases where spectra data have large deviations.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The one-point spectra for <span class="math notranslate nohighlight">\(F_{13}\)</span> are NOT to be pre-multiplied with a negative, this data generator automatically performs this step both when using <code class="docutils literal notranslate"><span class="pre">DataType.CUSTOM</span></code> and <code class="docutils literal notranslate"><span class="pre">DataType.AUTO</span></code>.</p>
+</div>
+<dl class="py class enum">
+<dt class="sig sig-object py" id="drdmannturb.DataType">
+<em class="property"><span class="pre">enum</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">drdmannturb.</span></span><span class="sig-name descname"><span class="pre">DataType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#drdmannturb.DataType" title="Link to this definition">#</a></dt>
+<dd><p>An enumeration.</p>
+<p>Valid values are as follows:</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="drdmannturb.DataType.KAIMAL">
+<span class="sig-name descname"><span class="pre">KAIMAL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;DataType.KAIMAL:</span> <span class="pre">1&gt;</span></em><a class="headerlink" href="#drdmannturb.DataType.KAIMAL" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="drdmannturb.DataType.CUSTOM">
+<span class="sig-name descname"><span class="pre">CUSTOM</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;DataType.CUSTOM:</span> <span class="pre">2&gt;</span></em><a class="headerlink" href="#drdmannturb.DataType.CUSTOM" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="drdmannturb.DataType.AUTO">
+<span class="sig-name descname"><span class="pre">AUTO</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;DataType.AUTO:</span> <span class="pre">3&gt;</span></em><a class="headerlink" href="#drdmannturb.DataType.AUTO" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="drdmannturb.DataType.VK">
+<span class="sig-name descname"><span class="pre">VK</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;DataType.VK:</span> <span class="pre">4&gt;</span></em><a class="headerlink" href="#drdmannturb.DataType.VK" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="power-spectra">
+<h2>Power Spectra<a class="headerlink" href="#power-spectra" title="Link to this heading">#</a></h2>
+<dl class="py class enum">
+<dt class="sig sig-object py" id="drdmannturb.PowerSpectraType">
+<em class="property"><span class="pre">enum</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">drdmannturb.</span></span><span class="sig-name descname"><span class="pre">PowerSpectraType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#drdmannturb.PowerSpectraType" title="Link to this definition">#</a></dt>
+<dd><p>An enumeration.</p>
+<p>Valid values are as follows:</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="drdmannturb.PowerSpectraType.RDT">
+<span class="sig-name descname"><span class="pre">RDT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;PowerSpectraType.RDT:</span> <span class="pre">1&gt;</span></em><a class="headerlink" href="#drdmannturb.PowerSpectraType.RDT" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<p>The power spectra law definition is given <a class="reference internal" href="internal_rdt_ps.html"><span class="doc">here</span></a>.</p>
+</section>
+<section id="eddy-lifetime-function">
+<h2>Eddy Lifetime Function<a class="headerlink" href="#eddy-lifetime-function" title="Link to this heading">#</a></h2>
+<p>The type of eddy lifetime function <span class="math notranslate nohighlight">\(\tau\)</span> to use, its form, and whether or not to learn this function is determined by <a class="reference internal" href="#drdmannturb.EddyLifetimeType" title="drdmannturb.EddyLifetimeType"><code class="xref py py-enum docutils literal notranslate"><span class="pre">EddyLifetimeType</span></code></a>. The following models are provided, with more discussions of each in the next section:</p>
+<ol class="arabic">
+<li><p><code class="docutils literal notranslate"><span class="pre">EddyLifetimeType.CONST</span></code> which simply returns <span class="math notranslate nohighlight">\(\tau = 1\)</span>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EddyLifetimeType.TWOTHIRD</span></code> which returns <span class="math notranslate nohighlight">\(\tau = (kL)^{-2/3}\)</span>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EddyLifetimeType.MANN</span></code>, which is the Mann function determined by</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\tau^{\mathrm{IEC}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}\]</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is a CPU-bound function since the hypergeometric function has no readily use-able CUDA implementation, which considerably impacts performance. Consider using an approximation to this function.</p>
+</div>
+</div></blockquote>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EddyLifetimeType.MANN_APPROX</span></code>, which performs a linear regression on a single evaluation of the Mann eddy lifetime function in log-log space. This results in a GPU function of the form <span class="math notranslate nohighlight">\(\tau \approx \exp (\alpha \boldsymbol{k} + \beta)\)</span>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EddyLifetimeType.TAUNET</span></code>, which performs a simple neural-network based fit of the eddy lifetime function. This has the component of learning</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}).\]</div>
+<p>The architecture here is identical to the one used in the original DRD paper: 2 layers of 10 neurons each, connected by a RELU function. Setting <code class="docutils literal notranslate"><span class="pre">learn_nu=True</span></code> means the neural network will also attempt to learn the <span class="math notranslate nohighlight">\(\nu\)</span> value.</p>
+</div></blockquote>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EddyLifetimeType.CUSTOMMLP</span></code> which is an expanded API of the <code class="docutils literal notranslate"><span class="pre">TAUNET</span></code>: the number of layers, widths of each layer, and activation functions between each layer can be specified. The <code class="docutils literal notranslate"><span class="pre">learn_nu</span></code> variable serves the same function as for <code class="docutils literal notranslate"><span class="pre">TAUNET</span></code>.</p></li>
+</ol>
+<dl class="py class enum">
+<dt class="sig sig-object py" id="drdmannturb.EddyLifetimeType">
+<em class="property"><span class="pre">enum</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">drdmannturb.</span></span><span class="sig-name descname"><span class="pre">EddyLifetimeType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#drdmannturb.EddyLifetimeType" title="Link to this definition">#</a></dt>
+<dd><p>An enumeration.</p>
+<p>Valid values are as follows:</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="drdmannturb.EddyLifetimeType.TWOTHIRD">
+<span class="sig-name descname"><span class="pre">TWOTHIRD</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;EddyLifetimeType.TWOTHIRD:</span> <span class="pre">1&gt;</span></em><a class="headerlink" href="#drdmannturb.EddyLifetimeType.TWOTHIRD" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="drdmannturb.EddyLifetimeType.CUSTOMMLP">
+<span class="sig-name descname"><span class="pre">CUSTOMMLP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;EddyLifetimeType.CUSTOMMLP:</span> <span class="pre">2&gt;</span></em><a class="headerlink" href="#drdmannturb.EddyLifetimeType.CUSTOMMLP" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="drdmannturb.EddyLifetimeType.TAUNET">
+<span class="sig-name descname"><span class="pre">TAUNET</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;EddyLifetimeType.TAUNET:</span> <span class="pre">3&gt;</span></em><a class="headerlink" href="#drdmannturb.EddyLifetimeType.TAUNET" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="drdmannturb.EddyLifetimeType.MANN">
+<span class="sig-name descname"><span class="pre">MANN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;EddyLifetimeType.MANN:</span> <span class="pre">4&gt;</span></em><a class="headerlink" href="#drdmannturb.EddyLifetimeType.MANN" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="drdmannturb.EddyLifetimeType.MANN_APPROX">
+<span class="sig-name descname"><span class="pre">MANN_APPROX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;EddyLifetimeType.MANN_APPROX:</span> <span class="pre">5&gt;</span></em><a class="headerlink" href="#drdmannturb.EddyLifetimeType.MANN_APPROX" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="drdmannturb.EddyLifetimeType.CONST">
+<span class="sig-name descname"><span class="pre">CONST</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;EddyLifetimeType.CONST:</span> <span class="pre">6&gt;</span></em><a class="headerlink" href="#drdmannturb.EddyLifetimeType.CONST" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="mann-eddy-lifetime-function-and-vk-energy-spectrum">
+<h2>Mann Eddy Lifetime Function and VK Energy Spectrum<a class="headerlink" href="#mann-eddy-lifetime-function-and-vk-energy-spectrum" title="Link to this heading">#</a></h2>
+<p>The associated eddy lifetime functions are as follows:</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="drdmannturb.common.MannEddyLifetime">
+<span class="sig-prename descclassname"><span class="pre">drdmannturb.common.</span></span><span class="sig-name descname"><span class="pre">MannEddyLifetime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kL</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/drdmannturb/common.html#MannEddyLifetime"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#drdmannturb.common.MannEddyLifetime" title="Link to this definition">#</a></dt>
+<dd><p>Implementation of the full Mann eddy lifetime function, of the form</p>
+<div class="math notranslate nohighlight">
+\[\tau^{\mathrm{IEC}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}\]</div>
+<p>This function can execute with input data that are either in Torch or numpy. However,</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This function depends on SciPy for evaluating the hypergeometric function, meaning a GPU tensor will be returned to the CPU for a single evaluation and then converted back to a GPU tensor. This incurs a substantial loss of performance.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kL</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Union[torch.Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">np.ndarray]</span></code>) – Scaled wave number</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code> – Evaluated Mann eddy lifetime function.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="drdmannturb.common.Mann_linear_exponential_approx">
+<span class="sig-prename descclassname"><span class="pre">drdmannturb.common.</span></span><span class="sig-name descname"><span class="pre">Mann_linear_exponential_approx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kL</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coefficient</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intercept</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/drdmannturb/common.html#Mann_linear_exponential_approx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#drdmannturb.common.Mann_linear_exponential_approx" title="Link to this definition">#</a></dt>
+<dd><p>A surrogate for the term involving the hypergeometric function</p>
+<div class="math notranslate nohighlight">
+\[\frac{x^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-x^{-2}\right)}}\]</div>
+<p>via an exponential function, which is a reasonable approximation since the resulting <span class="math notranslate nohighlight">\(\tau\)</span> is nearly linear on a log-log plot. The resulting approximation is the function</p>
+<div class="math notranslate nohighlight">
+\[\exp \left( \alpha kL + \beta \right)\]</div>
+<p>where <span class="math notranslate nohighlight">\(\alpha, \beta\)</span> are obtained from a linear regression on the hypergeometric function on the domain of interest. In particular, using this function requires that a linear regression has already been performed on the basis of the above function depending on the hypergeometric function, which is an operation performed once on the CPU. The rest of this subroutine is on the GPU and unlike the full hypergeometric approximation, will not incur any slow-down of the rest of the spectra fitting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kL</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – _description_</p></li>
+<li><p><strong>coefficient</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The linear coefficient <span class="math notranslate nohighlight">\(\alpha\)</span> obtained from the linear regression.</p></li>
+<li><p><strong>intercept</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The intercept term <span class="math notranslate nohighlight">\(\beta\)</span> from the linear regression.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code> – Exponential approximation to the Mann eddy lifetime function output.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="drdmannturb.common.VKEnergySpectrum">
+<span class="sig-prename descclassname"><span class="pre">drdmannturb.common.</span></span><span class="sig-name descname"><span class="pre">VKEnergySpectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kL</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#drdmannturb.common.VKEnergySpectrum" title="Link to this definition">#</a></dt>
+<dd><p>Von Karman energy spectrum without scaling:</p>
+<div class="math notranslate nohighlight">
+\[\widetilde{E}(\boldsymbol{k}) = \left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3}.\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kL</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – Scaled wave number domain.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code> – Result of the evaluation</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  <!-- Previous / next buttons -->
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="dataclasses.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Dataclass Primitives</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="calibration.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Spectra and Eddy Lifetime Function Learning</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-types">Data Types</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.DataType"><code class="docutils literal notranslate"><span class="pre">DataType</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.DataType.KAIMAL"><code class="docutils literal notranslate"><span class="pre">DataType.KAIMAL</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.DataType.CUSTOM"><code class="docutils literal notranslate"><span class="pre">DataType.CUSTOM</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.DataType.AUTO"><code class="docutils literal notranslate"><span class="pre">DataType.AUTO</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.DataType.VK"><code class="docutils literal notranslate"><span class="pre">DataType.VK</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#power-spectra">Power Spectra</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.PowerSpectraType"><code class="docutils literal notranslate"><span class="pre">PowerSpectraType</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.PowerSpectraType.RDT"><code class="docutils literal notranslate"><span class="pre">PowerSpectraType.RDT</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#eddy-lifetime-function">Eddy Lifetime Function</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.EddyLifetimeType"><code class="docutils literal notranslate"><span class="pre">EddyLifetimeType</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.EddyLifetimeType.TWOTHIRD"><code class="docutils literal notranslate"><span class="pre">EddyLifetimeType.TWOTHIRD</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.EddyLifetimeType.CUSTOMMLP"><code class="docutils literal notranslate"><span class="pre">EddyLifetimeType.CUSTOMMLP</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.EddyLifetimeType.TAUNET"><code class="docutils literal notranslate"><span class="pre">EddyLifetimeType.TAUNET</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.EddyLifetimeType.MANN"><code class="docutils literal notranslate"><span class="pre">EddyLifetimeType.MANN</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.EddyLifetimeType.MANN_APPROX"><code class="docutils literal notranslate"><span class="pre">EddyLifetimeType.MANN_APPROX</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.EddyLifetimeType.CONST"><code class="docutils literal notranslate"><span class="pre">EddyLifetimeType.CONST</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mann-eddy-lifetime-function-and-vk-energy-spectrum">Mann Eddy Lifetime Function and VK Energy Spectrum</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.common.MannEddyLifetime"><code class="docutils literal notranslate"><span class="pre">MannEddyLifetime()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.common.Mann_linear_exponential_approx"><code class="docutils literal notranslate"><span class="pre">Mann_linear_exponential_approx()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.common.VKEnergySpectrum"><code class="docutils literal notranslate"><span class="pre">VKEnergySpectrum()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="tocsection sourcelink">
+    <a href="_sources/datatypes.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=365ca57ee442770a23c6"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=365ca57ee442770a23c6"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright Alexey Izmailov, Matthew Meeker.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.5.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.3.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

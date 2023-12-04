@@ -1,0 +1,1369 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>drdmannturb.spectra_fitting.calibration &#8212; DRDMannTurb 0.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=365ca57ee442770a23c6" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=365ca57ee442770a23c6" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=365ca57ee442770a23c6" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=365ca57ee442770a23c6" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=362ab14a" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery.css?v=61a4c737" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=365ca57ee442770a23c6" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=365ca57ee442770a23c6" />
+  <script src="../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=365ca57ee442770a23c6"></script>
+
+    <script src="../../../_static/documentation_options.js?v=2709fde1"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="https://unpkg.com/mermaid@10.2.0/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="https://unpkg.com/d3/dist/d3.min.js"></script>
+    <script>
+            window.addEventListener("load", function () {
+              var svgs = d3.selectAll(".mermaid svg");
+              svgs.each(function() {
+                var svg = d3.select(this);
+                svg.html("<g>" + svg.html() + "</g>");
+                var inner = svg.select("g");
+                var zoom = d3.zoom().on("zoom", function(event) {
+                  inner.attr("transform", event.transform);
+                });
+                svg.call(zoom);
+              });
+            });
+            </script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/drdmannturb/spectra_fitting/calibration';</script>
+    <script src="../../../_static/require.min.js?v=8a87acde"></script>
+    <script src="../../../_static/custom.js?v=9aa989ff"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">DRDMannTurb 0.1 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../getting-started.html">
+                        Getting Started
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../forward_api.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../internal_api.html">
+                        Internal API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../getting-started.html">
+                        Getting Started
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../forward_api.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../internal_api.html">
+                        Internal API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">drdmannturb....</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for drdmannturb.spectra_fitting.calibration</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module implements the exposed CalibrationProblem class.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch.nn.utils</span> <span class="kn">import</span> <span class="n">parameters_to_vector</span><span class="p">,</span> <span class="n">vector_to_parameters</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="kn">from</span> <span class="nn">..common</span> <span class="kn">import</span> <span class="n">MannEddyLifetime</span>
+<span class="kn">from</span> <span class="nn">..enums</span> <span class="kn">import</span> <span class="n">EddyLifetimeType</span>
+<span class="kn">from</span> <span class="nn">..parameters</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">LossParameters</span><span class="p">,</span>
+    <span class="n">NNParameters</span><span class="p">,</span>
+    <span class="n">PhysicalParameters</span><span class="p">,</span>
+    <span class="n">ProblemParameters</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.loss_functions</span> <span class="kn">import</span> <span class="n">LossAggregator</span>
+<span class="kn">from</span> <span class="nn">.one_point_spectra</span> <span class="kn">import</span> <span class="n">OnePointSpectra</span>
+
+<span class="n">tqdm</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">tqdm</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="CalibrationProblem">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.CalibrationProblem">[docs]</a>
+<span class="k">class</span> <span class="nc">CalibrationProblem</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. _calibration-problem-reference:</span>
+
+<span class="sd">    Class which manages the spectra fitting and eddy lifetime function learning based on the deep rapid distortion model developed</span>
+<span class="sd">    in `Keith, Khristenko, Wohlmuth (2021) &lt;https://arxiv.org/pdf/2107.11046.pdf&gt;`_.</span>
+
+<span class="sd">    This class manages the operator regression task which characterizes the best fitting candidate</span>
+<span class="sd">    in a family of nonlocal covariance kernels that are parametrized by a neural network.</span>
+
+<span class="sd">    This class can also be used independently of neural networks via the ``EddyLifetimeType`` used for classical spectra fitting tasks, for instance, using</span>
+<span class="sd">    the ``EddyLifetimeType.MANN`` results in a fit that completely relies on the Mann eddy lifetime function. If a neural network model is used, Torch&#39;s ``LBFGS`` optimizer is used with cosine annealing for learning rate scheduling. Parameters for these components of the training process are set in ``LossParameters`` and ``ProblemParameters`` during initialization.</span>
+
+<span class="sd">    After instantiating ``CalibrationProblem``, wherein the problem and eddy lifetime function substitution</span>
+<span class="sd">    type are indicated, the user will need to generate the OPS data using ``OnePointSpectraDataGenerator``,</span>
+<span class="sd">    after which the model can be fit with ``CalibrationProblem.calibrate``.</span>
+
+<span class="sd">    After training, this class can be used in conjunction with the fluctuation generation utilities in this package to generate</span>
+<span class="sd">    realistic turbulence fields based on the learned spectra and eddy lifetimes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">nn_params</span><span class="p">:</span> <span class="n">NNParameters</span><span class="p">,</span>
+        <span class="n">prob_params</span><span class="p">:</span> <span class="n">ProblemParameters</span><span class="p">,</span>
+        <span class="n">loss_params</span><span class="p">:</span> <span class="n">LossParameters</span><span class="p">,</span>
+        <span class="n">phys_params</span><span class="p">:</span> <span class="n">PhysicalParameters</span><span class="p">,</span>
+        <span class="n">logging_directory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">output_directory</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Path</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;results&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Constructor for ``CalibrationProblem`` class. As depicted in the UML diagram, this requires of 4 dataclasses.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        device: str,</span>
+<span class="sd">            One of the strings ``&quot;cpu&quot;, &quot;cuda&quot;, &quot;mps&quot;`` indicating the torch device to use</span>
+<span class="sd">        nn_params : NNParameters</span>
+<span class="sd">            A ``NNParameters`` (for Neural Network) dataclass instance, which defines values of interest</span>
+<span class="sd">            eg. size and depth. By default, calls constructor using default values.</span>
+<span class="sd">        prob_params : ProblemParameters</span>
+<span class="sd">            A ``ProblemParameters`` dataclass instance, which is used to determine the conditional branching</span>
+<span class="sd">            and computations required, among other things. By default, calls constructor using default values</span>
+<span class="sd">        loss_params : LossParameters</span>
+<span class="sd">            A ``LossParameters`` dataclass instance, which defines the loss function terms and related coefficients.</span>
+<span class="sd">            By default, calls constructor using the default values.</span>
+<span class="sd">        phys_params : PhysicalParameters</span>
+<span class="sd">            A ``PhysicalParameters`` dataclass instance, which defines the physical constants governing the</span>
+<span class="sd">            problem setting; note that the ``PhysicalParameters`` constructor requires three positional</span>
+<span class="sd">            arguments.</span>
+<span class="sd">        output_directory : Union[Path, str], optional</span>
+<span class="sd">            The directory to write output to; by default ``&quot;./results&quot;``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">nn_params</span> <span class="o">=</span> <span class="n">nn_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prob_params</span> <span class="o">=</span> <span class="n">prob_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss_params</span> <span class="o">=</span> <span class="n">loss_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phys_params</span> <span class="o">=</span> <span class="n">phys_params</span>
+
+        <span class="c1"># stringify the activation functions used; for manual bash only</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activfuncstr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">nn_params</span><span class="o">.</span><span class="n">activations</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_size</span> <span class="o">=</span> <span class="n">nn_params</span><span class="o">.</span><span class="n">input_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hidden_layer_size</span> <span class="o">=</span> <span class="n">nn_params</span><span class="o">.</span><span class="n">hidden_layer_sizes</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">hidden_layer_size</span> <span class="o">=</span> <span class="n">nn_params</span><span class="o">.</span><span class="n">hidden_layer_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_with_noise</span> <span class="o">=</span> <span class="n">prob_params</span><span class="o">.</span><span class="n">init_with_noise</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">noise_magnitude</span> <span class="o">=</span> <span class="n">prob_params</span><span class="o">.</span><span class="n">noise_magnitude</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span> <span class="o">=</span> <span class="n">OnePointSpectra</span><span class="p">(</span>
+            <span class="n">type_eddy_lifetime</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">prob_params</span><span class="o">.</span><span class="n">eddy_lifetime</span><span class="p">,</span>
+            <span class="n">type_power_spectra</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">prob_params</span><span class="o">.</span><span class="n">power_spectra</span><span class="p">,</span>
+            <span class="n">nn_parameters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nn_params</span><span class="p">,</span>
+            <span class="n">learn_nu</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">prob_params</span><span class="o">.</span><span class="n">learn_nu</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prob_params</span><span class="o">.</span><span class="n">eddy_lifetime</span> <span class="o">==</span> <span class="n">EddyLifetimeType</span><span class="o">.</span><span class="n">MANN_APPROX</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">set_scales</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">phys_params</span><span class="o">.</span><span class="n">L</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phys_params</span><span class="o">.</span><span class="n">Gamma</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phys_params</span><span class="o">.</span><span class="n">sigma</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_with_noise</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initialize_parameters_with_noise</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_dimensional_scales</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">vdim</span> <span class="o">=</span> <span class="mi">3</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">epoch_model_sizes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">prob_params</span><span class="o">.</span><span class="n">nepochs</span><span class="p">,))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_directory</span> <span class="o">=</span> <span class="n">output_directory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logging_directory</span> <span class="o">=</span> <span class="n">logging_directory</span>
+
+    <span class="c1"># TODO: propagate device setting through this method</span>
+<div class="viewcode-block" id="CalibrationProblem.init_device">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.CalibrationProblem.init_device">[docs]</a>
+    <span class="k">def</span> <span class="nf">init_device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the device (CPU or GPU) on which computation is performed.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        device : str</span>
+<span class="sd">            string following PyTorch conventions -- &quot;cuda&quot; or &quot;cpu&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">device</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span> <span class="ow">and</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="s2">&quot;torch.cuda.FloatTensor&quot;</span><span class="p">)</span></div>
+
+        <span class="c1"># self.OPS.to(self.device)</span>
+
+    <span class="c1"># =========================================</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns all parameters of the One Point Spectra surrogate model as a single vector.</span>
+
+<span class="sd">        .. note:: The first 3 parameters of self.parameters() are exactly</span>
+<span class="sd">            #.  LengthScale</span>
+
+<span class="sd">            #.  TimeScale</span>
+
+<span class="sd">            #.  Spectrum Amplitude</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Single vector containing all model parameters on the CPU, which can be loaded into an object with the same architecture with the</span>
+<span class="sd">            parameters setter method. This automatically offloads any model parameters that were on the GPU, if any.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">NN_parameters</span> <span class="o">=</span> <span class="n">parameters_to_vector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">param_vec</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">NN_parameters</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">NN_parameters</span><span class="o">.</span><span class="n">is_cuda</span>
+                <span class="k">else</span> <span class="n">NN_parameters</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">param_vec</span>
+
+    <span class="nd">@parameters</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param_vec</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Setter method for loading in model parameters from a given vector.</span>
+
+<span class="sd">        .. note:: The first 3 parameters of self.parameters() are exactly</span>
+
+<span class="sd">            #.  LengthScale</span>
+
+<span class="sd">            #.  TimeScale</span>
+
+<span class="sd">            #.  Spectrum Amplitude</span>
+
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        param_vec : Union[np.ndarray, torch.tensor]</span>
+<span class="sd">            One-dimensional vector of model parameters.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            &quot;Parameter vector must contain at least 3 dimensionless scale quantities (L, Gamma, sigma) as well as network parameters, if using one of TAUNET, CUSTOMMLP.&quot;</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            &quot;Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported against the currently constructed architecture if this mismatch occurs.&quot;</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            &quot;Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported against the currently constructed architecture if this mismatch occurs.&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_vec</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Parameter vector must contain at least 3 dimensionless scale quantities (L, Gamma, sigma) as well as network parameters, if using one of TAUNET, CUSTOMMLP.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_vec</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported against the currently constructed architecture if this mismatch occurs.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">type_EddyLifetime</span>
+            <span class="ow">in</span> <span class="p">[</span>
+                <span class="n">EddyLifetimeType</span><span class="o">.</span><span class="n">TAUNET</span><span class="p">,</span>
+                <span class="n">EddyLifetimeType</span><span class="o">.</span><span class="n">CUSTOMMLP</span><span class="p">,</span>
+            <span class="p">]</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_vec</span><span class="p">[</span><span class="mi">3</span><span class="p">:])</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_trainable_params</span><span class="p">()</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported against the currently constructed architecture if this mismatch occurs.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">param_vec</span><span class="p">):</span>
+            <span class="n">param_vec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+                <span class="n">param_vec</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span>
+            <span class="p">)</span>  <span class="c1"># TODO: this should also properly load on GPU, issue #28</span>
+
+        <span class="n">vector_to_parameters</span><span class="p">(</span><span class="n">param_vec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+
+<div class="viewcode-block" id="CalibrationProblem.log_dimensional_scales">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.CalibrationProblem.log_dimensional_scales">[docs]</a>
+    <span class="k">def</span> <span class="nf">log_dimensional_scales</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the quantities for non-dimensionalization in log-space.</span>
+
+<span class="sd">        .. note:: The first 3 parameters of self.parameters() are exactly</span>
+
+<span class="sd">            #.  LengthScale</span>
+
+<span class="sd">            #.  TimeScale</span>
+
+<span class="sd">            #.  Spectrum Amplitude</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phys_params</span><span class="o">.</span><span class="n">L</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">phys_params</span><span class="o">.</span><span class="n">Gamma</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">phys_params</span><span class="o">.</span><span class="n">sigma</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="p">):</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+            <span class="n">parameters</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phys_params</span><span class="o">.</span><span class="n">L</span><span class="p">),</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phys_params</span><span class="o">.</span><span class="n">Gamma</span><span class="p">),</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phys_params</span><span class="o">.</span><span class="n">sigma</span><span class="p">),</span>
+            <span class="p">]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">parameters</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All dimension scaling constants must be positive.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CalibrationProblem.initialize_parameters_with_noise">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.CalibrationProblem.initialize_parameters_with_noise">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialize_parameters_with_noise</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Simple routine to introduce additive white noise to the OPS parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">noise_magnitude</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">vector_to_parameters</span><span class="p">(</span><span class="n">noise</span><span class="o">.</span><span class="n">abs</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+
+        <span class="n">vector_to_parameters</span><span class="p">(</span><span class="n">noise</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">tauNet</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+
+        <span class="n">vector_to_parameters</span><span class="p">(</span><span class="n">noise</span><span class="o">.</span><span class="n">abs</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">Corrector</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="CalibrationProblem.eval">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.CalibrationProblem.eval">[docs]</a>
+    <span class="k">def</span> <span class="nf">eval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calls the calibrated model on :math:`k_1`. This can be done after training or after loading trained model parameters from file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        k1 : torch.Tensor</span>
+<span class="sd">            Tensor of :math:`k_1` data</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Evaluation of the model represented in a Numpy array (CPU bound)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Input</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_input</span><span class="p">(</span><span class="n">k1</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">Output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="p">(</span><span class="n">Input</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_output</span><span class="p">(</span><span class="n">Output</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CalibrationProblem.eval_grad">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.CalibrationProblem.eval_grad">[docs]</a>
+    <span class="k">def</span> <span class="nf">eval_grad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Evaluates gradient of :math:`k_1` via Autograd</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        k1 : torch.Tensor</span>
+<span class="sd">            Tensor of :math::math:`k_1` data</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Numpy array of resultant gradient (CPU bound)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+        <span class="n">Input</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_input</span><span class="p">(</span><span class="n">k1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="p">(</span><span class="n">Input</span><span class="p">)</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="n">grad</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">param</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">parameters</span><span class="p">()])</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_output</span><span class="p">(</span><span class="n">grad</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CalibrationProblem.format_input">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.CalibrationProblem.format_input">[docs]</a>
+    <span class="k">def</span> <span class="nf">format_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Wrapper around clone and cast :math:`k_1` to ``torch.float64``</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        k1 : torch.Tensor</span>
+<span class="sd">            Tensor of :math:`k_1`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            Copy of `:math:`k_1` casted to doubles</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">formatted_k1</span> <span class="o">=</span> <span class="n">k1</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+        <span class="n">formatted_k1</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">k1</span><span class="o">.</span><span class="n">requires_grad</span>
+
+        <span class="k">return</span> <span class="n">formatted_k1</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CalibrationProblem.format_output">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.CalibrationProblem.format_output">[docs]</a>
+    <span class="k">def</span> <span class="nf">format_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Wrapper around torch&#39;s ``out.cpu().numpy()``. Returns a CPU tensor.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        out : torch.Tensor</span>
+<span class="sd">            Tensor to be brought to CPU and converted to an `np.ndarray`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Numpy array of the input tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span></div>
+
+
+    <span class="c1"># -----------------------------------------</span>
+
+<div class="viewcode-block" id="CalibrationProblem.calibrate">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.CalibrationProblem.calibrate">[docs]</a>
+    <span class="k">def</span> <span class="nf">calibrate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
+        <span class="n">tb_comment</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">optimizer_class</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">LBFGS</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calibration method, which handles the main training loop and some</span>
+<span class="sd">        data pre-processing. Currently the only supported optimizer is Torch&#39;s ``LBFGS``</span>
+<span class="sd">        and the learning rate scheduler uses cosine annealing. Parameters for these</span>
+<span class="sd">        components of the training process are set in ``LossParameters`` and ``ProblemParameters``</span>
+<span class="sd">        during initialization.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : tuple[Iterable[float], torch.Tensor]</span>
+<span class="sd">            Tuple of data points and values, respectively, to be used in calibration.</span>
+<span class="sd">        tb_comment : str</span>
+<span class="sd">           Filename comment used by tensorboard; useful for distinguishing between architectures and hyperparameters. Refer to tensorboard documentation for examples of use. By default, the empty string, which results in default tensorboard filenames.</span>
+<span class="sd">        optimizer_class : torch.optim.Optimizer, optional</span>
+<span class="sd">           Choice of Torch optimizer, by default torch.optim.LBFGS</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Problem parameters as a Numpy array</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        RuntimeError</span>
+<span class="sd">            Thrown in the case that the current loss is not finite.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">DataPoints</span><span class="p">,</span> <span class="n">DataValues</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="n">OptimizerClass</span> <span class="o">=</span> <span class="n">optimizer_class</span>
+        <span class="n">lr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prob_params</span><span class="o">.</span><span class="n">learning_rate</span>
+        <span class="n">tol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prob_params</span><span class="o">.</span><span class="n">tol</span>
+        <span class="n">nepochs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prob_params</span><span class="o">.</span><span class="n">nepochs</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_loss_optim</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">curves</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">k1_data_pts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">DataPoints</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">LossAggregator</span> <span class="o">=</span> <span class="n">LossAggregator</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss_params</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">k1_data_pts</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logging_directory</span><span class="p">,</span>
+            <span class="n">tb_comment</span><span class="o">=</span><span class="n">tb_comment</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">kF_data_vals</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="n">DataValues</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="n">DataValues</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                <span class="n">DataValues</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+                <span class="n">DataValues</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">k1_data_pts</span><span class="p">,</span> <span class="n">y_data0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k1_data_pts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kF_data_vals</span>
+
+        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="p">(</span><span class="n">k1_data_pts</span><span class="p">)</span>
+        <span class="n">y_data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">y_data</span><span class="p">[:</span><span class="mi">4</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_data0</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">y_data0</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">4</span><span class="p">)</span>
+
+        <span class="c1">########################################</span>
+        <span class="c1"># Optimizer and Scheduler Initialization</span>
+        <span class="c1">########################################</span>
+        <span class="k">if</span> <span class="n">OptimizerClass</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">LBFGS</span><span class="p">:</span>
+            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">OptimizerClass</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span>
+                <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span>
+                <span class="n">line_search_fn</span><span class="o">=</span><span class="s2">&quot;strong_wolfe&quot;</span><span class="p">,</span>
+                <span class="n">max_iter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">prob_params</span><span class="o">.</span><span class="n">wolfe_iter_count</span><span class="p">,</span>
+                <span class="n">history_size</span><span class="o">=</span><span class="n">nepochs</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">OptimizerClass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">)</span>
+
+        <span class="n">scheduler</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">CosineAnnealingLR</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">T_max</span><span class="o">=</span><span class="n">nepochs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">e_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">type_EddyLifetime</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="n">EddyLifetimeType</span><span class="o">.</span><span class="n">TAUNET</span><span class="p">,</span>
+            <span class="n">EddyLifetimeType</span><span class="o">.</span><span class="n">CUSTOMMLP</span><span class="p">,</span>
+        <span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gen_theta_NN</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">parameters_to_vector</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">tauNet</span><span class="o">.</span><span class="n">NN</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gen_theta_NN</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="mf">0.0</span>
+
+        <span class="n">theta_NN</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_theta_NN</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">LossAggregator</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span>
+            <span class="n">y</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">curves</span><span class="p">],</span> <span class="n">y_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">curves</span><span class="p">],</span> <span class="n">theta_NN</span><span class="p">,</span> <span class="mi">0</span>
+        <span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">40</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial loss: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">40</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">closure</span><span class="p">():</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="p">(</span><span class="n">k1_data_pts</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">LossAggregator</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span>
+                <span class="n">y</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">curves</span><span class="p">],</span> <span class="n">y_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">curves</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_theta_NN</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">e_count</span>
+            <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">e_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span>
+
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nepochs</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)):</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">closure</span><span class="p">)</span>
+            <span class="n">scheduler</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="s2">&quot;Loss is not a finite value, check initialization and learning hyperparameters.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">tol</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Spectra Fitting Concluded with loss below tolerance. Final loss: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="k">break</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">40</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Spectra fitting concluded with final loss: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prob_params</span><span class="o">.</span><span class="n">learn_nu</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="p">,</span> <span class="s2">&quot;tauNet&quot;</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Learned nu value: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">tauNet</span><span class="o">.</span><span class="n">Ra</span><span class="o">.</span><span class="n">nu</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span></div>
+
+
+    <span class="c1"># ------------------------------------------------</span>
+    <span class="c1">### Post-treatment and Export</span>
+    <span class="c1"># ------------------------------------------------</span>
+
+<div class="viewcode-block" id="CalibrationProblem.num_trainable_params">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.CalibrationProblem.num_trainable_params">[docs]</a>
+    <span class="k">def</span> <span class="nf">num_trainable_params</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the number of trainable network parameters</span>
+<span class="sd">            in the underlying model.</span>
+
+<span class="sd">            The EddyLifetimeType must be set to one of the following, which involve</span>
+<span class="sd">            a network surrogate for the eddy lifetime:</span>
+
+<span class="sd">                #.  ``TAUNET``</span>
+
+<span class="sd">                #.  ``CUSTOMMLP``</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int</span>
+<span class="sd">            The number of trainable network parameters in the underlying model.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the OPS was not initialized to one of TAUNET, CUSTOMMLP</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">type_EddyLifetime</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="n">EddyLifetimeType</span><span class="o">.</span><span class="n">TAUNET</span><span class="p">,</span>
+            <span class="n">EddyLifetimeType</span><span class="o">.</span><span class="n">CUSTOMMLP</span><span class="p">,</span>
+        <span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Not using trainable model for approximation, must be TAUNET, CUSTOMMLP.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">tauNet</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span></div>
+
+
+    <span class="k">def</span> <span class="nf">eval_trainable_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">ord</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;fro&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluates the magnitude (or other norm) of the trainable parameters in the model.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            The ``EddyLifetimeType`` must be set to one of ``TAUNET`` or ``CUSTOMMLP``, which involve</span>
+<span class="sd">            a network surrogate for the eddy lifetime.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ord : Optional[Union[float, str]]</span>
+<span class="sd">            The order of the norm approximation, follows ``torch.norm`` conventions.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the OPS was not initialized to one of ``TAUNET``, ``CUSTOMMLP``.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">type_EddyLifetime</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="n">EddyLifetimeType</span><span class="o">.</span><span class="n">TAUNET</span><span class="p">,</span>
+            <span class="n">EddyLifetimeType</span><span class="o">.</span><span class="n">CUSTOMMLP</span><span class="p">,</span>
+        <span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Not using trainable model for approximation, must be TAUNET, CUSTOMMLP.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">parameters_to_vector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">tauNet</span><span class="o">.</span><span class="n">parameters</span><span class="p">()),</span> <span class="nb">ord</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="CalibrationProblem.eval_trainable_norm">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.CalibrationProblem.eval_trainable_norm">[docs]</a>
+    <span class="k">def</span> <span class="nf">eval_trainable_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">ord</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;fro&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluates the magnitude (or other norm) of the</span>
+<span class="sd">            trainable parameters in the model.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            The ``EddyLifetimeType`` must be set to one of ``TAUNET`` or ``CUSTOMMLP``, which involve</span>
+<span class="sd">            a network surrogate for the eddy lifetime.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ord : Optional[Union[float, str]]</span>
+<span class="sd">            The order of the norm approximation, follows ``torch.norm`` conventions.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the OPS was not initialized to one of ``TAUNET``, ``CUSTOMMLP``.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">type_EddyLifetime</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="n">EddyLifetimeType</span><span class="o">.</span><span class="n">TAUNET</span><span class="p">,</span>
+            <span class="n">EddyLifetimeType</span><span class="o">.</span><span class="n">CUSTOMMLP</span><span class="p">,</span>
+        <span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Not using trainable model for approximation, must be TAUNET, CUSTOMMLP.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">parameters_to_vector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">tauNet</span><span class="o">.</span><span class="n">parameters</span><span class="p">()),</span> <span class="nb">ord</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CalibrationProblem.save_model">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.CalibrationProblem.save_model">[docs]</a>
+    <span class="k">def</span> <span class="nf">save_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">save_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Saves model with current weights, model configuration, and training histories to file.</span>
+<span class="sd">        The written filename is of the form ``save_dir/&lt;EddyLifetimeType&gt;_&lt;DataType&gt;.pkl``</span>
+
+<span class="sd">        This routine stores</span>
+
+<span class="sd">            #.  ``NNParameters``</span>
+
+<span class="sd">            #.  ``ProblemParameters``</span>
+
+<span class="sd">            #.  ``PhysicalParameters``</span>
+
+<span class="sd">            #.  ``LossParameters``</span>
+
+<span class="sd">            #.  Optimized Parameters (``self.parameters`` field)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        save_dir : Optional[str], optional</span>
+<span class="sd">            Directory to save to, by default None; defaults to provided output_dir field for object.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            No output_directory provided during object initialization and no save_dir provided for this method call.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">save_dir</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_directory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must provide directory to save output to.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">save_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">save_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_directory</span>
+
+        <span class="n">filename</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">save_dir</span>
+            <span class="o">+</span> <span class="s2">&quot;/&quot;</span>
+            <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prob_params</span><span class="o">.</span><span class="n">eddy_lifetime</span><span class="p">)</span>
+            <span class="o">+</span> <span class="s2">&quot;_&quot;</span>
+            <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prob_params</span><span class="o">.</span><span class="n">data_type</span><span class="p">)</span>
+            <span class="o">+</span> <span class="s2">&quot;.pkl&quot;</span>
+        <span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;wb+&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">nn_params</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">prob_params</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">loss_params</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">phys_params</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
+                <span class="p">],</span>
+                <span class="n">file</span><span class="p">,</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CalibrationProblem.plot">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.CalibrationProblem.plot">[docs]</a>
+    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">Data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">model_vals</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">plot_tau</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">save</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">save_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">save_filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Plotting method which visualizes the spectra fit as well as the learned eddy lifetime</span>
+<span class="sd">        function, if ``plot_tau=True``. By default, this operates on the data used in the fitting,</span>
+<span class="sd">        but an alternative :math:`k_1` domain can be provided and the trained model can be re-evaluated.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        Data : tuple[Iterable[float], torch.Tensor], optional</span>
+<span class="sd">            Tuple of data points and corresponding values, by default ``None``</span>
+<span class="sd">        model_vals : torch.Tensor, optional</span>
+<span class="sd">            Evaluation of the OPS on the data, by default None in which case</span>
+<span class="sd">            ``Data`` must provided (since the function will call OPS on the provided</span>
+<span class="sd">            ``Data``)</span>
+<span class="sd">        plot_tau : bool, optional</span>
+<span class="sd">            Indicates whether to plot the learned eddy lifetime function or not,</span>
+<span class="sd">            by default ``True``</span>
+<span class="sd">        save : bool, optional</span>
+<span class="sd">            Whether to save the resulting figure, by default ``False``</span>
+<span class="sd">        save_dir : Optional[Union[Path, str]], optional</span>
+<span class="sd">            Directory to save to, which is created safely if not already present. By default,</span>
+<span class="sd">            this is the current working directory.</span>
+<span class="sd">        save_filename : str, optional</span>
+<span class="sd">            Filename to save the final figure to, by default ``drdmannturb_final_spectra_fit.png``</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            Must either provide ``k1space`` or re-use what was used for model calibration;</span>
+<span class="sd">            thrown in the case neither is specified.</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            Must either provide data points or re-use what was used for model calibration;</span>
+<span class="sd">            thrown in the case neither is specified.</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            Thrown in the case that ``save`` is true but neither the ``save_dir`` or ``output_directory``</span>
+<span class="sd">            are provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">clr</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;royalblue&quot;</span><span class="p">,</span> <span class="s2">&quot;crimson&quot;</span><span class="p">,</span> <span class="s2">&quot;forestgreen&quot;</span><span class="p">,</span> <span class="s2">&quot;mediumorchid&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">Data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">DataPoints</span><span class="p">,</span> <span class="n">DataValues</span> <span class="o">=</span> <span class="n">Data</span>
+            <span class="n">k1_data_pts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">DataPoints</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+
+            <span class="n">kF_data_vals</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="n">DataValues</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                    <span class="n">DataValues</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="n">DataValues</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+                    <span class="n">DataValues</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;k1_data_pts&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">k1_data_pts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">k1_data_pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k1_data_pts</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Must either provide k1space or re-use what was used for model calibration, neither is currently specified.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;kF_data_vals&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">kF_data_vals</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">kF_data_vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kF_data_vals</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Must either provide data points or re-use what was used for model calibration, neither is currently specified.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="n">kF_model_vals</span> <span class="o">=</span> <span class="n">model_vals</span> <span class="k">if</span> <span class="n">model_vals</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="p">(</span><span class="n">k1_data_pts</span><span class="p">)</span>
+
+        <span class="n">kF_model_vals</span> <span class="o">=</span> <span class="n">kF_model_vals</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+        <span class="n">kF_data_vals</span> <span class="o">=</span> <span class="n">kF_data_vals</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">plot_tau</span><span class="p">:</span>
+            <span class="n">k_gd</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+            <span class="n">k_1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">k_gd</span><span class="p">,</span> <span class="mi">0</span> <span class="o">*</span> <span class="n">k_gd</span><span class="p">,</span> <span class="mi">0</span> <span class="o">*</span> <span class="n">k_gd</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">k_2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="mi">0</span> <span class="o">*</span> <span class="n">k_gd</span><span class="p">,</span> <span class="n">k_gd</span><span class="p">,</span> <span class="mi">0</span> <span class="o">*</span> <span class="n">k_gd</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">k_3</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="mi">0</span> <span class="o">*</span> <span class="n">k_gd</span><span class="p">,</span> <span class="mi">0</span> <span class="o">*</span> <span class="n">k_gd</span><span class="p">,</span> <span class="n">k_gd</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">k_4</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">k_gd</span><span class="p">,</span> <span class="n">k_gd</span><span class="p">,</span> <span class="n">k_gd</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">3</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">k1_data_pts</span> <span class="o">=</span> <span class="n">k1_data_pts</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+
+        <span class="n">nrows</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">plot_tau</span> <span class="k">else</span> <span class="mi">1</span>
+
+        <span class="k">with</span> <span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">context</span><span class="p">(</span><span class="s2">&quot;bmh&quot;</span><span class="p">):</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;font.size&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">})</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fig</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
+                <span class="n">nrows</span><span class="o">=</span><span class="n">nrows</span><span class="p">,</span>
+                <span class="n">ncols</span><span class="o">=</span><span class="n">ncols</span><span class="p">,</span>
+                <span class="n">num</span><span class="o">=</span><span class="s2">&quot;Calibration&quot;</span><span class="p">,</span>
+                <span class="n">clear</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">figsize</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">plot_tau</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ax</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">]</span>
+
+            <span class="c1"># Subplot 1: One-point spectra</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;One-point spectra&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lines_SP_model</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vdim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lines_SP_data</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vdim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vdim</span><span class="p">):</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lines_SP_model</span><span class="p">[</span><span class="n">i</span><span class="p">],)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                    <span class="n">k1_data_pts</span><span class="p">,</span>
+                    <span class="n">kF_model_vals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                    <span class="s2">&quot;--&quot;</span><span class="p">,</span>
+                    <span class="n">color</span><span class="o">=</span><span class="n">clr</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$F_</span><span class="si">{0:d}</span><span class="s2">$ model&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="p">)</span>
+
+            <span class="n">s</span> <span class="o">=</span> <span class="n">kF_data_vals</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vdim</span><span class="p">):</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lines_SP_data</span><span class="p">[</span><span class="n">i</span><span class="p">],)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                    <span class="n">k1_data_pts</span><span class="p">,</span>
+                    <span class="n">kF_data_vals</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">s</span> <span class="o">//</span> <span class="mi">4</span><span class="p">)[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                    <span class="s2">&quot;o-&quot;</span><span class="p">,</span>
+                    <span class="n">color</span><span class="o">=</span><span class="n">clr</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$F_</span><span class="si">{0:d}</span><span class="s2">$ data&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
+                    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="mi">3</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">curves</span><span class="p">:</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lines_SP_model</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">vdim</span><span class="p">],)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                    <span class="n">k1_data_pts</span><span class="p">,</span>
+                    <span class="o">-</span><span class="n">kF_model_vals</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">vdim</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                    <span class="s2">&quot;--&quot;</span><span class="p">,</span>
+                    <span class="n">color</span><span class="o">=</span><span class="n">clr</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+                    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$-F_</span><span class="si">{13}</span><span class="s2">$ model&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lines_SP_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">vdim</span><span class="p">],)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                    <span class="n">k1_data_pts</span><span class="p">,</span>
+                    <span class="o">-</span><span class="n">kF_data_vals</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">s</span> <span class="o">//</span> <span class="mi">4</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">vdim</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                    <span class="s2">&quot;o-&quot;</span><span class="p">,</span>
+                    <span class="n">color</span><span class="o">=</span><span class="n">clr</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+                    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$-F_</span><span class="si">{13}</span><span class="s2">$ data&quot;</span><span class="p">,</span>
+                    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$k_1$&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$k_1 F_i /u_*^2$&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">which</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">plot_tau</span><span class="p">:</span>
+                <span class="c1"># Subplot 2: Eddy Lifetime</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Eddy lifetime&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tau_model1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">EddyLifetime</span><span class="p">(</span><span class="n">k_1</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tau_model2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">EddyLifetime</span><span class="p">(</span><span class="n">k_2</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tau_model3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">EddyLifetime</span><span class="p">(</span><span class="n">k_3</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tau_model4</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">EddyLifetime</span><span class="p">(</span><span class="n">k_4</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">tau_ref</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">phys_params</span><span class="o">.</span><span class="n">Gamma</span>
+                    <span class="o">*</span> <span class="n">MannEddyLifetime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phys_params</span><span class="o">.</span><span class="n">L</span> <span class="o">*</span> <span class="n">k_gd</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+                <span class="p">)</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lines_LT_model1</span><span class="p">,)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                    <span class="n">k_gd</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tau_model1</span><span class="p">,</span>
+                    <span class="s2">&quot;-&quot;</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\tau_</span><span class="si">{model}</span><span class="s2">(k_1)$&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lines_LT_model2</span><span class="p">,)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                    <span class="n">k_gd</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tau_model2</span><span class="p">,</span>
+                    <span class="s2">&quot;-&quot;</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\tau_</span><span class="si">{model}</span><span class="s2">(k_2)$&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lines_LT_model3</span><span class="p">,)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                    <span class="n">k_gd</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tau_model3</span><span class="p">,</span>
+                    <span class="s2">&quot;-&quot;</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\tau_</span><span class="si">{model}</span><span class="s2">(k_3)$&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lines_LT_model4</span><span class="p">,)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                    <span class="n">k_gd</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tau_model4</span><span class="p">,</span>
+                    <span class="s2">&quot;-&quot;</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\tau_</span><span class="si">{model}</span><span class="s2">(k,k,k)$&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lines_LT_ref</span><span class="p">,)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                    <span class="n">k_gd</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tau_ref</span><span class="p">,</span>
+                    <span class="s2">&quot;--&quot;</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\tau_</span><span class="si">{ref}</span><span class="s2">=$Mann&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$f$&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\tau$&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">which</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">flush_events</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vdim</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lines_SP_model</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ydata</span><span class="p">(</span><span class="n">kF_model_vals</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">if</span> <span class="mi">3</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">curves</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lines_SP_model</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">vdim</span><span class="p">]</span><span class="o">.</span><span class="n">set_ydata</span><span class="p">(</span><span class="o">-</span><span class="n">kF_model_vals</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">vdim</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">plot_tau</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tau_model1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">EddyLifetime</span><span class="p">(</span><span class="n">k_1</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tau_model2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">EddyLifetime</span><span class="p">(</span><span class="n">k_2</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tau_model3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">EddyLifetime</span><span class="p">(</span><span class="n">k_3</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tau_model4</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">EddyLifetime</span><span class="p">(</span><span class="n">k_4</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lines_LT_model1</span><span class="o">.</span><span class="n">set_ydata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tau_model1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lines_LT_model2</span><span class="o">.</span><span class="n">set_ydata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tau_model2</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lines_LT_model3</span><span class="o">.</span><span class="n">set_ydata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tau_model3</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lines_LT_model4</span><span class="o">.</span><span class="n">set_ydata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tau_model4</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">save_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">save_dir</span> <span class="o">=</span> <span class="n">save_dir</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">save_dir</span><span class="p">)</span> <span class="o">==</span> <span class="n">Path</span> <span class="k">else</span> <span class="n">Path</span><span class="p">(</span><span class="n">save_dir</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_directory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">save_dir</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">output_directory</span>
+                    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_directory</span><span class="p">)</span> <span class="o">==</span> <span class="n">Path</span>
+                    <span class="k">else</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_directory</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Plot saving is not possible without specifying the save directory or output_directory for the class.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">save_filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">save_path</span> <span class="o">=</span> <span class="n">save_dir</span> <span class="o">/</span> <span class="p">(</span><span class="n">save_filename</span> <span class="o">+</span> <span class="s2">&quot;.png&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">save_path</span> <span class="o">=</span> <span class="n">save_dir</span> <span class="o">/</span> <span class="s2">&quot;drdmannturb_final_spectra_fit.png&quot;</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">save_dir</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">save_dir</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">save_path</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;png&quot;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="CalibrationProblem.plot_losses">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.CalibrationProblem.plot_losses">[docs]</a>
+    <span class="k">def</span> <span class="nf">plot_losses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_number</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A wrapper method around the ``plot_loss_logs`` helper, which plots out the loss</span>
+<span class="sd">        function terms, multiplied by their associated hyperparameters</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        run_number : int</span>
+<span class="sd">            The number of the run in the logging directory to plot out. This is 0-indexed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">listdir</span><span class="p">,</span> <span class="n">path</span>
+
+        <span class="n">log_fpath</span> <span class="o">=</span> <span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logging_directory</span><span class="p">)[</span><span class="n">run_number</span><span class="p">]</span>
+        <span class="n">full_fpath</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logging_directory</span><span class="p">,</span> <span class="n">log_fpath</span><span class="p">)</span>
+
+        <span class="kn">from</span> <span class="nn">drdmannturb</span> <span class="kn">import</span> <span class="n">plot_loss_logs</span>
+
+        <span class="n">plot_loss_logs</span><span class="p">(</span><span class="n">full_fpath</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  <!-- Previous / next buttons -->
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=365ca57ee442770a23c6"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=365ca57ee442770a23c6"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright Alexey Izmailov, Matthew Meeker.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.5.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.3.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

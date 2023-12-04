@@ -1,0 +1,814 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>drdmannturb.fluctuation_generation.generate_wind &#8212; DRDMannTurb 0.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=365ca57ee442770a23c6" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=365ca57ee442770a23c6" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=365ca57ee442770a23c6" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=365ca57ee442770a23c6" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=362ab14a" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery.css?v=61a4c737" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=365ca57ee442770a23c6" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=365ca57ee442770a23c6" />
+  <script src="../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=365ca57ee442770a23c6"></script>
+
+    <script src="../../../_static/documentation_options.js?v=2709fde1"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="https://unpkg.com/mermaid@10.2.0/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="https://unpkg.com/d3/dist/d3.min.js"></script>
+    <script>
+            window.addEventListener("load", function () {
+              var svgs = d3.selectAll(".mermaid svg");
+              svgs.each(function() {
+                var svg = d3.select(this);
+                svg.html("<g>" + svg.html() + "</g>");
+                var inner = svg.select("g");
+                var zoom = d3.zoom().on("zoom", function(event) {
+                  inner.attr("transform", event.transform);
+                });
+                svg.call(zoom);
+              });
+            });
+            </script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/drdmannturb/fluctuation_generation/generate_wind';</script>
+    <script src="../../../_static/require.min.js?v=8a87acde"></script>
+    <script src="../../../_static/custom.js?v=9aa989ff"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">DRDMannTurb 0.1 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../getting-started.html">
+                        Getting Started
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../forward_api.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../internal_api.html">
+                        Internal API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../getting-started.html">
+                        Getting Started
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../forward_api.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../internal_api.html">
+                        Internal API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">drdmannturb....</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for drdmannturb.fluctuation_generation.generate_wind</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module implements the wind generation</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">PathLike</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">torch.cuda</span> <span class="kn">import</span> <span class="n">is_available</span>
+
+<span class="kn">from</span> <span class="nn">drdmannturb.fluctuation_generation.covariance_kernels</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">MannCovariance</span><span class="p">,</span>
+    <span class="n">VonKarmanCovariance</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">drdmannturb.fluctuation_generation.gaussian_random_fields</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">drdmannturb.fluctuation_generation.nn_covariance</span> <span class="kn">import</span> <span class="n">NNCovariance</span>
+<span class="kn">from</span> <span class="nn">drdmannturb.spectra_fitting</span> <span class="kn">import</span> <span class="n">CalibrationProblem</span>
+
+
+<div class="viewcode-block" id="GenerateFluctuationField">
+<a class="viewcode-back" href="../../../windgeneration.html#drdmannturb.GenerateFluctuationField">[docs]</a>
+<span class="k">class</span> <span class="nc">GenerateFluctuationField</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class for generating a fluctuation field either from a Mann model or a pre-fit DRD model that generates the field spectra.</span>
+
+<span class="sd">    Turbulent fluctuations can be formally written as a convolution of a covariance kernel with Gaussian noise :math:`\boldsymbol{\xi}` in the physical domain:</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        \mathbf{u}=\mathcal{F}^{-1} \mathcal{G} \widehat{\boldsymbol{\xi}}=\mathcal{F}^{-1} \mathcal{G} \mathcal{F} \boldsymbol{\xi},</span>
+
+<span class="sd">    where :math:`\mathcal{F}` is the Fourier transform and the operator :math:`\mathcal{G}` is the point-wise multiplication by :math:G(\boldsymbol{k})`, which is any positive-definite &quot;square-root&quot; of the spectral tensor and satisfies :math:`G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k})`.</span>
+
+<span class="sd">    This is determined by which :math:`\Phi(\boldsymbol{k}, \tau(\boldsymbol{k}))` is used. The following are provided:</span>
+
+<span class="sd">    #. Mann, which utilizes the Mann eddy lifetime function</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \tau^{\mathrm{IEC}}(k)=\frac{T B^{-1}(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}</span>
+
+<span class="sd">    and the full spectral tensor can be found in the following reference:</span>
+<span class="sd">        J. Mann, “The spatial structure of neutral atmospheric surfacelayer turbulence,” Journal of fluid mechanics 273, 141-168 (1994)</span>
+
+<span class="sd">    #. DRD model, which utilizes a learned eddy lifetime function and requires a pre-trained DRD model. The eddy lifetime function is given by</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k})</span>
+
+<span class="sd">    #. Von Karman model,</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \Phi_{i j}^{\mathrm{VK}}(\boldsymbol{k})=\frac{E(k)}{4 \pi k^2}\left(\delta_{i j}-\frac{k_i k_j}{k^2}\right)</span>
+
+<span class="sd">        which utilizes the energy spectrum function</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            E(k)=c_0^2 \varepsilon^{2 / 3} k^{-5 / 3}\left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3},</span>
+
+<span class="sd">        where :math:`\varepsilon` is the viscous dissipation of the turbulent kinetic energy, :math:`L` is the length scale parameter and :math:`c_0^2 \approx 1.7` is an empirical constant.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="GenerateFluctuationField.__init__">
+<a class="viewcode-back" href="../../../windgeneration.html#drdmannturb.GenerateFluctuationField.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">friction_velocity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">reference_height</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">grid_dimensions</span><span class="p">,</span>
+        <span class="n">grid_levels</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">path_to_parameters</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PathLike</span><span class="p">],</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">blend_num</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        friction_velocity : float</span>
+<span class="sd">            The reference wind friction velocity :math:`u_*`</span>
+<span class="sd">        reference_height : float</span>
+<span class="sd">            Reference height :math:`L`</span>
+<span class="sd">        grid_dimensions : np.ndarray</span>
+<span class="sd">            Numpy array denoting the grid size</span>
+<span class="sd">        grid_levels : np.ndarray</span>
+<span class="sd">            Numpy array denoting the grid levels</span>
+<span class="sd">        model : str</span>
+<span class="sd">            One of ``&quot;NN&quot;``, ``&quot;VK&quot;``, or ``&quot;Mann&quot;`` denoting</span>
+<span class="sd">            &quot;Neural Network,&quot; &quot;Von Karman,&quot; and &quot;Mann model&quot;.</span>
+<span class="sd">        path_to_parameters : Union[str, PathLike]</span>
+<span class="sd">            File path (string or ``Pathlib.Path()``)</span>
+<span class="sd">        seed : int, optional</span>
+<span class="sd">            Pseudo-random number generator seed, by default None. See ``np.random.RandomState``.</span>
+<span class="sd">        blend_num : int, optional</span>
+<span class="sd">           Number of grid points in the y-z plane to use as buffer regions between successive blocks of fluctuation; see figures 7 and 8 of the original DRD paper, by default 10. Note that at the boundary of each block, points are often correlated, so if the resulting field has undesirably high correlation, increasing this number may mitigate some of these effects.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If ``model`` doesn&#39;t match one of the 3 available models: NN, VK and Mann.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">model</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;NN&quot;</span><span class="p">,</span> <span class="s2">&quot;VK&quot;</span><span class="p">,</span> <span class="s2">&quot;Mann&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Provided model type not supported, must be one of NN, VK, Mann&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;NN&quot;</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_to_parameters</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+                <span class="p">(</span>
+                    <span class="n">nn_params</span><span class="p">,</span>
+                    <span class="n">prob_params</span><span class="p">,</span>
+                    <span class="n">loss_params</span><span class="p">,</span>
+                    <span class="n">phys_params</span><span class="p">,</span>
+                    <span class="n">model_params</span><span class="p">,</span>
+                <span class="p">)</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+
+            <span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
+
+            <span class="n">pb</span> <span class="o">=</span> <span class="n">CalibrationProblem</span><span class="p">(</span>
+                <span class="n">nn_params</span><span class="o">=</span><span class="n">nn_params</span><span class="p">,</span>
+                <span class="n">prob_params</span><span class="o">=</span><span class="n">prob_params</span><span class="p">,</span>
+                <span class="n">loss_params</span><span class="o">=</span><span class="n">loss_params</span><span class="p">,</span>
+                <span class="n">phys_params</span><span class="o">=</span><span class="n">phys_params</span><span class="p">,</span>
+                <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">pb</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">model_params</span>
+            <span class="n">L</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">M</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">exp_scales</span><span class="p">()</span>
+
+            <span class="n">M</span> <span class="o">=</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">L</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">5</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">M</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Scales: &quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">L</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">M</span><span class="p">])</span>
+            <span class="n">E0</span> <span class="o">=</span> <span class="n">M</span> <span class="o">*</span> <span class="n">friction_velocity</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">reference_height</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="n">L</span> <span class="o">=</span> <span class="n">L</span> <span class="o">*</span> <span class="n">reference_height</span>
+            <span class="n">Gamma</span> <span class="o">=</span> <span class="n">T</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">E0</span> <span class="o">=</span> <span class="mf">3.2</span> <span class="o">*</span> <span class="n">friction_velocity</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">reference_height</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="n">L</span> <span class="o">=</span> <span class="mf">0.59</span> <span class="o">*</span> <span class="n">reference_height</span>
+            <span class="c1"># L = 95 # why should the length scale depend on the reference height???????</span>
+            <span class="n">Gamma</span> <span class="o">=</span> <span class="mf">3.9</span>
+
+        <span class="c1"># define margins and buffer</span>
+        <span class="n">time_buffer</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">Gamma</span> <span class="o">*</span> <span class="n">L</span>
+        <span class="n">spatial_margin</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">L</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">grid_levels</span> <span class="o">=</span> <span class="p">[</span><span class="n">grid_levels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">GetInt</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="n">Nx</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">grid_levels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">Ny</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">grid_levels</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">Nz</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">grid_levels</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">hx</span> <span class="o">=</span> <span class="n">grid_dimensions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">Nx</span>
+        <span class="n">hy</span> <span class="o">=</span> <span class="n">grid_dimensions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">Ny</span>
+        <span class="n">hz</span> <span class="o">=</span> <span class="n">grid_dimensions</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="n">Nz</span>
+
+        <span class="n">n_buffer</span> <span class="o">=</span> <span class="n">ceil</span><span class="p">(</span><span class="n">time_buffer</span> <span class="o">/</span> <span class="n">hx</span><span class="p">)</span>
+        <span class="n">n_marginy</span> <span class="o">=</span> <span class="n">ceil</span><span class="p">(</span><span class="n">spatial_margin</span> <span class="o">/</span> <span class="n">hy</span><span class="p">)</span>
+        <span class="n">n_marginz</span> <span class="o">=</span> <span class="n">ceil</span><span class="p">(</span><span class="n">spatial_margin</span> <span class="o">/</span> <span class="n">hz</span><span class="p">)</span>
+
+        <span class="n">wind_shape</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">Ny</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">Nz</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">blend_num</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">noise_shape</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">[</span><span class="n">Nx</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n_buffer</span> <span class="o">+</span> <span class="p">(</span><span class="n">blend_num</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
+                <span class="o">+</span> <span class="p">[</span><span class="n">Ny</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n_marginy</span><span class="p">]</span>
+                <span class="o">+</span> <span class="p">[</span><span class="n">Nz</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n_marginz</span><span class="p">]</span>
+                <span class="o">+</span> <span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">noise_shape</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">[</span><span class="n">Nx</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n_buffer</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">Ny</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n_marginy</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">Nz</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n_marginz</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="n">new_part_shape</span> <span class="o">=</span> <span class="p">[</span><span class="n">Nx</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">Ny</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n_marginy</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">Nz</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n_marginz</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+
+        <span class="n">central_part</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="p">]</span> <span class="o">*</span> <span class="mi">4</span>
+        <span class="n">new_part</span> <span class="o">=</span> <span class="n">central_part</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">central_part</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">n_buffer</span><span class="p">,</span> <span class="o">-</span><span class="n">n_buffer</span><span class="p">)</span>
+        <span class="n">central_part</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">n_marginy</span><span class="p">,</span> <span class="o">-</span><span class="n">n_marginy</span><span class="p">)</span>
+        <span class="n">central_part</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n_marginz</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">blend_num</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">new_part</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n_buffer</span> <span class="o">+</span> <span class="p">(</span><span class="n">blend_num</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_part</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n_buffer</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid_dimensions</span> <span class="o">=</span> <span class="n">grid_dimensions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid_levels</span> <span class="o">=</span> <span class="n">grid_levels</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">new_part</span> <span class="o">=</span> <span class="n">new_part</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Nx</span> <span class="o">=</span> <span class="n">Nx</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blend_num</span> <span class="o">=</span> <span class="n">blend_num</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">central_part</span> <span class="o">=</span> <span class="n">central_part</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">new_part_shape</span> <span class="o">=</span> <span class="n">new_part_shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">noise_shape</span> <span class="o">=</span> <span class="n">noise_shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_buffer</span> <span class="o">=</span> <span class="n">n_buffer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_marginy</span> <span class="o">=</span> <span class="n">n_marginy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_marginz</span> <span class="o">=</span> <span class="n">n_marginz</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">noise</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">wind_shape</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_law</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">z</span><span class="p">,</span> <span class="n">z_0</span><span class="p">,</span> <span class="n">u_ast</span><span class="p">:</span> <span class="n">u_ast</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">z</span> <span class="o">/</span> <span class="n">z_0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">0.41</span>
+
+        <span class="c1">### Random field object</span>
+
+        <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;VK&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Covariance</span> <span class="o">=</span> <span class="n">VonKarmanCovariance</span><span class="p">(</span><span class="n">ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">length_scale</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">E0</span><span class="o">=</span><span class="n">E0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">RF</span> <span class="o">=</span> <span class="n">VectorGaussianRandomField</span><span class="p">(</span>
+                <span class="n">ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                <span class="n">grid_level</span><span class="o">=</span><span class="n">grid_levels</span><span class="p">,</span>
+                <span class="n">grid_dimensions</span><span class="o">=</span><span class="n">grid_dimensions</span><span class="p">,</span>
+                <span class="n">sampling_method</span><span class="o">=</span><span class="s2">&quot;vf_fftw&quot;</span><span class="p">,</span>
+                <span class="n">grid_shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">Covariance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">Covariance</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;Mann&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Covariance</span> <span class="o">=</span> <span class="n">MannCovariance</span><span class="p">(</span><span class="n">ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">length_scale</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">E0</span><span class="o">=</span><span class="n">E0</span><span class="p">,</span> <span class="n">Gamma</span><span class="o">=</span><span class="n">Gamma</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">RF</span> <span class="o">=</span> <span class="n">VectorGaussianRandomField</span><span class="p">(</span>
+                <span class="n">ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                <span class="n">grid_level</span><span class="o">=</span><span class="n">grid_levels</span><span class="p">,</span>
+                <span class="n">grid_dimensions</span><span class="o">=</span><span class="n">grid_dimensions</span><span class="p">,</span>
+                <span class="n">sampling_method</span><span class="o">=</span><span class="s2">&quot;vf_fftw&quot;</span><span class="p">,</span>
+                <span class="n">grid_shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">Covariance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">Covariance</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;NN&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Covariance</span> <span class="o">=</span> <span class="n">NNCovariance</span><span class="p">(</span>
+                <span class="n">ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                <span class="n">length_scale</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
+                <span class="n">E0</span><span class="o">=</span><span class="n">E0</span><span class="p">,</span>
+                <span class="n">Gamma</span><span class="o">=</span><span class="n">Gamma</span><span class="p">,</span>
+                <span class="n">ops</span><span class="o">=</span><span class="n">pb</span><span class="o">.</span><span class="n">OPS</span><span class="p">,</span>
+                <span class="n">h_ref</span><span class="o">=</span><span class="n">reference_height</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">RF</span> <span class="o">=</span> <span class="n">VectorGaussianRandomField</span><span class="p">(</span>
+                <span class="n">ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                <span class="n">grid_level</span><span class="o">=</span><span class="n">grid_levels</span><span class="p">,</span>
+                <span class="n">grid_dimensions</span><span class="o">=</span><span class="n">grid_dimensions</span><span class="p">,</span>
+                <span class="n">sampling_method</span><span class="o">=</span><span class="s2">&quot;vf_fftw&quot;</span><span class="p">,</span>
+                <span class="n">grid_shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">Covariance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">Covariance</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">RF</span><span class="o">.</span><span class="n">reseed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_generate_block</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates a single block of the fluctuation field.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            A single block of the fluctuation field, to be concatenated with the total field.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">noise</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RF</span><span class="o">.</span><span class="n">sample_noise</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_shape</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">Nx</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">noise</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">new_part</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RF</span><span class="o">.</span><span class="n">sample_noise</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">new_part_shape</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">noise</span> <span class="o">=</span> <span class="n">noise</span>
+
+        <span class="n">wind_block</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RF</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">noise</span><span class="p">)</span>
+        <span class="n">wind</span> <span class="o">=</span> <span class="n">wind_block</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">central_part</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blend_num</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">blend_region</span> <span class="o">=</span> <span class="n">wind</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">blend_num</span> <span class="p">:,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">blend_region</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blend_num</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">wind</span> <span class="o">=</span> <span class="n">wind</span><span class="p">[:</span> <span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blend_num</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="o">...</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">wind</span>
+
+<div class="viewcode-block" id="GenerateFluctuationField.generate">
+<a class="viewcode-back" href="../../../windgeneration.html#drdmannturb.GenerateFluctuationField.generate">[docs]</a>
+    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_blocks</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates the full fluctuation field in blocks. The resulting field is stored as the ``total_fluctuation`` field of this object, allowing for all metadata of the object to be stored safely with the fluctuation field, and also reducing data duplication for post-processing; all operations can be performed on this public variable.</span>
+
+<span class="sd">        .. warning::</span>
+<span class="sd">            If this method is called twice in the same object, additional fluctuation field blocks will be appended to the field generated from the first call. If this is undesirable behavior, instantiate a new object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        num_blocks : int</span>
+<span class="sd">            Number of blocks to use in fluctuation field generation.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The full fluctuation field, which is also stored as the ``total_fluctuation`` field.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span><span class="p">):</span>
+            <span class="kn">import</span> <span class="nn">warnings</span>
+
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Fluctuation field has already been generated, additional blocks will be appended to existing field. If this is undesirable behavior, instantiate a new object.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_blocks</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_block</span><span class="p">()),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span></div>
+
+
+<div class="viewcode-block" id="GenerateFluctuationField.normalize">
+<a class="viewcode-back" href="../../../windgeneration.html#drdmannturb.GenerateFluctuationField.normalize">[docs]</a>
+    <span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">roughness_height</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">friction_velocity</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Normalizes the generated field by the logarithmic profile</span>
+
+<span class="sd">        .. math ::</span>
+
+<span class="sd">            \left\langle U_1(z)\right\rangle=\frac{u_*}{\kappa} \ln \left(\frac{z}{z_0}+1\right)</span>
+
+<span class="sd">        where :math:`u_*` is the friction velocity and :math:`z_0` is the roughness height. More information on this normalization can be found in</span>
+<span class="sd">            J. JCSS, “Probabilistic model code,” Joint Committee on Structural Safety (2001).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        roughness_height : float</span>
+<span class="sd">            Roughness height :math:`z_0`.</span>
+<span class="sd">        friction_velocity : float</span>
+<span class="sd">            Ground friction velocity :math:`u_*`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Fluctuation field normalized by the logarithmic profile.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;No fluctuation field has been generated, call the .generate() method first!&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span> <span class="o">/=</span> <span class="n">sd</span>
+
+        <span class="n">z_space</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+            <span class="mf">0.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_dimensions</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid_levels</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="n">mean_profile_z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_law</span><span class="p">(</span><span class="n">z_space</span><span class="p">,</span> <span class="n">roughness_height</span><span class="p">,</span> <span class="n">friction_velocity</span><span class="p">)</span>
+
+        <span class="n">mean_profile</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span><span class="p">)</span>
+        <span class="n">mean_profile</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span>
+            <span class="n">mean_profile_z</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="p">(</span><span class="n">mean_profile</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">mean_profile</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span> <span class="o">+</span> <span class="n">mean_profile</span></div>
+
+
+<div class="viewcode-block" id="GenerateFluctuationField.save_to_vtk">
+<a class="viewcode-back" href="../../../windgeneration.html#drdmannturb.GenerateFluctuationField.save_to_vtk">[docs]</a>
+    <span class="k">def</span> <span class="nf">save_to_vtk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;./&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Saves generated fluctuation field in VTK format to specified filepath.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filepath : Union[str, Path]</span>
+<span class="sd">           Filepath to which to save generated fluctuation field.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">pyevtk.hl</span> <span class="kn">import</span> <span class="n">imageToVTK</span>
+
+        <span class="n">spacing</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid_dimensions</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">grid_levels</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="n">wind_field_vtk</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">],</span> <span class="n">order</span><span class="o">=</span><span class="s2">&quot;C&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+        <span class="p">)</span>
+
+        <span class="n">cellData</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;grid&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+            <span class="s2">&quot;wind&quot;</span><span class="p">:</span> <span class="n">wind_field_vtk</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">imageToVTK</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">cellData</span><span class="o">=</span><span class="n">cellData</span><span class="p">,</span> <span class="n">spacing</span><span class="o">=</span><span class="n">spacing</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  <!-- Previous / next buttons -->
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=365ca57ee442770a23c6"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=365ca57ee442770a23c6"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright Alexey Izmailov, Matthew Meeker.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.5.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.3.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
