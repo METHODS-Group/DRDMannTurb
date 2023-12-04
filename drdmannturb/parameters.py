@@ -62,7 +62,6 @@ class ProblemParameters:
 
 @dataclass
 class PhysicalParameters:
-
     r"""
     This class provides a convenient method of storing and passing around
     the physical parameters required to define a problem; this also offers

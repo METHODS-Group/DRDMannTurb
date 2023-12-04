@@ -22,13 +22,10 @@ See again the `original DRD paper <https://arxiv.org/abs/2107.11046>`_.
 import torch
 import torch.nn as nn
 
-from drdmannturb.parameters import (
-    LossParameters,
-    NNParameters,
-    PhysicalParameters,
-    ProblemParameters,
-)
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+from drdmannturb.parameters import (LossParameters, NNParameters,
+                                    PhysicalParameters, ProblemParameters)
+from drdmannturb.spectra_fitting import (CalibrationProblem,
+                                         OnePointSpectraDataGenerator)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 

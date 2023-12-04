@@ -6,7 +6,8 @@ import torch
 import torch.nn as nn
 from sklearn.linear_model import LinearRegression
 
-from ..common import Mann_linear_exponential_approx, MannEddyLifetime, VKEnergySpectrum
+from ..common import (Mann_linear_exponential_approx, MannEddyLifetime,
+                      VKEnergySpectrum)
 from ..enums import EddyLifetimeType, PowerSpectraType
 from ..nn_modules import CustomNet, TauNet
 from ..parameters import NNParameters

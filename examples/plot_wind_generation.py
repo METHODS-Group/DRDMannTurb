@@ -19,13 +19,9 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from drdmannturb.fluctuation_generation import (
-    plot_velocity_components,  # utility function for plotting each velocity component in the field, not used in this example
-)
-from drdmannturb.fluctuation_generation import (
-    GenerateFluctuationField,
-    plot_velocity_magnitude,
-)
+from drdmannturb.fluctuation_generation import (  # utility function for plotting each velocity component in the field, not used in this example
+    GenerateFluctuationField, plot_velocity_components,
+    plot_velocity_magnitude)
 
 path = Path().resolve()
 

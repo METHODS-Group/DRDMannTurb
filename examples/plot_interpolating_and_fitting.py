@@ -40,13 +40,10 @@ import torch.nn as nn
 
 from drdmannturb.enums import DataType
 from drdmannturb.interpolation import extract_x_spectra, interpolate
-from drdmannturb.parameters import (
-    LossParameters,
-    NNParameters,
-    PhysicalParameters,
-    ProblemParameters,
-)
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+from drdmannturb.parameters import (LossParameters, NNParameters,
+                                    PhysicalParameters, ProblemParameters)
+from drdmannturb.spectra_fitting import (CalibrationProblem,
+                                         OnePointSpectraDataGenerator)
 
 path = Path().resolve()
 datapath = (

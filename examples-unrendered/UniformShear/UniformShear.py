@@ -6,12 +6,11 @@ import numpy as np
 from pyevtk.hl import imageToVTK
 
 from drdmannturb.fluctuation_generation.covariance_kernels import (
-    MannCovariance,
-    VonKarmanCovariance,
-)
+    MannCovariance, VonKarmanCovariance)
 from drdmannturb.fluctuation_generation.gaussian_random_fields import *
 from drdmannturb.fluctuation_generation.nn_covariance import NNCovariance
-from drdmannturb.spectra_fitting.calibration import CalibrationProblem, OnePointSpectra
+from drdmannturb.spectra_fitting.calibration import (CalibrationProblem,
+                                                     OnePointSpectra)
 
 resdir = Path(__file__).parent / "data"
 

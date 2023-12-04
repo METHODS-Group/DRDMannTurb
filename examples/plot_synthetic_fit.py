@@ -25,13 +25,10 @@ import torch
 import torch.nn as nn
 
 from drdmannturb import EddyLifetimeType
-from drdmannturb.parameters import (
-    LossParameters,
-    NNParameters,
-    PhysicalParameters,
-    ProblemParameters,
-)
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+from drdmannturb.parameters import (LossParameters, NNParameters,
+                                    PhysicalParameters, ProblemParameters)
+from drdmannturb.spectra_fitting import (CalibrationProblem,
+                                         OnePointSpectraDataGenerator)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
