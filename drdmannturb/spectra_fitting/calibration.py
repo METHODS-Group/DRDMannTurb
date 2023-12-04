@@ -541,37 +541,6 @@ class CalibrationProblem:
             torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord
         )
 
-    def eval_trainable_norm(self, ord: Optional[Union[float, str]] = "fro"):
-        """Evaluates the magnitude (or other norm) of the
-            trainable parameters in the model.
-
-        .. note::
-            The ``EddyLifetimeType`` must be set to one of ``TAUNET`` or ``CUSTOMMLP``, which involve
-            a network surrogate for the eddy lifetime.
-
-        Parameters
-        ----------
-        ord : Optional[Union[float, str]]
-            The order of the norm approximation, follows ``torch.norm`` conventions.
-
-        Raises
-        ------
-        ValueError
-            If the OPS was not initialized to one of ``TAUNET``, ``CUSTOMMLP``.
-
-        """
-        if self.OPS.type_EddyLifetime not in [
-            EddyLifetimeType.TAUNET,
-            EddyLifetimeType.CUSTOMMLP,
-        ]:
-            raise ValueError(
-                "Not using trainable model for approximation, must be TAUNET, CUSTOMMLP."
-            )
-
-        return torch.norm(
-            torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord
-        )
-
     def save_model(self, save_dir: Optional[str] = None):
         """Saves model with current weights, model configuration, and training histories to file.
         The written filename is of the form ``save_dir/<EddyLifetimeType>_<DataType>.pkl``

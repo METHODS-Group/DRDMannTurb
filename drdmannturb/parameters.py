@@ -5,7 +5,6 @@ This module defines several dataclasses that comprise the set-up for a calibrati
 from dataclasses import dataclass, field
 from typing import List
 
-import numpy as np
 import torch
 import torch.nn as nn
 

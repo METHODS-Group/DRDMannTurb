@@ -293,7 +293,7 @@ class CustomNet(nn.Module):
         self.fg_learn_nu = learn_nu
 
         hls = None
-        if type(hidden_layer_sizes) is int:
+        if isinstance(hidden_layer_sizes, int):
             hls = [hidden_layer_sizes for _ in range(n_layers)]
         else:
             hls = hidden_layer_sizes

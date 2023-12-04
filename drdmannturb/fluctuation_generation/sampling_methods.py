@@ -3,7 +3,6 @@ This module implements and exposes the various sampling methods required
 """
 
 import os
-from math import *
 
 import numpy as np
 import scipy.fftpack as fft
@@ -43,17 +42,10 @@ class Sampling_method_freq(Sampling_method_base):
         super().__init__(RandomField)
         L, Nd, d = self.L, self.Nd, self.ndim
         self.Frequencies = [
-            (2 * pi / L[j]) * (Nd[j] * fft.fftfreq(Nd[j])) for j in range(d)
+            (2 * np.pi / L[j]) * (Nd[j] * fft.fftfreq(Nd[j])) for j in range(d)
         ]
         self.TransformNorm = np.sqrt(L.prod())
         self.Spectrum = RandomField.Covariance.precompute_Spectrum(self.Frequencies)
-
-
-#######################################################################################################
-# 	Fourier Transform (FFTW)
-#######################################################################################################
-### - Only stationary covariance
-### - Uses the Fastest Fourier Transform in the West
 
 
 class Sampling_FFTW(Sampling_method_freq):
@@ -88,14 +80,6 @@ class Sampling_FFTW(Sampling_method_freq):
         self.fft_y[:] *= self.Spectrum_half
         self.ifft_plan()
         return self.fft_x[self.DomainSlice] / self.TransformNorm
-
-
-#######################################################################################################
-# 	Vector Field Fourier Transform (VF_FFTW)
-#######################################################################################################
-### - Random vector fields
-### - Only stationary covariance
-### - Uses the Fastest Fourier Transform in the West
 
 
 class Sampling_VF_FFTW(Sampling_method_freq):
@@ -156,13 +140,6 @@ class Sampling_VF_FFTW(Sampling_method_freq):
         return tmp[self.DomainSlice] / self.TransformNorm
 
 
-#######################################################################################################
-# 	Fourier Transform
-#######################################################################################################
-### - Only stationary covariance
-### - Uses sscipy.fftpack (slower solution)
-
-
 class Sampling_FFT(Sampling_method_freq):
     """Sampling using ``scipy.fftpack``, which is considerably slower than with FFTW but is a simpler interface."""
 
@@ -176,13 +153,6 @@ class Sampling_FFT(Sampling_method_freq):
         return y.real[self.DomainSlice] / self.TransformNorm
 
 
-#######################################################################################################
-# 	Sine Transform
-#######################################################################################################
-### - Only stationary covariance
-### - Uses sscipy.fftpack (non the fastest solution)
-
-
 class Sampling_DST(Sampling_method_freq):
     """Sampling using the discrete sine transform from ``scipy.fftpack``, with all other operations being identical as other sampling methods."""
 
@@ -194,13 +164,6 @@ class Sampling_DST(Sampling_method_freq):
         for j in range(self.ndim):
             y = fft.dst(y, axis=j, type=1)
         return y[self.DomainSlice] / self.TransformNorm
-
-
-#######################################################################################################
-# 	Cosine Transform
-#######################################################################################################
-### - Only stationary covariance
-### - Uses sscipy.fftpack (non the fastest solution)
 
 
 class Sampling_DCT(Sampling_method_freq):
