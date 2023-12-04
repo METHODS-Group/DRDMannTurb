@@ -7,13 +7,14 @@ import numpy as np
 import pytest
 import torch
 
+from drdmannturb import GenerateFluctuationField
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # v2: torch.set_default_device('cuda:0')
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
-from drdmannturb import GenerateFluctuationField
 
 L = 0.59
 

@@ -7,7 +7,7 @@ rapid simulation of realistic wind turbulence.
 The code is based on the original work of Jacob Mann in [1994](https://doi.org/10.1017/S0022112094001886) and [1998](https://doi.org/10.1016/S0266-8920(97)00036-2)
 as well as in the deep-learning enhancement developed in [Keith, Khristenko, Wohlmuth (2021)](https://arxiv.org/pdf/2107.11046.pdf). 
 
-To learn more and see some examples, visit the [documentation]().
+To learn more and see some examples, visit the [documentation]() or `/examples`.
 
 
 ## Installation
@@ -20,9 +20,13 @@ To learn more and see some examples, visit the [documentation]().
 
 ## Development Installation Instructions 
 
-This package is provided as a locally ``pip``-installable package. It is recommended that Python 3.9 is used in your local environment. 
+This package is provided as a locally ``pip``-installable package. We recommend that you use Python 3.9 in your local environment. 
 
-A Conda spec-file is included, to install a functioning environment, run ``conda create --name ENV_NAME_HERE --file spec-file.txt``. Then run ``pip install -e .`` to load ``drdmannturb`` into your environment. 
+A Conda spec-file is included, to install a functioning environment, run ``conda create --name ENV_NAME_HERE --file spec-file.txt``. Then run ``pip install -e .`` to load ``drdmannturb`` into your environment.
+
+### Pre-commit hooks
+
+We use `pre-commit`. See 
 
 ## Local Documentation Building Instructions 
 

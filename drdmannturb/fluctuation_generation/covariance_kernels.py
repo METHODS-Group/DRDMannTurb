@@ -116,7 +116,7 @@ class MannCovariance(Covariance):
         length_scale: float = 1.0,
         E0: float = 1.0,
         Gamma: float = 1.0,
-        **kwargs
+        **kwargs,
     ):
         """
         Parameters

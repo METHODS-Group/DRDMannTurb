@@ -17,8 +17,12 @@ from tqdm import tqdm
 
 from ..common import MannEddyLifetime
 from ..enums import EddyLifetimeType
-from ..parameters import (LossParameters, NNParameters, PhysicalParameters,
-                          ProblemParameters)
+from ..parameters import (
+    LossParameters,
+    NNParameters,
+    PhysicalParameters,
+    ProblemParameters,
+)
 from .loss_functions import LossAggregator
 from .one_point_spectra import OnePointSpectra
 

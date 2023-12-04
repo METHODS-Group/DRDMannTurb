@@ -3,16 +3,18 @@
 import pickle
 from pathlib import Path
 
-import numpy as np
 import pytest
 import torch
 import torch.nn as nn
 
 from drdmannturb.enums import EddyLifetimeType
-from drdmannturb.parameters import (LossParameters, NNParameters,
-                                    PhysicalParameters, ProblemParameters)
-from drdmannturb.spectra_fitting import (CalibrationProblem,
-                                         OnePointSpectraDataGenerator)
+from drdmannturb.parameters import (
+    LossParameters,
+    NNParameters,
+    PhysicalParameters,
+    ProblemParameters,
+)
+from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 

@@ -23,12 +23,17 @@ The following example is also discussed in the `original DRD paper <https://arxi
 
 import torch
 import torch.nn as nn
+import pickle
+import numpy as np
 
 from drdmannturb import EddyLifetimeType
-from drdmannturb.parameters import (LossParameters, NNParameters,
-                                    PhysicalParameters, ProblemParameters)
-from drdmannturb.spectra_fitting import (CalibrationProblem,
-                                         OnePointSpectraDataGenerator)
+from drdmannturb.parameters import (
+    LossParameters,
+    NNParameters,
+    PhysicalParameters,
+    ProblemParameters,
+)
+from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -148,7 +153,6 @@ pb.save_model("../results/")
 # Lastly, we load our model back in.
 
 # %%
-import pickle
 
 path_to_parameters = "../results/EddyLifetimeType.TAUNET_DataType.KAIMAL.pkl"
 
@@ -174,7 +178,5 @@ pb_new = CalibrationProblem(
 )
 
 pb_new.parameters = model_params
-
-import numpy as np
 
 assert np.ma.allequal(pb.parameters, pb_new.parameters)

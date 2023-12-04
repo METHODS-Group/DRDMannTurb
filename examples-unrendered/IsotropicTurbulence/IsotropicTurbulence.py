@@ -4,7 +4,6 @@ This example does TODO
 
 from time import time
 
-import matplotlib.pyplot as plt
 import numpy as np
 from pyevtk.hl import imageToVTK
 
@@ -12,7 +11,6 @@ from pyevtk.hl import imageToVTK
 from drdmannturb.fluctuation_generation.covariance_kernels import (
     MannCovariance, VonKarmanCovariance)
 from drdmannturb.fluctuation_generation.gaussian_random_fields import *
-from drdmannturb.fluctuation_generation.nn_covariance import NNCovariance
 
 
 class GenerateWindTurbulence:
@@ -155,7 +153,6 @@ class GenerateWindTurbulence:
 ############################################################################
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
 
     normalize = False
     friction_velocity = 0.45

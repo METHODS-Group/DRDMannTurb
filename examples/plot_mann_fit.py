@@ -26,10 +26,13 @@ Also, the resulting fitting can be used directly to generate a 3D Mann fluctuati
 import torch
 
 from drdmannturb import EddyLifetimeType
-from drdmannturb.parameters import (LossParameters, NNParameters,
-                                    PhysicalParameters, ProblemParameters)
-from drdmannturb.spectra_fitting import (CalibrationProblem,
-                                         OnePointSpectraDataGenerator)
+from drdmannturb.parameters import (
+    LossParameters,
+    NNParameters,
+    PhysicalParameters,
+    ProblemParameters,
+)
+from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 

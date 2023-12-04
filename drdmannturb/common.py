@@ -12,8 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from scipy.special import hyp2f1
-from tensorboard.backend.event_processing.event_accumulator import \
-    EventAccumulator
+from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
 
 @torch.jit.script
