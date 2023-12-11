@@ -163,6 +163,7 @@ def plot_velocity_magnitude(
     wind_field: np.ndarray,
     surf_count=75,
     reshape=True,
+    transparent=False,
 ) -> go.Figure:
     """Produces a 3D plot of the wind velocity magnitude in a specified domain. This returns a Plotly figure for use of downstream visualization.
 
@@ -176,6 +177,8 @@ def plot_velocity_magnitude(
         Number of surfaces to be used, by default 75
     reshape : bool, optional
         Whether to re-format the given wind field into C-order, typically the desirable choice to match the order of entries of the wind field and the provided spacing, by default True
+    transparent : bool, optional
+        Whether to set the background of the plot to a transparent background, which renders the same on different backgrounds on which this ``Figure`` could be embedded.
 
     Returns
     -------
@@ -200,9 +203,12 @@ def plot_velocity_magnitude(
             z=Z.flatten(),
             value=wind_magnitude.flatten(),
             surface_count=surf_count,
-            opacity=0.5,
-            colorscale="spectral_r",
-            colorbar={"title": "|U(x)|"},
+            opacity=0.75,
+            colorscale="Turbo",  # spectral_r
+            colorbar={
+                "title": "|U(x)|",
+            },
+            showscale=False,
         ),
     )
 
@@ -217,5 +223,8 @@ def plot_velocity_magnitude(
     )
 
     fig.update_layout(title_text="Fluctuation Vector Magnitude", title_x=0.5)
+
+    if transparent:
+        fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
 
     return fig
