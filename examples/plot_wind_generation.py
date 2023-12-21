@@ -7,6 +7,7 @@ This example demonstrates the utilities for generating fluctuation fields, which
 
 """
 
+#######################################################################################
 #   .. centered::
 #       This example may take a few seconds to load. Please be patient,
 #       Plotly requires some time to render 3D graphics.
@@ -103,7 +104,11 @@ fig_magnitude_mann  # .show("browser")
 # We now generate a similar fluctuation field in the same physical setting and domain but using a pre-trained DRD model. This model is the result of
 # fitting the Mann model with a Kaimal spectrum, showcased in an earlier example, so we anticipate the resulting fluctuation fields to be similar. Note
 # that since DRD models learn the scales, these are taken from the saved object, which has these values as parameters.
-
+# The field generation process can be summarized by the following diagram of a 2D domain (a transversal cross-section of a 3D turbulence block).
+#
+# .. image:: https://github.com/METHODS-Group/DRDMannTurb/blob/main/paper/fluct_gen_box_by_box.png?raw=true
+#
+# A continuous wind field is generated block-by-block where noise is being copied from the end of one block to the start of the next block. Turbulent fluctuations are recomputed block-by-block using the partially shared noise. Common Gaussian noise is used in the overlapping domains.
 path_to_parameters = (
     path / "../docs/source/results/EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl"
     if path.name == "examples"
