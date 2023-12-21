@@ -40,15 +40,20 @@ is their ability to generate fluctuations based on prescribed second-order stati
 
 # Results
 
+The output of the fitting component of ``DRDMannTurb`` consists of two parts: the spectra fit by a DRD model and the learned eddy lifetime function. Below, a sample fitting is provided for the Kaimal spectra and Mann model. The resulting fit is better than a fit by the Mann uniform shear model.   
 
-For more detailed results and discussions, please see the official examples.  
+![](synthetic_fit.png)
+
+
+
+For more detailed discussions of results, please see the official examples.  
 
 # Package Features
 
 - Generates synthetic turbulence fields using the Classic Mann model
 - Calibrate the Mann model parameters using reference "textbook" or in-situ spectra and co-spectra
 - Calibrate the DRD model using a flexible suite of neural network architectures for the eddy lifetime functions
-- Fast wind field generation using a domain decomposition approach
+- Fast fluctuation field generation using a domain decomposition approach
 
 # Acknowledgements
 

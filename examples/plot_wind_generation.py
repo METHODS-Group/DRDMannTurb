@@ -108,7 +108,7 @@ fig_magnitude_mann  # .show("browser")
 #
 # .. image:: https://github.com/METHODS-Group/DRDMannTurb/blob/main/paper/fluct_gen_box_by_box.png?raw=true
 #
-# A continuous wind field is generated block-by-block where noise is being copied from the end of one block to the start of the next block. Turbulent fluctuations are recomputed block-by-block using the partially shared noise. Common Gaussian noise is used in the overlapping domains.
+# A continuous wind field is generated block-by-block where noise is being copied from the end of one block to the start of the next block. Turbulent fluctuations are recomputed block-by-block using the partially shared noise. Common Gaussian noise is used in the overlapping domains. This diagram is from `Keith, Khristenko, Wohlmuth (2021) <https://arxiv.org/pdf/2107.11046.pdf>`_, please see the discussion therein for further details.
 path_to_parameters = (
     path / "../docs/source/results/EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl"
     if path.name == "examples"
