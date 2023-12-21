@@ -41,7 +41,7 @@ if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
 #######################################################################################
-# Set up physical parameters and domain associated with the Kaimal spectrum. We perform the spectra fitting over the :math:`k_1` space :math:[10^{{-1}}, 10^2]`
+# Set up physical parameters and domain associated with the Kaimal spectrum. We perform the spectra fitting over the :math:`k_1` space :math:`[10^{{-1}}, 10^2]`
 # with 20 points.
 
 # Scales associated with Kaimal spectrum
@@ -60,7 +60,7 @@ domain = torch.logspace(-1, 2, 20)
 # The current set-up involves using the Mann model for the eddy lifetime function, meaning no
 # neural network is used in learning the :math:`\tau` function. Additionally, the physical parameters
 # are taken from the reference values for the Kaimal spectra. Finally, in this scenario the regression
-# occurs as an MSE fit to the spectra, which are generated from Mann turbulence (i.e. a synthetic data fit).
+# occurs as an MSE fit to the spectra, which are generated from Mann turbulence (i.e., a synthetic data fit).
 # The ``EddyLifetimeType.MANN`` argument determines the type of eddy lifetime function to use.
 pb = CalibrationProblem(
     nn_params=NNParameters(),
@@ -95,7 +95,7 @@ Data = OnePointSpectraDataGenerator(data_points=DataPoints).Data
 # which only has a CPU implementation through ``Scipy``. When using this function
 # with a neural network task, consider either learning this function as well or
 # using a linear approximation from your data that provides a GPU kernel for
-# fast evaluation of a similar model. See a later example.
+# fast evaluation of a similar model. See example [??].
 #
 # Having the necessary components, the model is "calibrated" (fit) to the provided spectra
 # and we conclude with a plot.
@@ -104,5 +104,5 @@ optimal_parameters = pb.calibrate(data=Data)
 
 ##############################################################################
 # The following plot shows the best fit to the synthetic Mann data. Notice that
-# the eddy lifetime function is precisely the Mann model.
+# the eddy lifetime function is precisely :math:`\tau^{\mathrm{IEC}}(k)`
 pb.plot()

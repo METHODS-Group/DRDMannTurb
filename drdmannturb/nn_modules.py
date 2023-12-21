@@ -207,7 +207,7 @@ class TauNet(nn.Module):
     where
 
     .. math::
-        \boldsymbol{a}(\boldsymbol{k}) = \operatorname{abs}(\boldsymbol{k} \mathrm{NN}(\operatorname{abs}(\boldsymbol{k})).
+        \boldsymbol{a}(\boldsymbol{k}) = \operatorname{abs}(\boldsymbol{k}) + \mathrm{NN}(\operatorname{abs}(\boldsymbol{k})).
 
     This class implements the simplest architectures which solve this problem.
     """

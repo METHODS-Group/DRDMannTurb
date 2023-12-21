@@ -42,7 +42,7 @@ if torch.cuda.is_available():
 
 
 #######################################################################################
-# Set up physical parameters and domain associated with the Kaimal spectrum. We perform the spectra fitting over the :math:`k_1` space :math:[10^{{-1}}, 10^2]`
+# Set up physical parameters and domain associated with the Kaimal spectrum. We perform the spectra fitting over the :math:`k_1` space :math:`[10^{{-1}}, 10^2]`
 # with 20 points.
 
 # Scales associated with Kaimal spectrum
