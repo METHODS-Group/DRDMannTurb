@@ -49,6 +49,8 @@ L = 0.59  # length scale
 Gamma = 3.9  # time scale
 sigma = 3.2  # energy spectrum scale
 
+zref = 1  # reference height
+
 domain = torch.logspace(-1, 2, 20)
 
 ##############################################################################
@@ -83,7 +85,7 @@ pb = CalibrationProblem(
 # Lastly, we collect ``Data = (<data points>, <data values>)`` to be used in calibration.
 
 k1_data_pts = domain
-DataPoints = [(k1, 1) for k1 in k1_data_pts]
+DataPoints = [(k1, zref) for k1 in k1_data_pts]
 
 Data = OnePointSpectraDataGenerator(data_points=DataPoints).Data
 

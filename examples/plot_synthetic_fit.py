@@ -54,8 +54,10 @@ L = 0.59
 Gamma = 3.9
 sigma = 3.2
 
-# Reference velocity
-Uref = 21.0
+Uref = 21.0  # reference velocity
+
+zref = 1  # reference height
+
 # We consider the range :math:`\mathcal{D} =[0.1, 100]` and sample the data points :math:`f_j \in \mathcal{D}` using a logarithmic grid of :math:`20` nodes.
 domain = torch.logspace(-1, 2, 20)
 
@@ -108,7 +110,7 @@ pb = CalibrationProblem(
 # It is worth noting that the second element of each tuple in ``DataPoints`` is the corresponding
 # reference height, which we have chosen to be uniformly :math:`1`.
 k1_data_pts = domain
-DataPoints = [(k1, 1) for k1 in k1_data_pts]
+DataPoints = [(k1, zref) for k1 in k1_data_pts]
 
 Data = OnePointSpectraDataGenerator(data_points=DataPoints).Data
 

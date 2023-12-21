@@ -115,7 +115,7 @@ pb = CalibrationProblem(
 CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=","))
 f = CustomData[:, 0]
 k1_data_pts = 2 * torch.pi * f / Uref
-DataPoints = [(k1, 1) for k1 in k1_data_pts]
+DataPoints = [(k1, zref) for k1 in k1_data_pts]
 Data = OnePointSpectraDataGenerator(
     data_points=DataPoints,
     data_type=DataType.CUSTOM,

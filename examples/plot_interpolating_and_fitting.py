@@ -75,7 +75,10 @@ if torch.cuda.is_available():
 L = 70
 Gamma = 3.7
 sigma = 0.04
-Uref = 21.0
+
+Uref = 21.0  # reference velocity
+zref = 1  # reference height
+
 
 ##############################################################################
 # Extracting data from CSVs
@@ -96,7 +99,7 @@ domain = torch.tensor(x_interp)
 f = domain
 k1_data_pts = 2 * torch.pi * f / Uref
 
-DataPoints = [(k1, 1) for k1 in k1_data_pts]
+DataPoints = [(k1, zref) for k1 in k1_data_pts]
 interpolated_spectra = np.stack((interp_u, interp_v, interp_w, interp_uw), axis=1)
 
 datagen = OnePointSpectraDataGenerator(
