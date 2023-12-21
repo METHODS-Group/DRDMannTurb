@@ -375,7 +375,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="NNCovariance">
-<a class="viewcode-back" href="../../../cov_kernels.html#drdmannturb.NNCovariance">[docs]</a>
+<a class="viewcode-back" href="../../../internal_cov.html#drdmannturb.NNCovariance">[docs]</a>
 <span class="k">class</span> <span class="nc">NNCovariance</span><span class="p">(</span><span class="n">Covariance</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Neural Network covariance kernel. Like other covariance kernel implementations, this evaluates the :math:`G(\boldsymbol{k})` which satisfies :math:`G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k}, \tau(\boldsymbol{k}))` where the spectral tensor is defined through the eddy lifetime function learned by the neural network as well as the fitted spectra. Here, </span>
@@ -398,8 +398,6 @@ document.write(`
 <span class="sd">    For more detailed definitions of individual terms, refer to section III B (specifically pages 4 and 5) of the original DRD paper. </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="NNCovariance.__init__">
-<a class="viewcode-back" href="../../../cov_kernels.html#drdmannturb.NNCovariance.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">ndim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -443,13 +441,12 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">Gamma</span> <span class="o">=</span> <span class="n">Gamma</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">OPS</span> <span class="o">=</span> <span class="n">ops</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">h_ref</span> <span class="o">=</span> <span class="n">h_ref</span></div>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">h_ref</span> <span class="o">=</span> <span class="n">h_ref</span>
         <span class="c1">### NOTE: NN implicitly involves the length scales (it is associated with non-dimensional internal L)</span>
         <span class="c1">### NOTE: However, here we scale L with the reference_height - the latter has to be taken into account from the physical setting</span>
 
 <div class="viewcode-block" id="NNCovariance.precompute_Spectrum">
-<a class="viewcode-back" href="../../../cov_kernels.html#drdmannturb.NNCovariance.precompute_Spectrum">[docs]</a>
+<a class="viewcode-back" href="../../../internal_cov.html#drdmannturb.NNCovariance.precompute_Spectrum">[docs]</a>
     <span class="k">def</span> <span class="nf">precompute_Spectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Frequencies</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluation method which pre-computes the square-root of the associated spectrum tensor in the complex domain.</span>
 

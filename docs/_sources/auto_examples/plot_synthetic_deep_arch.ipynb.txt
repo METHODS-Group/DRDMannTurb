@@ -40,7 +40,7 @@
       },
       "outputs": [],
       "source": [
-        "# Scales associated with Kaimal spectrum\nL = 0.59\nGamma = 3.9\nsigma = 3.2\n\n# Reference velocity\nUref = 21.0\n\n\ndomain = torch.logspace(-1, 2, 20)"
+        "# Scales associated with Kaimal spectrum\nL = 0.59\nGamma = 3.9\nsigma = 3.2\n\nUref = 21.0  # reference velocity\nzref = 1  # reference height\n\n\ndomain = torch.logspace(-1, 2, 20)"
       ]
     },
     {
@@ -76,7 +76,7 @@
       },
       "outputs": [],
       "source": [
-        "k1_data_pts = domain\nDataPoints = [(k1, 1) for k1 in k1_data_pts]\n\nData = OnePointSpectraDataGenerator(data_points=DataPoints).Data"
+        "k1_data_pts = domain\nDataPoints = [(k1, zref) for k1 in k1_data_pts]\n\nData = OnePointSpectraDataGenerator(data_points=DataPoints).Data"
       ]
     },
     {

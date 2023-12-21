@@ -598,6 +598,8 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">init_mann_linear_approx</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 
+<div class="viewcode-block" id="OnePointSpectra.EddyLifetime">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.OnePointSpectra.EddyLifetime">[docs]</a>
     <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">export</span>
     <span class="k">def</span> <span class="nf">EddyLifetime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
@@ -654,8 +656,11 @@ document.write(`
                 <span class="s2">&quot;Did not specify an admissible EddyLifetime model. Refer to the EddyLifetimeType documentation.&quot;</span>
             <span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeScale</span> <span class="o">*</span> <span class="n">tau</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeScale</span> <span class="o">*</span> <span class="n">tau</span></div>
 
+
+<div class="viewcode-block" id="OnePointSpectra.InitialGuess_EddyLifetime">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.OnePointSpectra.InitialGuess_EddyLifetime">[docs]</a>
     <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">export</span>
     <span class="k">def</span> <span class="nf">InitialGuess_EddyLifetime</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
@@ -667,8 +672,11 @@ document.write(`
 <span class="sd">            Initial guess evaluation, presently, the :math:`0` function.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="mf">0.0</span>
+        <span class="k">return</span> <span class="mf">0.0</span></div>
 
+
+<div class="viewcode-block" id="OnePointSpectra.PowerSpectra">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.OnePointSpectra.PowerSpectra">[docs]</a>
     <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">export</span>
     <span class="k">def</span> <span class="nf">PowerSpectra</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -689,8 +697,11 @@ document.write(`
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_PowerSpectra</span> <span class="o">==</span> <span class="n">PowerSpectraType</span><span class="o">.</span><span class="n">RDT</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">PowerSpectraRDT</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">E0</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Incorrect PowerSpectra model !&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Incorrect PowerSpectra model !&quot;</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="OnePointSpectra.quad23">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.OnePointSpectra.quad23">[docs]</a>
     <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">export</span>
     <span class="k">def</span> <span class="nf">quad23</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
@@ -714,8 +725,11 @@ document.write(`
 
         <span class="c1"># NOTE: Integration in k2 (fixed k3=0, since slices are identical in meshgrid)</span>
         <span class="n">quad</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">quad</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">quad</span>
+        <span class="k">return</span> <span class="n">quad</span></div>
 
+
+<div class="viewcode-block" id="OnePointSpectra.get_div">
+<a class="viewcode-back" href="../../../calibration.html#drdmannturb.OnePointSpectra.get_div">[docs]</a>
     <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">export</span>
     <span class="k">def</span> <span class="nf">get_div</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Phi</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
@@ -741,6 +755,7 @@ document.write(`
             <span class="p">]</span>
         <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">Phi11</span> <span class="o">+</span> <span class="n">Phi22</span> <span class="o">+</span> <span class="n">Phi33</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">div</span></div>
+</div>
 
 </pre></div>
 

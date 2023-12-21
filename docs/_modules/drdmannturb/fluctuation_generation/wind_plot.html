@@ -538,6 +538,7 @@ document.write(`
     <span class="n">wind_field</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">surf_count</span><span class="o">=</span><span class="mi">75</span><span class="p">,</span>
     <span class="n">reshape</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">transparent</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Produces a 3D plot of the wind velocity magnitude in a specified domain. This returns a Plotly figure for use of downstream visualization.</span>
 
@@ -551,6 +552,8 @@ document.write(`
 <span class="sd">        Number of surfaces to be used, by default 75</span>
 <span class="sd">    reshape : bool, optional</span>
 <span class="sd">        Whether to re-format the given wind field into C-order, typically the desirable choice to match the order of entries of the wind field and the provided spacing, by default True</span>
+<span class="sd">    transparent : bool, optional</span>
+<span class="sd">        Whether to set the background of the plot to a transparent background, which renders the same on different backgrounds on which this ``Figure`` could be embedded.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -575,9 +578,12 @@ document.write(`
             <span class="n">z</span><span class="o">=</span><span class="n">Z</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
             <span class="n">value</span><span class="o">=</span><span class="n">wind_magnitude</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
             <span class="n">surface_count</span><span class="o">=</span><span class="n">surf_count</span><span class="p">,</span>
-            <span class="n">opacity</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
-            <span class="n">colorscale</span><span class="o">=</span><span class="s2">&quot;spectral_r&quot;</span><span class="p">,</span>
-            <span class="n">colorbar</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;|U(x)|&quot;</span><span class="p">},</span>
+            <span class="n">opacity</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span>
+            <span class="n">colorscale</span><span class="o">=</span><span class="s2">&quot;Turbo&quot;</span><span class="p">,</span>  <span class="c1"># spectral_r</span>
+            <span class="n">colorbar</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;|U(x)|&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="n">showscale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">),</span>
     <span class="p">)</span>
 
@@ -592,6 +598,9 @@ document.write(`
     <span class="p">)</span>
 
     <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title_text</span><span class="o">=</span><span class="s2">&quot;Fluctuation Vector Magnitude&quot;</span><span class="p">,</span> <span class="n">title_x</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">transparent</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">paper_bgcolor</span><span class="o">=</span><span class="s2">&quot;rgba(0,0,0,0)&quot;</span><span class="p">,</span> <span class="n">plot_bgcolor</span><span class="o">=</span><span class="s2">&quot;rgba(0,0,0,0)&quot;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">fig</span></div>
 

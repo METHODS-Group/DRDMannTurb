@@ -29,7 +29,7 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "Set up physical parameters and domain associated with the Kaimal spectrum. We perform the spectra fitting over the $k_1$ space :math:[10^{{-1}}, 10^2]`\nwith 20 points.\n\n"
+        "Set up physical parameters and domain associated with the Kaimal spectrum. We perform the spectra fitting over the $k_1$ space $[10^{{-1}}, 10^2]$\nwith 20 points.\n\n"
       ]
     },
     {
@@ -40,7 +40,7 @@
       },
       "outputs": [],
       "source": [
-        "# Scales associated with Kaimal spectrum\nL = 0.59  # length scale\nGamma = 3.9  # time scale\nsigma = 3.2  # energy spectrum scale\n\ndomain = torch.logspace(-1, 2, 20)"
+        "# Scales associated with Kaimal spectrum\nL = 0.59  # length scale\nGamma = 3.9  # time scale\nsigma = 3.2  # energy spectrum scale\n\nzref = 1  # reference height\n\ndomain = torch.logspace(-1, 2, 20)"
       ]
     },
     {
@@ -76,7 +76,7 @@
       },
       "outputs": [],
       "source": [
-        "k1_data_pts = domain\nDataPoints = [(k1, 1) for k1 in k1_data_pts]\n\nData = OnePointSpectraDataGenerator(data_points=DataPoints).Data"
+        "k1_data_pts = domain\nDataPoints = [(k1, zref) for k1 in k1_data_pts]\n\nData = OnePointSpectraDataGenerator(data_points=DataPoints).Data"
       ]
     },
     {

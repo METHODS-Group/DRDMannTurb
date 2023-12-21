@@ -377,8 +377,6 @@ document.write(`
 <div class="viewcode-block" id="LossAggregator">
 <a class="viewcode-back" href="../../../losses.html#drdmannturb.LossAggregator">[docs]</a>
 <span class="k">class</span> <span class="nc">LossAggregator</span><span class="p">:</span>
-<div class="viewcode-block" id="LossAggregator.__init__">
-<a class="viewcode-back" href="../../../losses.html#drdmannturb.LossAggregator.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">params</span><span class="p">:</span> <span class="n">LossParameters</span><span class="p">,</span>
@@ -438,8 +436,7 @@ document.write(`
             <span class="k">lambda</span> <span class="n">y</span><span class="p">,</span> <span class="n">theta_NN</span><span class="p">,</span> <span class="n">epoch</span><span class="p">:</span> <span class="n">t_alphapen1</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">theta_NN</span><span class="p">,</span> <span class="n">epoch</span><span class="p">)</span>
             <span class="o">+</span> <span class="n">t_alphapen2</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">theta_NN</span><span class="p">,</span> <span class="n">epoch</span><span class="p">)</span>
             <span class="o">+</span> <span class="n">t_beta_reg</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">theta_NN</span><span class="p">,</span> <span class="n">epoch</span><span class="p">)</span>
-        <span class="p">)</span></div>
-
+        <span class="p">)</span>
 
 <div class="viewcode-block" id="LossAggregator.MSE_term">
 <a class="viewcode-back" href="../../../losses.html#drdmannturb.LossAggregator.MSE_term">[docs]</a>

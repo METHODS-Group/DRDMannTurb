@@ -40,7 +40,7 @@
       },
       "outputs": [],
       "source": [
-        "# Characteristic scales associated with Kaimal spectrum\nL = 0.59\nGamma = 3.9\nsigma = 3.2\n\n# Reference velocity\nUref = 21.0\n# We consider the range :math:`\\mathcal{D} =[0.1, 100]` and sample the data points :math:`f_j \\in \\mathcal{D}` using a logarithmic grid of :math:`20` nodes.\ndomain = torch.logspace(-1, 2, 20)"
+        "# Characteristic scales associated with Kaimal spectrum\nL = 0.59\nGamma = 3.9\nsigma = 3.2\n\nUref = 21.0  # reference velocity\n\nzref = 1  # reference height\n\n# We consider the range :math:`\\mathcal{D} =[0.1, 100]` and sample the data points :math:`f_j \\in \\mathcal{D}` using a logarithmic grid of :math:`20` nodes.\ndomain = torch.logspace(-1, 2, 20)"
       ]
     },
     {
@@ -76,7 +76,7 @@
       },
       "outputs": [],
       "source": [
-        "k1_data_pts = domain\nDataPoints = [(k1, 1) for k1 in k1_data_pts]\n\nData = OnePointSpectraDataGenerator(data_points=DataPoints).Data"
+        "k1_data_pts = domain\nDataPoints = [(k1, zref) for k1 in k1_data_pts]\n\nData = OnePointSpectraDataGenerator(data_points=DataPoints).Data"
       ]
     },
     {

@@ -40,7 +40,7 @@
       },
       "outputs": [],
       "source": [
-        "L = 70\nGamma = 3.7\nsigma = 0.04\nUref = 21.0"
+        "L = 70\nGamma = 3.7\nsigma = 0.04\n\nUref = 21.0  # reference velocity\nzref = 1  # reference height"
       ]
     },
     {
@@ -58,7 +58,7 @@
       },
       "outputs": [],
       "source": [
-        "x_coords_u, u_spectra = extract_x_spectra(datapath / \"u_spectra.csv\")\nx_coords_v, v_spectra = extract_x_spectra(datapath / \"v_spectra.csv\")\nx_coords_w, w_spectra = extract_x_spectra(datapath / \"w_spectra.csv\")\nx_coords_uw, uw_cospectra = extract_x_spectra(datapath / \"uw_cospectra.csv\")\nx_full = [x_coords_u, x_coords_v, x_coords_w, x_coords_uw]\nspectra_full = [u_spectra, v_spectra, w_spectra, uw_cospectra]\nx_interp, interp_u, interp_v, interp_w, interp_uw = interpolate(\n    datapath, num_k1_points=40, plot=True\n)\ndomain = torch.tensor(x_interp)\n\nf = domain\nk1_data_pts = 2 * torch.pi * f / Uref\n\nDataPoints = [(k1, 1) for k1 in k1_data_pts]\ninterpolated_spectra = np.stack((interp_u, interp_v, interp_w, interp_uw), axis=1)\n\ndatagen = OnePointSpectraDataGenerator(\n    data_points=DataPoints,\n    data_type=DataType.AUTO,\n    k1_data_points=(\n        k1_data_pts.cpu().numpy() if torch.cuda.is_available() else k1_data_pts.numpy()\n    ),\n    spectra_values=interpolated_spectra,\n)\n\ndatagen.plot(x_interp, spectra_full, x_full)"
+        "x_coords_u, u_spectra = extract_x_spectra(datapath / \"u_spectra.csv\")\nx_coords_v, v_spectra = extract_x_spectra(datapath / \"v_spectra.csv\")\nx_coords_w, w_spectra = extract_x_spectra(datapath / \"w_spectra.csv\")\nx_coords_uw, uw_cospectra = extract_x_spectra(datapath / \"uw_cospectra.csv\")\nx_full = [x_coords_u, x_coords_v, x_coords_w, x_coords_uw]\nspectra_full = [u_spectra, v_spectra, w_spectra, uw_cospectra]\nx_interp, interp_u, interp_v, interp_w, interp_uw = interpolate(\n    datapath, num_k1_points=40, plot=True\n)\ndomain = torch.tensor(x_interp)\n\nf = domain\nk1_data_pts = 2 * torch.pi * f / Uref\n\nDataPoints = [(k1, zref) for k1 in k1_data_pts]\ninterpolated_spectra = np.stack((interp_u, interp_v, interp_w, interp_uw), axis=1)\n\ndatagen = OnePointSpectraDataGenerator(\n    data_points=DataPoints,\n    data_type=DataType.AUTO,\n    k1_data_points=(\n        k1_data_pts.cpu().numpy() if torch.cuda.is_available() else k1_data_pts.numpy()\n    ),\n    spectra_values=interpolated_spectra,\n)\n\ndatagen.plot(x_interp, spectra_full, x_full)"
       ]
     },
     {

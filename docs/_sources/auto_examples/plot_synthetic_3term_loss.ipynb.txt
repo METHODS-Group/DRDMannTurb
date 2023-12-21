@@ -22,7 +22,7 @@
       },
       "outputs": [],
       "source": [
-        "import torch\nimport torch.nn as nn\n\nfrom drdmannturb.parameters import (\n    LossParameters,\n    NNParameters,\n    PhysicalParameters,\n    ProblemParameters,\n)\nfrom drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\n# v2: torch.set_default_device('cuda:0')\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")\n\n# Scales associated with Kaimal spectrum\nL = 0.59\nGamma = 3.9\nsigma = 3.2\n\nUref = 21.0\n\ndomain = torch.logspace(-1, 2, 20)"
+        "import torch\nimport torch.nn as nn\n\nfrom drdmannturb.parameters import (\n    LossParameters,\n    NNParameters,\n    PhysicalParameters,\n    ProblemParameters,\n)\nfrom drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\n# v2: torch.set_default_device('cuda:0')\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")\n\n# Scales associated with Kaimal spectrum\nL = 0.59\nGamma = 3.9\nsigma = 3.2\n\nUref = 21.0  # reference velocity\nzref = 1  # reference height\n\ndomain = torch.logspace(-1, 2, 20)"
       ]
     },
     {
@@ -58,7 +58,7 @@
       },
       "outputs": [],
       "source": [
-        "k1_data_pts = domain\nDataPoints = [(k1, 1) for k1 in k1_data_pts]\n\nData = OnePointSpectraDataGenerator(data_points=DataPoints).Data"
+        "k1_data_pts = domain\nDataPoints = [(k1, zref) for k1 in k1_data_pts]\n\nData = OnePointSpectraDataGenerator(data_points=DataPoints).Data"
       ]
     },
     {

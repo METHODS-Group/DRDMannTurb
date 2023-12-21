@@ -76,7 +76,7 @@
       },
       "outputs": [],
       "source": [
-        "CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=\",\"))\nf = CustomData[:, 0]\nk1_data_pts = 2 * torch.pi * f / Uref\nDataPoints = [(k1, 1) for k1 in k1_data_pts]\nData = OnePointSpectraDataGenerator(\n    data_points=DataPoints,\n    data_type=DataType.CUSTOM,\n    spectra_file=spectra_file,\n    k1_data_points=k1_data_pts.data.cpu().numpy(),\n).Data"
+        "CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=\",\"))\nf = CustomData[:, 0]\nk1_data_pts = 2 * torch.pi * f / Uref\nDataPoints = [(k1, zref) for k1 in k1_data_pts]\nData = OnePointSpectraDataGenerator(\n    data_points=DataPoints,\n    data_type=DataType.CUSTOM,\n    spectra_file=spectra_file,\n    k1_data_points=k1_data_pts.data.cpu().numpy(),\n).Data"
       ]
     },
     {

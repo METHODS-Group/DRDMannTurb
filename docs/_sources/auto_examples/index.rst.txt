@@ -50,23 +50,6 @@ The first two examples correspond to the experiments presented in `the original 
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example is nearly identical to the Synthetic Data fit, however we use a more sophisticated...">
-
-.. only:: html
-
-  .. image:: /auto_examples/images/thumb/sphx_glr_plot_synthetic_3term_loss_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_auto_examples_plot_synthetic_3term_loss.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Adding Regularization and Penalty Terms to Fitting</div>
-    </div>
-
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the a simple configuration of DRDMannTurb to spectra fitting while us...">
 
 .. only:: html
@@ -79,6 +62,23 @@ The first two examples correspond to the experiments presented in `the original 
 .. raw:: html
 
       <div class="sphx-glr-thumbnail-title">Mann Eddy Lifetime Linear Regression</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example is nearly identical to the Synthetic Data fit, however we use a more sophisticated...">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_plot_synthetic_3term_loss_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_plot_synthetic_3term_loss.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Adding Regularization and Penalty Terms to Fitting</div>
     </div>
 
 
@@ -118,23 +118,6 @@ The first two examples correspond to the experiments presented in `the original 
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="In this example, we&#x27;re using real-world data, but importantly the data points are not over the ...">
-
-.. only:: html
-
-  .. image:: /auto_examples/images/thumb/sphx_glr_plot_interpolating_and_fitting_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_auto_examples_plot_interpolating_and_fitting.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Interpolating Spectra Data and Fitting</div>
-    </div>
-
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="The IEC-recommended spectral tensor model is calibrated to fit the Kaimal spectra. There are th...">
 
 .. only:: html
@@ -147,6 +130,23 @@ The first two examples correspond to the experiments presented in `the original 
 .. raw:: html
 
       <div class="sphx-glr-thumbnail-title">Synthetic Data Fit</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="In this example, we&#x27;re using real-world data, but importantly the data points are not over the ...">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_plot_interpolating_and_fitting_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_plot_interpolating_and_fitting.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Interpolating Spectra Data and Fitting</div>
     </div>
 
 
@@ -176,12 +176,12 @@ The first two examples correspond to the experiments presented in `the original 
    :hidden:
 
    /auto_examples/plot_mann_fit
-   /auto_examples/plot_synthetic_3term_loss
    /auto_examples/plot_mann_linear_regression
+   /auto_examples/plot_synthetic_3term_loss
    /auto_examples/plot_synthetic_deep_arch
    /auto_examples/plot_custom_data_fit
-   /auto_examples/plot_interpolating_and_fitting
    /auto_examples/plot_synthetic_fit
+   /auto_examples/plot_interpolating_and_fitting
    /auto_examples/plot_wind_generation
 
 
