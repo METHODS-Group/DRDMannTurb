@@ -7,6 +7,36 @@ Getting Started
 
 Please consider reading `the original DRD paper <https://arxiv.org/pdf/2107.11046.pdf>`_ and the examples. Please also see the UML diagrams for both :doc:`spectra fitting <./uml_drd>` and :doc:`fluctuation field generation <./uml_fluct_gen>` to see how the models are configured.  
 
+Installation
+=============
+
+The following sections will guide you through the installtion of DRDMannTurb and its dependencies. The following instructions should work on any operating system (OS) that is supported by `Anaconda`_, including in particular: **Windows**, **macOS**, and **Linux**. 
+
+#. Clone DRDMannTurb from its `GitHub repository <https://github.com/METHODS-Group/DRDMannTurb>`_.
+   Enter the directory and check out the branch of your choice.
+   The latest development version will be available under the branch ``develop``.
+
+   .. code-block:: shell
+
+      git clone https://github.com/METHODS-Group/DRDMannTurb.git
+      cd DRDMannTurb
+      git checkout main
+
+#. Create an Anaconda environment called ``drdmannturb_env`` for installing DRDMannTurb.
+   Use the default environment specs in ``env_drdmannturb.yml`` to create it.
+   Then activate the environment:
+
+   .. code-block:: shell
+
+      conda env create -n drdmannturb_env -f requirements/env_drdmannturb.yml
+      conda activate drdmannturb_env
+
+#. Install the local DRDMannTurb source files as Python package using ``pip``:
+
+   .. code-block:: shell
+
+      python -m pip install -e ./
+
 Spectra Fitting 
 ---------------
 
