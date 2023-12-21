@@ -40,7 +40,7 @@ is their ability to generate fluctuations based on prescribed second-order stati
 
 # Results
 
-The output of the fitting component of ``DRDMannTurb`` consists of two parts: the spectra fit by a DRD model and the learned eddy lifetime function. Below, a sample fitting is provided for the Kaimal spectra and Mann model. The resulting fit is better than a fit by the Mann uniform shear model.   
+The output of the fitting component of ``DRDMannTurb`` consists of two parts: the spectra fit by a DRD model and the learned eddy lifetime function. Below, a sample fitting is provided for the Kaimal spectra and Mann model. The resulting fit is better than a fit by the Mann uniform shear model. 
 
 ![](synthetic_fit.png)
 
