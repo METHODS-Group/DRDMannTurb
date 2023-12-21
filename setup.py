@@ -21,6 +21,22 @@ setup(
     ],
     extras_require={
         "dev": ["ruff", "isort", "black", "pytest", "pytest-cov"],
+        "docs": [
+            "ipython",
+            "numpydoc",
+            "pydocstyle",
+            "Sphinx>=1.8.3",
+            "pydata-sphinx-theme>=0.14.2",
+            "sphinx-panels",
+            "sphinx-notfound-page",
+            "sphinx-copybutton",
+            "sphinxcontrib-mermaid",
+            "sphinxcontrib-jsmath",
+            "nbsphinx",
+            "sphinx-gallery",
+            "myst_parser",
+            "tensorboard",
+        ],
     },
     classifiers=[
         "Development Status :: 1 - Planning",

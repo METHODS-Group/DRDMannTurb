@@ -154,3 +154,6 @@ dmypy.json
 # *.png
 *.vti
 *.pvd
+
+## macOS icons
+*.DS_Store

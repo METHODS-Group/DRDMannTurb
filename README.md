@@ -15,7 +15,9 @@ To learn more and see some examples, visit the [documentation]() or `/examples`.
 
 ## Features
 
+`DRDMannTurb` is split primarily into two modules `spectra_fitting` and `fluctuation_generation`.
 
+`spectra_fitting` is used to model 
 
 
 ## Development Installation Instructions 
@@ -30,16 +32,14 @@ We use `pre-commit`. See
 
 ## Local Documentation Building Instructions 
 
-Docs are in the ``/docs/`` folder. Make sure the dependencies listed in ``./requirements-docs.txt`` are installed.
+The documentation sources are contained in ``/docs/``. Make sure the dependencies listed in ``./requirements-docs.txt`` are installed;
+alternatively, this can be achieved with `pip install -e ".[docs]"`.
 
 Run ``make html`` to generate html pages in the ``/docs/build/html`` folder, which can be hosted locally with ``python -m http.server <PORT-NUMBER>``. 
-
 
 ## Contribute
 
 We always welcome new contributors! Feel free to open an issue or reach out to use via email if you want to collaborate.
-
-
 
 ## Attributions
 

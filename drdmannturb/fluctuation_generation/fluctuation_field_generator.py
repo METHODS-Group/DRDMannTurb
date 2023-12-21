@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Optional, Union
 
 import numpy as np
-# from torch.cuda import is_available
 
 from ..spectra_fitting import CalibrationProblem
 from .covariance_kernels import MannCovariance, VonKarmanCovariance
@@ -159,7 +158,8 @@ class GenerateFluctuationField:
         time_buffer = 3 * Gamma * L
         spatial_margin = 1 * L
 
-        grid_levels = [grid_levels[i].GetInt() for i in range(3)]
+        # NOTE: this line was wrapped with an empty `except`; was it ever run?
+        # grid_levels = [grid_levels[i].GetInt() for i in range(3)]
 
         Nx = 2 ** grid_levels[0] + 1
         Ny = 2 ** grid_levels[1] + 1
