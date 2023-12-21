@@ -5,9 +5,12 @@ Fluctuation Field Generation
 
 This example demonstrates the utilities for generating fluctuation fields, which can be either from a pre-trained DRD model, or based on some well-known spectra models. ``DRDMannTurb`` provides several utilities for plotting the resulting fields through Plotly, which can be done in several contexts as well as utilities for saving to VTK for downstream analysis. 
 
-.. warning:: 
-    This example may take a few seconds to load. Please be patient, Plotly requires some time to render 3D graphics. 
 """
+
+#   .. centered::
+#       This example may take a few seconds to load. Please be patient,
+#       Plotly requires some time to render 3D graphics.
+#
 
 #######################################################################################
 # Import packages
@@ -100,13 +103,13 @@ fig_magnitude_mann  # .show("browser")
 # We now generate a similar fluctuation field in the same physical setting and domain but using a pre-trained DRD model. This model is the result of
 # fitting the Mann model with a Kaimal spectrum, showcased in an earlier example, so we anticipate the resulting fluctuation fields to be similar. Note
 # that since DRD models learn the scales, these are taken from the saved object, which has these values as parameters.
-# sphinx_gallery_start_ignore
+
 path_to_parameters = (
     path / "../docs/source/results/EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl"
     if path.name == "examples"
     else path / "../results/EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl"
 )
-# sphinx_gallery_end_ignore
+
 Type_Model = "NN"  ### 'Mann', 'VK', 'NN'
 nBlocks = 3
 
