@@ -5,15 +5,15 @@ Pure Mann Model Fit
 
 This example demonstrates the a simple configuration of ``DRDMannTurb`` to spectra fitting while using the Mann model as the eddy lifetime function under the Kaimal one-point spectra.
 
-For reference, the full Mann eddy lifetime function is given by 
+For reference, the full Mann eddy lifetime function is given by
 
 .. math::
 
-    \tau^{\mathrm{IEC}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}
+    \tau^{\mathrm{Mann}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}
 
-and the Kaimal one-point spectra. This set of models has classically been most useful for flat homogeneous terrains. 
+and the Kaimal one-point spectra. This set of models has classically been most useful for flat homogeneous terrains.
 
-Also, the resulting fitting can be used directly to generate a 3D Mann fluctuation field, as demonstrated in our wind generation example. 
+Also, the resulting fitting can be used directly to generate a 3D Mann fluctuation field, as demonstrated in our wind generation example.
 
 """
 
@@ -44,10 +44,14 @@ if torch.cuda.is_available():
 # Set up physical parameters and domain associated with the Kaimal spectrum. We perform the spectra fitting over the :math:`k_1` space :math:`[10^{{-1}}, 10^2]`
 # with 20 points.
 
+
+zref=40 #reference height
+ustar=1.773
+
 # Scales associated with Kaimal spectrum
-L = 0.59  # length scale
+L = 0.59*zref  # length scale
 Gamma = 3.9  # time scale
-sigma = 3.2  # energy spectrum scale
+sigma = 3.2*ustar**2./zref**(2./3.)  # energy spectrum scale
 
 zref = 1  # reference height
 
