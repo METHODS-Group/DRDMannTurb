@@ -19,8 +19,8 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from drdmannturb.fluctuation_generation import (  # utility function for plotting each velocity component in the field, not used in this example
-    GenerateFluctuationField,
+from drdmannturb.turbulence_generation import (  # utility function for plotting each velocity component in the field, not used in this example
+    GenerateTurbulenceField,
     plot_velocity_magnitude,
 )
 
@@ -59,7 +59,7 @@ nBlocks = 3
 # ----------------------------------------
 # The Mann model requires three parameters, length scale, time scale, and spectrum amplitude scale, which we take from the Kaimal spectrum.
 #
-gen_mann = GenerateFluctuationField(
+gen_mann = GenerateTurbulenceField(
     friction_velocity,
     reference_height,
     grid_dimensions,
@@ -107,7 +107,7 @@ path_to_parameters = (
 Type_Model = "NN"  ### 'Mann', 'VK', 'NN'
 nBlocks = 3
 
-gen_drd = GenerateFluctuationField(
+gen_drd = GenerateTurbulenceField(
     friction_velocity,
     reference_height,
     grid_dimensions,

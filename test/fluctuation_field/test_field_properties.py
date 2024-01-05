@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 import torch
 
-from drdmannturb import GenerateFluctuationField
+from drdmannturb import GenerateTurbulenceField
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -23,8 +23,8 @@ sigma = 3.4
 
 domain = torch.logspace(-1, 2, 20)
 
-path = Path().resolve()
-path_to_trained = path.parent / "io"
+dir_path = Path(__file__).resolve().parent
+path_to_trained = dir_path.parent / "in"
 
 
 @pytest.mark.parametrize(
@@ -56,7 +56,7 @@ def test_field_divergence(model_save_filename: str):
     Type_Model = "NN"
     nBlocks = 3
 
-    gen_drd = GenerateFluctuationField(
+    gen_drd = GenerateTurbulenceField(
         friction_velocity,
         reference_height,
         grid_dimensions,

@@ -50,6 +50,7 @@ jobs:
 
       - name: Pytest
         run: |
-          pytest test/ --cov
+          cd test
+          python -m pytest test/ --cov
 
 

@@ -4,11 +4,21 @@
 # model pickles 
 *.pkl 
 
+# VTK files
+*.vts
+
+####################################################
 # overrides for data used in examples
+
 # necessary for interpolation data example 
 !/docs/source/data/*.csv 
+
 # necessary for model saving, loading, and viz examples 
 !/docs/source/results/*.pkl
+
+# necessary for test cases
+!/test/in/*.pkl
+####################################################
 
 docs/source/auto_examples
 

@@ -5,7 +5,7 @@ Fluctuation Field Generation
 
 DRDMannTurb provides generic methods for generating fluctuation fields from specified spectra models. Please refer to :doc:`the UML diagram <./uml_fluct_gen>` to see the class hierarchy. 
 
-.. autoclass:: drdmannturb.GenerateFluctuationField 
+.. autoclass:: drdmannturb.GenerateTurbulenceField 
     :members: 
 
 Plotting Utilities 

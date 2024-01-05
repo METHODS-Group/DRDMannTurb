@@ -5,10 +5,10 @@ from .common import (
     plot_loss_logs,
 )
 from .enums import DataType, EddyLifetimeType, PowerSpectraType
-from .fluctuation_generation import (
+from .turbulence_generation import (
     Covariance,
     GaussianRandomField,
-    GenerateFluctuationField,
+    GenerateTurbulenceField,
     MannCovariance,
     NNCovariance,
     Sampling_DCT,

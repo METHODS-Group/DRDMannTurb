@@ -4,7 +4,7 @@ This module implements a random field generator.
 Notes
 -----
 
-This should not be directly used but is needed by ``GenerateFluctuationField``.
+This should not be directly used but is needed by ``GenerateTurbulenceField``.
 """
 
 from typing import Optional

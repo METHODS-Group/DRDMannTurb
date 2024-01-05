@@ -4,7 +4,7 @@ __all__ = [
     "MannCovariance",
     "GaussianRandomField",
     "VectorGaussianRandomField",
-    "GenerateFluctuationField",
+    "GenerateTurbulenceField",
     "NNCovariance",
     "Sampling_method_base",
     "Sampling_method_freq",
@@ -20,7 +20,7 @@ __all__ = [
 ]
 
 from .covariance_kernels import Covariance, MannCovariance, VonKarmanCovariance
-from .fluctuation_field_generator import GenerateFluctuationField
+from .turbulence_field_generator import GenerateTurbulenceField
 from .gaussian_random_fields import GaussianRandomField, VectorGaussianRandomField
 from .nn_covariance import NNCovariance
 from .sampling_methods import (

@@ -30,6 +30,10 @@ sigma = 3.4
 domain = torch.logspace(-1, 2, 20)
 
 
+dir_path = Path(__file__).resolve().parent
+path_to_trained = dir_path.parent / "in"
+
+
 @pytest.mark.parametrize(
     "eddylifetime",
     [EddyLifetimeType.CUSTOMMLP, EddyLifetimeType.TAUNET],
@@ -78,7 +82,7 @@ def test_nnparams_load_trained_TAUNET():
 
     pb.save_model(".")
 
-    params_fp = Path().resolve() / "./EddyLifetimeType.TAUNET_DataType.KAIMAL.pkl"
+    params_fp = path_to_trained / "EddyLifetimeType.TAUNET_DataType.KAIMAL.pkl"
     with open(params_fp, "rb") as file:
         (
             nn_params,
@@ -125,7 +129,7 @@ def test_nnparams_load_trained_CUSTOMMLP():
 
     pb.save_model(".")
 
-    params_fp = Path().resolve() / "./EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl"
+    params_fp = path_to_trained / "EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl"
     with open(params_fp, "rb") as file:
         (
             nn_params,

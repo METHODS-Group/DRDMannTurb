@@ -16,10 +16,10 @@ from .gaussian_random_fields import VectorGaussianRandomField
 from .nn_covariance import NNCovariance
 
 
-class GenerateFluctuationField:
+class GenerateTurbulenceField:
     r"""
-    .. _generate-fluctuation-field-reference:
-    Class for generating a fluctuation field either from a Mann model or a pre-fit DRD model that generates the field spectra.
+    .. _generate-turbulence-field-reference:
+    Class for generating a turbulent fluctuation field either from a Mann model or a pre-fit DRD model that generates the field spectra.
 
     Turbulent fluctuations can be formally written as a convolution of a covariance kernel with Gaussian noise :math:`\boldsymbol{\xi}` in the physical domain:
 
@@ -158,9 +158,6 @@ class GenerateFluctuationField:
         time_buffer = 3 * Gamma * L
         spatial_margin = 1 * L
 
-        # NOTE: this line was wrapped with an empty `except`; was it ever run?
-        # grid_levels = [grid_levels[i].GetInt() for i in range(3)]
-
         Nx = 2 ** grid_levels[0] + 1
         Ny = 2 ** grid_levels[1] + 1
         Nz = 2 ** grid_levels[2] + 1
@@ -282,6 +279,8 @@ class GenerateFluctuationField:
         if self.blend_num > 1:
             wind = wind[: -(self.blend_num - 1), ...]
 
+        self.RF.reseed()
+
         return wind
 
     def generate(self, num_blocks: int) -> np.ndarray:
@@ -304,7 +303,7 @@ class GenerateFluctuationField:
             import warnings
 
             warnings.warn(
-                "Fluctuation field has already been generated, additional blocks will be appended to existing field. If this is undesirable behavior, instantiate a new object."
+                "Turbulence field has already been generated, additional blocks will be appended to existing field. If this is undesirable behavior, instantiate a new object."
             )
 
         for _ in range(num_blocks):

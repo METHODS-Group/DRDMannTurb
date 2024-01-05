@@ -3,7 +3,7 @@
 UML Diagram for Fluctuation Field Generation
 ============================================
 
-Here is an UML diagram representing the interoperability between several internal classes of the package that comprise the fluctuation generator :py:class:`GenerateFluctuationField`. Please refer to specific class documentations for details. The following diagram is interactive -- try zooming and panning to resize for your convenience. 
+Here is an UML diagram representing the interoperability between several internal classes of the package that comprise the fluctuation generator :py:class:`GenerateTurbulenceField`. Please refer to specific class documentations for details. The following diagram is interactive -- try zooming and panning to resize for your convenience. 
 
 These interactive UML diagrams have an issue with rendering the correct arrow types in dark mode, please consider switching to light mode.
 
@@ -12,7 +12,7 @@ These interactive UML diagrams have an issue with rendering the correct arrow ty
 
     classDiagram
     direction LR
-    GenerateFluctuationField ..> VectorGaussianRandomField
+    GenerateTurbulenceField ..> VectorGaussianRandomField
     GaussianRandomField ..> Covariance
 
     VectorGaussianRandomField --|> GaussianRandomField
@@ -24,16 +24,16 @@ These interactive UML diagrams have an issue with rendering the correct arrow ty
     NNCovariance --|> Covariance
     end
 
-    GenerateFluctuationField : +np.ndarray total_fluctuation
-    GenerateFluctuationField : +Callable log_law
-    GenerateFluctuationField : +int seed
-    GenerateFluctuationField : +Covariance Covariance
-    GenerateFluctuationField : +VectorGaussianRandomField RF
+    GenerateTurbulenceField : +np.ndarray total_fluctuation
+    GenerateTurbulenceField : +Callable log_law
+    GenerateTurbulenceField : +int seed
+    GenerateTurbulenceField : +Covariance Covariance
+    GenerateTurbulenceField : +VectorGaussianRandomField RF
 
-    GenerateFluctuationField: -_generate_block()
-    GenerateFluctuationField: +generate()
-    GenerateFluctuationField: +normalize()
-    GenerateFluctuationField: +save_to_vtk()
+    GenerateTurbulenceField: -_generate_block()
+    GenerateTurbulenceField: +generate()
+    GenerateTurbulenceField: +normalize()
+    GenerateTurbulenceField: +save_to_vtk()
     class VectorGaussianRandomField{
       +int vdim
       +tuple DomainSlice

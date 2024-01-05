@@ -15,10 +15,9 @@ To learn more and see some examples, visit the [documentation]() or `/examples`.
 
 ## Features
 
-`DRDMannTurb` is split primarily into two modules `spectra_fitting` and `fluctuation_generation`.
-
-`spectra_fitting` is used to model 
-
+`DRDMannTurb` is split into two modules `spectra_fitting` and `turbulence_generation`.
+Roughly, `spectra_fitting` is used to fit a model with provided data and, with `turbulence_generation`,
+one can then generate a synthetic wind field.
 
 ## Development Installation Instructions 
 

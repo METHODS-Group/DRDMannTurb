@@ -51,7 +51,7 @@ if torch.cuda.is_available():
 # time scale, and :math:`\sigma` is the spectrum amplitude.
 
 
-# Characteristic scales associated with Kaimal spectrum
+# Characteristic scales associated with the Mann Model
 L = 0.59
 Gamma = 3.9
 sigma = 3.2

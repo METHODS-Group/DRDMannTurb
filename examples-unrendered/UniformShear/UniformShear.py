@@ -5,10 +5,10 @@ from time import time
 import numpy as np
 from pyevtk.hl import imageToVTK
 
-from drdmannturb.fluctuation_generation.covariance_kernels import (
+from drdmannturb.turbulence_generation.covariance_kernels import (
     MannCovariance, VonKarmanCovariance)
-from drdmannturb.fluctuation_generation.gaussian_random_fields import *
-from drdmannturb.fluctuation_generation.nn_covariance import NNCovariance
+from drdmannturb.turbulence_generation.gaussian_random_fields import *
+from drdmannturb.turbulence_generation.nn_covariance import NNCovariance
 from drdmannturb.spectra_fitting.calibration import (CalibrationProblem)
 
 resdir = Path(__file__).parent / "data"
