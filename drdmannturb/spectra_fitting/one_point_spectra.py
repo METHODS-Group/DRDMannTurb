@@ -179,7 +179,9 @@ class OnePointSpectra(nn.Module):
         self.k0 = self.k.clone()
         self.k0[..., 2] = self.k[..., 2] + self.beta * self.k[..., 0]
         k0L = self.LengthScale * self.k0.norm(dim=-1)
-        self.E0 = self.Magnitude * VKEnergySpectrum(k0L)
+        self.E0 = (
+            self.Magnitude * self.LengthScale ** (5.0 / 3.0) * VKEnergySpectrum(k0L)
+        )
         self.Phi = self.PowerSpectra()
         kF = torch.stack([k1_input * self.quad23(Phi) for Phi in self.Phi])
         return kF
@@ -275,7 +277,6 @@ class OnePointSpectra(nn.Module):
             raise Exception(
                 "Did not specify an admissible EddyLifetime model. Refer to the EddyLifetimeType documentation."
             )
-
         return self.TimeScale * tau
 
     @torch.jit.export
