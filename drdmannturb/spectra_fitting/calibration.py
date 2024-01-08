@@ -793,36 +793,37 @@ class CalibrationProblem:
                     * MannEddyLifetime(self.phys_params.L * k_gd).cpu().detach().numpy()
                 )
                 (self.lines_LT_model1,) = self.ax[1].plot(
-                    k_gd.cpu().detach().numpy()*self.phys_params.L ,
+                    k_gd.cpu().detach().numpy() * self.phys_params.L,
                     self.tau_model1,
                     "-",
                     label=r"$\tau_{model}(k_1)$",
                 )
                 (self.lines_LT_model2,) = self.ax[1].plot(
-                    k_gd.cpu().detach().numpy()*self.phys_params.L ,
+                    k_gd.cpu().detach().numpy() * self.phys_params.L,
                     self.tau_model2,
                     "-",
                     label=r"$\tau_{model}(k_2)$",
                 )
                 (self.lines_LT_model3,) = self.ax[1].plot(
-                    k_gd.cpu().detach().numpy()*self.phys_params.L ,
+                    k_gd.cpu().detach().numpy() * self.phys_params.L,
                     self.tau_model3,
                     "-",
                     label=r"$\tau_{model}(k_3)$",
                 )
                 (self.lines_LT_model4,) = self.ax[1].plot(
-                    k_gd.cpu().detach().numpy()*self.phys_params.L ,
+                    k_gd.cpu().detach().numpy() * self.phys_params.L,
                     self.tau_model4,
                     "-",
                     label=r"$\tau_{model}(k,k,k)$",
                 )
 
                 (self.lines_LT_ref,) = self.ax[1].plot(
-                    k_gd.cpu().detach().numpy()*self.phys_params.L ,
+                    k_gd.cpu().detach().numpy() * self.phys_params.L,
                     self.tau_ref,
                     "--",
                     label=r"$\tau_{ref}=$Mann",
                 )
+
                 self.ax[1].legend()
                 self.ax[1].set_xscale("log")
                 self.ax[1].set_yscale("log")

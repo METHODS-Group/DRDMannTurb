@@ -45,13 +45,13 @@ if torch.cuda.is_available():
 # with 20 points.
 
 
-zref=40 #reference height
-ustar=1.773
+zref = 40  # reference height
+ustar = 1.773
 
 # Scales associated with Kaimal spectrum
-L = 0.59*zref  # length scale
+L = 0.59 * zref  # length scale
 Gamma = 3.9  # time scale
-sigma = 3.2*ustar**2./zref**(2./3.)  # energy spectrum scale
+sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # energy spectrum scale
 
 zref = 1  # reference height
 
