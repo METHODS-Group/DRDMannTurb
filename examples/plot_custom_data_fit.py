@@ -50,10 +50,38 @@ spectra_file = (
 ##############################################################################
 # Setting Physical Parameters
 # ---------------------------
-# Here, we define our charateristic scales :math:`L, \Gamma, \sigma`, the
+# Here, we define our characteristic scales :math:`L, \Gamma, \sigma`, the
 # log-scale domain, and the reference height `zref` and velocity `Uref`.
 
-domain = torch.logspace(-1, 2, 20)
+domain = torch.logspace(-1, 3, 40)
+
+# zref = 70
+# ustar = 1.773
+#
+# L = 0.59 * zref  # length scale
+# GAMMA = 3.9  # time scale
+# SIGMA = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # energy spectrum scale
+
+
+# L = 0.59* zref #70
+# GAMMA = 3.7
+# SIGMA = 0.04
+
+# Uref = 21
+# zref = 1
+
+# zref = 1
+# Uref = 21
+
+# zref = 70
+# Uref = 21 #8.08
+# z0 = 0.1
+
+# ustar=0.41*Uref/np.log(zref/z0)
+
+# L     = 0.59 * zref #14.09
+# GAMMA = 3.9
+# SIGMA = 0.15174254
 
 L = 70
 GAMMA = 3.7
@@ -61,7 +89,6 @@ SIGMA = 0.04
 
 Uref = 21
 zref = 1
-
 
 #######################################################################################
 # ``CalibrationProblem`` construction
@@ -112,16 +139,16 @@ pb = CalibrationProblem(
 # --------------
 # The data are provided in a CSV format with the first column determining the frequency domain, which must be non-dimensionalized by the reference velocity.
 # The different spectra are provided in the order ``uu, vv, ww, uw`` where the last is the u-w cospectra (the convention for 3D velocity vector components being u, v, w for x, y, z).
+# The ``k1_data_points`` key word argument is needed here to define the domain over which
 CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=","))
 f = CustomData[:, 0]
-k1_data_pts = 2 * torch.pi * f / Uref
-DataPoints = [(k1, zref) for k1 in k1_data_pts]
+k1_data_pts = 2 * torch.pi * f / Uref * L
 Data = OnePointSpectraDataGenerator(
     zref=zref,
-    data_points=DataPoints,
+    data_points=k1_data_pts,
     data_type=DataType.CUSTOM,
     spectra_file=spectra_file,
-    k1_data_points=k1_data_pts.data.cpu().numpy(),
+    # k1_data_points=k1_data_pts.data.cpu().numpy(),
 ).Data
 
 
@@ -133,6 +160,7 @@ Data = OnePointSpectraDataGenerator(
 # fit for :math:`\nu` is close to :math:`\nu \approx - 1/3`, which can be improved
 # with further training.
 optimal_parameters = pb.calibrate(data=Data)
+print(optimal_parameters[:3])
 
 ##############################################################################
 # Plotting

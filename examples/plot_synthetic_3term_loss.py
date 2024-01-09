@@ -72,11 +72,8 @@ pb = CalibrationProblem(
 # In the following cell, we construct our :math:`k_1` data points grid and
 # generate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.
 # It is worth noting that the second element of each tuple in ``DataPoints`` is the
-# corresponding reference height, which we have chosen to be uniformly :math:`1`.
-k1_data_pts = domain
-DataPoints = [(k1, zref) for k1 in k1_data_pts]
-
-Data = OnePointSpectraDataGenerator(zref=zref, data_points=DataPoints).Data
+# corresponding reference height, which we have chosen to be uniformly `zref`.
+Data = OnePointSpectraDataGenerator(zref=zref, data_points=domain).Data
 
 ##############################################################################
 # Calibration

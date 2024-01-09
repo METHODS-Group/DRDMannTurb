@@ -99,12 +99,11 @@ domain = torch.tensor(x_interp)
 f = domain
 k1_data_pts = 2 * torch.pi * f / Uref
 
-DataPoints = [(k1, zref) for k1 in k1_data_pts]
 interpolated_spectra = np.stack((interp_u, interp_v, interp_w, interp_uw), axis=1)
 
 datagen = OnePointSpectraDataGenerator(
     zref=zref,
-    data_points=DataPoints,
+    data_points=k1_data_pts,
     data_type=DataType.AUTO,
     k1_data_points=(
         k1_data_pts.cpu().numpy() if torch.cuda.is_available() else k1_data_pts.numpy()

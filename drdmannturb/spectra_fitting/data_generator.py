@@ -62,7 +62,7 @@ class OnePointSpectraDataGenerator:
             Indicates the data format to generate and operate with, by
             default ``DataType.KAIMAL``
         k1_data_points : Optional[Any], optional
-            Wavevector domain of :math:`k_1`, by default None
+            Wavevector domain of :math:`k_1`, by default None. This is only to be used when the ``AUTO`` tag is chosen to define the domain over which a non-linear regression is to be computed. See the interpolation module for examples of unifying different :math:`k_1` domains.
         spectra_file : Optional[Path], optional
             If using ``DataType.CUSTOM`` or ``DataType.AUTO``, this
             is used to indicate the data file (a .dat) to read
@@ -183,8 +183,11 @@ class OnePointSpectraDataGenerator:
                 DataValues[:, 0, 2] = -func3(self.k1, *fit4)
 
                 DataValues = torch.tensor(DataValues)
+                DataPoints = list(
+                    zip(self.DataPoints, [self.zref] * len(self.DataPoints))
+                )
 
-                self.Data = (self.DataPoints, DataValues)
+                self.Data = (DataPoints, DataValues)
 
                 self.CustomData = torch.tensor(Data_temp)
             else:
@@ -226,7 +229,7 @@ class OnePointSpectraDataGenerator:
         Raises
         ------
         ValueError
-            DataType set such that an iterable set of spectra values and heights is required. This is for any DataType other than ``CUSTOM`` and ``AUTO``.
+            DataType set such that an iterable set of spectra values is required. This is for any DataType other than ``CUSTOM`` and ``AUTO``.
         """
         DataValues = torch.zeros([len(DataPoints), 3, 3])
 
@@ -239,16 +242,17 @@ class OnePointSpectraDataGenerator:
         else:
             if DataPoints is None:
                 raise ValueError(
-                    f"DataType set to {self.data_type}, which requires an iterable set of spectra values and heights."
+                    f"DataType set to {self.data_type}, which requires an iterable set of spectra values"
                 )
 
             for i, Point in enumerate(DataPoints):
-                DataValues[i] = self.eval(*Point)
+                DataValues[i] = self.eval(Point)
 
+        DataPoints = list(zip(DataPoints, [self.zref] * len(DataPoints)))
         self.Data = (DataPoints, DataValues)
         return self.Data
 
-    def eval_VK(self, k1: float, z: float = 1.0) -> torch.Tensor:
+    def eval_VK(self, k1: float) -> torch.Tensor:
         r"""
         Evaluation of von Karman spectral tensor given in the form
 
@@ -266,8 +270,6 @@ class OnePointSpectraDataGenerator:
         ----------
         k1 : torch.Tensor
             First dimension of the wavevector :math:`k_1`, this is a single coordinate of the domain over which the associated spectra are defined.
-        z : int, optional
-            Height above ground, by default 1
 
         Returns
         -------
@@ -295,7 +297,7 @@ class OnePointSpectraDataGenerator:
         )
         return k1 * F
 
-    def eval_Kaimal(self, k1: float, z: float = 1.0) -> torch.Tensor:
+    def eval_Kaimal(self, k1: float) -> torch.Tensor:
         r"""
         Evaluates the one-point spectra as proposed by `Kaimal et al <https://apps.dtic.mil/sti/tr/pdf/AD0748543.pdf>`__ in 1972. Clasically motivated by measurements taken over a flat homogeneous terrain in Kansas, the one-point spectra were proposed as 
 
@@ -316,16 +318,13 @@ class OnePointSpectraDataGenerator:
         ----------
         k1 : torch.Tensor
             First dimension of the wavevector :math:`k_1`, this is the domain over which the associated spectra are defined. 
-        z : int, optional
-            Height above ground, by default 1
 
         Returns
         -------
         torch.Tensor
             The :math:`3 \times 3` matrix with entries determined by the Kaimal one-point spectra. 
         """
-        z = self.zref
-        n = 1 / (2 * np.pi) * k1 * z
+        n = 1 / (2 * np.pi) * k1 * self.zref
         F = torch.zeros([3, 3])
         F[0, 0] = 102 * n / (1 + 33 * n) ** (5 / 3)
         F[1, 1] = 17 * n / (1 + 9.5 * n) ** (5 / 3)

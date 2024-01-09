@@ -88,10 +88,7 @@ pb = CalibrationProblem(
 #
 # Lastly, we collect ``Data = (<data points>, <data values>)`` to be used in calibration.
 
-k1_data_pts = domain
-DataPoints = [(k1, zref) for k1 in k1_data_pts]
-
-Data = OnePointSpectraDataGenerator(data_points=DataPoints, zref=zref).Data
+Data = OnePointSpectraDataGenerator(data_points=domain, zref=zref).Data
 
 ##############################################################################
 # The model is now "calibrated" to the provided spectra from the synthetic
@@ -101,7 +98,7 @@ Data = OnePointSpectraDataGenerator(data_points=DataPoints, zref=zref).Data
 # which only has a CPU implementation through ``Scipy``. When using this function
 # with a neural network task, consider either learning this function as well or
 # using a linear approximation from your data that provides a GPU kernel for
-# fast evaluation of a similar model. See example [??].
+# fast evaluation of a similar model. See the final example in the collection where a linear regression is used in log-log space to generate this.
 #
 # Having the necessary components, the model is "calibrated" (fit) to the provided spectra
 # and we conclude with a plot.
