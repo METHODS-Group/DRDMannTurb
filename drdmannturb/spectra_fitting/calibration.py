@@ -361,7 +361,7 @@ class CalibrationProblem:
         Returns
         -------
         np.ndarray
-            Problem parameters as a Numpy array
+            Physical parameters for the problem, in normal space (not in log-space, as represented internally). In the order ``[length scale, time scale, spectrum amplitude]``.
 
         Raises
         ------
@@ -478,7 +478,8 @@ class CalibrationProblem:
         if self.prob_params.learn_nu and hasattr(self.OPS, "tauNet"):
             print(f"Learned nu value: {self.OPS.tauNet.Ra.nu.item()}")
 
-        return self.parameters
+        # physical parameters are stored as natural logarithms internally
+        return np.exp(self.parameters)
 
     # ------------------------------------------------
     ### Post-treatment and Export

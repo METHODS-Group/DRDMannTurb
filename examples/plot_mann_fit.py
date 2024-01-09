@@ -53,7 +53,7 @@ L = 0.59 * zref  # length scale
 Gamma = 3.9  # time scale
 sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # energy spectrum scale
 
-zref = 1  # reference height
+print(f"Physical Parameters: {L,Gamma,sigma}")
 
 domain = torch.logspace(-1, 2, 20)
 
@@ -91,7 +91,7 @@ pb = CalibrationProblem(
 k1_data_pts = domain
 DataPoints = [(k1, zref) for k1 in k1_data_pts]
 
-Data = OnePointSpectraDataGenerator(data_points=DataPoints).Data
+Data = OnePointSpectraDataGenerator(data_points=DataPoints, zref=zref).Data
 
 ##############################################################################
 # The model is now "calibrated" to the provided spectra from the synthetic
@@ -110,5 +110,5 @@ optimal_parameters = pb.calibrate(data=Data)
 
 ##############################################################################
 # The following plot shows the best fit to the synthetic Mann data. Notice that
-# the eddy lifetime function is precisely :math:`\tau^{\mathrm{IEC}}(k)`
+# the eddy lifetime function is precisely :math:`\tau^{\mathrm{Mann}}(k)`
 pb.plot()
