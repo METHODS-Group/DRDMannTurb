@@ -117,6 +117,7 @@ f = CustomData[:, 0]
 k1_data_pts = 2 * torch.pi * f / Uref
 DataPoints = [(k1, zref) for k1 in k1_data_pts]
 Data = OnePointSpectraDataGenerator(
+    zref=zref,
     data_points=DataPoints,
     data_type=DataType.CUSTOM,
     spectra_file=spectra_file,

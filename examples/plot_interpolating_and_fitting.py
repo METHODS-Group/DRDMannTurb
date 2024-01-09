@@ -103,6 +103,7 @@ DataPoints = [(k1, zref) for k1 in k1_data_pts]
 interpolated_spectra = np.stack((interp_u, interp_v, interp_w, interp_uw), axis=1)
 
 datagen = OnePointSpectraDataGenerator(
+    zref=zref,
     data_points=DataPoints,
     data_type=DataType.AUTO,
     k1_data_points=(

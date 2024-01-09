@@ -43,17 +43,19 @@ class OnePointSpectraDataGenerator:
 
     def __init__(
         self,
+        zref: float,
         data_points: Optional[Iterable[Tuple[torch.tensor, float]]] = None,
         data_type: DataType = DataType.KAIMAL,
         k1_data_points: Optional[torch.Tensor] = None,
         spectra_values: Optional[torch.Tensor] = None,
         spectra_file: Optional[Union[Path, str]] = None,
-        zref: float = 1.0,
         seed: int = 3,
     ):
         r"""
         Parameters
         ----------
+        zref : float
+            Reference altitude value, by default 1.0
         data_points : Iterable[Tuple[torch.tensor, float]], optional
             Observed spectra data points at each of the :math:`k_1` coordinates, paired with the associated reference height (typically kept at 1, but may depend on applications).
         data_type : DataType, optional
@@ -66,8 +68,6 @@ class OnePointSpectraDataGenerator:
             is used to indicate the data file (a .dat) to read
             from. Since it is not used by others, it is by
             default None
-        zref : float, optional
-            Reference altitude value, by default 1.0
 
         Raises
         ------

@@ -92,7 +92,7 @@ pb = CalibrationProblem(
 k1_data_pts = domain
 DataPoints = [(k1, zref) for k1 in k1_data_pts]
 
-Data = OnePointSpectraDataGenerator(data_points=DataPoints).Data
+Data = OnePointSpectraDataGenerator(zref=zref, data_points=DataPoints).Data
 
 ##############################################################################
 # Calibration
