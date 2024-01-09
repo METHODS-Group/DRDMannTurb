@@ -361,7 +361,7 @@ class CalibrationProblem:
         Returns
         -------
         np.ndarray
-            Problem parameters as a Numpy array
+            Physical parameters for the problem, in normal space (not in log-space, as represented internally). In the order ``[length scale, time scale, spectrum amplitude]``.
 
         Raises
         ------
@@ -478,7 +478,8 @@ class CalibrationProblem:
         if self.prob_params.learn_nu and hasattr(self.OPS, "tauNet"):
             print(f"Learned nu value: {self.OPS.tauNet.Ra.nu.item()}")
 
-        return self.parameters
+        # physical parameters are stored as natural logarithms internally
+        return np.exp(self.parameters)
 
     # ------------------------------------------------
     ### Post-treatment and Export
@@ -728,7 +729,7 @@ class CalibrationProblem:
                 ncols=ncols,
                 num="Calibration",
                 clear=True,
-                figsize=[10, 5],
+                figsize=[10, 4],
             )
             if not plot_tau:
                 self.ax = [self.ax]
@@ -776,7 +777,7 @@ class CalibrationProblem:
             self.ax[0].legend()
             self.ax[0].set_xscale("log")
             self.ax[0].set_yscale("log")
-            self.ax[0].set_xlabel(r"$k_1$")
+            self.ax[0].set_xlabel(r"$k_1 z$")
             self.ax[0].set_ylabel(r"$k_1 F_i /u_*^2$")
             self.ax[0].grid(which="both")
 
@@ -793,40 +794,41 @@ class CalibrationProblem:
                     * MannEddyLifetime(self.phys_params.L * k_gd).cpu().detach().numpy()
                 )
                 (self.lines_LT_model1,) = self.ax[1].plot(
-                    k_gd.cpu().detach().numpy(),
+                    k_gd.cpu().detach().numpy() * self.phys_params.L,
                     self.tau_model1,
                     "-",
                     label=r"$\tau_{model}(k_1)$",
                 )
                 (self.lines_LT_model2,) = self.ax[1].plot(
-                    k_gd.cpu().detach().numpy(),
+                    k_gd.cpu().detach().numpy() * self.phys_params.L,
                     self.tau_model2,
                     "-",
                     label=r"$\tau_{model}(k_2)$",
                 )
                 (self.lines_LT_model3,) = self.ax[1].plot(
-                    k_gd.cpu().detach().numpy(),
+                    k_gd.cpu().detach().numpy() * self.phys_params.L,
                     self.tau_model3,
                     "-",
                     label=r"$\tau_{model}(k_3)$",
                 )
                 (self.lines_LT_model4,) = self.ax[1].plot(
-                    k_gd.cpu().detach().numpy(),
+                    k_gd.cpu().detach().numpy() * self.phys_params.L,
                     self.tau_model4,
                     "-",
                     label=r"$\tau_{model}(k,k,k)$",
                 )
 
                 (self.lines_LT_ref,) = self.ax[1].plot(
-                    k_gd.cpu().detach().numpy(),
+                    k_gd.cpu().detach().numpy() * self.phys_params.L,
                     self.tau_ref,
                     "--",
                     label=r"$\tau_{ref}=$Mann",
                 )
+
                 self.ax[1].legend()
                 self.ax[1].set_xscale("log")
                 self.ax[1].set_yscale("log")
-                self.ax[1].set_xlabel(r"$f$")
+                self.ax[1].set_xlabel(r"$k_1 L$")
                 self.ax[1].set_ylabel(r"$\tau$")
                 self.ax[1].grid(which="both")
 

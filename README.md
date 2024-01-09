@@ -6,7 +6,6 @@ as well as in the deep-learning enhancement developed by Keith et al in [this 20
 ## Basic Usage
 
 
-
 See the ``/examples/`` folder for baselines from the paper and for examples of the many functionalities of the package.
 
 ## Development Installation Instructions 
@@ -14,6 +13,8 @@ See the ``/examples/`` folder for baselines from the paper and for examples of t
 This package is provided as a locally ``pip``-installable package. It is recommended that Python 3.9 is used in your local environment. 
 
 A Conda spec-file is included, to install a functioning environment, run ``conda create --name ENV_NAME_HERE --file spec-file.txt``. Then run ``pip install -e .`` to load ``drdmannturb`` into your environment. 
+
+We also suggest installing the local ``pre-commit`` configuration by running ``pre-commit install`` in the root directory of this repository. 
 
 ## Local Documentation Building Instructions 
 
