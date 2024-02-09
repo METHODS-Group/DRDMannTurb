@@ -147,8 +147,3 @@ def test_nnparams_load_trained_CUSTOMMLP():
     pb_new.parameters = model_params
 
     assert (pb.parameters == pb_new.parameters).all()
-
-
-if __name__ == "__main__":
-    test_nnparams_load_trained_TAUNET()
-    # test_nnparams_load_trained_CUSTOMMLP()

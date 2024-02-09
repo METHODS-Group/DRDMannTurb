@@ -43,9 +43,9 @@ if torch.cuda.is_available():
 # :math:`f_j \in \mathcal{D}` using a logarithmic grid of :math:`20` nodes.
 
 # Scales associated with Kaimal spectrum
-L = 0.59
-Gamma = 3.9
-sigma = 3.2
+L = 0.59  # length scale
+Gamma = 3.9  # time scale
+sigma = 3.2  # energy spectrum scale
 
 Uref = 21.0  # reference velocity
 zref = 1  # reference height

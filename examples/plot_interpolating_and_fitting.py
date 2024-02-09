@@ -72,9 +72,9 @@ if torch.cuda.is_available():
 # Here, we define our charateristic scales :math:`L, \Gamma, \sigma`, the
 # log-scale domain, and the reference height `zref` and velocity `Uref`.
 # for interpolation, log10-scaled k1 is used, regular values of the domain used for fitting
-L = 70
-Gamma = 3.7
-sigma = 0.04
+L = 70  # length scale
+Gamma = 3.7  # time scale
+sigma = 0.04  # energy spectrum scale
 
 Uref = 21.0  # reference velocity
 zref = 1  # reference height
