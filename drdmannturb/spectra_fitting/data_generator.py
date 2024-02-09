@@ -44,6 +44,7 @@ class OnePointSpectraDataGenerator:
     def __init__(
         self,
         zref: float,
+        ustar: float,
         data_points: Optional[Iterable[Tuple[torch.tensor, float]]] = None,
         data_type: DataType = DataType.KAIMAL,
         k1_data_points: Optional[torch.Tensor] = None,
@@ -90,6 +91,7 @@ class OnePointSpectraDataGenerator:
             self.spectra_values = spectra_values
 
         self.zref = zref
+        self.ustar = ustar
 
         if self.data_type == DataType.VK:
             self.eval = self.eval_VK
@@ -248,7 +250,7 @@ class OnePointSpectraDataGenerator:
             for i, Point in enumerate(DataPoints):
                 DataValues[i] = self.eval(Point)
 
-        DataPoints = list(zip(DataPoints, [self.zref] * len(DataPoints)))
+        DataPoints = list(zip(DataPoints, [self.zref] * len(DataPoints)))  # TODO
         self.Data = (DataPoints, DataValues)
         return self.Data
 
@@ -324,13 +326,15 @@ class OnePointSpectraDataGenerator:
         torch.Tensor
             The :math:`3 \times 3` matrix with entries determined by the Kaimal one-point spectra. 
         """
+        # TODO: check ustar dependence
         n = 1 / (2 * np.pi) * k1 * self.zref
         F = torch.zeros([3, 3])
-        F[0, 0] = 102 * n / (1 + 33 * n) ** (5 / 3)
-        F[1, 1] = 17 * n / (1 + 9.5 * n) ** (5 / 3)
-        F[2, 2] = 2.1 * n / (1 + 5.3 * n ** (5 / 3))
-        F[0, 2] = -12 * n / (1 + 9.6 * n) ** (7.0 / 3.0)
-        return F
+        F[0, 0] = 52.5 * n / (1 + 33 * n) ** (5 / 3)
+        F[1, 1] = 8.5 * n / (1 + 9.5 * n) ** (5 / 3)
+        F[2, 2] = 1.05 * n / (1 + 5.3 * n ** (5 / 3))
+        F[0, 2] = -7 * n / (1 + 9.6 * n) ** (12.0 / 5.0)
+
+        return F * self.ustar**2
 
     def plot(
         self,

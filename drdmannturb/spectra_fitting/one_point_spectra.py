@@ -21,6 +21,7 @@ class OnePointSpectra(nn.Module):
     def __init__(
         self,
         type_eddy_lifetime: EddyLifetimeType,
+        physical_params,
         type_power_spectra: PowerSpectraType = PowerSpectraType.RDT,
         nn_parameters: Optional[NNParameters] = None,
         learn_nu: bool = False,
@@ -88,9 +89,16 @@ class OnePointSpectra(nn.Module):
 
         self.meshgrid23 = torch.meshgrid(self.grid_k2, self.grid_k3, indexing="ij")
 
-        self.logLengthScale = nn.Parameter(torch.tensor(0, dtype=torch.float64))
-        self.logTimeScale = nn.Parameter(torch.tensor(0, dtype=torch.float64))
-        self.logMagnitude = nn.Parameter(torch.tensor(0, dtype=torch.float64))
+        # TODO: check positivity
+        self.logLengthScale = nn.Parameter(
+            torch.tensor(np.log10(physical_params.L), dtype=torch.float64)
+        )
+        self.logTimeScale = nn.Parameter(
+            torch.tensor(np.log10(physical_params.Gamma), dtype=torch.float64)
+        )
+        self.logMagnitude = nn.Parameter(
+            torch.tensor(np.log10(physical_params.sigma), dtype=torch.float64)
+        )
 
         if self.type_EddyLifetime == EddyLifetimeType.TAUNET:
             self.tauNet = TauNet(

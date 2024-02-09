@@ -101,6 +101,7 @@ class CalibrationProblem:
 
         self.OPS = OnePointSpectra(
             type_eddy_lifetime=self.prob_params.eddy_lifetime,
+            physical_params=self.phys_params,
             type_power_spectra=self.prob_params.power_spectra,
             nn_parameters=self.nn_params,
             learn_nu=self.prob_params.learn_nu,
@@ -457,21 +458,21 @@ class CalibrationProblem:
 
             return self.loss
 
-        for _ in tqdm(range(1, nepochs + 1)):
-            optimizer.step(closure)
-            scheduler.step()
-
-            if not (torch.isfinite(self.loss)):
-                raise RuntimeError(
-                    "Loss is not a finite value, check initialization and learning hyperparameters."
-                )
-
-            if self.loss.item() < tol:
-                print(
-                    f"Spectra Fitting Concluded with loss below tolerance. Final loss: {self.loss.item()}"
-                )
-                break
-
+        # for _ in tqdm(range(1, nepochs + 1)):
+        # optimizer.step(closure)
+        # scheduler.step()
+        #
+        # if not (torch.isfinite(self.loss)):
+        # raise RuntimeError(
+        # "Loss is not a finite value, check initialization and learning hyperparameters."
+        # )
+        #
+        # if self.loss.item() < tol:
+        # print(
+        # f"Spectra Fitting Concluded with loss below tolerance. Final loss: {self.loss.item()}"
+        # )
+        # break
+        #
         print("=" * 40)
         print(f"Spectra fitting concluded with final loss: {self.loss.item()}")
 
@@ -705,10 +706,14 @@ class CalibrationProblem:
                     "Must either provide data points or re-use what was used for model calibration, neither is currently specified."
                 )
 
-        kF_model_vals = model_vals if model_vals is not None else self.OPS(k1_data_pts)
+        kF_model_vals = (
+            model_vals
+            if model_vals is not None
+            else self.OPS(k1_data_pts) / self.phys_params.ustar**2.0
+        )
 
         kF_model_vals = kF_model_vals.cpu().detach()
-        kF_data_vals = kF_data_vals.cpu().detach()
+        kF_data_vals = kF_data_vals.cpu().detach() / self.phys_params.ustar**2
 
         if plot_tau:
             k_gd = torch.logspace(-3, 3, 50, dtype=torch.float64)

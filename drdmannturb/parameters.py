@@ -94,6 +94,8 @@ class PhysicalParameters:
     zref: float = 1.0
     Iref: float = 0.14
 
+    ustar: float = 1.0
+
     domain: torch.Tensor = torch.logspace(-1, 2, 20)
 
 
