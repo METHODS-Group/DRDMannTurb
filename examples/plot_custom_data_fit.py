@@ -59,8 +59,8 @@ L = 70  # length scale
 GAMMA = 3.7  # time scale
 SIGMA = 0.04  # energy spectrum scale
 
-Uref = 21
-zref = 1
+Uref = 21  # reference velocity
+zref = 1  # reference height
 
 #######################################################################################
 # ``CalibrationProblem`` construction
@@ -111,7 +111,7 @@ pb = CalibrationProblem(
 # --------------
 # The data are provided in a CSV format with the first column determining the frequency domain, which must be non-dimensionalized by the reference velocity.
 # The different spectra are provided in the order ``uu, vv, ww, uw`` where the last is the u-w cospectra (the convention for 3D velocity vector components being u, v, w for x, y, z).
-# The ``k1_data_points`` key word argument is needed here to define the domain over which
+# The ``k1_data_points`` key word argument is needed here to define the domain over which the spectra are defined.
 CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=","))
 f = CustomData[:, 0]
 k1_data_pts = 2 * torch.pi * f / Uref
