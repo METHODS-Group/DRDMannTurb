@@ -55,37 +55,9 @@ spectra_file = (
 
 domain = torch.logspace(-1, 3, 40)
 
-# zref = 70
-# ustar = 1.773
-#
-# L = 0.59 * zref  # length scale
-# GAMMA = 3.9  # time scale
-# SIGMA = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # energy spectrum scale
-
-
-# L = 0.59* zref #70
-# GAMMA = 3.7
-# SIGMA = 0.04
-
-# Uref = 21
-# zref = 1
-
-# zref = 1
-# Uref = 21
-
-# zref = 70
-# Uref = 21 #8.08
-# z0 = 0.1
-
-# ustar=0.41*Uref/np.log(zref/z0)
-
-# L     = 0.59 * zref #14.09
-# GAMMA = 3.9
-# SIGMA = 0.15174254
-
-L = 70
-GAMMA = 3.7
-SIGMA = 0.04
+L = 70  # length scale
+GAMMA = 3.7  # time scale
+SIGMA = 0.04  # energy spectrum scale
 
 Uref = 21
 zref = 1
@@ -142,13 +114,13 @@ pb = CalibrationProblem(
 # The ``k1_data_points`` key word argument is needed here to define the domain over which
 CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=","))
 f = CustomData[:, 0]
-k1_data_pts = 2 * torch.pi * f / Uref * L
+k1_data_pts = 2 * torch.pi * f / Uref
 Data = OnePointSpectraDataGenerator(
     zref=zref,
     data_points=k1_data_pts,
     data_type=DataType.CUSTOM,
     spectra_file=spectra_file,
-    # k1_data_points=k1_data_pts.data.cpu().numpy(),
+    k1_data_points=k1_data_pts.data.cpu().numpy(),
 ).Data
 
 
