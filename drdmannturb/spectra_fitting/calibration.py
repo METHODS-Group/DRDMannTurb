@@ -458,21 +458,21 @@ class CalibrationProblem:
 
             return self.loss
 
-        # for _ in tqdm(range(1, nepochs + 1)):
-        # optimizer.step(closure)
-        # scheduler.step()
-        #
-        # if not (torch.isfinite(self.loss)):
-        # raise RuntimeError(
-        # "Loss is not a finite value, check initialization and learning hyperparameters."
-        # )
-        #
-        # if self.loss.item() < tol:
-        # print(
-        # f"Spectra Fitting Concluded with loss below tolerance. Final loss: {self.loss.item()}"
-        # )
-        # break
-        #
+        for _ in tqdm(range(1, nepochs + 1)):
+            optimizer.step(closure)
+            scheduler.step()
+
+            if not (torch.isfinite(self.loss)):
+                raise RuntimeError(
+                    "Loss is not a finite value, check initialization and learning hyperparameters."
+                )
+
+            if self.loss.item() < tol:
+                print(
+                    f"Spectra Fitting Concluded with loss below tolerance. Final loss: {self.loss.item()}"
+                )
+                break
+
         print("=" * 40)
         print(f"Spectra fitting concluded with final loss: {self.loss.item()}")
 

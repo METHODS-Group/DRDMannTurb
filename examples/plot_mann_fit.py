@@ -45,18 +45,15 @@ if torch.cuda.is_available():
 # with 20 points.
 
 
-zref = 40  # 1 #40  # reference height
-ustar = 10  # 1.773
+zref = 40  # reference height
+ustar = 1.773
 
 # Scales associated with Kaimal spectrum
-# L = 10
 L = 0.59 * zref  # length scale
 Gamma = 3.9  # time scale
 sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # energy spectrum scale
 
 print(f"Physical Parameters: {L,Gamma,sigma}")
-
-# domain = torch.logspace(-3, 2, 20)
 
 k1 = torch.logspace(-1, 2, 20) / zref
 
@@ -73,7 +70,7 @@ k1 = torch.logspace(-1, 2, 20) / zref
 # The ``EddyLifetimeType.MANN`` argument determines the type of eddy lifetime function to use.
 pb = CalibrationProblem(
     nn_params=NNParameters(),
-    prob_params=ProblemParameters(eddy_lifetime=EddyLifetimeType.MANN, nepochs=2),
+    prob_params=ProblemParameters(eddy_lifetime=EddyLifetimeType.MANN, nepochs=5),
     loss_params=LossParameters(),
     phys_params=PhysicalParameters(
         L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1
@@ -110,6 +107,10 @@ Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
 
 optimal_parameters = pb.calibrate(data=Data)
 
+# PRetty print stuff
+# print("L optimal = ", optimal_parameters)
+
+print(optimal_parameters)
 ##############################################################################
 # The following plot shows the best fit to the synthetic Mann data. Notice that
 # the eddy lifetime function is precisely :math:`\tau^{\mathrm{Mann}}(k)`
