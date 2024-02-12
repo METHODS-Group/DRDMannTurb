@@ -56,7 +56,9 @@ class OnePointSpectraDataGenerator:
         Parameters
         ----------
         zref : float
-            Reference altitude value, by default 1.0
+            Reference altitude value
+        ustar : float
+            Friction velocity.
         data_points : Iterable[Tuple[torch.tensor, float]], optional
             Observed spectra data points at each of the :math:`k_1` coordinates, paired with the associated reference height (typically kept at 1, but may depend on applications).
         data_type : DataType, optional

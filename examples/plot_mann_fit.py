@@ -46,7 +46,7 @@ if torch.cuda.is_available():
 
 
 zref = 40  # reference height
-ustar = 1.773
+ustar = 1.773  # friction velocity
 
 # Scales associated with Kaimal spectrum
 L = 0.59 * zref  # length scale
