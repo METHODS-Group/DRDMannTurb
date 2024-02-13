@@ -15,6 +15,7 @@ class LossAggregator:
         self,
         params: LossParameters,
         k1space: torch.Tensor,
+        zref: float,
         tb_log_dir: Optional[str] = None,
         tb_comment: str = "",
     ):
@@ -36,6 +37,8 @@ class LossAggregator:
             Dataclass with parameters that determine the loss function
         k1space : torch.Tensor
             The spectra space for k1, this is assumed to be in logspace.
+        zref : float
+            Reference velocity, needed for computing penalty derivatives wrt ``k1 z``.
         tb_log_dir : Optional[str]
             Logging directory for the TensorBoard logger. Conventions are those of TensorBoard, which by default result in the creation of a ``runs`` subdirectory where the script is being run if this parameter is left as None.
         fn_comment : str
@@ -43,6 +46,8 @@ class LossAggregator:
         """
         self.writer = SummaryWriter(log_dir=tb_log_dir, comment=tb_comment)
         self.params = params
+
+        self.zref = zref
         self.k1space = k1space
         self.logk1 = torch.log(self.k1space)
         self.h1 = torch.diff(self.logk1)
@@ -121,8 +126,10 @@ class LossAggregator:
         logy = torch.log(torch.abs(y))
         d2logy = torch.diff(torch.diff(logy, dim=-1) / self.h1, dim=-1) / self.h2
 
-        pen2ndorder_loss = self.params.alpha_pen2 * torch.mean(
-            torch.relu(d2logy).square()
+        pen2ndorder_loss = (
+            self.params.alpha_pen2
+            * torch.mean(torch.relu(d2logy).square())
+            / self.zref**2
         )
 
         self.writer.add_scalar("2nd Order Penalty", pen2ndorder_loss, epoch)
@@ -153,8 +160,8 @@ class LossAggregator:
         logy = torch.log(torch.abs(y))
         d1logy = torch.diff(logy, dim=-1) / self.h1
 
-        pen1storder_loss = self.params.alpha_pen1 * torch.mean(
-            torch.relu(d1logy).square()
+        pen1storder_loss = (
+            self.params.alpha_pen1 * torch.mean(torch.relu(d1logy).square()) / self.zref
         )
         self.writer.add_scalar("1st Order Penalty", pen1storder_loss, epoch)
 

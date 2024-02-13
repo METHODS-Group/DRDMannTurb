@@ -7,7 +7,7 @@ import pickle
 from collections.abc import Iterable
 from functools import partial
 from pathlib import Path
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -343,12 +343,14 @@ class CalibrationProblem:
         data: tuple[Iterable[float], torch.Tensor],
         tb_comment: str = "",
         optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
-    ) -> np.ndarray:
+    ) -> Dict[str, float]:
         r"""Calibration method, which handles the main training loop and some
         data pre-processing. Currently the only supported optimizer is Torch's ``LBFGS``
         and the learning rate scheduler uses cosine annealing. Parameters for these
         components of the training process are set in ``LossParameters`` and ``ProblemParameters``
         during initialization.
+
+        See the ``.print_calibrated_params()`` method to receive a pretty-printed output of the calibrated physical parameters.
 
         Parameters
         ----------
@@ -361,8 +363,8 @@ class CalibrationProblem:
 
         Returns
         -------
-        np.ndarray
-            Physical parameters for the problem, in normal space (not in log-space, as represented internally). In the order ``[length scale, time scale, spectrum amplitude]``.
+        Dict[str, float]
+            Physical parameters for the problem, in normal space (not in log-space, as represented internally). Presented as a dictionary in the order ``{L : length scale, Gamma : time scale, sigma : spectrum amplitude}``.
 
         Raises
         ------
@@ -383,9 +385,10 @@ class CalibrationProblem:
         self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
 
         self.LossAggregator = LossAggregator(
-            self.loss_params,
-            self.k1_data_pts,
-            self.logging_directory,
+            params=self.loss_params,
+            k1space=self.k1_data_pts,
+            zref=self.phys_params.zref,
+            tb_log_dir=self.logging_directory,
             tb_comment=tb_comment,
         )
 
@@ -480,11 +483,44 @@ class CalibrationProblem:
             print(f"Learned nu value: {self.OPS.tauNet.Ra.nu.item()}")
 
         # physical parameters are stored as natural logarithms internally
-        return np.exp(self.parameters)
+        self.calibrated_params = {
+            "L": np.exp(self.parameters[0]),
+            "Gamma": np.exp(self.parameters[1]),
+            "sigma": np.exp(self.parameters[2]),
+        }
+
+        return self.calibrated_params
 
     # ------------------------------------------------
     ### Post-treatment and Export
     # ------------------------------------------------
+
+    def print_calibrated_params(self):
+        """Prints out the optimal calibrated parameters ``L``, ``Gamma``, ``sigma``, which are stored in a fitted ``CalibrationProblem`` object under the ``calibrated_params`` dictionary.
+
+        Raises
+        ------
+        ValueError
+            Must call ``.calibrate()`` method to compute a fit to physical parameters first.
+        """
+        if not hasattr(self, "calibrated_params"):
+            raise ValueError(
+                "Must call .calibrate() method to compute a fit to physical parameters first."
+            )
+
+        OKGREEN = "\033[92m"
+        ENDC = "\033[0m"
+
+        print("=" * 40)
+
+        for k, v in self.calibrated_params.items():
+            print(
+                f"{OKGREEN}Optimal calibrated {k+' '*4 if k == 'L' else k} : {v:8.4f} {ENDC}"
+            )
+
+        print("=" * 40)
+
+        return
 
     def num_trainable_params(self) -> int:
         """Computes the number of trainable network parameters

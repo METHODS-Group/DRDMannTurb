@@ -132,7 +132,8 @@ Data = OnePointSpectraDataGenerator(
 # fit for :math:`\nu` is close to :math:`\nu \approx - 1/3`, which can be improved
 # with further training.
 optimal_parameters = pb.calibrate(data=Data)
-print(optimal_parameters[:3])
+
+pb.print_calibrated_params()
 
 ##############################################################################
 # Plotting

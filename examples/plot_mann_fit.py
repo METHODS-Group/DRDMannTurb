@@ -70,7 +70,7 @@ k1 = torch.logspace(-1, 2, 20) / zref
 # The ``EddyLifetimeType.MANN`` argument determines the type of eddy lifetime function to use.
 pb = CalibrationProblem(
     nn_params=NNParameters(),
-    prob_params=ProblemParameters(eddy_lifetime=EddyLifetimeType.MANN, nepochs=5),
+    prob_params=ProblemParameters(eddy_lifetime=EddyLifetimeType.MANN, nepochs=2),
     loss_params=LossParameters(),
     phys_params=PhysicalParameters(
         L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1
@@ -107,10 +107,8 @@ Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
 
 optimal_parameters = pb.calibrate(data=Data)
 
-# PRetty print stuff
-# print("L optimal = ", optimal_parameters)
+pb.print_calibrated_params()
 
-print(optimal_parameters)
 ##############################################################################
 # The following plot shows the best fit to the synthetic Mann data. Notice that
 # the eddy lifetime function is precisely :math:`\tau^{\mathrm{Mann}}(k)`

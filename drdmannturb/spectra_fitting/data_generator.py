@@ -44,7 +44,7 @@ class OnePointSpectraDataGenerator:
     def __init__(
         self,
         zref: float,
-        ustar: float,
+        ustar: float = 1.0,
         data_points: Optional[Iterable[Tuple[torch.tensor, float]]] = None,
         data_type: DataType = DataType.KAIMAL,
         k1_data_points: Optional[torch.Tensor] = None,
@@ -58,7 +58,7 @@ class OnePointSpectraDataGenerator:
         zref : float
             Reference altitude value
         ustar : float
-            Friction velocity.
+            Friction velocity, by default 1.0.
         data_points : Iterable[Tuple[torch.tensor, float]], optional
             Observed spectra data points at each of the :math:`k_1` coordinates, paired with the associated reference height (typically kept at 1, but may depend on applications).
         data_type : DataType, optional
@@ -186,7 +186,7 @@ class OnePointSpectraDataGenerator:
                 fit4 = fitOPS(self.k1, Data_temp[:, 3], 3)
                 DataValues[:, 0, 2] = -func3(self.k1, *fit4)
 
-                DataValues = torch.tensor(DataValues)
+                DataValues = torch.tensor(DataValues * self.ustar**2)
                 DataPoints = list(
                     zip(self.DataPoints, [self.zref] * len(self.DataPoints))
                 )
@@ -252,7 +252,7 @@ class OnePointSpectraDataGenerator:
             for i, Point in enumerate(DataPoints):
                 DataValues[i] = self.eval(Point)
 
-        DataPoints = list(zip(DataPoints, [self.zref] * len(DataPoints)))  # TODO
+        DataPoints = list(zip(DataPoints, [self.zref] * len(DataPoints)))
         self.Data = (DataPoints, DataValues)
         return self.Data
 
@@ -328,7 +328,6 @@ class OnePointSpectraDataGenerator:
         torch.Tensor
             The :math:`3 \times 3` matrix with entries determined by the Kaimal one-point spectra. 
         """
-        # TODO: check ustar dependence
         n = 1 / (2 * np.pi) * k1 * self.zref
         F = torch.zeros([3, 3])
         F[0, 0] = 52.5 * n / (1 + 33 * n) ** (5 / 3)
