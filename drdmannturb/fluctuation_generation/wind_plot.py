@@ -6,6 +6,8 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+from .cmap_util import FIELD_COLORSCALE
+
 
 def create_grid(
     spacing: tuple[float, float, float], shape: tuple[int, int, int]
@@ -22,13 +24,13 @@ def create_grid(
     Returns
     -------
     np.ndarray
-       np.meshgrid object consisting of points at the provided spacing and with the specified counts in each dimension.
+       np.meshgrid object consisting of points at the provided spacing and with the specified counts in each dimension. This is 'ij' indexed (not Cartesian!).
     """
     x = np.array([spacing[0] * n for n in range(shape[0])])
     y = np.array([spacing[1] * n for n in range(shape[1])])
     z = np.array([spacing[2] * n for n in range(shape[2])])
 
-    return np.meshgrid(x, y, z)
+    return np.meshgrid(x, y, z, indexing="ij")
 
 
 def format_wind_field(
@@ -153,7 +155,7 @@ def plot_velocity_components(
         ),
     )
 
-    fig.update_coloraxes(colorscale="spectral_r")
+    fig.update_coloraxes(colorscale=FIELD_COLORSCALE)
 
     return fig
 
@@ -203,12 +205,20 @@ def plot_velocity_magnitude(
             z=Z.flatten(),
             value=wind_magnitude.flatten(),
             surface_count=surf_count,
+            opacityscale=[
+                [0, 0.75],
+                [0.25, 0.5],
+                [0.35, 0.35],
+                [0.5, 0.1],
+                [0.75, 0.45],
+                [1, 1],
+            ],
             opacity=0.75,
-            colorscale="Turbo",  # spectral_r
+            colorscale=FIELD_COLORSCALE,
             colorbar={
                 "title": "|U(x)|",
             },
-            showscale=False,
+            showscale=True,
         ),
     )
 
