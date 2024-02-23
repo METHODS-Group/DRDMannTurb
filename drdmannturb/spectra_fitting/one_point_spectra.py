@@ -91,7 +91,12 @@ class OnePointSpectra(nn.Module):
 
         self.meshgrid23 = torch.meshgrid(self.grid_k2, self.grid_k3, indexing="ij")
 
-        # TODO: check positivity
+        assert physical_params.L > 0, "Length scale L must be positive."
+        assert (
+            physical_params.Gamma > 0
+        ), "Characteristic time scale Gamma must be positive."
+        assert physical_params.sigma > 0, "Spectrum amplitude sigma must be positive."
+
         self.logLengthScale = nn.Parameter(
             torch.tensor(np.log10(physical_params.L), dtype=torch.float64)
         )
