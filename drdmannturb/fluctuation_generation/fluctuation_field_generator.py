@@ -288,7 +288,55 @@ class GenerateFluctuationField:
 
         return wind
 
-    def generate(self, num_blocks: int) -> np.ndarray:
+    def _normalize_block(
+        self, curr_block: np.ndarray, roughness_height: float, friction_velocity: float
+    ) -> np.ndarray:
+        r"""Normalizes the generated field by the logarithmic profile
+
+        .. math ::
+
+            \left\langle U_1(z)\right\rangle=\frac{u_{\ast}}{\kappa} \ln \left(\frac{z}{z_0}+1\right)
+
+
+        where :math:`u_{\ast}` is the friction velocity and :math:`z_0` is the roughness height. More information on this normalization can be found in
+
+        J. JCSS, “Probabilistic model code,” Joint Committee on Structural Safety (2001).
+
+        Parameters
+        ----------
+        roughness_height : float
+            Roughness height :math:`z_0`.
+        friction_velocity : float
+            Ground friction velocity :math:`u_{\ast}`.
+
+        Returns
+        -------
+        np.ndarray
+            Fluctuation field normalized by the logarithmic profile.
+        """
+        if not np.any(curr_block):
+            raise ValueError(
+                "No fluctuation field has been generated, call the .generate() method first."
+            )
+
+        sd = np.sqrt(np.mean(curr_block**2))
+        curr_block /= sd
+
+        z_space = np.linspace(
+            0.0, self.grid_dimensions[2], 2 ** (self.grid_levels[2]) + 1
+        )
+        mean_profile_z = self.log_law(z_space, roughness_height, friction_velocity)
+
+        mean_profile = np.zeros_like(curr_block)
+        mean_profile[..., 0] = np.tile(
+            mean_profile_z.T, (mean_profile.shape[0], mean_profile.shape[1], 1)
+        )
+
+        return curr_block + mean_profile
+
+    def generate(
+        self, num_blocks: int, roughness_height: float, friction_velocity: float
+    ) -> np.ndarray:
         """Generates the full fluctuation field in blocks. The resulting field is stored as the ``total_fluctuation`` field of this object, allowing for all metadata of the object to be stored safely with the fluctuation field, and also reducing data duplication for post-processing; all operations can be performed on this public variable.
 
         .. warning::
@@ -312,8 +360,14 @@ class GenerateFluctuationField:
             )
 
         for _ in range(num_blocks):
+            t_block = self._generate_block()
+
+            normed_block = self._normalize_block(
+                t_block, roughness_height, friction_velocity
+            )
+
             self.total_fluctuation = np.concatenate(
-                (self.total_fluctuation, self._generate_block()), axis=0
+                (self.total_fluctuation, normed_block), axis=0
             )
 
         return self.total_fluctuation
@@ -346,7 +400,7 @@ class GenerateFluctuationField:
         """
         if not np.any(self.total_fluctuation):
             raise ValueError(
-                "No fluctuation field has been generated, call the .generate() method first!"
+                "No fluctuation field has been generated, call the .generate() method first."
             )
 
         sd = np.sqrt(np.mean(self.total_fluctuation**2))

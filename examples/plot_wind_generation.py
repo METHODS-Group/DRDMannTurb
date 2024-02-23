@@ -44,9 +44,9 @@ if torch.cuda.is_available():
 # ---------------------------
 # Here, we set the physical parameters of the environment in which the fluctuation field is generated: the friction velocity :math:`u_* = 0.45`, roughness height :math:`z_0=0.0001` and reference height of :math:`180`.
 # The physical domain is determined by dimensions in 3D as well as the discretization size (grid levels) in each dimension.
-friction_velocity = 0.45
+friction_velocity = 2.683479938442173
 reference_height = 180.0
-roughness_height = 0.0001
+roughness_height = 0.75
 
 grid_dimensions = np.array([1200.0, 864.0, 576.0])
 grid_levels = np.array([5, 3, 5])
@@ -78,24 +78,28 @@ gen_mann = GenerateFluctuationField(
     seed=seed,
 )
 
-fluctuation_field_mann = gen_mann.generate(nBlocks)
+fluctuation_field_mann = gen_mann.generate(nBlocks, roughness_height, friction_velocity)
 
 #######################################################################################
 # Scaling of the field (normalization)
 # ------------------------------------
-# We now normalize and scale the generated fluctuation field so that
+# WThe generated fluctuation field is normalized and scaled by the logarithmic profile
 #
 # .. math:: \left\langle U_1(z)\right\rangle=\frac{u_*}{\kappa} \ln \left(\frac{z}{z_0}+1\right)
 #
 # where :math:`u_*` is the friction velocity and :math:`z_0` is the roughness height.
 #
-fluctuation_field_mann = gen_mann.normalize(roughness_height, friction_velocity)
 
 spacing = tuple(grid_dimensions / (2.0**grid_levels + 1))
 
-fig_magnitude_mann = plot_velocity_magnitude(spacing, fluctuation_field_mann)
+fig_magnitude_mann = plot_velocity_magnitude(
+    spacing, fluctuation_field_mann, transparent=True
+)
 
-# this is a Plotly figure, which can be visualized with the ``.show()`` method in different contexts.
+# this is a Plotly figure, which can be visualized with the ``.show()`` method in different contexts. While these utilities
+# may be useful for quick visualization, we recommend using Paraview to visualize higher resolution output. We will cover
+# saving to a portable VTK format further in this example.
+
 fig_magnitude_mann  # .show("browser")
 
 #######################################################################################
@@ -128,10 +132,7 @@ gen_drd = GenerateFluctuationField(
     seed=seed,
 )
 
-fluctuation_field_drd = gen_drd.generate(nBlocks)
-
-fluctuation_field_drd = gen_drd.normalize(roughness_height, friction_velocity)
-
+fluctuation_field_drd = gen_drd.generate(nBlocks, roughness_height, friction_velocity)
 
 #######################################################################################
 # Evaluating Divergence Properties and Plotting
@@ -146,7 +147,9 @@ gen_drd.evaluate_divergence(spacing, fluctuation_field_drd).max()
 
 #######################################################################################
 # We now visualize the output fluctuation field.
-fig_magnitude_drd = plot_velocity_magnitude(spacing, fluctuation_field_drd)
+fig_magnitude_drd = plot_velocity_magnitude(
+    spacing, fluctuation_field_drd, transparent=True
+)
 
 # this is a Plotly figure, which can be visualized with the ``.show()`` method in different contexts.
 fig_magnitude_drd  # .show("browser")
@@ -154,6 +157,8 @@ fig_magnitude_drd  # .show("browser")
 #######################################################################################
 # Saving Generated Fluctuation Field as VTK
 # -----------------------------------------
+# For higher resolution fluctuation fields, we suggest using Paraview. To transfer the generated data
+# from our package, we provide the ``.save_to_vtk()`` method.
 filename = str(
     path / "../docs/source/results/fluctuation_simple"
     if path.name == "examples"
