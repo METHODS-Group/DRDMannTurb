@@ -46,7 +46,7 @@ if torch.cuda.is_available():
 
 
 zref = 40  # reference height
-ustar = 1.773
+ustar = 1.773  # friction velocity
 
 # Scales associated with Kaimal spectrum
 L = 0.59 * zref  # length scale
@@ -55,7 +55,7 @@ sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # energy spectrum scale
 
 print(f"Physical Parameters: {L,Gamma,sigma}")
 
-domain = torch.logspace(-1, 2, 20)
+k1 = torch.logspace(-1, 2, 20) / zref
 
 ##############################################################################
 # ``CalibrationProblem`` Construction
@@ -72,7 +72,9 @@ pb = CalibrationProblem(
     nn_params=NNParameters(),
     prob_params=ProblemParameters(eddy_lifetime=EddyLifetimeType.MANN, nepochs=2),
     loss_params=LossParameters(),
-    phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, domain=domain),
+    phys_params=PhysicalParameters(
+        L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1
+    ),
     device=device,
 )
 
@@ -88,7 +90,7 @@ pb = CalibrationProblem(
 #
 # Lastly, we collect ``Data = (<data points>, <data values>)`` to be used in calibration.
 
-Data = OnePointSpectraDataGenerator(data_points=domain, zref=zref).Data
+Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
 
 ##############################################################################
 # The model is now "calibrated" to the provided spectra from the synthetic
@@ -104,6 +106,8 @@ Data = OnePointSpectraDataGenerator(data_points=domain, zref=zref).Data
 # and we conclude with a plot.
 
 optimal_parameters = pb.calibrate(data=Data)
+
+pb.print_calibrated_params()
 
 ##############################################################################
 # The following plot shows the best fit to the synthetic Mann data. Notice that

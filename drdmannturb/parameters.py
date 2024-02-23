@@ -80,8 +80,6 @@ class PhysicalParameters:
         Reference velocity value at hub height (m/s)
     zref : float, optional
         Reference height value; should be measured at hub height (meters)
-    Iref : float, optional
-        Longitudinal turbulence scale parameter at hub height (meters)
     domain : torch.Tensor
         :math:`k_1` domain over which spectra data are defined.
     """
@@ -92,7 +90,8 @@ class PhysicalParameters:
 
     Uref: float = 10.0
     zref: float = 1.0
-    Iref: float = 0.14
+
+    ustar: float = 1.0
 
     domain: torch.Tensor = torch.logspace(-1, 2, 20)
 

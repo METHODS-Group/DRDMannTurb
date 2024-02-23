@@ -159,6 +159,8 @@ Data = datagen.Data
 pb.eval(k1_data_pts)
 optimal_parameters = pb.calibrate(data=Data)
 
+pb.print_calibrated_params()
+
 ##############################################################################
 # Plotting
 # --------

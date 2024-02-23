@@ -100,6 +100,8 @@ Data = OnePointSpectraDataGenerator(zref=zref, data_points=domain).Data
 # which we just constructed and performs a typical training loop.
 optimal_parameters = pb.calibrate(data=Data)
 
+pb.print_calibrated_params()
+
 ##############################################################################
 # Plotting
 # --------

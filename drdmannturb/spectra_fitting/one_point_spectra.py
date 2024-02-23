@@ -9,7 +9,7 @@ from sklearn.linear_model import LinearRegression
 from ..common import Mann_linear_exponential_approx, MannEddyLifetime, VKEnergySpectrum
 from ..enums import EddyLifetimeType, PowerSpectraType
 from ..nn_modules import CustomNet, TauNet
-from ..parameters import NNParameters
+from ..parameters import NNParameters, PhysicalParameters
 from .power_spectra_rdt import PowerSpectraRDT
 
 
@@ -21,6 +21,7 @@ class OnePointSpectra(nn.Module):
     def __init__(
         self,
         type_eddy_lifetime: EddyLifetimeType,
+        physical_params: PhysicalParameters,
         type_power_spectra: PowerSpectraType = PowerSpectraType.RDT,
         nn_parameters: Optional[NNParameters] = None,
         learn_nu: bool = False,
@@ -43,6 +44,8 @@ class OnePointSpectra(nn.Module):
         ----------
         type_eddy_lifetime : EddyLifetimeType, optional
             Type of eddy lifetime function :math:`\tau` to use.
+        physical_params : PhysicalParameters,
+            Object specifying physical parameters of the problem.
         type_power_spectra : PowerSpectraType, optional
             Type of power spectra function to use, by default PowerSpectraType.RDT, the only one currently implemented.
         nn_parameters : NNParameters, optional
@@ -88,9 +91,21 @@ class OnePointSpectra(nn.Module):
 
         self.meshgrid23 = torch.meshgrid(self.grid_k2, self.grid_k3, indexing="ij")
 
-        self.logLengthScale = nn.Parameter(torch.tensor(0, dtype=torch.float64))
-        self.logTimeScale = nn.Parameter(torch.tensor(0, dtype=torch.float64))
-        self.logMagnitude = nn.Parameter(torch.tensor(0, dtype=torch.float64))
+        assert physical_params.L > 0, "Length scale L must be positive."
+        assert (
+            physical_params.Gamma > 0
+        ), "Characteristic time scale Gamma must be positive."
+        assert physical_params.sigma > 0, "Spectrum amplitude sigma must be positive."
+
+        self.logLengthScale = nn.Parameter(
+            torch.tensor(np.log10(physical_params.L), dtype=torch.float64)
+        )
+        self.logTimeScale = nn.Parameter(
+            torch.tensor(np.log10(physical_params.Gamma), dtype=torch.float64)
+        )
+        self.logMagnitude = nn.Parameter(
+            torch.tensor(np.log10(physical_params.sigma), dtype=torch.float64)
+        )
 
         if self.type_EddyLifetime == EddyLifetimeType.TAUNET:
             self.tauNet = TauNet(

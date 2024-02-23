@@ -44,6 +44,7 @@ class OnePointSpectraDataGenerator:
     def __init__(
         self,
         zref: float,
+        ustar: float = 1.0,
         data_points: Optional[Iterable[Tuple[torch.tensor, float]]] = None,
         data_type: DataType = DataType.KAIMAL,
         k1_data_points: Optional[torch.Tensor] = None,
@@ -55,7 +56,9 @@ class OnePointSpectraDataGenerator:
         Parameters
         ----------
         zref : float
-            Reference altitude value, by default 1.0
+            Reference altitude value
+        ustar : float
+            Friction velocity, by default 1.0.
         data_points : Iterable[Tuple[torch.tensor, float]], optional
             Observed spectra data points at each of the :math:`k_1` coordinates, paired with the associated reference height (typically kept at 1, but may depend on applications).
         data_type : DataType, optional
@@ -90,6 +93,7 @@ class OnePointSpectraDataGenerator:
             self.spectra_values = spectra_values
 
         self.zref = zref
+        self.ustar = ustar
 
         if self.data_type == DataType.VK:
             self.eval = self.eval_VK
@@ -182,7 +186,7 @@ class OnePointSpectraDataGenerator:
                 fit4 = fitOPS(self.k1, Data_temp[:, 3], 3)
                 DataValues[:, 0, 2] = -func3(self.k1, *fit4)
 
-                DataValues = torch.tensor(DataValues)
+                DataValues = torch.tensor(DataValues * self.ustar**2)
                 DataPoints = list(
                     zip(self.DataPoints, [self.zref] * len(self.DataPoints))
                 )
@@ -326,11 +330,12 @@ class OnePointSpectraDataGenerator:
         """
         n = 1 / (2 * np.pi) * k1 * self.zref
         F = torch.zeros([3, 3])
-        F[0, 0] = 102 * n / (1 + 33 * n) ** (5 / 3)
-        F[1, 1] = 17 * n / (1 + 9.5 * n) ** (5 / 3)
-        F[2, 2] = 2.1 * n / (1 + 5.3 * n ** (5 / 3))
-        F[0, 2] = -12 * n / (1 + 9.6 * n) ** (7.0 / 3.0)
-        return F
+        F[0, 0] = 52.5 * n / (1 + 33 * n) ** (5 / 3)
+        F[1, 1] = 8.5 * n / (1 + 9.5 * n) ** (5 / 3)
+        F[2, 2] = 1.05 * n / (1 + 5.3 * n ** (5 / 3))
+        F[0, 2] = -7 * n / (1 + 9.6 * n) ** (12.0 / 5.0)
+
+        return F * self.ustar**2
 
     def plot(
         self,

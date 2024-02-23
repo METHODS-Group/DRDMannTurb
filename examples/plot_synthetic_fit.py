@@ -119,6 +119,8 @@ Data = OnePointSpectraDataGenerator(zref=zref, data_points=domain).Data
 
 optimal_parameters = pb.calibrate(data=Data)
 
+pb.print_calibrated_params()
+
 ##############################################################################
 # Plotting
 # --------
