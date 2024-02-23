@@ -408,19 +408,19 @@ document.write(`
 </section>
 <section id="Setting-Physical-Parameters">
 <h2>Setting Physical Parameters<a class="headerlink" href="#Setting-Physical-Parameters" title="Link to this heading">#</a></h2>
-<p>Here, we define our charateristic scales <span class="math notranslate nohighlight">\(L, \Gamma, \sigma\)</span>, the log-scale domain, and the reference height <code class="docutils literal notranslate"><span class="pre">zref</span></code> and velocity <code class="docutils literal notranslate"><span class="pre">Uref</span></code>.</p>
+<p>Here, we define our characteristic scales <span class="math notranslate nohighlight">\(L, \Gamma, \sigma\)</span>, the log-scale domain, and the reference height <code class="docutils literal notranslate"><span class="pre">zref</span></code> and velocity <code class="docutils literal notranslate"><span class="pre">Uref</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">domain</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">domain</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">40</span><span class="p">)</span>
 
-<span class="n">L</span> <span class="o">=</span> <span class="mi">70</span>
-<span class="n">GAMMA</span> <span class="o">=</span> <span class="mf">3.7</span>
-<span class="n">SIGMA</span> <span class="o">=</span> <span class="mf">0.04</span>
+<span class="n">L</span> <span class="o">=</span> <span class="mi">70</span>  <span class="c1"># length scale</span>
+<span class="n">GAMMA</span> <span class="o">=</span> <span class="mf">3.7</span>  <span class="c1"># time scale</span>
+<span class="n">SIGMA</span> <span class="o">=</span> <span class="mf">0.04</span>  <span class="c1"># energy spectrum scale</span>
 
-<span class="n">Uref</span> <span class="o">=</span> <span class="mi">21</span>
-<span class="n">zref</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">Uref</span> <span class="o">=</span> <span class="mi">21</span>  <span class="c1"># reference velocity</span>
+<span class="n">zref</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># reference height</span>
 </pre></div>
 </div>
 </div>
@@ -461,7 +461,7 @@ document.write(`
 </section>
 <section id="Data-from-File">
 <h2>Data from File<a class="headerlink" href="#Data-from-File" title="Link to this heading">#</a></h2>
-<p>The data are provided in a CSV format with the first column determining the frequency domain, which must be non-dimensionalized by the reference velocity. The different spectra are provided in the order <code class="docutils literal notranslate"><span class="pre">uu,</span> <span class="pre">vv,</span> <span class="pre">ww,</span> <span class="pre">uw</span></code> where the last is the u-w cospectra (the convention for 3D velocity vector components being u, v, w for x, y, z).</p>
+<p>The data are provided in a CSV format with the first column determining the frequency domain, which must be non-dimensionalized by the reference velocity. The different spectra are provided in the order <code class="docutils literal notranslate"><span class="pre">uu,</span> <span class="pre">vv,</span> <span class="pre">ww,</span> <span class="pre">uw</span></code> where the last is the u-w cospectra (the convention for 3D velocity vector components being u, v, w for x, y, z). The <code class="docutils literal notranslate"><span class="pre">k1_data_points</span></code> key word argument is needed here to define the domain over which the spectra are defined.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
@@ -469,9 +469,9 @@ document.write(`
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">CustomData</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">spectra_file</span><span class="p">,</span> <span class="n">skip_header</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">))</span>
 <span class="n">f</span> <span class="o">=</span> <span class="n">CustomData</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
 <span class="n">k1_data_pts</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">f</span> <span class="o">/</span> <span class="n">Uref</span>
-<span class="n">DataPoints</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k1</span><span class="p">,</span> <span class="n">zref</span><span class="p">)</span> <span class="k">for</span> <span class="n">k1</span> <span class="ow">in</span> <span class="n">k1_data_pts</span><span class="p">]</span>
 <span class="n">Data</span> <span class="o">=</span> <span class="n">OnePointSpectraDataGenerator</span><span class="p">(</span>
-    <span class="n">data_points</span><span class="o">=</span><span class="n">DataPoints</span><span class="p">,</span>
+    <span class="n">zref</span><span class="o">=</span><span class="n">zref</span><span class="p">,</span>
+    <span class="n">data_points</span><span class="o">=</span><span class="n">k1_data_pts</span><span class="p">,</span>
     <span class="n">data_type</span><span class="o">=</span><span class="n">DataType</span><span class="o">.</span><span class="n">CUSTOM</span><span class="p">,</span>
     <span class="n">spectra_file</span><span class="o">=</span><span class="n">spectra_file</span><span class="p">,</span>
     <span class="n">k1_data_points</span><span class="o">=</span><span class="n">k1_data_pts</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
@@ -488,6 +488,8 @@ document.write(`
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">optimal_parameters</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">Data</span><span class="p">)</span>
+
+<span class="n">pb</span><span class="o">.</span><span class="n">print_calibrated_params</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -497,7 +499,7 @@ document.write(`
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 ========================================
-Initial loss: 24.53155984350733
+Initial loss: 5.218100752994359
 ========================================
 </pre></div></div>
 </div>
@@ -506,7 +508,7 @@ Initial loss: 24.53155984350733
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████████████████████████████████████████████████| 5/5 [00:26&lt;00:00,  5.38s/it]
+100%|███████████████████████████████████████████████████████████████████████████████████████████| 5/5 [00:27&lt;00:00,  5.47s/it]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -515,8 +517,13 @@ Initial loss: 24.53155984350733
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 ========================================
-Spectra fitting concluded with final loss: 0.1957984629321719
-Learned nu value: -0.41393243319730527
+Spectra fitting concluded with final loss: 0.1633738944750295
+Learned nu value: 0.11707970110012203
+========================================
+<span class="ansi-green-intense-fg">Optimal calibrated L     :  43.2830 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated Gamma :   3.5231 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated sigma :   0.0041 </span>
+========================================
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">

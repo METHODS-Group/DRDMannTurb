@@ -65,7 +65,7 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "## Data Generation\nIn the following cell, we construct our $k_1$ data points grid and\ngenerate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.\nIt is worth noting that the second element of each tuple in ``DataPoints`` is the corresponding\nreference height, which we have chosen to be uniformly $1$.\n\n"
+        "## Data Generation\nIn the following cell, we construct our $k_1$ data points grid and\ngenerate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.\nIt is worth noting that the second element of each tuple in ``DataPoints`` is the corresponding\nreference height, which we have chosen to be uniformly `zref`.\n\n"
       ]
     },
     {
@@ -76,7 +76,7 @@
       },
       "outputs": [],
       "source": [
-        "k1_data_pts = domain\nDataPoints = [(k1, zref) for k1 in k1_data_pts]\n\nData = OnePointSpectraDataGenerator(data_points=DataPoints).Data"
+        "Data = OnePointSpectraDataGenerator(zref=zref, data_points=domain).Data"
       ]
     },
     {
@@ -94,7 +94,7 @@
       },
       "outputs": [],
       "source": [
-        "optimal_parameters = pb.calibrate(data=Data)"
+        "optimal_parameters = pb.calibrate(data=Data)\n\npb.print_calibrated_params()"
       ]
     },
     {

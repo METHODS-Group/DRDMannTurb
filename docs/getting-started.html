@@ -359,15 +359,43 @@ document.write(`
 <h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">#</a></h1>
 <p><cite>DRDMannTurb</cite> consists of two major components: (1) fitting a Deep Rapid Distortion (DRD) spectral tensor model to one-point spectra from real-world wind observations, and (2) generating divergence-free fluctuation fields from the inferred spectral tensor using a novel and efficient block-wise approach. Additional utilities for data pre-processing, such as interpolation and filtering, as well as 3D visualization tools are provided as part of the package.</p>
 <p>Please consider reading <a class="reference external" href="https://arxiv.org/pdf/2107.11046.pdf">the original DRD paper</a> and the examples. Please also see the UML diagrams for both <a class="reference internal" href="uml_drd.html"><span class="doc">spectra fitting</span></a> and <a class="reference internal" href="uml_fluct_gen.html"><span class="doc">fluctuation field generation</span></a> to see how the models are configured.</p>
+</section>
 <section id="spectra-fitting">
-<h2>Spectra Fitting<a class="headerlink" href="#spectra-fitting" title="Link to this heading">#</a></h2>
+<h1>Spectra Fitting<a class="headerlink" href="#spectra-fitting" title="Link to this heading">#</a></h1>
 <p><code class="docutils literal notranslate"><span class="pre">DRDMannTurb</span></code> performs an operator regression task that characterizes an optimal nonlocal covariance kernel via neural network training. These kernels are part of a family of DRD models that preserve physical fluid flow properties such as mass conservation as well as turbulence statistics up to second order. DRD models are generalizations of <a class="reference external" href="https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/spatial-structure-of-neutral-atmospheric-surfacelayer-turbulence/ACFE1EA8C45763481CBEB193B314E2EB">the Mann model</a>, which admits three parameters: the Kolmogorov constant multiplied by the two-thirds power law for the rate of viscous dissipation, a turbulence length scale, and a non-dimensional time-scale related to the eddy-lifetime function. <code class="docutils literal notranslate"><span class="pre">DRDMannTurb</span></code> allows users to easily extend the classical Mann model to a DRD model by using neural networks to approximate the function related to the lifetime of the eddies. These networks have a wide range of customizability in terms of architecture and their training is facilitated via <code class="docutils literal notranslate"><span class="pre">PyTorch</span></code>.  This leads to a model that can better fit field data without changing the complexity of generating the associated synthetic turbulence wind field.</p>
 <p>The overall workflow consists of a <code class="docutils literal notranslate"><span class="pre">OnePointSpectraDataGenerator</span></code> which provides the data over which a DRD model is to be trained. This class also provides pre-processing utilities for interpolation of data to a common wave vector domain and filtering the curves to improve fits with noisy data. Alternatively, data can be generated from the Mann model. This enables the functionality of performing pure Mann model fits to data and for generating fluctuation fields based on the Mann model.</p>
 </section>
 <section id="field-generation">
-<h2>Field Generation<a class="headerlink" href="#field-generation" title="Link to this heading">#</a></h2>
+<h1>Field Generation<a class="headerlink" href="#field-generation" title="Link to this heading">#</a></h1>
 <p>Fluctuation field generation involves one class and is performed in an efficient block-wise manner: rather than generating the field in the whole domain, the field is generated locally on overlapping blocks that partition the domain and are then composed together to form a single turbulence field. Please see the final section of the original DRD paper for a more in-depth discussion. Plotting utilities facilitated by <code class="docutils literal notranslate"><span class="pre">Plotly</span></code> are provided.</p>
 </section>
+<section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h1>
+<p>The following sections will guide you through the installtion of DRDMannTurb and its dependencies. The following instructions should work on any operating system (OS) that is supported by <a class="reference external" href="https://docs.conda.io/projects/conda/en/stable/user-guide/getting-started.html">Anaconda</a>, including <strong>Windows</strong>, <strong>macOS</strong>, and <strong>Linux</strong>.</p>
+<ol class="arabic">
+<li><p>Clone DRDMannTurb from its <a class="reference external" href="https://github.com/METHODS-Group/DRDMannTurb">GitHub repository</a>.
+Enter the directory and check out the branch of your choice.
+The latest development version will be available under the branch <code class="docutils literal notranslate"><span class="pre">develop</span></code>.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/METHODS-Group/DRDMannTurb.git
+<span class="nb">cd</span><span class="w"> </span>DRDMannTurb
+git<span class="w"> </span>checkout<span class="w"> </span>main
+</pre></div>
+</div>
+</li>
+<li><p>Create an Anaconda environment called <code class="docutils literal notranslate"><span class="pre">drdmannturb_env</span></code> for installing DRDMannTurb.
+Use the default environment specs in <code class="docutils literal notranslate"><span class="pre">env_drdmannturb.yml</span></code> to create it.
+Then activate the environment:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>drdmannturb_env<span class="w"> </span>-f<span class="w"> </span>requirements/env_drdmannturb.yml
+conda<span class="w"> </span>activate<span class="w"> </span>drdmannturb_env
+</pre></div>
+</div>
+</li>
+<li><p>Install the local DRDMannTurb source files as a Python package using <code class="docutils literal notranslate"><span class="pre">pip</span></code> in the root directory:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>./
+</pre></div>
+</div>
+</li>
+</ol>
 </section>
 
 
@@ -414,9 +442,12 @@ document.write(`
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#spectra-fitting">Spectra Fitting</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#field-generation">Field Generation</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Getting Started</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#spectra-fitting">Spectra Fitting</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#field-generation">Field Generation</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#installation">Installation</a></li>
 </ul>
+
   </nav></div>
 
   <div class="sidebar-secondary-item">

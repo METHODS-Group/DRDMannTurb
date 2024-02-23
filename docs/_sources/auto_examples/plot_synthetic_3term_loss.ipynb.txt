@@ -22,7 +22,7 @@
       },
       "outputs": [],
       "source": [
-        "import torch\nimport torch.nn as nn\n\nfrom drdmannturb.parameters import (\n    LossParameters,\n    NNParameters,\n    PhysicalParameters,\n    ProblemParameters,\n)\nfrom drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\n# v2: torch.set_default_device('cuda:0')\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")\n\n# Scales associated with Kaimal spectrum\nL = 0.59\nGamma = 3.9\nsigma = 3.2\n\nUref = 21.0  # reference velocity\nzref = 1  # reference height\n\ndomain = torch.logspace(-1, 2, 20)"
+        "import torch\nimport torch.nn as nn\n\nfrom drdmannturb.parameters import (\n    LossParameters,\n    NNParameters,\n    PhysicalParameters,\n    ProblemParameters,\n)\nfrom drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\n# v2: torch.set_default_device('cuda:0')\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")\n\n# Scales associated with Kaimal spectrum\nL = 0.59  # length scale\nGamma = 3.9  # time scale\nsigma = 3.2  # energy spectrum scale\n\nUref = 21.0  # reference velocity\nzref = 1  # reference height\n\ndomain = torch.logspace(-1, 2, 20)"
       ]
     },
     {
@@ -47,7 +47,7 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "In the following cell, we construct our $k_1$ data points grid and\ngenerate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.\nIt is worth noting that the second element of each tuple in ``DataPoints`` is the\ncorresponding reference height, which we have chosen to be uniformly $1$.\n\n"
+        "In the following cell, we construct our $k_1$ data points grid and\ngenerate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.\nIt is worth noting that the second element of each tuple in ``DataPoints`` is the\ncorresponding reference height, which we have chosen to be uniformly `zref`.\n\n"
       ]
     },
     {
@@ -58,7 +58,7 @@
       },
       "outputs": [],
       "source": [
-        "k1_data_pts = domain\nDataPoints = [(k1, zref) for k1 in k1_data_pts]\n\nData = OnePointSpectraDataGenerator(data_points=DataPoints).Data"
+        "Data = OnePointSpectraDataGenerator(zref=zref, data_points=domain).Data"
       ]
     },
     {
@@ -76,7 +76,7 @@
       },
       "outputs": [],
       "source": [
-        "optimal_parameters = pb.calibrate(data=Data)"
+        "optimal_parameters = pb.calibrate(data=Data)\n\npb.print_calibrated_params()"
       ]
     },
     {

@@ -56,7 +56,7 @@ The type of eddy lifetime function :math:`\tau` to use, its form, and whether or
 
     .. math::
 
-        \tau^{\mathrm{IEC}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}
+        \tau^{\mathrm{Mann}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}
 
     .. note:: 
         This is a CPU-bound function since the hypergeometric function has no readily use-able CUDA implementation, which considerably impacts performance. Consider using an approximation to this function.

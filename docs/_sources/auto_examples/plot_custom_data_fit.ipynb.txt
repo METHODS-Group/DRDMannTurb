@@ -29,7 +29,7 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "## Setting Physical Parameters\nHere, we define our charateristic scales $L, \\Gamma, \\sigma$, the\nlog-scale domain, and the reference height `zref` and velocity `Uref`.\n\n"
+        "## Setting Physical Parameters\nHere, we define our characteristic scales $L, \\Gamma, \\sigma$, the\nlog-scale domain, and the reference height `zref` and velocity `Uref`.\n\n"
       ]
     },
     {
@@ -40,7 +40,7 @@
       },
       "outputs": [],
       "source": [
-        "domain = torch.logspace(-1, 2, 20)\n\nL = 70\nGAMMA = 3.7\nSIGMA = 0.04\n\nUref = 21\nzref = 1"
+        "domain = torch.logspace(-1, 3, 40)\n\nL = 70  # length scale\nGAMMA = 3.7  # time scale\nSIGMA = 0.04  # energy spectrum scale\n\nUref = 21  # reference velocity\nzref = 1  # reference height"
       ]
     },
     {
@@ -65,7 +65,7 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "## Data from File\nThe data are provided in a CSV format with the first column determining the frequency domain, which must be non-dimensionalized by the reference velocity.\nThe different spectra are provided in the order ``uu, vv, ww, uw`` where the last is the u-w cospectra (the convention for 3D velocity vector components being u, v, w for x, y, z).\n\n"
+        "## Data from File\nThe data are provided in a CSV format with the first column determining the frequency domain, which must be non-dimensionalized by the reference velocity.\nThe different spectra are provided in the order ``uu, vv, ww, uw`` where the last is the u-w cospectra (the convention for 3D velocity vector components being u, v, w for x, y, z).\nThe ``k1_data_points`` key word argument is needed here to define the domain over which the spectra are defined.\n\n"
       ]
     },
     {
@@ -76,7 +76,7 @@
       },
       "outputs": [],
       "source": [
-        "CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=\",\"))\nf = CustomData[:, 0]\nk1_data_pts = 2 * torch.pi * f / Uref\nDataPoints = [(k1, zref) for k1 in k1_data_pts]\nData = OnePointSpectraDataGenerator(\n    data_points=DataPoints,\n    data_type=DataType.CUSTOM,\n    spectra_file=spectra_file,\n    k1_data_points=k1_data_pts.data.cpu().numpy(),\n).Data"
+        "CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=\",\"))\nf = CustomData[:, 0]\nk1_data_pts = 2 * torch.pi * f / Uref\nData = OnePointSpectraDataGenerator(\n    zref=zref,\n    data_points=k1_data_pts,\n    data_type=DataType.CUSTOM,\n    spectra_file=spectra_file,\n    k1_data_points=k1_data_pts.data.cpu().numpy(),\n).Data"
       ]
     },
     {
@@ -94,7 +94,7 @@
       },
       "outputs": [],
       "source": [
-        "optimal_parameters = pb.calibrate(data=Data)"
+        "optimal_parameters = pb.calibrate(data=Data)\n\npb.print_calibrated_params()"
       ]
     },
     {

@@ -391,9 +391,9 @@ document.write(`
     <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="s2">&quot;torch.cuda.FloatTensor&quot;</span><span class="p">)</span>
 
 <span class="c1"># Scales associated with Kaimal spectrum</span>
-<span class="n">L</span> <span class="o">=</span> <span class="mf">0.59</span>
-<span class="n">Gamma</span> <span class="o">=</span> <span class="mf">3.9</span>
-<span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.2</span>
+<span class="n">L</span> <span class="o">=</span> <span class="mf">0.59</span>  <span class="c1"># length scale</span>
+<span class="n">Gamma</span> <span class="o">=</span> <span class="mf">3.9</span>  <span class="c1"># time scale</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.2</span>  <span class="c1"># energy spectrum scale</span>
 
 <span class="n">Uref</span> <span class="o">=</span> <span class="mf">21.0</span>  <span class="c1"># reference velocity</span>
 <span class="n">zref</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># reference height</span>
@@ -423,15 +423,12 @@ document.write(`
 </pre></div>
 </div>
 </div>
-<p>In the following cell, we construct our <span class="math notranslate nohighlight">\(k_1\)</span> data points grid and generate the values. <code class="docutils literal notranslate"><span class="pre">Data</span></code> will be a tuple <code class="docutils literal notranslate"><span class="pre">(&lt;data</span> <span class="pre">points&gt;,</span> <span class="pre">&lt;data</span> <span class="pre">values&gt;)</span></code>. It is worth noting that the second element of each tuple in <code class="docutils literal notranslate"><span class="pre">DataPoints</span></code> is the corresponding reference height, which we have chosen to be uniformly <span class="math notranslate nohighlight">\(1\)</span>.</p>
+<p>In the following cell, we construct our <span class="math notranslate nohighlight">\(k_1\)</span> data points grid and generate the values. <code class="docutils literal notranslate"><span class="pre">Data</span></code> will be a tuple <code class="docutils literal notranslate"><span class="pre">(&lt;data</span> <span class="pre">points&gt;,</span> <span class="pre">&lt;data</span> <span class="pre">values&gt;)</span></code>. It is worth noting that the second element of each tuple in <code class="docutils literal notranslate"><span class="pre">DataPoints</span></code> is the corresponding reference height, which we have chosen to be uniformly <code class="docutils literal notranslate"><span class="pre">zref</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">k1_data_pts</span> <span class="o">=</span> <span class="n">domain</span>
-<span class="n">DataPoints</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k1</span><span class="p">,</span> <span class="n">zref</span><span class="p">)</span> <span class="k">for</span> <span class="n">k1</span> <span class="ow">in</span> <span class="n">k1_data_pts</span><span class="p">]</span>
-
-<span class="n">Data</span> <span class="o">=</span> <span class="n">OnePointSpectraDataGenerator</span><span class="p">(</span><span class="n">data_points</span><span class="o">=</span><span class="n">DataPoints</span><span class="p">)</span><span class="o">.</span><span class="n">Data</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Data</span> <span class="o">=</span> <span class="n">OnePointSpectraDataGenerator</span><span class="p">(</span><span class="n">zref</span><span class="o">=</span><span class="n">zref</span><span class="p">,</span> <span class="n">data_points</span><span class="o">=</span><span class="n">domain</span><span class="p">)</span><span class="o">.</span><span class="n">Data</span>
 </pre></div>
 </div>
 </div>
@@ -444,6 +441,8 @@ document.write(`
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">optimal_parameters</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">Data</span><span class="p">)</span>
+
+<span class="n">pb</span><span class="o">.</span><span class="n">print_calibrated_params</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -453,7 +452,7 @@ document.write(`
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 ========================================
-Initial loss: 0.09308508513972936
+Initial loss: 0.048342988060472554
 ========================================
 </pre></div></div>
 </div>
@@ -462,7 +461,7 @@ Initial loss: 0.09308508513972936
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████████████████████████████████████████████████| 5/5 [00:12&lt;00:00,  2.56s/it]
+100%|███████████████████████████████████████████████████████████████████████████████████████████| 5/5 [00:12&lt;00:00,  2.55s/it]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -471,7 +470,12 @@ Initial loss: 0.09308508513972936
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 ========================================
-Spectra fitting concluded with final loss: 0.00652196201289829
+Spectra fitting concluded with final loss: 0.006719365444343754
+========================================
+<span class="ansi-green-intense-fg">Optimal calibrated L     :   0.6268 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated Gamma :   3.4610 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated sigma :   3.0053 </span>
+========================================
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">

@@ -366,7 +366,7 @@ document.write(`
 <h1>Pure Mann Model Fit<a class="headerlink" href="#Pure-Mann-Model-Fit" title="Link to this heading">#</a></h1>
 <p>This example demonstrates the a simple configuration of <code class="docutils literal notranslate"><span class="pre">DRDMannTurb</span></code> to spectra fitting while using the Mann model as the eddy lifetime function under the Kaimal one-point spectra.</p>
 <p>For reference, the full Mann eddy lifetime function is given by</p>
-<p><span class="math">\begin{align}\tau^{\mathrm{IEC}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}\end{align}</span></p>
+<p><span class="math">\begin{align}\tau^{\mathrm{Mann}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}\end{align}</span></p>
 <p>and the Kaimal one-point spectra. This set of models has classically been most useful for flat homogeneous terrains.</p>
 <p>Also, the resulting fitting can be used directly to generate a 3D Mann fluctuation field, as demonstrated in our wind generation example.</p>
 <section id="Import-packages">
@@ -396,20 +396,31 @@ document.write(`
 </div>
 </div>
 <p>Set up physical parameters and domain associated with the Kaimal spectrum. We perform the spectra fitting over the <span class="math notranslate nohighlight">\(k_1\)</span> space <span class="math notranslate nohighlight">\([10^{{-1}}, 10^2]\)</span> with 20 points.</p>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Scales associated with Kaimal spectrum</span>
-<span class="n">L</span> <span class="o">=</span> <span class="mf">0.59</span>  <span class="c1"># length scale</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">zref</span> <span class="o">=</span> <span class="mi">40</span>  <span class="c1"># reference height</span>
+<span class="n">ustar</span> <span class="o">=</span> <span class="mf">1.773</span>  <span class="c1"># friction velocity</span>
+
+<span class="c1"># Scales associated with Kaimal spectrum</span>
+<span class="n">L</span> <span class="o">=</span> <span class="mf">0.59</span> <span class="o">*</span> <span class="n">zref</span>  <span class="c1"># length scale</span>
 <span class="n">Gamma</span> <span class="o">=</span> <span class="mf">3.9</span>  <span class="c1"># time scale</span>
-<span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.2</span>  <span class="c1"># energy spectrum scale</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.2</span> <span class="o">*</span> <span class="n">ustar</span><span class="o">**</span><span class="mf">2.0</span> <span class="o">/</span> <span class="n">zref</span> <span class="o">**</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">)</span>  <span class="c1"># energy spectrum scale</span>
 
-<span class="n">zref</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># reference height</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Physical Parameters: </span><span class="si">{</span><span class="n">L</span><span class="p">,</span><span class="n">Gamma</span><span class="p">,</span><span class="n">sigma</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-<span class="n">domain</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+<span class="n">k1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span> <span class="o">/</span> <span class="n">zref</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Physical Parameters: (23.599999999999998, 3.9, 0.8600574364289042)
+</pre></div></div>
 </div>
 </section>
 <section id="CalibrationProblem-Construction">
@@ -424,7 +435,9 @@ Finally, in this scenario the regression occurs as an MSE fit to the spectra, wh
     <span class="n">nn_params</span><span class="o">=</span><span class="n">NNParameters</span><span class="p">(),</span>
     <span class="n">prob_params</span><span class="o">=</span><span class="n">ProblemParameters</span><span class="p">(</span><span class="n">eddy_lifetime</span><span class="o">=</span><span class="n">EddyLifetimeType</span><span class="o">.</span><span class="n">MANN</span><span class="p">,</span> <span class="n">nepochs</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
     <span class="n">loss_params</span><span class="o">=</span><span class="n">LossParameters</span><span class="p">(),</span>
-    <span class="n">phys_params</span><span class="o">=</span><span class="n">PhysicalParameters</span><span class="p">(</span><span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">Gamma</span><span class="o">=</span><span class="n">Gamma</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">),</span>
+    <span class="n">phys_params</span><span class="o">=</span><span class="n">PhysicalParameters</span><span class="p">(</span>
+        <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">Gamma</span><span class="o">=</span><span class="n">Gamma</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span> <span class="n">ustar</span><span class="o">=</span><span class="n">ustar</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="n">k1</span>
+    <span class="p">),</span>
     <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
@@ -440,21 +453,20 @@ Finally, in this scenario the regression occurs as an MSE fit to the spectra, wh
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">k1_data_pts</span> <span class="o">=</span> <span class="n">domain</span>
-<span class="n">DataPoints</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k1</span><span class="p">,</span> <span class="n">zref</span><span class="p">)</span> <span class="k">for</span> <span class="n">k1</span> <span class="ow">in</span> <span class="n">k1_data_pts</span><span class="p">]</span>
-
-<span class="n">Data</span> <span class="o">=</span> <span class="n">OnePointSpectraDataGenerator</span><span class="p">(</span><span class="n">data_points</span><span class="o">=</span><span class="n">DataPoints</span><span class="p">)</span><span class="o">.</span><span class="n">Data</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Data</span> <span class="o">=</span> <span class="n">OnePointSpectraDataGenerator</span><span class="p">(</span><span class="n">data_points</span><span class="o">=</span><span class="n">k1</span><span class="p">,</span> <span class="n">zref</span><span class="o">=</span><span class="n">zref</span><span class="p">,</span> <span class="n">ustar</span><span class="o">=</span><span class="n">ustar</span><span class="p">)</span><span class="o">.</span><span class="n">Data</span>
 </pre></div>
 </div>
 </div>
 <p>The model is now “calibrated” to the provided spectra from the synthetic data generated from <code class="docutils literal notranslate"><span class="pre">OnePointSpectraDataGenerator</span></code>.</p>
-<p>The Mann eddy lifetime function relies on evaluating a hypergeometric function, which only has a CPU implementation through <code class="docutils literal notranslate"><span class="pre">Scipy</span></code>. When using this function with a neural network task, consider either learning this function as well or using a linear approximation from your data that provides a GPU kernel for fast evaluation of a similar model. See example [??].</p>
+<p>The Mann eddy lifetime function relies on evaluating a hypergeometric function, which only has a CPU implementation through <code class="docutils literal notranslate"><span class="pre">Scipy</span></code>. When using this function with a neural network task, consider either learning this function as well or using a linear approximation from your data that provides a GPU kernel for fast evaluation of a similar model. See the final example in the collection where a linear regression is used in log-log space to generate this.</p>
 <p>Having the necessary components, the model is “calibrated” (fit) to the provided spectra and we conclude with a plot.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">optimal_parameters</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">Data</span><span class="p">)</span>
+
+<span class="n">pb</span><span class="o">.</span><span class="n">print_calibrated_params</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -464,7 +476,7 @@ Finally, in this scenario the regression occurs as an MSE fit to the spectra, wh
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 ========================================
-Initial loss: 0.09375912098796542
+Initial loss: 0.036969418218857554
 ========================================
 </pre></div></div>
 </div>
@@ -473,7 +485,7 @@ Initial loss: 0.09375912098796542
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████████████████████████████████████████████████| 2/2 [00:07&lt;00:00,  3.61s/it]
+100%|███████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:05&lt;00:00,  2.95s/it]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -482,7 +494,12 @@ Initial loss: 0.09375912098796542
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 ========================================
-Spectra fitting concluded with final loss: 0.032209544120698506
+Spectra fitting concluded with final loss: 0.025248721189996604
+========================================
+<span class="ansi-green-intense-fg">Optimal calibrated L     :  27.2532 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated Gamma :   3.6762 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated sigma :   0.7988 </span>
+========================================
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -493,7 +510,7 @@ Spectra fitting concluded with final loss: 0.032209544120698506
 
 </pre></div></div>
 </div>
-<p>The following plot shows the best fit to the synthetic Mann data. Notice that the eddy lifetime function is precisely <span class="math notranslate nohighlight">\(\tau^{\mathrm{IEC}}(k)\)</span></p>
+<p>The following plot shows the best fit to the synthetic Mann data. Notice that the eddy lifetime function is precisely <span class="math notranslate nohighlight">\(\tau^{\mathrm{Mann}}(k)\)</span></p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>

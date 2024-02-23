@@ -37,14 +37,14 @@ The first two examples correspond to the experiments presented in `the original 
 
 .. only:: html
 
-  .. image:: /auto_examples/images/thumb/sphx_glr_plot_mann_fit_thumb.png
+  .. image:: /auto_examples/images/thumb/sphx_glr_plot_mann_linear_regression_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_plot_mann_fit.py`
+  :ref:`sphx_glr_auto_examples_plot_mann_linear_regression.py`
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Pure Mann Model Fit</div>
+      <div class="sphx-glr-thumbnail-title">Mann Eddy Lifetime Linear Regression</div>
     </div>
 
 
@@ -54,14 +54,14 @@ The first two examples correspond to the experiments presented in `the original 
 
 .. only:: html
 
-  .. image:: /auto_examples/images/thumb/sphx_glr_plot_mann_linear_regression_thumb.png
+  .. image:: /auto_examples/images/thumb/sphx_glr_plot_mann_fit_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_plot_mann_linear_regression.py`
+  :ref:`sphx_glr_auto_examples_plot_mann_fit.py`
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Mann Eddy Lifetime Linear Regression</div>
+      <div class="sphx-glr-thumbnail-title">Pure Mann Model Fit</div>
     </div>
 
 
@@ -175,8 +175,8 @@ The first two examples correspond to the experiments presented in `the original 
 .. toctree::
    :hidden:
 
-   /auto_examples/plot_mann_fit
    /auto_examples/plot_mann_linear_regression
+   /auto_examples/plot_mann_fit
    /auto_examples/plot_synthetic_3term_loss
    /auto_examples/plot_synthetic_deep_arch
    /auto_examples/plot_custom_data_fit

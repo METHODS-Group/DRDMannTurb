@@ -398,9 +398,9 @@ resulting eddy lifetime functions are usually non-physical.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Scales associated with Kaimal spectrum</span>
-<span class="n">L</span> <span class="o">=</span> <span class="mf">0.59</span>
-<span class="n">Gamma</span> <span class="o">=</span> <span class="mf">3.9</span>
-<span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.2</span>
+<span class="n">L</span> <span class="o">=</span> <span class="mf">0.59</span>  <span class="c1"># length scale</span>
+<span class="n">Gamma</span> <span class="o">=</span> <span class="mf">3.9</span>  <span class="c1"># time scale</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.2</span>  <span class="c1"># energy spectrum scale</span>
 
 <span class="n">Uref</span> <span class="o">=</span> <span class="mf">21.0</span>  <span class="c1"># reference velocity</span>
 <span class="n">zref</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># reference height</span>
@@ -438,15 +438,12 @@ close fit to the eddy lifetime function. Interestingly, learning this parameter 
 </section>
 <section id="Data-Generation">
 <h2>Data Generation<a class="headerlink" href="#Data-Generation" title="Link to this heading">#</a></h2>
-<p>In the following cell, we construct our <span class="math notranslate nohighlight">\(k_1\)</span> data points grid and generate the values. <code class="docutils literal notranslate"><span class="pre">Data</span></code> will be a tuple <code class="docutils literal notranslate"><span class="pre">(&lt;data</span> <span class="pre">points&gt;,</span> <span class="pre">&lt;data</span> <span class="pre">values&gt;)</span></code>. It is worth noting that the second element of each tuple in <code class="docutils literal notranslate"><span class="pre">DataPoints</span></code> is the corresponding reference height, which we have chosen to be uniformly <span class="math notranslate nohighlight">\(1\)</span>.</p>
+<p>In the following cell, we construct our <span class="math notranslate nohighlight">\(k_1\)</span> data points grid and generate the values. <code class="docutils literal notranslate"><span class="pre">Data</span></code> will be a tuple <code class="docutils literal notranslate"><span class="pre">(&lt;data</span> <span class="pre">points&gt;,</span> <span class="pre">&lt;data</span> <span class="pre">values&gt;)</span></code>. It is worth noting that the second element of each tuple in <code class="docutils literal notranslate"><span class="pre">DataPoints</span></code> is the corresponding reference height, which we have chosen to be uniformly <code class="docutils literal notranslate"><span class="pre">zref</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">k1_data_pts</span> <span class="o">=</span> <span class="n">domain</span>
-<span class="n">DataPoints</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k1</span><span class="p">,</span> <span class="n">zref</span><span class="p">)</span> <span class="k">for</span> <span class="n">k1</span> <span class="ow">in</span> <span class="n">k1_data_pts</span><span class="p">]</span>
-
-<span class="n">Data</span> <span class="o">=</span> <span class="n">OnePointSpectraDataGenerator</span><span class="p">(</span><span class="n">data_points</span><span class="o">=</span><span class="n">DataPoints</span><span class="p">)</span><span class="o">.</span><span class="n">Data</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Data</span> <span class="o">=</span> <span class="n">OnePointSpectraDataGenerator</span><span class="p">(</span><span class="n">zref</span><span class="o">=</span><span class="n">zref</span><span class="p">,</span> <span class="n">data_points</span><span class="o">=</span><span class="n">domain</span><span class="p">)</span><span class="o">.</span><span class="n">Data</span>
 </pre></div>
 </div>
 </div>
@@ -459,6 +456,8 @@ close fit to the eddy lifetime function. Interestingly, learning this parameter 
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">optimal_parameters</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">Data</span><span class="p">)</span>
+
+<span class="n">pb</span><span class="o">.</span><span class="n">print_calibrated_params</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -468,7 +467,7 @@ close fit to the eddy lifetime function. Interestingly, learning this parameter 
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 ========================================
-Initial loss: 0.09128584938697676
+Initial loss: 0.04543508293649999
 ========================================
 </pre></div></div>
 </div>
@@ -477,7 +476,7 @@ Initial loss: 0.09128584938697676
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
- 64%|███████████████████████████████████████████████████▊                             | 16/25 [01:10&lt;00:39,  4.39s/it]
+ 72%|████████████████████████████████████████████████████████████████                         | 18/25 [01:18&lt;00:30,  4.34s/it]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -485,9 +484,14 @@ Initial loss: 0.09128584938697676
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Spectra Fitting Concluded with loss below tolerance. Final loss: 0.0009749702264056247
+Spectra Fitting Concluded with loss below tolerance. Final loss: 0.0009522247006185344
 ========================================
-Spectra fitting concluded with final loss: 0.0009749702264056247
+Spectra fitting concluded with final loss: 0.0009522247006185344
+========================================
+<span class="ansi-green-intense-fg">Optimal calibrated L     :   0.5740 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated Gamma :   4.8073 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated sigma :   3.1257 </span>
+========================================
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">

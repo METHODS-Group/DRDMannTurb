@@ -441,15 +441,12 @@ synthetic or real-world data. In normal space, this is a function of the form :m
 </section>
 <section id="Data-Generation">
 <h2>Data Generation<a class="headerlink" href="#Data-Generation" title="Link to this heading">#</a></h2>
-<p>In the following cell, we construct our <span class="math notranslate nohighlight">\(k_1\)</span> data points grid and generate the values. <code class="docutils literal notranslate"><span class="pre">Data</span></code> will be a tuple <code class="docutils literal notranslate"><span class="pre">(&lt;data</span> <span class="pre">points&gt;,</span> <span class="pre">&lt;data</span> <span class="pre">values&gt;)</span></code>. It is worth noting that the second element of each tuple in <code class="docutils literal notranslate"><span class="pre">DataPoints</span></code> is the corresponding reference height, which we have chosen to be uniformly <span class="math notranslate nohighlight">\(1\)</span>.</p>
+<p>In the following cell, we construct our <span class="math notranslate nohighlight">\(k_1\)</span> data points grid and generate the values. <code class="docutils literal notranslate"><span class="pre">Data</span></code> will be a tuple <code class="docutils literal notranslate"><span class="pre">(&lt;data</span> <span class="pre">points&gt;,</span> <span class="pre">&lt;data</span> <span class="pre">values&gt;)</span></code>. It is worth noting that the second element of each tuple in <code class="docutils literal notranslate"><span class="pre">DataPoints</span></code> is the corresponding reference height, which we have chosen to be uniformly <code class="docutils literal notranslate"><span class="pre">zref</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">k1_data_pts</span> <span class="o">=</span> <span class="n">domain</span>
-<span class="n">DataPoints</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k1</span><span class="p">,</span> <span class="n">zref</span><span class="p">)</span> <span class="k">for</span> <span class="n">k1</span> <span class="ow">in</span> <span class="n">k1_data_pts</span><span class="p">]</span>
-
-<span class="n">Data</span> <span class="o">=</span> <span class="n">OnePointSpectraDataGenerator</span><span class="p">(</span><span class="n">data_points</span><span class="o">=</span><span class="n">DataPoints</span><span class="p">)</span><span class="o">.</span><span class="n">Data</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Data</span> <span class="o">=</span> <span class="n">OnePointSpectraDataGenerator</span><span class="p">(</span><span class="n">zref</span><span class="o">=</span><span class="n">zref</span><span class="p">,</span> <span class="n">data_points</span><span class="o">=</span><span class="n">domain</span><span class="p">)</span><span class="o">.</span><span class="n">Data</span>
 </pre></div>
 </div>
 </div>
@@ -462,6 +459,8 @@ synthetic or real-world data. In normal space, this is a function of the form :m
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">optimal_parameters</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">Data</span><span class="p">)</span>
+
+<span class="n">pb</span><span class="o">.</span><span class="n">print_calibrated_params</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -474,7 +473,7 @@ synthetic or real-world data. In normal space, this is a function of the form :m
 Mann Linear Approximation R2 Score in log-log space: 0.9920140661948813
 ========================================
 ========================================
-Initial loss: 1.881223142108241
+Initial loss: 1.670480683735509
 ========================================
 </pre></div></div>
 </div>
@@ -483,7 +482,7 @@ Initial loss: 1.881223142108241
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|█████████████████████████████████████████████████████████████████████████████████| 10/10 [00:02&lt;00:00,  3.65it/s]
+100%|█████████████████████████████████████████████████████████████████████████████████████████| 10/10 [00:02&lt;00:00,  3.50it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -492,7 +491,12 @@ Initial loss: 1.881223142108241
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 ========================================
-Spectra fitting concluded with final loss: 0.058471332971692394
+Spectra fitting concluded with final loss: 0.04383332913789145
+========================================
+<span class="ansi-green-intense-fg">Optimal calibrated L     :   0.5803 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated Gamma :   0.4354 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated sigma :   3.2239 </span>
+========================================
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">

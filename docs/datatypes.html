@@ -472,7 +472,7 @@ document.write(`
 <li><p><code class="docutils literal notranslate"><span class="pre">EddyLifetimeType.MANN</span></code>, which is the Mann function determined by</p>
 <blockquote>
 <div><div class="math notranslate nohighlight">
-\[\tau^{\mathrm{IEC}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}\]</div>
+\[\tau^{\mathrm{Mann}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}\]</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This is a CPU-bound function since the hypergeometric function has no readily use-able CUDA implementation, which considerably impacts performance. Consider using an approximation to this function.</p>
