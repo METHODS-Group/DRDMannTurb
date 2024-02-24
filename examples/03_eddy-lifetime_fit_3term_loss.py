@@ -4,9 +4,9 @@ Adding Regularization and Penalty Terms to Fitting
 ==================================================
 
 This example is nearly identical to the Synthetic Data fit, however we
-use a more sophisticated loss function, introducing an additional first-order 
-penalty term. The previous synthetic fit relied only on MSE loss and a second-order penalty. 
-All other models remain the same: Mann turbulence under the Kaimal spectra. 
+use a more sophisticated loss function, introducing an additional first-order
+penalty term. The previous synthetic fit relied only on MSE loss and a second-order penalty.
+All other models remain the same: Mann turbulence under the Kaimal spectra.
 
 
 See again the `original DRD paper <https://arxiv.org/abs/2107.11046>`_.
@@ -36,15 +36,17 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
+zref = 40  # reference height
+ustar = 1.773  # friction velocity
+
 # Scales associated with Kaimal spectrum
-L = 0.59  # length scale
+L = 0.59 * zref  # length scale
 Gamma = 3.9  # time scale
-sigma = 3.2  # energy spectrum scale
+sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # energy spectrum scale
 
-Uref = 21.0  # reference velocity
-zref = 1  # reference height
+print(f"Physical Parameters: {L,Gamma,sigma}")
 
-domain = torch.logspace(-1, 2, 20)
+k1 = torch.logspace(-1, 2, 20) / zref
 
 ##############################################################################
 # %%
@@ -63,7 +65,9 @@ pb = CalibrationProblem(
     ),
     prob_params=ProblemParameters(nepochs=5),
     loss_params=LossParameters(alpha_pen2=1.0, alpha_pen1=1.0e-5, beta_reg=2e-4),
-    phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, domain=domain),
+    phys_params=PhysicalParameters(
+        L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1
+    ),
     logging_directory="runs/synthetic_3term",
     device=device,
 )
@@ -73,7 +77,7 @@ pb = CalibrationProblem(
 # generate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.
 # It is worth noting that the second element of each tuple in ``DataPoints`` is the
 # corresponding reference height, which we have chosen to be uniformly `zref`.
-Data = OnePointSpectraDataGenerator(zref=zref, data_points=domain).Data
+Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
 
 ##############################################################################
 # Calibration

@@ -3,8 +3,8 @@ r"""
 Custom Data Fit
 ===============
 
-In this example, we use ``drdmannturb`` to fit a simple neural network model to real-world data without any preprocessing. This involves data that are observed in the real world, specifically near a North Sea wind turbine farm. The physical parameters are determined from those measurements. Additionally, the :math:`\nu` parameter is also learned. 
-is learned for the rational function for :math:`\tau` given by 
+In this example, we use ``drdmannturb`` to fit a simple neural network model to real-world data without any preprocessing. This involves data that are observed in the real world, specifically near a North Sea wind turbine farm. The physical parameters are determined from those measurements. Additionally, the :math:`\nu` parameter is also learned.
+is learned for the rational function for :math:`\tau` given by
 
 .. math::
         \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}).
@@ -42,7 +42,7 @@ if torch.cuda.is_available():
 
 
 spectra_file = (
-    path / "../docs/source/data/Spectra.dat"
+    path / "./inputs/Spectra.dat"
     if path.name == "examples"
     else path / "../data/Spectra.dat"
 )

@@ -1,6 +1,6 @@
 r"""
 ===================
-Pure Mann Model Fit
+Basic Mann Model Fit
 ===================
 
 This example demonstrates the a simple configuration of ``DRDMannTurb`` to spectra fitting while using the Mann model as the eddy lifetime function under the Kaimal one-point spectra.

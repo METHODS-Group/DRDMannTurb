@@ -218,7 +218,10 @@ class GenerateFluctuationField:
         self.noise = None
         self.total_fluctuation = np.zeros(wind_shape)
 
-        self.log_law = lambda z, z_0, u_ast: u_ast * np.log(z / z_0 + 1.0) / 0.41
+        self.log_law = (
+            lambda z, z0, zref, uref: uref * np.log(z / z0) / np.log(zref / z0)
+        )
+        self.power_law = lambda z, zref, Uref, a: Uref * (z / zref) ** a
 
         ### Random field object
 
@@ -289,7 +292,13 @@ class GenerateFluctuationField:
         return wind
 
     def _normalize_block(
-        self, curr_block: np.ndarray, roughness_height: float, friction_velocity: float
+        self,
+        curr_block: np.ndarray,
+        zref: float,
+        uref: float,
+        z0: float,
+        plexp: float,
+        windprofiletype: str,
     ) -> np.ndarray:
         r"""Normalizes the generated field by the logarithmic profile
 
@@ -325,7 +334,10 @@ class GenerateFluctuationField:
         z_space = np.linspace(
             0.0, self.grid_dimensions[2], 2 ** (self.grid_levels[2]) + 1
         )
-        mean_profile_z = self.log_law(z_space, roughness_height, friction_velocity)
+        if windprofiletype == "LOG":
+            mean_profile_z = self.log_law(z_space, z0, zref, uref)
+        else:
+            mean_profile_z = self.power_law(z_space, zref, uref, plexp)
 
         mean_profile = np.zeros_like(curr_block)
         mean_profile[..., 0] = np.tile(
@@ -335,7 +347,13 @@ class GenerateFluctuationField:
         return curr_block + mean_profile
 
     def generate(
-        self, num_blocks: int, roughness_height: float, friction_velocity: float
+        self,
+        num_blocks: int,
+        zref: float,
+        uref: float,
+        z0: float,
+        plexp: float,
+        windprofiletype: str,
     ) -> np.ndarray:
         """Generates the full fluctuation field in blocks. The resulting field is stored as the ``total_fluctuation`` field of this object, allowing for all metadata of the object to be stored safely with the fluctuation field, and also reducing data duplication for post-processing; all operations can be performed on this public variable.
 
@@ -363,7 +381,7 @@ class GenerateFluctuationField:
             t_block = self._generate_block()
 
             normed_block = self._normalize_block(
-                t_block, roughness_height, friction_velocity
+                t_block, zref, uref, z0, plexp, windprofiletype
             )
 
             self.total_fluctuation = np.concatenate(
@@ -373,7 +391,7 @@ class GenerateFluctuationField:
         return self.total_fluctuation
 
     def normalize(
-        self, roughness_height: float, friction_velocity: float
+        self, zref: float, uref: float, z0: float, plexp: float, windprofiletype: str
     ) -> np.ndarray:
         r"""Normalizes the generated field by the logarithmic profile
 
@@ -409,7 +427,11 @@ class GenerateFluctuationField:
         z_space = np.linspace(
             0.0, self.grid_dimensions[2], 2 ** (self.grid_levels[2]) + 1
         )
-        mean_profile_z = self.log_law(z_space, roughness_height, friction_velocity)
+
+        if self.mean_profile_law == "LOG":
+            mean_profile_z = self.log_law(z_space, z0, zref, uref)
+        else:
+            mean_profile_z = self.power_law(z_space, zref, uref, plexp)
 
         mean_profile = np.zeros_like(self.total_fluctuation)
         mean_profile[..., 0] = np.tile(

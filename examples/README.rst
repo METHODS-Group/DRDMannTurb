@@ -9,16 +9,20 @@ The first two examples correspond to the experiments presented in `the original 
     :numbered:
     :caption: Contents:
     
-    plot_synthetic_fit.py
+    01_basic_mann_parameters_fit.py 
 
-    plot_synthetic_deep_arch.py
+    02_eddy-lifetime_fit.py
 
-    plot_synthetic_3term_loss.py
+    03_eddy-lifetime_fit_3term_loss.py
 
-    plot_interpolating_and_fitting.py
+    04_eddy-lifetime_fit_gelu.py
 
-    plot_custom_data_fit.py
+    05_custorm_noisy_data_fit.py
 
-    plot_wind_generation.py
+    06_custorm_data_interpolate_and_fit.py
+
+    07_mann_linear_regression.py
+
+    08_mann_box_generation_IEC.py
 
     
