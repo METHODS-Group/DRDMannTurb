@@ -48,23 +48,23 @@ z0 = 0.02
 zref = 90
 uref = 11.4
 ustar = uref * 0.41 / np.log(zref / z0)
-plexp = 0.2
-windprofiletype = "PL"  # "LOG"
+plexp = 0.2  # power law exponent
+windprofiletype = "PL"  # choosing power law, use log with "LOG" here instead
 
 L = 0.593 * zref
 Gamma = 3.89
 sigma = 0.052
 
-Lx = 7200
-Ly = 128
-Lz = 128
+Lx = 720  # 7200
+Ly = 64
+Lz = 64
 
-nBlocks = 4
+nBlocks = 3
 grid_dimensions = np.array([Lx / 4, Ly, Lz])
 
-grid_levels = np.array([10, 5, 5])
+grid_levels = np.array([6, 4, 4])
 
-seed = None  # 9000
+seed = None
 
 #######################################################################################
 # Generating Fluctuation Field from Mann Model
@@ -97,11 +97,11 @@ fluctuation_field_mann = gen_mann.generate(
 #######################################################################################
 # Scaling of the field (normalization)
 # ------------------------------------
-# WThe generated fluctuation field is normalized and scaled by the logarithmic profile
+# The generated fluctuation field is normalized and scaled by the power law profile
 #
-# .. math:: \left\langle U_1(z)\right\rangle=\frac{u_*}{\kappa} \ln \left(\frac{z}{z_0}+1\right)
+# .. math:: \left\langle U_1(z)\right\rangle= u_* \left( \frac{z}{z_{\text{ref}}} \right)^\alpha
 #
-# where :math:`u_*` is the friction velocity and :math:`z_0` is the roughness height.
+# where :math:`u_*` is the friction velocity and :math:`z_{\text{ref}}` is the reference height.
 #
 
 spacing = tuple(grid_dimensions / (2.0**grid_levels + 1))
@@ -114,7 +114,7 @@ fig_magnitude_mann = plot_velocity_magnitude(
 # may be useful for quick visualization, we recommend using Paraview to visualize higher resolution output. We will cover
 # saving to a portable VTK format further in this example.
 
-fig_magnitude_mann  # .show("browser")
+fig_magnitude_mann  # .show("browser"), or for specific browser, use .show("firefox")
 
 
 #######################################################################################

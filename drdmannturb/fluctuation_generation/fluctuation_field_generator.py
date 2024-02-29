@@ -219,7 +219,7 @@ class GenerateFluctuationField:
         self.total_fluctuation = np.zeros(wind_shape)
 
         self.log_law = (
-            lambda z, z0, zref, uref: uref * np.log(z / z0) / np.log(zref / z0)
+            lambda z, z0, zref, uref: uref * np.log(z / z0 + 1.0) / np.log(zref / z0)
         )
         self.power_law = lambda z, zref, Uref, a: Uref * (z / zref) ** a
 
@@ -297,31 +297,47 @@ class GenerateFluctuationField:
         zref: float,
         uref: float,
         z0: float,
-        plexp: float,
         windprofiletype: str,
+        plexp: Optional[float] = None,
     ) -> np.ndarray:
-        r"""Normalizes the generated field by the logarithmic profile
-
-        .. math ::
-
-            \left\langle U_1(z)\right\rangle=\frac{u_{\ast}}{\kappa} \ln \left(\frac{z}{z_0}+1\right)
-
-
-        where :math:`u_{\ast}` is the friction velocity and :math:`z_0` is the roughness height. More information on this normalization can be found in
-
-        J. JCSS, “Probabilistic model code,” Joint Committee on Structural Safety (2001).
+        r"""Normalizes an individual block of wind under the given profile and physical parameters.
 
         Parameters
         ----------
-        roughness_height : float
-            Roughness height :math:`z_0`.
-        friction_velocity : float
-            Ground friction velocity :math:`u_{\ast}`.
+        curr_block : np.ndarray
+            _description_
+
+        zref : float
+            Reference height.
+        uref : float
+            Reference velocity.
+        z0 : float
+            Roughness height.
+        windprofiletype : str
+            Type of wind profile by which to normalize, either ``"LOG"`` for logarithmic scaling or ``"PL"`` for power law scaling: for ``"LOG"``,
+
+            .. math::
+                \left\langle U_1(z)\right\rangle=\frac{u_*}{\kappa} \ln \left(\frac{z}{z_0}+1\right)
+
+            or for ``"PL"``,
+
+            .. math::
+                \left\langle U_1(z)\right\rangle= u_* \left( \frac{z}{z_{\text{ref}}} \right)^\alpha
+
+            where :math:`u_*` is the friction velocity and :math:`z_{\text{ref}}` is the reference height.
+
+        plexp : Optional[float], optional
+            Power law exponent :math:`\alpha`, by default None.
 
         Returns
         -------
         np.ndarray
             Fluctuation field normalized by the logarithmic profile.
+
+        Raises
+        ------
+        ValueError
+            "No fluctuation field has been generated, call the .generate() method first."
         """
         if not np.any(curr_block):
             raise ValueError(
@@ -352,10 +368,10 @@ class GenerateFluctuationField:
         zref: float,
         uref: float,
         z0: float,
-        plexp: float,
         windprofiletype: str,
+        plexp: Optional[float] = None,
     ) -> np.ndarray:
-        """Generates the full fluctuation field in blocks. The resulting field is stored as the ``total_fluctuation`` field of this object, allowing for all metadata of the object to be stored safely with the fluctuation field, and also reducing data duplication for post-processing; all operations can be performed on this public variable.
+        r"""Generates the full fluctuation field in blocks. The resulting field is stored as the ``total_fluctuation`` field of this object, allowing for all metadata of the object to be stored safely with the fluctuation field, and also reducing data duplication for post-processing; all operations can be performed on this public variable.
 
         .. warning::
             If this method is called twice in the same object, additional fluctuation field blocks will be appended to the field generated from the first call. If this is undesirable behavior, instantiate a new object.
@@ -364,6 +380,27 @@ class GenerateFluctuationField:
         ----------
         num_blocks : int
             Number of blocks to use in fluctuation field generation.
+        zref : float
+            Reference height.
+        uref : float
+            Reference velocity.
+        z0 : float
+            Roughness height.
+        windprofiletype : str
+            Type of wind profile by which to normalize, either ``"LOG"`` for logarithmic scaling or ``"PL"`` for power law scaling: for ``"LOG"``,
+
+            .. math::
+                \left\langle U_1(z)\right\rangle=\frac{u_*}{\kappa} \ln \left(\frac{z}{z_0}+1\right)
+
+            or for ``"PL"``,
+
+            .. math::
+                \left\langle U_1(z)\right\rangle= u_* \left( \frac{z}{z_{\text{ref}}} \right)^\alpha
+
+            where :math:`u_*` is the friction velocity and :math:`z_{\text{ref}}` is the reference height.
+
+        plexp : Optional[float], optional
+            Power law exponent :math:`\alpha`, by default None.
 
         Returns
         -------
@@ -381,7 +418,12 @@ class GenerateFluctuationField:
             t_block = self._generate_block()
 
             normed_block = self._normalize_block(
-                t_block, zref, uref, z0, plexp, windprofiletype
+                curr_block=t_block,
+                zref=zref,
+                uref=uref,
+                z0=z0,
+                windprofiletype=windprofiletype,
+                plexp=plexp,
             )
 
             self.total_fluctuation = np.concatenate(
@@ -389,56 +431,6 @@ class GenerateFluctuationField:
             )
 
         return self.total_fluctuation
-
-    def normalize(
-        self, zref: float, uref: float, z0: float, plexp: float, windprofiletype: str
-    ) -> np.ndarray:
-        r"""Normalizes the generated field by the logarithmic profile
-
-        .. math ::
-
-            \left\langle U_1(z)\right\rangle=\frac{u_{\ast}}{\kappa} \ln \left(\frac{z}{z_0}+1\right)
-
-
-        where :math:`u_{\ast}` is the friction velocity and :math:`z_0` is the roughness height. More information on this normalization can be found in
-
-        J. JCSS, “Probabilistic model code,” Joint Committee on Structural Safety (2001).
-
-        Parameters
-        ----------
-        roughness_height : float
-            Roughness height :math:`z_0`.
-        friction_velocity : float
-            Ground friction velocity :math:`u_{\ast}`.
-
-        Returns
-        -------
-        np.ndarray
-            Fluctuation field normalized by the logarithmic profile.
-        """
-        if not np.any(self.total_fluctuation):
-            raise ValueError(
-                "No fluctuation field has been generated, call the .generate() method first."
-            )
-
-        sd = np.sqrt(np.mean(self.total_fluctuation**2))
-        self.total_fluctuation /= sd
-
-        z_space = np.linspace(
-            0.0, self.grid_dimensions[2], 2 ** (self.grid_levels[2]) + 1
-        )
-
-        if self.mean_profile_law == "LOG":
-            mean_profile_z = self.log_law(z_space, z0, zref, uref)
-        else:
-            mean_profile_z = self.power_law(z_space, zref, uref, plexp)
-
-        mean_profile = np.zeros_like(self.total_fluctuation)
-        mean_profile[..., 0] = np.tile(
-            mean_profile_z.T, (mean_profile.shape[0], mean_profile.shape[1], 1)
-        )
-
-        return self.total_fluctuation + mean_profile
 
     def save_to_vtk(self, filepath: Union[str, Path] = "./"):
         """Saves generated fluctuation field in VTK format to specified filepath.
