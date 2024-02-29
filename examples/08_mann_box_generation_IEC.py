@@ -91,7 +91,7 @@ gen_mann = GenerateFluctuationField(
 )
 
 fluctuation_field_mann = gen_mann.generate(
-    nBlocks, zref, uref, z0, plexp, windprofiletype
+    nBlocks, zref, uref, z0, windprofiletype, plexp
 )
 
 #######################################################################################

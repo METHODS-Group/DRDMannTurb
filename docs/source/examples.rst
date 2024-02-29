@@ -83,3 +83,12 @@ The examples below give introductions to the framework and the utilities provide
 .. raw:: html
 
     <hr>
+
+.. toctree::
+   :maxdepth: 1
+
+   auto_examples/09_drd_box
+
+.. raw:: html
+
+    <hr>
