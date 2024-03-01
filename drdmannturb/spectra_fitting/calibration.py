@@ -115,7 +115,7 @@ class CalibrationProblem:
         if self.init_with_noise:
             self.initialize_parameters_with_noise()
 
-        self.log_dimensional_scales()
+        # self.log_dimensional_scales()
 
         self.vdim = 3
 
@@ -404,8 +404,13 @@ class CalibrationProblem:
         k1_data_pts, y_data0 = self.k1_data_pts, self.kF_data_vals
 
         y = self.OPS(k1_data_pts)
+
+        print(f"OPS output: {y[0]}")
+
         y_data = torch.zeros_like(y)
         y_data[:4, ...] = y_data0.view(4, y_data0.shape[0] // 4)
+
+        print(f"Datagen output: {y_data[0]}")
 
         ########################################
         # Optimizer and Scheduler Initialization

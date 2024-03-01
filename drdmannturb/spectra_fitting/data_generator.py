@@ -329,12 +329,13 @@ class OnePointSpectraDataGenerator:
             The :math:`3 \times 3` matrix with entries determined by the Kaimal one-point spectra. 
         """
         n = 1 / (2 * np.pi) * k1 * self.zref
+        # F = torch.ones([3, 3])
         F = torch.zeros([3, 3])
         F[0, 0] = 52.5 * n / (1 + 33 * n) ** (5 / 3)
         F[1, 1] = 8.5 * n / (1 + 9.5 * n) ** (5 / 3)
         F[2, 2] = 1.05 * n / (1 + 5.3 * n ** (5 / 3))
         F[0, 2] = -7 * n / (1 + 9.6 * n) ** (12.0 / 5.0)
-
+        #
         return F * self.ustar**2
 
     def plot(

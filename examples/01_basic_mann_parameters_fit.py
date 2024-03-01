@@ -17,7 +17,7 @@ Also, the resulting fitting can be used directly to generate a 3D Mann fluctuati
 
 """
 
-#######################################################################################
+###l####################################################################################
 # Import packages
 # ---------------
 #
@@ -44,14 +44,15 @@ if torch.cuda.is_available():
 # Set up physical parameters and domain associated with the Kaimal spectrum. We perform the spectra fitting over the :math:`k_1` space :math:`[10^{{-1}}, 10^2]`
 # with 20 points.
 
-
-zref = 40  # reference height
+zref = 4  # reference height
 ustar = 1.773  # friction velocity
 
 # Scales associated with Kaimal spectrum
-L = 0.59 * zref  # length scale
+L = 0.59 * zref  # 0.59 * zref  # length scale
 Gamma = 3.9  # time scale
-sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # energy spectrum scale
+sigma = (
+    3.2 * ustar**2.0 / zref ** (2.0 / 3.0)
+)  # 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # energy spectrum scale
 
 print(f"Physical Parameters: {L,Gamma,sigma}")
 
@@ -73,7 +74,7 @@ pb = CalibrationProblem(
     prob_params=ProblemParameters(eddy_lifetime=EddyLifetimeType.MANN, nepochs=2),
     loss_params=LossParameters(),
     phys_params=PhysicalParameters(
-        L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1
+        L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1, zref=zref
     ),
     device=device,
 )

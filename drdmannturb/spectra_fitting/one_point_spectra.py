@@ -97,15 +97,19 @@ class OnePointSpectra(nn.Module):
         ), "Characteristic time scale Gamma must be positive."
         assert physical_params.sigma > 0, "Spectrum amplitude sigma must be positive."
 
-        self.logLengthScale = nn.Parameter(
-            torch.tensor(np.log10(physical_params.L), dtype=torch.float64)
-        )
-        self.logTimeScale = nn.Parameter(
-            torch.tensor(np.log10(physical_params.Gamma), dtype=torch.float64)
-        )
-        self.logMagnitude = nn.Parameter(
-            torch.tensor(np.log10(physical_params.sigma), dtype=torch.float64)
-        )
+        self.logLengthScale = nn.Parameter(torch.tensor(0.0, dtype=torch.float64))
+        self.logTimeScale = nn.Parameter(torch.tensor(0.0, dtype=torch.float64))
+        self.logMagnitude = nn.Parameter(torch.tensor(0.0, dtype=torch.float64))
+
+        # self.logLengthScale = nn.Parameter(
+        #     torch.tensor(np.log10(physical_params.L), dtype=torch.float64)
+        # )
+        # self.logTimeScale = nn.Parameter(
+        #     torch.tensor(np.log10(physical_params.Gamma), dtype=torch.float64)
+        # )
+        # self.logMagnitude = nn.Parameter(
+        #     torch.tensor(np.log10(physical_params.sigma), dtype=torch.float64)
+        # )
 
         if self.type_EddyLifetime == EddyLifetimeType.TAUNET:
             self.tauNet = TauNet(
@@ -161,7 +165,7 @@ class OnePointSpectra(nn.Module):
         self.LengthScale = torch.exp(self.logLengthScale)  # NOTE: this is L
         self.TimeScale = torch.exp(self.logTimeScale)  # NOTE: this is gamma
         self.Magnitude = torch.exp(self.logMagnitude)  # NOTE: this is sigma
-        return self.LengthScale.item(), self.TimeScale.item(), self.Magnitude.item()
+        return
 
     def forward(self, k1_input: torch.Tensor) -> torch.Tensor:
         r"""
@@ -186,19 +190,29 @@ class OnePointSpectra(nn.Module):
             Network output
         """
         self.exp_scales()
+
+        print(f"Length scale: {self.LengthScale}")
+        print(f"Magnitude: {self.Magnitude}")
+        print(f"time scale: {self.TimeScale}")
         self.k = torch.stack(
             torch.meshgrid(k1_input, self.grid_k2, self.grid_k3, indexing="ij"), dim=-1
         )
         self.k123 = self.k[..., 0], self.k[..., 1], self.k[..., 2]
-        self.beta = self.EddyLifetime()
-        self.k0 = self.k.clone()
+        self.beta = self.EddyLifetime()  # !!
+        self.k0 = self.k.clone()  # !!
         self.k0[..., 2] = self.k[..., 2] + self.beta * self.k[..., 0]
-        k0L = self.LengthScale * self.k0.norm(dim=-1)
+        k0L = self.LengthScale * self.k0.norm(dim=-1)  # !
         self.E0 = (
             self.Magnitude * self.LengthScale ** (5.0 / 3.0) * VKEnergySpectrum(k0L)
-        )
-        self.Phi = self.PowerSpectra()
+        )  # !!
+        self.Phi = self.PowerSpectra()  # !!
+        # kF = torch.ones_like(torch.stack([k1_input for Phi in self.Phi]))
         kF = torch.stack([k1_input * self.quad23(Phi) for Phi in self.Phi])
+        print("END")
+        print(f"Length scale: {self.LengthScale}")
+        print(f"Magnitude: {self.Magnitude}")
+        print(f"time scale: {self.TimeScale}")
+
         return kF
 
     def init_mann_approximation(self):
@@ -259,8 +273,8 @@ class OnePointSpectra(nn.Module):
         """
         if k is None:
             k = self.k
-        else:
-            self.exp_scales()
+        # else:
+        # self.exp_scales()
 
         kL = self.LengthScale * k.norm(dim=-1)
 
@@ -276,6 +290,10 @@ class OnePointSpectra(nn.Module):
             self.type_EddyLifetime == EddyLifetimeType.MANN
         ):  # uses numpy - can not be backpropagated, also CPU only.
             tau = MannEddyLifetime(kL)
+            print(tau.mean())
+            import sys
+
+            sys.exit(0)
         elif self.type_EddyLifetime == EddyLifetimeType.MANN_APPROX:
             tau = Mann_linear_exponential_approx(
                 kL, self.tau_approx_coeff_, self.tau_approx_intercept_
