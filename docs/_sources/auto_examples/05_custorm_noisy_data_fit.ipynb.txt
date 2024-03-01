@@ -1,0 +1,158 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "\n# Custom Data Fit\n\nIn this example, we use ``drdmannturb`` to fit a simple neural network model to real-world data without any preprocessing. This involves data that are observed in the real world, specifically near a North Sea wind turbine farm. The physical parameters are determined from those measurements. Additionally, the $\\nu$ parameter is also learned.\nis learned for the rational function for $\\tau$ given by\n\n\\begin{align}\\tau(\\boldsymbol{k})=\\frac{T|\\boldsymbol{a}|^{\\nu-\\frac{2}{3}}}{\\left(1+|\\boldsymbol{a}|^2\\right)^{\\nu / 2}}, \\quad \\boldsymbol{a}=\\boldsymbol{a}(\\boldsymbol{k}).\\end{align}\n"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Import packages\n\nFirst, we import the packages needed for this example, obtain the current\nworking directory and dataset path, and choose to use CUDA if it is available.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "from pathlib import Path\n\nimport numpy as np\nimport torch\nimport torch.nn as nn\n\nfrom drdmannturb.enums import DataType\nfrom drdmannturb.parameters import (\n    LossParameters,\n    NNParameters,\n    PhysicalParameters,\n    ProblemParameters,\n)\nfrom drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator\n\npath = Path().resolve()\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\n# v2: torch.set_default_device('cuda:0')\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")\n\n\nspectra_file = (\n    path / \"./inputs/Spectra.dat\"\n    if path.name == \"examples\"\n    else path / \"../data/Spectra.dat\"\n)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Setting Physical Parameters\nHere, we define our characteristic scales $L, \\Gamma, \\sigma$, the\nlog-scale domain, and the reference height `zref` and velocity `Uref`.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "domain = torch.logspace(-1, 3, 40)\n\nL = 70  # length scale\nGAMMA = 3.7  # time scale\nSIGMA = 0.04  # energy spectrum scale\n\nUref = 21  # reference velocity\nzref = 1  # reference height"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## ``CalibrationProblem`` construction\n\nWe'll use a simple neural network consisting of two layers with $10$ neurons each,\nconnected by a ReLU activation function. The parameters determining the network\narchitecture can conveniently be set through the ``NNParameters`` dataclass.\n\nUsing the ``ProblemParameters`` dataclass, we indicate the eddy lifetime function\n$\\tau$ substitution, that we do not intend to learn the exponent $\\nu$,\nand that we would like to train for 10 epochs, or until the tolerance ``tol`` loss (0.001 by default),\nwhichever is reached first.\n\nHaving set our physical parameters above, we need only pass these to the\n``PhysicalParameters`` dataclass just as is done below.\n\nLastly, using the ``LossParameters`` dataclass, we introduce a second-order\nderivative penalty term with weight $\\alpha_2 = 1$ and a\nnetwork parameter regularization term with weight\n$\\beta=10^{-5}$ to our MSE loss function.\n\nNote that $\\nu$ is learned here.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "pb = CalibrationProblem(\n    nn_params=NNParameters(\n        nlayers=2, hidden_layer_sizes=[10, 10], activations=[nn.ReLU(), nn.ReLU()]\n    ),\n    prob_params=ProblemParameters(\n        data_type=DataType.CUSTOM, tol=1e-9, nepochs=5, learn_nu=True\n    ),\n    loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1e-5),\n    phys_params=PhysicalParameters(\n        L=L,\n        Gamma=GAMMA,\n        sigma=SIGMA,\n        domain=domain,\n        Uref=Uref,\n        zref=zref,\n    ),\n    logging_directory=\"runs/custom_data\",\n    device=device,\n)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Data from File\nThe data are provided in a CSV format with the first column determining the frequency domain, which must be non-dimensionalized by the reference velocity.\nThe different spectra are provided in the order ``uu, vv, ww, uw`` where the last is the u-w cospectra (the convention for 3D velocity vector components being u, v, w for x, y, z).\nThe ``k1_data_points`` key word argument is needed here to define the domain over which the spectra are defined.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=\",\"))\nf = CustomData[:, 0]\nk1_data_pts = 2 * torch.pi * f / Uref\nData = OnePointSpectraDataGenerator(\n    zref=zref,\n    data_points=k1_data_pts,\n    data_type=DataType.CUSTOM,\n    spectra_file=spectra_file,\n    k1_data_points=k1_data_pts.data.cpu().numpy(),\n).Data"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Calibration\nNow, we fit our model. ``CalibrationProblem.calibrate`` takes the tuple ``Data``\nwhich we just constructed and performs a typical training loop. The resulting\nfit for $\\nu$ is close to $\\nu \\approx - 1/3$, which can be improved\nwith further training.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "optimal_parameters = pb.calibrate(data=Data)\n\npb.print_calibrated_params()"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Plotting\n``DRDMannTurb`` offers built-in plotting utilities and Tensorboard integration\nwhich make visualizing results and various aspects of training performance\nvery simple.\n\nThe following will plot our fit. As can be seen, the spectra is fairly noisy,\nwhich suggests that a better fit may be obtained from pre-processing the data, which\nwe will explore in the next example.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "pb.plot()"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "This plots out the loss function terms as specified, each multiplied by the\nrespective coefficient hyperparameter. The training logs can be accessed from the logging directory\nwith Tensorboard utilities, but we also provide a simple internal utility for a single\ntraining log plot.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "pb.plot_losses(run_number=0)"
+      ]
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "display_name": "Python 3",
+      "language": "python",
+      "name": "python3"
+    },
+    "language_info": {
+      "codemirror_mode": {
+        "name": "ipython",
+        "version": 3
+      },
+      "file_extension": ".py",
+      "mimetype": "text/x-python",
+      "name": "python",
+      "nbconvert_exporter": "python",
+      "pygments_lexer": "ipython3",
+      "version": "3.9.13"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 0
+}

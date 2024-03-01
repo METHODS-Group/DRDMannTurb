@@ -333,7 +333,9 @@ document.write(`
 <p><cite>DRDMannTurb</cite> (Deep Rapid Distortion Mann Turbulence) is a GPU-accelerated, data-driven Python framework for
 the automatic fitting of spectra data and generation of synthetic turbulent wind fields. This package is intended to be used by
 wind engineers in applications requiring rapid simulation of realistic wind turbulence. It is based off of the Deep Rapid Distortion models presented in <a class="reference external" href="https://arxiv.org/pdf/2107.11046.pdf">Keith, Khristenko, Wohlmuth (2021)</a>. The data-driven functionalities are GPU-accelerated via a <a class="reference external" href="https://pytorch.org/docs/stable/index.html">PyTorch</a>  implementation.</p>
+<figure class="align-default">
 <img alt="_images/animation.gif" src="_images/animation.gif" />
+</figure>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This project is still under development.</p>
@@ -350,14 +352,15 @@ wind engineers in applications requiring rapid simulation of realistic wind turb
 <hr><div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="auto_examples/plot_mann_fit.html">Pure Mann Model Fit</a></li>
-<li class="toctree-l2"><a class="reference internal" href="auto_examples/plot_synthetic_fit.html">Synthetic Data Fit</a></li>
-<li class="toctree-l2"><a class="reference internal" href="auto_examples/plot_synthetic_3term_loss.html">Adding Regularization and Penalty Terms to Fitting</a></li>
-<li class="toctree-l2"><a class="reference internal" href="auto_examples/plot_synthetic_deep_arch.html">Changing MLP Architecture and Fitting</a></li>
-<li class="toctree-l2"><a class="reference internal" href="auto_examples/plot_custom_data_fit.html">Custom Data Fit</a></li>
-<li class="toctree-l2"><a class="reference internal" href="auto_examples/plot_interpolating_and_fitting.html">Interpolating Spectra Data and Fitting</a></li>
-<li class="toctree-l2"><a class="reference internal" href="auto_examples/plot_wind_generation.html">Fluctuation Field Generation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="auto_examples/plot_mann_linear_regression.html">Mann Eddy Lifetime Linear Regression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="auto_examples/01_basic_mann_parameters_fit.html">Basic Mann Model Fit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="auto_examples/02_eddy-lifetime_fit.html">Synthetic Data Fit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="auto_examples/03_eddy-lifetime_fit_3term_loss.html">Adding Regularization and Penalty Terms to Fitting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="auto_examples/04_eddy-lifetime_fit_gelu.html">Changing MLP Architecture and Fitting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="auto_examples/05_custom_noisy_data_fit.html">Custom Data Fit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="auto_examples/06_custom_data_interpolate_and_fit.html">Interpolating Spectra Data and Fitting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="auto_examples/07_mann_linear_regression.html">Mann Eddy Lifetime Linear Regression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="auto_examples/08_mann_box_generation_IEC.html">Fluctuation Field Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="auto_examples/09_drd_box.html">Fluctuation Field Generation from DRD Model</a></li>
 </ul>
 </li>
 </ul>

@@ -7,7 +7,7 @@ The examples below give introductions to the framework and the utilities provide
    :maxdepth: 1
    :caption: Contents:
 
-   auto_examples/plot_mann_fit
+   auto_examples/01_basic_mann_parameters_fit
 
 .. raw:: html
 
@@ -16,7 +16,7 @@ The examples below give introductions to the framework and the utilities provide
 .. toctree::
    :maxdepth: 1
 
-   auto_examples/plot_synthetic_fit
+   auto_examples/02_eddy-lifetime_fit
     
 .. raw:: html
 
@@ -27,7 +27,7 @@ The examples below give introductions to the framework and the utilities provide
    :maxdepth: 1
    
 
-   auto_examples/plot_synthetic_3term_loss
+   auto_examples/03_eddy-lifetime_fit_3term_loss
 
 .. raw:: html
 
@@ -37,7 +37,7 @@ The examples below give introductions to the framework and the utilities provide
    :maxdepth: 1
    
 
-   auto_examples/plot_synthetic_deep_arch
+   auto_examples/04_eddy-lifetime_fit_gelu
 
 .. raw:: html
 
@@ -47,7 +47,7 @@ The examples below give introductions to the framework and the utilities provide
 .. toctree::
    :maxdepth: 1
 
-   auto_examples/plot_custom_data_fit
+   auto_examples/05_custom_noisy_data_fit
 
 .. raw:: html
 
@@ -58,7 +58,7 @@ The examples below give introductions to the framework and the utilities provide
    :maxdepth: 1
    
 
-   auto_examples/plot_interpolating_and_fitting
+   auto_examples/06_custom_data_interpolate_and_fit
 
 .. raw:: html
 
@@ -68,7 +68,7 @@ The examples below give introductions to the framework and the utilities provide
 .. toctree::
    :maxdepth: 1
 
-   auto_examples/plot_wind_generation
+   auto_examples/07_mann_linear_regression
 
 .. raw:: html
 
@@ -78,7 +78,16 @@ The examples below give introductions to the framework and the utilities provide
 .. toctree::
    :maxdepth: 1
    
-   auto_examples/plot_mann_linear_regression
+   auto_examples/08_mann_box_generation_IEC
+
+.. raw:: html
+
+    <hr>
+
+.. toctree::
+   :maxdepth: 1
+
+   auto_examples/09_drd_box
 
 .. raw:: html
 

@@ -237,7 +237,7 @@ document.write(`
   <div class="bd-container">
     <div class="bd-container__inner bd-page-width">
       
-      <div class="bd-sidebar-primary bd-sidebar">
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
         
 
   
@@ -307,34 +307,6 @@ document.write(`
       </div>
     
   </div>
-  
-    <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item">
-<nav class="bd-docs-nav bd-links"
-     aria-label="Section Navigation">
-  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1 has-children"><a class="reference internal" href="fitting.html">Spectra Fitting with DRD Calibration</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
-<li class="toctree-l2 has-children"><a class="reference internal" href="data_types_and_classes.html">Data Types and Data Classes</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="dataclasses.html">Dataclass Primitives</a></li>
-<li class="toctree-l3"><a class="reference internal" href="datatypes.html">Data Types and Eddy Lifetime Functions</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="calibration.html">Spectra and Eddy Lifetime Function Learning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="losses.html">Loss Function Evaluation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="interpolation.html">Spectra Interpolation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tb_loss.html">Visualizing Training</a></li>
-</ul>
-</li>
-</ul>
-<ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Fluctuation Field Generation</a></li>
-
-</ul>
-</div>
-</nav></div>
-    </div>
   
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
@@ -489,7 +461,7 @@ document.write(`
 
 <dl class="py method">
 <dt class="sig sig-object py" id="drdmannturb.GenerateFluctuationField.generate">
-<span class="sig-name descname"><span class="pre">generate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_blocks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roughness_height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">friction_velocity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/drdmannturb/fluctuation_generation/fluctuation_field_generator.html#GenerateFluctuationField.generate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#drdmannturb.GenerateFluctuationField.generate" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">generate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_blocks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">windprofiletype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plexp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/drdmannturb/fluctuation_generation/fluctuation_field_generator.html#GenerateFluctuationField.generate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#drdmannturb.GenerateFluctuationField.generate" title="Link to this definition">#</a></dt>
 <dd><p>Generates the full fluctuation field in blocks. The resulting field is stored as the <code class="docutils literal notranslate"><span class="pre">total_fluctuation</span></code> field of this object, allowing for all metadata of the object to be stored safely with the fluctuation field, and also reducing data duplication for post-processing; all operations can be performed on this public variable.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -499,38 +471,22 @@ document.write(`
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>num_blocks</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – Number of blocks to use in fluctuation field generation.</p></li>
-<li><p><strong>roughness_height</strong> (<em>float</em>) – </p></li>
-<li><p><strong>friction_velocity</strong> (<em>float</em>) – </p></li>
+<li><p><strong>zref</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – Reference height.</p></li>
+<li><p><strong>uref</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – Reference velocity.</p></li>
+<li><p><strong>z0</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – Roughness height.</p></li>
+<li><p><strong>windprofiletype</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – <p>Type of wind profile by which to normalize, either <code class="docutils literal notranslate"><span class="pre">&quot;LOG&quot;</span></code> for logarithmic scaling or <code class="docutils literal notranslate"><span class="pre">&quot;PL&quot;</span></code> for power law scaling: for <code class="docutils literal notranslate"><span class="pre">&quot;LOG&quot;</span></code>,</p>
+<div class="math notranslate nohighlight">
+\[\left\langle U_1(z)\right\rangle=\frac{u_*}{\kappa} \ln \left(\frac{z}{z_0}+1\right)\]</div>
+<p>or for <code class="docutils literal notranslate"><span class="pre">&quot;PL&quot;</span></code>,</p>
+<div class="math notranslate nohighlight">
+\[\left\langle U_1(z)\right\rangle= u_* \left( \frac{z}{z_{\text{ref}}} \right)^\alpha\]</div>
+<p>where <span class="math notranslate nohighlight">\(u_*\)</span> is the friction velocity and <span class="math notranslate nohighlight">\(z_{\text{ref}}\)</span> is the reference height.</p>
+</p></li>
+<li><p><strong>plexp</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Optional[float]</span></code>, <em>optional</em>) – Power law exponent <span class="math notranslate nohighlight">\(\alpha\)</span>, by default None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">np.ndarray</span></code> – The full fluctuation field, which is also stored as the <code class="docutils literal notranslate"><span class="pre">total_fluctuation</span></code> field.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><em>ndarray</em></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="drdmannturb.GenerateFluctuationField.normalize">
-<span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">roughness_height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">friction_velocity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/drdmannturb/fluctuation_generation/fluctuation_field_generator.html#GenerateFluctuationField.normalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#drdmannturb.GenerateFluctuationField.normalize" title="Link to this definition">#</a></dt>
-<dd><p>Normalizes the generated field by the logarithmic profile</p>
-<div class="math notranslate nohighlight">
-\[\left\langle U_1(z)\right\rangle=\frac{u_{\ast}}{\kappa} \ln \left(\frac{z}{z_0}+1\right)\]</div>
-<p>where <span class="math notranslate nohighlight">\(u_{\ast}\)</span> is the friction velocity and <span class="math notranslate nohighlight">\(z_0\)</span> is the roughness height. More information on this normalization can be found in</p>
-<ol class="upperalpha simple" start="10">
-<li><p>JCSS, “Probabilistic model code,” Joint Committee on Structural Safety (2001).</p></li>
-</ol>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>roughness_height</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – Roughness height <span class="math notranslate nohighlight">\(z_0\)</span>.</p></li>
-<li><p><strong>friction_velocity</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – Ground friction velocity <span class="math notranslate nohighlight">\(u_{\ast}\)</span>.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">np.ndarray</span></code> – Fluctuation field normalized by the logarithmic profile.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><em>ndarray</em></p>
@@ -686,7 +642,6 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.GenerateFluctuationField"><code class="docutils literal notranslate"><span class="pre">GenerateFluctuationField</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.GenerateFluctuationField.evaluate_divergence"><code class="docutils literal notranslate"><span class="pre">GenerateFluctuationField.evaluate_divergence()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.GenerateFluctuationField.generate"><code class="docutils literal notranslate"><span class="pre">GenerateFluctuationField.generate()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.GenerateFluctuationField.normalize"><code class="docutils literal notranslate"><span class="pre">GenerateFluctuationField.normalize()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#drdmannturb.GenerateFluctuationField.save_to_vtk"><code class="docutils literal notranslate"><span class="pre">GenerateFluctuationField.save_to_vtk()</span></code></a></li>
 </ul>
 </li>

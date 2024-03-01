@@ -591,7 +591,10 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">noise</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">wind_shape</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">log_law</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">z</span><span class="p">,</span> <span class="n">z_0</span><span class="p">,</span> <span class="n">u_ast</span><span class="p">:</span> <span class="n">u_ast</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">z</span> <span class="o">/</span> <span class="n">z_0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">0.41</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_law</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">z</span><span class="p">,</span> <span class="n">z0</span><span class="p">,</span> <span class="n">zref</span><span class="p">,</span> <span class="n">uref</span><span class="p">:</span> <span class="n">uref</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">z</span> <span class="o">/</span> <span class="n">z0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">zref</span> <span class="o">/</span> <span class="n">z0</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">power_law</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">z</span><span class="p">,</span> <span class="n">zref</span><span class="p">,</span> <span class="n">Uref</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span> <span class="n">Uref</span> <span class="o">*</span> <span class="p">(</span><span class="n">z</span> <span class="o">/</span> <span class="n">zref</span><span class="p">)</span> <span class="o">**</span> <span class="n">a</span>
 
         <span class="c1">### Random field object</span>
 
@@ -661,29 +664,53 @@ document.write(`
 
         <span class="k">return</span> <span class="n">wind</span>
 
-    <span class="k">def</span> <span class="nf">_normalize_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curr_block</span> <span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">roughness_height</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">friction_velocity</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span> 
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Normalizes the generated field by the logarithmic profile</span>
-
-<span class="sd">        .. math ::</span>
-
-<span class="sd">            \left\langle U_1(z)\right\rangle=\frac{u_{\ast}}{\kappa} \ln \left(\frac{z}{z_0}+1\right)</span>
-
-
-<span class="sd">        where :math:`u_{\ast}` is the friction velocity and :math:`z_0` is the roughness height. More information on this normalization can be found in</span>
-
-<span class="sd">        J. JCSS, “Probabilistic model code,” Joint Committee on Structural Safety (2001).</span>
+    <span class="k">def</span> <span class="nf">_normalize_block</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">curr_block</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">zref</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">uref</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">z0</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">windprofiletype</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">plexp</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Normalizes an individual block of wind under the given profile and physical parameters.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        roughness_height : float</span>
-<span class="sd">            Roughness height :math:`z_0`.</span>
-<span class="sd">        friction_velocity : float</span>
-<span class="sd">            Ground friction velocity :math:`u_{\ast}`.</span>
+<span class="sd">        curr_block : np.ndarray</span>
+<span class="sd">            _description_</span>
+
+<span class="sd">        zref : float</span>
+<span class="sd">            Reference height.</span>
+<span class="sd">        uref : float</span>
+<span class="sd">            Reference velocity.</span>
+<span class="sd">        z0 : float</span>
+<span class="sd">            Roughness height.</span>
+<span class="sd">        windprofiletype : str</span>
+<span class="sd">            Type of wind profile by which to normalize, either ``&quot;LOG&quot;`` for logarithmic scaling or ``&quot;PL&quot;`` for power law scaling: for ``&quot;LOG&quot;``,</span>
+
+<span class="sd">            .. math::</span>
+<span class="sd">                \left\langle U_1(z)\right\rangle=\frac{u_*}{\kappa} \ln \left(\frac{z}{z_0}+1\right)</span>
+
+<span class="sd">            or for ``&quot;PL&quot;``,</span>
+
+<span class="sd">            .. math::</span>
+<span class="sd">                \left\langle U_1(z)\right\rangle= u_* \left( \frac{z}{z_{\text{ref}}} \right)^\alpha</span>
+
+<span class="sd">            where :math:`u_*` is the friction velocity and :math:`z_{\text{ref}}` is the reference height.</span>
+
+<span class="sd">        plexp : Optional[float], optional</span>
+<span class="sd">            Power law exponent :math:`\alpha`, by default None.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        np.ndarray</span>
 <span class="sd">            Fluctuation field normalized by the logarithmic profile.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            &quot;No fluctuation field has been generated, call the .generate() method first.&quot;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">curr_block</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -696,7 +723,10 @@ document.write(`
         <span class="n">z_space</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
             <span class="mf">0.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_dimensions</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid_levels</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
         <span class="p">)</span>
-        <span class="n">mean_profile_z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_law</span><span class="p">(</span><span class="n">z_space</span><span class="p">,</span> <span class="n">roughness_height</span><span class="p">,</span> <span class="n">friction_velocity</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">windprofiletype</span> <span class="o">==</span> <span class="s2">&quot;LOG&quot;</span><span class="p">:</span>
+            <span class="n">mean_profile_z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_law</span><span class="p">(</span><span class="n">z_space</span><span class="p">,</span> <span class="n">z0</span><span class="p">,</span> <span class="n">zref</span><span class="p">,</span> <span class="n">uref</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mean_profile_z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_law</span><span class="p">(</span><span class="n">z_space</span><span class="p">,</span> <span class="n">zref</span><span class="p">,</span> <span class="n">uref</span><span class="p">,</span> <span class="n">plexp</span><span class="p">)</span>
 
         <span class="n">mean_profile</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">curr_block</span><span class="p">)</span>
         <span class="n">mean_profile</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span>
@@ -707,8 +737,16 @@ document.write(`
 
 <div class="viewcode-block" id="GenerateFluctuationField.generate">
 <a class="viewcode-back" href="../../../windgeneration.html#drdmannturb.GenerateFluctuationField.generate">[docs]</a>
-    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_blocks</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">roughness_height</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">friction_velocity</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates the full fluctuation field in blocks. The resulting field is stored as the ``total_fluctuation`` field of this object, allowing for all metadata of the object to be stored safely with the fluctuation field, and also reducing data duplication for post-processing; all operations can be performed on this public variable.</span>
+    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">num_blocks</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">zref</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">uref</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">z0</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">windprofiletype</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">plexp</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generates the full fluctuation field in blocks. The resulting field is stored as the ``total_fluctuation`` field of this object, allowing for all metadata of the object to be stored safely with the fluctuation field, and also reducing data duplication for post-processing; all operations can be performed on this public variable.</span>
 
 <span class="sd">        .. warning::</span>
 <span class="sd">            If this method is called twice in the same object, additional fluctuation field blocks will be appended to the field generated from the first call. If this is undesirable behavior, instantiate a new object.</span>
@@ -717,6 +755,27 @@ document.write(`
 <span class="sd">        ----------</span>
 <span class="sd">        num_blocks : int</span>
 <span class="sd">            Number of blocks to use in fluctuation field generation.</span>
+<span class="sd">        zref : float</span>
+<span class="sd">            Reference height.</span>
+<span class="sd">        uref : float</span>
+<span class="sd">            Reference velocity.</span>
+<span class="sd">        z0 : float</span>
+<span class="sd">            Roughness height.</span>
+<span class="sd">        windprofiletype : str</span>
+<span class="sd">            Type of wind profile by which to normalize, either ``&quot;LOG&quot;`` for logarithmic scaling or ``&quot;PL&quot;`` for power law scaling: for ``&quot;LOG&quot;``,</span>
+
+<span class="sd">            .. math::</span>
+<span class="sd">                \left\langle U_1(z)\right\rangle=\frac{u_*}{\kappa} \ln \left(\frac{z}{z_0}+1\right)</span>
+
+<span class="sd">            or for ``&quot;PL&quot;``,</span>
+
+<span class="sd">            .. math::</span>
+<span class="sd">                \left\langle U_1(z)\right\rangle= u_* \left( \frac{z}{z_{\text{ref}}} \right)^\alpha</span>
+
+<span class="sd">            where :math:`u_*` is the friction velocity and :math:`z_{\text{ref}}` is the reference height.</span>
+
+<span class="sd">        plexp : Optional[float], optional</span>
+<span class="sd">            Power law exponent :math:`\alpha`, by default None.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -733,62 +792,20 @@ document.write(`
         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_blocks</span><span class="p">):</span>
             <span class="n">t_block</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_block</span><span class="p">()</span>
 
-            <span class="n">normed_block</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_block</span><span class="p">(</span><span class="n">t_block</span><span class="p">,</span> <span class="n">roughness_height</span><span class="p">,</span> <span class="n">friction_velocity</span><span class="p">)</span>
+            <span class="n">normed_block</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_block</span><span class="p">(</span>
+                <span class="n">curr_block</span><span class="o">=</span><span class="n">t_block</span><span class="p">,</span>
+                <span class="n">zref</span><span class="o">=</span><span class="n">zref</span><span class="p">,</span>
+                <span class="n">uref</span><span class="o">=</span><span class="n">uref</span><span class="p">,</span>
+                <span class="n">z0</span><span class="o">=</span><span class="n">z0</span><span class="p">,</span>
+                <span class="n">windprofiletype</span><span class="o">=</span><span class="n">windprofiletype</span><span class="p">,</span>
+                <span class="n">plexp</span><span class="o">=</span><span class="n">plexp</span><span class="p">,</span>
+            <span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
                 <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span><span class="p">,</span> <span class="n">normed_block</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span></div>
-
-
-<div class="viewcode-block" id="GenerateFluctuationField.normalize">
-<a class="viewcode-back" href="../../../windgeneration.html#drdmannturb.GenerateFluctuationField.normalize">[docs]</a>
-    <span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">roughness_height</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">friction_velocity</span><span class="p">:</span> <span class="nb">float</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Normalizes the generated field by the logarithmic profile</span>
-
-<span class="sd">        .. math ::</span>
-
-<span class="sd">            \left\langle U_1(z)\right\rangle=\frac{u_{\ast}}{\kappa} \ln \left(\frac{z}{z_0}+1\right)</span>
-
-
-<span class="sd">        where :math:`u_{\ast}` is the friction velocity and :math:`z_0` is the roughness height. More information on this normalization can be found in</span>
-
-<span class="sd">        J. JCSS, “Probabilistic model code,” Joint Committee on Structural Safety (2001).</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        roughness_height : float</span>
-<span class="sd">            Roughness height :math:`z_0`.</span>
-<span class="sd">        friction_velocity : float</span>
-<span class="sd">            Ground friction velocity :math:`u_{\ast}`.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        np.ndarray</span>
-<span class="sd">            Fluctuation field normalized by the logarithmic profile.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;No fluctuation field has been generated, call the .generate() method first.&quot;</span>
-            <span class="p">)</span>
-
-        <span class="n">sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span> <span class="o">/=</span> <span class="n">sd</span>
-
-        <span class="n">z_space</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
-            <span class="mf">0.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_dimensions</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid_levels</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
-        <span class="p">)</span>
-        <span class="n">mean_profile_z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_law</span><span class="p">(</span><span class="n">z_space</span><span class="p">,</span> <span class="n">roughness_height</span><span class="p">,</span> <span class="n">friction_velocity</span><span class="p">)</span>
-
-        <span class="n">mean_profile</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span><span class="p">)</span>
-        <span class="n">mean_profile</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span>
-            <span class="n">mean_profile_z</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="p">(</span><span class="n">mean_profile</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">mean_profile</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_fluctuation</span> <span class="o">+</span> <span class="n">mean_profile</span></div>
 
 
 <div class="viewcode-block" id="GenerateFluctuationField.save_to_vtk">

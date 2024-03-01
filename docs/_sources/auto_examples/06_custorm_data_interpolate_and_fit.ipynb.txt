@@ -1,0 +1,158 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "\n# Interpolating Spectra Data and Fitting\n\nIn this example, we're using real-world data, but importantly the data points are not over\nthe same spatial coordinates. Since that congruency is required, we need to interpolate the\ndata values and obtain them over a common set of points. Furthermore, we filter the noisy data to obtain smoother\ncurves for the DRD model to fit. ``DRDMannTurb`` has built-in utilities for handling this.\n\nThis process involves new sources of error: interpolation error and filtering error, in addition to the sources from\ndata collection and DRD model training.\n\nThe filtering is based on differential evolution to perform a non-linear fit onto functions of the following form:\n\n\\begin{align}\\frac{k_1 F_{11}\\left(k_1 z\\right)}{u_*^2}=J_1(f):=\\frac{a_1 f}{(1+b_1 f)^{c_1}}\\end{align}\n\n\\begin{align}\\frac{k_1 F_{22}\\left(k_1 z\\right)}{u_*^2}=J_2(f):=\\frac{a_2 f}{(1+b_2 f)^{c_2}}\\end{align}\n\n\\begin{align}\\frac{k_1 F_{33}\\left(k_1 z\\right)}{u_*^2}=J_3(f):=\\frac{a_3 f}{1+ b_3 f^{ c_3}}\\end{align}\n\n\\begin{align}-\\frac{k_1 F_{13}\\left(k_1 z\\right)}{u_*^2}=J_4(f):=\\frac{a_4 f}{(1+ b_4 f)^{c_4}}\\end{align}\n\nwith $F_{12}=F_{23}=0$. Here, $f = (2\\pi)^{-1} k_1 z$. In the above, the $a_i, b_i, c_i$ are free parameters which are optimized by differential evolution. The result is a spectra model that is similar in form to the Kaimal spectra and which filters/smooths the spectra data from the real world and eases fitting by DRD models. This option is highly suggested in cases where spectra data have large deviations.\n"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Import packages\n\nFirst, we import the packages needed for this example, obtain the current\nworking directory and dataset path, and choose to use CUDA if it is available.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "from pathlib import Path\n\nimport numpy as np\nimport torch\nimport torch.nn as nn\n\nfrom drdmannturb.enums import DataType\nfrom drdmannturb.interpolation import extract_x_spectra, interpolate\nfrom drdmannturb.parameters import (\n    LossParameters,\n    NNParameters,\n    PhysicalParameters,\n    ProblemParameters,\n)\nfrom drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator\n\npath = Path().resolve()\ndatapath = path / \"./inputs\" if path.name == \"examples\" else path / \"../data/\"\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\n# v2: torch.set_default_device('cuda:0')\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Setting Physical Parameters\nHere, we define our charateristic scales $L, \\Gamma, \\sigma$, the\nlog-scale domain, and the reference height `zref` and velocity `Uref`.\nfor interpolation, log10-scaled k1 is used, regular values of the domain used for fitting\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "L = 70  # length scale\nGamma = 3.7  # time scale\nsigma = 0.04  # energy spectrum scale\n\nUref = 21.0  # reference velocity\nzref = 1  # reference height"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Extracting data from CSVs\nThis package provides utilities for loading spectra data, which are provided here as CSVs as individual\nfiles over different domains. We can then interpolate onto a common basis in $k_1$ space.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "x_coords_u, u_spectra = extract_x_spectra(datapath / \"u_spectra.csv\")\nx_coords_v, v_spectra = extract_x_spectra(datapath / \"v_spectra.csv\")\nx_coords_w, w_spectra = extract_x_spectra(datapath / \"w_spectra.csv\")\nx_coords_uw, uw_cospectra = extract_x_spectra(datapath / \"uw_cospectra.csv\")\nx_full = [x_coords_u, x_coords_v, x_coords_w, x_coords_uw]\nspectra_full = [u_spectra, v_spectra, w_spectra, uw_cospectra]\nx_interp, interp_u, interp_v, interp_w, interp_uw = interpolate(\n    datapath, num_k1_points=40, plot=True\n)\ndomain = torch.tensor(x_interp)\n\nf = domain\nk1_data_pts = 2 * torch.pi * f / Uref\n\ninterpolated_spectra = np.stack((interp_u, interp_v, interp_w, interp_uw), axis=1)\n\ndatagen = OnePointSpectraDataGenerator(\n    zref=zref,\n    data_points=k1_data_pts,\n    data_type=DataType.AUTO,\n    k1_data_points=(\n        k1_data_pts.cpu().numpy() if torch.cuda.is_available() else k1_data_pts.numpy()\n    ),\n    spectra_values=interpolated_spectra,\n)\n\ndatagen.plot(x_interp, spectra_full, x_full)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## ``CalibrationProblem`` construction\n\nWe'll use a simple neural network consisting of two layers with $10$ neurons each,\nconnected by a ReLU activation function. The parameters determining the network\narchitecture can conveniently be set through the ``NNParameters`` dataclass.\n\nUsing the ``ProblemParameters`` dataclass, we indicate the eddy lifetime function\n$\\tau$ substitution, that we do not intend to learn the exponent $\\nu$,\nand that we would like to train for 10 epochs, or until the tolerance ``tol`` loss (0.001 by default),\nwhichever is reached first.\n\nHaving set our physical parameters above, we need only pass these to the\n``PhysicalParameters`` dataclass just as is done below.\n\nLastly, using the ``LossParameters`` dataclass, we introduce a second-order\nderivative penalty term with weight $\\alpha_2 = 1$ and a\nnetwork parameter regularization term with weight\n$\\beta=10^{-5}$ to our MSE loss function.\n\nThe $\\nu$ parameter is not learned in this example and is instead fixed at $\\nu = - 1/3$.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "pb = CalibrationProblem(\n    nn_params=NNParameters(\n        nlayers=2,\n        hidden_layer_sizes=[10, 10],\n        activations=[nn.ReLU(), nn.ReLU()],\n    ),\n    prob_params=ProblemParameters(nepochs=5),\n    loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1e-5),\n    phys_params=PhysicalParameters(\n        L=L, Gamma=Gamma, sigma=sigma, Uref=Uref, domain=domain\n    ),\n    logging_directory=\"runs/interpolating_and_fitting\",\n    device=device,\n)\nData = datagen.Data"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Calibration\nNow, we fit our model. ``CalibrationProblem.calibrate`` takes the tuple ``Data``\nwhich we just constructed and performs a typical training loop.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "pb.eval(k1_data_pts)\noptimal_parameters = pb.calibrate(data=Data)\n\npb.print_calibrated_params()"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Plotting\n``DRDMannTurb`` offers built-in plotting utilities and Tensorboard integration\nwhich make visualizing results and various aspects of training performance\nvery simple.\n\nThe following will plot our fit. As can be seen, the spectra is much smoother than the original\nspectra, which we investigated in the previous example.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "pb.plot()"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "This plots out the loss function terms as specified, each multiplied by the\nrespective coefficient hyperparameter. The training logs can be accessed from the logging directory\nwith Tensorboard utilities, but we also provide a simple internal utility for a single\ntraining log plot.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "pb.plot_losses(run_number=0)"
+      ]
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "display_name": "Python 3",
+      "language": "python",
+      "name": "python3"
+    },
+    "language_info": {
+      "codemirror_mode": {
+        "name": "ipython",
+        "version": 3
+      },
+      "file_extension": ".py",
+      "mimetype": "text/x-python",
+      "name": "python",
+      "nbconvert_exporter": "python",
+      "pygments_lexer": "ipython3",
+      "version": "3.9.13"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 0
+}

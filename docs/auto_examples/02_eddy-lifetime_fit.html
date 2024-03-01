@@ -1,0 +1,748 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Synthetic Data Fit &#8212; DRDMannTurb 0.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=362ab14a" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=61a4c737" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
+  <script src="../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
+
+    <script src="../_static/documentation_options.js?v=2709fde1"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'auto_examples/02_eddy-lifetime_fit';</script>
+    <script src="../_static/require.min.js?v=8a87acde"></script>
+    <script src="../_static/custom.js?v=9aa989ff"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Adding Regularization and Penalty Terms to Fitting" href="03_eddy-lifetime_fit_3term_loss.html" />
+    <link rel="prev" title="Basic Mann Model Fit" href="01_basic_mann_parameters_fit.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">DRDMannTurb 0.1 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../getting-started.html">
+                        Getting Started
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../forward_api.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../internal_api.html">
+                        Internal API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../getting-started.html">
+                        Getting Started
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../forward_api.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../internal_api.html">
+                        Internal API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Synthetic Data Fit</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <script src='http://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js'></script>
+<script>require=requirejs;</script><section id="Synthetic-Data-Fit">
+<h1>Synthetic Data Fit<a class="headerlink" href="#Synthetic-Data-Fit" title="Link to this heading">#</a></h1>
+<p>The IEC-recommended spectral tensor model is calibrated to fit the Kaimal spectra. There are three free parameters: <span class="math notranslate nohighlight">\(L, T, C\)</span>, which have been precomputed in <a class="reference external" href="https://www.sciencedirect.com/science/article/pii/S0266892097000362">Mann’s original work</a> to be <span class="math notranslate nohighlight">\(L=0.59, T=3.9, C=3.2\)</span>, which will be used to compare against a DRD model fit. In this example, the exponent <span class="math notranslate nohighlight">\(\nu=-\frac{1}{3}\)</span> is fixed so that <span class="math notranslate nohighlight">\(\tau(\boldsymbol{k})\)</span> matches the slope of <span class="math notranslate nohighlight">\(\tau^{IEC}\)</span> for
+<span class="math notranslate nohighlight">\(k \rightarrow 0\)</span>.</p>
+<p>The following example is also discussed in the <a class="reference external" href="https://arxiv.org/abs/2107.11046">original DRD paper</a>.</p>
+<section id="Import-packages">
+<h2>Import packages<a class="headerlink" href="#Import-packages" title="Link to this heading">#</a></h2>
+<p>First, we import the packages we need for this example. Additionally, we choose to use CUDA if it is available.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+
+<span class="kn">from</span> <span class="nn">drdmannturb</span> <span class="kn">import</span> <span class="n">EddyLifetimeType</span>
+<span class="kn">from</span> <span class="nn">drdmannturb.parameters</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">LossParameters</span><span class="p">,</span>
+    <span class="n">NNParameters</span><span class="p">,</span>
+    <span class="n">PhysicalParameters</span><span class="p">,</span>
+    <span class="n">ProblemParameters</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">drdmannturb.spectra_fitting</span> <span class="kn">import</span> <span class="n">CalibrationProblem</span><span class="p">,</span> <span class="n">OnePointSpectraDataGenerator</span>
+
+<span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
+
+<span class="c1"># v2: torch.set_default_device(&#39;cuda:0&#39;)</span>
+<span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="s2">&quot;torch.cuda.FloatTensor&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Setting-Physical-Parameters">
+<h2>Setting Physical Parameters<a class="headerlink" href="#Setting-Physical-Parameters" title="Link to this heading">#</a></h2>
+<p>The following cell sets the necessary physical constants, including the characteristic scales for non-dimensionalization, the reference velocity, and the domain.</p>
+<p><span class="math notranslate nohighlight">\(L\)</span> is our characteristic length scale, <span class="math notranslate nohighlight">\(\Gamma\)</span> is our characteristic time scale, and <span class="math notranslate nohighlight">\(\sigma\)</span> is the spectrum amplitude.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">zref</span> <span class="o">=</span> <span class="mi">40</span>  <span class="c1"># reference height</span>
+<span class="n">ustar</span> <span class="o">=</span> <span class="mf">1.773</span>  <span class="c1"># friction velocity</span>
+
+<span class="c1"># Scales associated with Kaimal spectrum</span>
+<span class="n">L</span> <span class="o">=</span> <span class="mf">0.59</span> <span class="o">*</span> <span class="n">zref</span>  <span class="c1"># length scale</span>
+<span class="n">Gamma</span> <span class="o">=</span> <span class="mf">3.9</span>  <span class="c1"># time scale</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.2</span> <span class="o">*</span> <span class="n">ustar</span><span class="o">**</span><span class="mf">2.0</span> <span class="o">/</span> <span class="n">zref</span> <span class="o">**</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">)</span>  <span class="c1"># energy spectrum scale</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Physical Parameters: </span><span class="si">{</span><span class="n">L</span><span class="p">,</span><span class="n">Gamma</span><span class="p">,</span><span class="n">sigma</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">k1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span> <span class="o">/</span> <span class="n">zref</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Physical Parameters: (23.599999999999998, 3.9, 0.8600574364289042)
+</pre></div></div>
+</div>
+</section>
+<section id="CalibrationProblem-construction">
+<h2><code class="docutils literal notranslate"><span class="pre">CalibrationProblem</span></code> construction<a class="headerlink" href="#CalibrationProblem-construction" title="Link to this heading">#</a></h2>
+<p>We’ll use a simple neural network consisting of two layers with <span class="math notranslate nohighlight">\(10\)</span> neurons each, connected by a ReLU activation function. The parameters determining the network architecture can conveniently be set through the <code class="docutils literal notranslate"><span class="pre">NNParameters</span></code> dataclass.</p>
+<p>Using the <code class="docutils literal notranslate"><span class="pre">ProblemParameters</span></code> dataclass, we indicate the eddy lifetime function <span class="math notranslate nohighlight">\(\tau\)</span> substitution, that we do not intend to learn the exponent <span class="math notranslate nohighlight">\(\nu\)</span>, and that we would like to train for 10 epochs, or until the tolerance <code class="docutils literal notranslate"><span class="pre">tol</span></code> loss (0.001 by default), whichever is reached first.</p>
+<p>Having set our physical parameters above, we need only pass these to the <code class="docutils literal notranslate"><span class="pre">PhysicalParameters</span></code> dataclass just as is done below.</p>
+<p>Lastly, using the <code class="docutils literal notranslate"><span class="pre">LossParameters</span></code> dataclass, we introduce a second-order derivative penalty term with weight <span class="math notranslate nohighlight">\(\alpha_2 = 1\)</span> and a network parameter regularization term with weight <span class="math notranslate nohighlight">\(\beta=10^{-5}\)</span> to our MSE loss function.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pb</span> <span class="o">=</span> <span class="n">CalibrationProblem</span><span class="p">(</span>
+    <span class="n">nn_params</span><span class="o">=</span><span class="n">NNParameters</span><span class="p">(</span>
+        <span class="n">nlayers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="c1"># Specifying the hidden layer sizes is done by passing a list of integers, as seen here.</span>
+        <span class="n">hidden_layer_sizes</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
+        <span class="c1"># Specifying the activations is done similarly.</span>
+        <span class="n">activations</span><span class="o">=</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">()],</span>
+    <span class="p">),</span>
+    <span class="n">prob_params</span><span class="o">=</span><span class="n">ProblemParameters</span><span class="p">(</span>
+        <span class="n">nepochs</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">learn_nu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">eddy_lifetime</span><span class="o">=</span><span class="n">EddyLifetimeType</span><span class="o">.</span><span class="n">TAUNET</span>
+    <span class="p">),</span>
+    <span class="c1"># Note that we have not activated the first order term, but this can be done by passing a value for ``alpha_pen1``</span>
+    <span class="n">loss_params</span><span class="o">=</span><span class="n">LossParameters</span><span class="p">(</span><span class="n">alpha_pen2</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">beta_reg</span><span class="o">=</span><span class="mf">1.0e-5</span><span class="p">),</span>
+    <span class="n">phys_params</span><span class="o">=</span><span class="n">PhysicalParameters</span><span class="p">(</span>
+        <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">Gamma</span><span class="o">=</span><span class="n">Gamma</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span> <span class="n">ustar</span><span class="o">=</span><span class="n">ustar</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="n">k1</span>
+    <span class="p">),</span>
+    <span class="n">logging_directory</span><span class="o">=</span><span class="s2">&quot;runs/synthetic_fit&quot;</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Data-Generation">
+<h2>Data Generation<a class="headerlink" href="#Data-Generation" title="Link to this heading">#</a></h2>
+<p>In the following cell, we construct our <span class="math notranslate nohighlight">\(k_1\)</span> data points grid and generate the values. <code class="docutils literal notranslate"><span class="pre">Data</span></code> will be a tuple <code class="docutils literal notranslate"><span class="pre">(&lt;data</span> <span class="pre">points&gt;,</span> <span class="pre">&lt;data</span> <span class="pre">values&gt;)</span></code>. It is worth noting that the second element of each tuple in <code class="docutils literal notranslate"><span class="pre">DataPoints</span></code> is the corresponding reference height, which we have chosen to be uniformly <code class="docutils literal notranslate"><span class="pre">zref</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Data</span> <span class="o">=</span> <span class="n">OnePointSpectraDataGenerator</span><span class="p">(</span><span class="n">data_points</span><span class="o">=</span><span class="n">k1</span><span class="p">,</span> <span class="n">zref</span><span class="o">=</span><span class="n">zref</span><span class="p">,</span> <span class="n">ustar</span><span class="o">=</span><span class="n">ustar</span><span class="p">)</span><span class="o">.</span><span class="n">Data</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Calibration">
+<h2>Calibration<a class="headerlink" href="#Calibration" title="Link to this heading">#</a></h2>
+<p>Now, we fit our model. <code class="docutils literal notranslate"><span class="pre">CalibrationProblem.calibrate</span></code> takes the tuple <code class="docutils literal notranslate"><span class="pre">Data</span></code> which we just constructed and performs a typical training loop.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">optimal_parameters</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">Data</span><span class="p">)</span>
+
+<span class="n">pb</span><span class="o">.</span><span class="n">print_calibrated_params</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+========================================
+Initial loss: 0.04727533236511994
+========================================
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+100%|████████████████████████████████████████████████████████████████| 10/10 [00:21&lt;00:00,  2.11s/it]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+========================================
+Spectra fitting concluded with final loss: 0.0070446695943156765
+========================================
+<span class="ansi-green-intense-fg">Optimal calibrated L     :  22.1053 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated Gamma :   1.6605 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated sigma :   0.8205 </span>
+========================================
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+</section>
+<section id="Plotting">
+<h2>Plotting<a class="headerlink" href="#Plotting" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">DRDMannTurb</span></code> offers built-in plotting utilities and Tensorboard integration which make visualizing results and various aspects of training performance very simple.</p>
+<p>The following will plot our fit.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pb</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/auto_examples_02_eddy-lifetime_fit_12_0.png" src="../_images/auto_examples_02_eddy-lifetime_fit_12_0.png" />
+</div>
+</div>
+<p>This plots out the loss function terms as specified, each multiplied by the respective coefficient hyperparameter. The training logs can be accessed from the logging directory with Tensorboard utilities, but we also provide a simple internal utility for a single training log plot.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pb</span><span class="o">.</span><span class="n">plot_losses</span><span class="p">(</span><span class="n">run_number</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/auto_examples_02_eddy-lifetime_fit_14_0.png" src="../_images/auto_examples_02_eddy-lifetime_fit_14_0.png" />
+</div>
+</div>
+</section>
+<section id="Save-Model-with-Problem-Metadata">
+<h2>Save Model with Problem Metadata<a class="headerlink" href="#Save-Model-with-Problem-Metadata" title="Link to this heading">#</a></h2>
+<p>Here, we’ll make use of the model saving utilities, which make saving your <code class="docutils literal notranslate"><span class="pre">DRDMannTurb</span></code> fit very straightforward. The following line automatically pickles and writes out a trained model along with the various parameter dataclasses in <code class="docutils literal notranslate"><span class="pre">../results</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pb</span><span class="o">.</span><span class="n">save_model</span><span class="p">(</span><span class="s2">&quot;./outputs/&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Loading-Model-and-Problem-Metadata">
+<h2>Loading Model and Problem Metadata<a class="headerlink" href="#Loading-Model-and-Problem-Metadata" title="Link to this heading">#</a></h2>
+<p>Lastly, we load our model back in.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
+
+<span class="n">path_to_parameters</span> <span class="o">=</span> <span class="s2">&quot;./outputs/EddyLifetimeType.TAUNET_DataType.KAIMAL.pkl&quot;</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_to_parameters</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="p">(</span>
+        <span class="n">nn_params</span><span class="p">,</span>
+        <span class="n">prob_params</span><span class="p">,</span>
+        <span class="n">loss_params</span><span class="p">,</span>
+        <span class="n">phys_params</span><span class="p">,</span>
+        <span class="n">model_params</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Recovering-Old-Model-Configuration-and-Old-Parameters">
+<h3>Recovering Old Model Configuration and Old Parameters<a class="headerlink" href="#Recovering-Old-Model-Configuration-and-Old-Parameters" title="Link to this heading">#</a></h3>
+<p>We can also load the old model configuration from file and create a new <code class="docutils literal notranslate"><span class="pre">CalibrationProblem</span></code> object from the stored network parameters and metadata.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pb_new</span> <span class="o">=</span> <span class="n">CalibrationProblem</span><span class="p">(</span>
+    <span class="n">nn_params</span><span class="o">=</span><span class="n">nn_params</span><span class="p">,</span>
+    <span class="n">prob_params</span><span class="o">=</span><span class="n">prob_params</span><span class="p">,</span>
+    <span class="n">loss_params</span><span class="o">=</span><span class="n">loss_params</span><span class="p">,</span>
+    <span class="n">phys_params</span><span class="o">=</span><span class="n">phys_params</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">pb_new</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">model_params</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">allequal</span><span class="p">(</span><span class="n">pb</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="n">pb_new</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="01_basic_mann_parameters_fit.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Basic Mann Model Fit</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="03_eddy-lifetime_fit_3term_loss.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Adding Regularization and Penalty Terms to Fitting</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Import-packages">Import packages</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Setting-Physical-Parameters">Setting Physical Parameters</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#CalibrationProblem-construction"><code class="docutils literal notranslate"><span class="pre">CalibrationProblem</span></code> construction</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Data-Generation">Data Generation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Calibration">Calibration</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Plotting">Plotting</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Save-Model-with-Problem-Metadata">Save Model with Problem Metadata</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Loading-Model-and-Problem-Metadata">Loading Model and Problem Metadata</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Recovering-Old-Model-Configuration-and-Old-Parameters">Recovering Old Model Configuration and Old Parameters</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/auto_examples/02_eddy-lifetime_fit.ipynb.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright Alexey Izmailov, Matthew Meeker.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

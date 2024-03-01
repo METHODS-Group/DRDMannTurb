@@ -1,0 +1,165 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "\n# Fluctuation Field Generation from DRD Model\n\nThis example demonstrates the utilities for generating fluctuation fields, which can be either from a pre-trained DRD model, or based on some well-known spectra models. ``DRDMannTurb`` provides several utilities for plotting the resulting fields through Plotly, which can be done in several contexts as well as utilities for saving to VTK for downstream analysis. \n"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        ".. centered::\n    This example may take a few seconds to load. Please be patient,\n    Plotly requires some time to render 3D graphics.\n\n\n"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Import packages\n\nFirst, we import the packages we need for this example.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "from pathlib import Path\n\nimport numpy as np\nimport torch\n\nfrom drdmannturb.fluctuation_generation import (\n    plot_velocity_components,  # utility function for plotting each velocity component in the field, not used in this example\n)\nfrom drdmannturb.fluctuation_generation import (\n    GenerateFluctuationField,\n    plot_velocity_magnitude,\n)\n\npath = Path().resolve()\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\n# v2: torch.set_default_device('cuda:0')\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Setting Physical Parameters\nHere, we set the physical parameters of the environment in which the fluctuation field is generated.\nThe physical domain is determined by dimensions in 3D as well as the discretization size (grid levels) in each dimension.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "z0 = 0.02\nzref = 90\nuref = 11.4\nustar = uref * 0.41 / np.log(zref / z0)\nwindprofiletype = \"LOG\"  # choosing log law, use power law with \"PL\" here instead\n\nL = 0.593 * zref\nGamma = 3.89\nsigma = 0.052\n\nLx = 720\nLy = 64\nLz = 64\n\nnBlocks = 3\ngrid_dimensions = np.array([Lx / 4, Ly, Lz])\n\ngrid_levels = np.array([6, 4, 4])\n\nseed = None"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Fluctuation Field Generation from Pre-Trained DRD Model\nWe now generate a similar fluctuation field in the same physical setting and domain but using a pre-trained DRD model. This model is the result of\nfitting the Mann model with a Kaimal spectrum, showcased in an earlier example, so we anticipate the resulting fluctuation fields to be similar. Note\nthat since DRD models learn the scales, these are taken from the saved object, which has these values as parameters.\nThe field generation process can be summarized by the following diagram of a 2D domain (a transversal cross-section of a 3D turbulence block).\n\n<img src=\"https://github.com/METHODS-Group/DRDMannTurb/blob/main/paper/fluct_gen_box_by_box.png?raw=true\">\n\nA continuous wind field is generated block-by-block where noise is being copied from the end of one block to the start of the next block. Turbulent fluctuations are recomputed block-by-block using the partially shared noise. Common Gaussian noise is used in the overlapping domains. This diagram is from [Keith, Khristenko, Wohlmuth (2021)](https://arxiv.org/pdf/2107.11046.pdf), please see the discussion therein for further details.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "path_to_parameters = (\n    path / \"../docs/source/results/EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl\"\n    if path.name == \"examples\"\n    else path / \"../results/EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl\"\n)\n\nType_Model = \"NN\"  ### 'Mann', 'VK', 'NN'\nnBlocks = 2\n\ngen_drd = GenerateFluctuationField(\n    ustar,\n    zref,\n    grid_dimensions,\n    grid_levels,\n    length_scale=L,\n    time_scale=Gamma,\n    energy_spectrum_scale=sigma,\n    model=Type_Model,\n    path_to_parameters=path_to_parameters,\n    seed=seed,\n)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Scaling of the field (normalization)\nThe generated fluctuation field is normalized and scaled by the logarithmic profile\n\n\\begin{align}\\left\\langle U_1(z)\\right\\rangle=\\frac{u_*}{\\kappa} \\ln \\left(\\frac{z}{z_0}+1\\right)\\end{align}\n\nwhere $u_*$ is the friction velocity and $z_0$ is the roughness height.\n\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "fluctuation_field_drd = gen_drd.generate(nBlocks, zref, uref, z0, windprofiletype)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Evaluating Divergence Properties and Plotting\n``DRDMannTurb`` provides utilities for computing the divergence of the resulting fluctuation field as well as\nvisualizing results. At the continuum level, the DRD model should yield an approximately divergence-free fluctuation\nfield, which we observe to within a reasonable tolerance. Also, the divergence is expected to decrease as the\n resolution of the fluctuation field is improved.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "spacing = tuple(grid_dimensions / (2.0**grid_levels + 1))\n\ngen_drd.evaluate_divergence(spacing, fluctuation_field_drd).mean()"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "We now visualize the output fluctuation field.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "fig_magnitude_drd = plot_velocity_magnitude(\n    spacing, fluctuation_field_drd, transparent=True\n)\n\n# this is a Plotly figure, which can be visualized with the ``.show()`` method in different contexts.\nfig_magnitude_drd  # .show(\"browser\"), or for specific browser, use .show(\"firefox\")"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Saving Generated Fluctuation Field as VTK\nFor higher resolution fluctuation fields, we suggest using Paraview. To transfer the generated data\nfrom our package, we provide the ``.save_to_vtk()`` method.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "filename = str(\n    path / \"../docs/source/results/fluctuation_drd\"\n    if path.name == \"examples\"\n    else path / \"../results/fluctuation_drd\"\n)\n\ngen_drd.save_to_vtk(filename)"
+      ]
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "display_name": "Python 3",
+      "language": "python",
+      "name": "python3"
+    },
+    "language_info": {
+      "codemirror_mode": {
+        "name": "ipython",
+        "version": 3
+      },
+      "file_extension": ".py",
+      "mimetype": "text/x-python",
+      "name": "python",
+      "nbconvert_exporter": "python",
+      "pygments_lexer": "ipython3",
+      "version": "3.9.13"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 0
+}

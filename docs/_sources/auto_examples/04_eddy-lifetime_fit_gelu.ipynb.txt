@@ -1,0 +1,158 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "\n# Changing MLP Architecture and Fitting\n\nThis example is nearly identical to the Synthetic Data fit, however we use\na different neural network architecture in hopes of obtaining a better spectra fitting.\nThe same set-up using the Mann model under the Kaimal spectra is used here as in other synthetic\ndata fitting examples. The only difference here is in the neural network architecture.\nAlthough certain combinations of activation functions, such as ``GELU`` result in considerably\nimproved spectra fitting and terminal loss values, the resulting eddy lifetime functions are\nusually non-physical.\n\nSee again the [original DRD paper](https://arxiv.org/abs/2107.11046).\n"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Import packages\n\nFirst, we import the packages we need for this example. Additionally, we choose to use\nCUDA if it is available.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "import torch\nimport torch.nn as nn\n\nfrom drdmannturb.parameters import (\n    LossParameters,\n    NNParameters,\n    PhysicalParameters,\n    ProblemParameters,\n)\nfrom drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Set up physical parameters and domain associated with the Kaimal spectrum. We perform the spectra fitting over the $k_1$ space $[10^{{-1}}, 10^2]$\nwith 20 points.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "zref = 40  # reference height\nustar = 1.773  # friction velocity\n\n# Scales associated with Kaimal spectrum\nL = 0.59 * zref  # length scale\nGamma = 3.9  # time scale\nsigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # energy spectrum scale\n\nprint(f\"Physical Parameters: {L,Gamma,sigma}\")\n\nk1 = torch.logspace(-1, 2, 20) / zref"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "%%\nNow, we construct our ``CalibrationProblem``.\n\nCompared to the first Synthetic Fit example, as noted already, we are using\na more complicated neural network architecture. This time, specifically, our\nnetwork will have 4 layers of width 10, 20, 20, 10 respectively, and we\nuse both ``GELU`` and ``RELU`` activations. We have\nprescribed more Wolfe iterations.\nFinally, this task is considerably more difficult than before since the exponent of\nthe eddy lifetime function $\\nu$ is to be learned. Much more training\nmay be necessary to obtain a close fit to the eddy lifetime function. Interestingly,\nlearning this parameter results in models that more accurately describe the spectra of\nMann turbulence than using the Mann model itself.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "pb = CalibrationProblem(\n    nn_params=NNParameters(\n        nlayers=4,\n        # Specifying the activations is done similarly.\n        hidden_layer_sizes=[10, 20, 20, 10],\n        activations=[nn.ReLU(), nn.GELU(), nn.GELU(), nn.ReLU()],\n    ),\n    prob_params=ProblemParameters(nepochs=25, wolfe_iter_count=20),\n    loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1.0e-5),\n    phys_params=PhysicalParameters(\n        L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1\n    ),\n    logging_directory=\"runs/synthetic_fit_deep_arch\",\n    device=device,\n)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Data Generation\nIn the following cell, we construct our $k_1$ data points grid and\ngenerate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.\nIt is worth noting that the second element of each tuple in ``DataPoints`` is the\ncorresponding reference height, which we have chosen to be uniformly `zref`.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Training\nNow, we fit our model. ``CalibrationProblem.calibrate()`` takes the tuple ``Data``\nwhich we just constructed and performs a typical training loop.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "optimal_parameters = pb.calibrate(data=Data)\n\npb.print_calibrated_params()"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Plotting\nLastly, we'll use built-in plotting utilities to see the fit result.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "pb.plot()"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "This plots the loss function terms as specified, each multiplied by the\nrespective coefficient hyperparameter. The training logs can be accessed from the logging directory\nwith Tensorboard utilities, but we also provide a simple internal utility for a single\ntraining log plot.\n\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "collapsed": false
+      },
+      "outputs": [],
+      "source": [
+        "pb.plot_losses(run_number=0)"
+      ]
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "display_name": "Python 3",
+      "language": "python",
+      "name": "python3"
+    },
+    "language_info": {
+      "codemirror_mode": {
+        "name": "ipython",
+        "version": 3
+      },
+      "file_extension": ".py",
+      "mimetype": "text/x-python",
+      "name": "python",
+      "nbconvert_exporter": "python",
+      "pygments_lexer": "ipython3",
+      "version": "3.9.13"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 0
+}
