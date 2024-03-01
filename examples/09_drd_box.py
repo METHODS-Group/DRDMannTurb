@@ -1,7 +1,7 @@
 """
-============================
-Fluctuation Field Generation
-============================
+===========================================
+Fluctuation Field Generation from DRD Model
+===========================================
 
 This example demonstrates the utilities for generating fluctuation fields, which can be either from a pre-trained DRD model, or based on some well-known spectra models. ``DRDMannTurb`` provides several utilities for plotting the resulting fields through Plotly, which can be done in several contexts as well as utilities for saving to VTK for downstream analysis. 
 
@@ -42,65 +42,30 @@ if torch.cuda.is_available():
 #######################################################################################
 # Setting Physical Parameters
 # ---------------------------
-# Here, we set the physical parameters of the environment in which the fluctuation field is generated: the friction velocity :math:`u_* = 0.45`, roughness height :math:`z_0=0.0001` and reference height of :math:`180`.
+# Here, we set the physical parameters of the environment in which the fluctuation field is generated.
 # The physical domain is determined by dimensions in 3D as well as the discretization size (grid levels) in each dimension.
-friction_velocity = 2.683479938442173
-reference_height = 180.0
-roughness_height = 0.75
 
-grid_dimensions = np.array([1200.0, 864.0, 576.0])
-grid_levels = np.array([5, 3, 5])
+z0 = 0.02
+zref = 90
+uref = 11.4
+ustar = uref * 0.41 / np.log(zref / z0)
+windprofiletype = "LOG"  # choosing log law, use power law with "PL" here instead
 
-seed = None  # 9000
+L = 0.593 * zref
+Gamma = 3.89
+sigma = 0.052
 
-#######################################################################################
-# Generating Fluctuation Field from Mann Model
-# --------------------------------------------
-# Fluctuation fields are generated block-by-block, rather than over the domain entirely. Please see section V, B of the original DRD paper for further discussion. Here, we will use 3 blocks.
+Lx = 720
+Ly = 64
+Lz = 64
 
-Type_Model = "Mann"  ### 'Mann', 'VK', 'NN'
 nBlocks = 3
+grid_dimensions = np.array([Lx / 4, Ly, Lz])
 
-#######################################################################################
-# Physical Parameters from Kaimal Spectrum
-# ----------------------------------------
-# The Mann model requires three parameters, length scale, time scale, and spectrum amplitude scale, which we take from the Kaimal spectrum.
-#
-gen_mann = GenerateFluctuationField(
-    friction_velocity,
-    reference_height,
-    grid_dimensions,
-    grid_levels,
-    length_scale=0.59,
-    time_scale=3.9,
-    energy_spectrum_scale=3.2,
-    model=Type_Model,
-    seed=seed,
-)
+grid_levels = np.array([6, 4, 4])
 
-fluctuation_field_mann = gen_mann.generate(nBlocks, roughness_height, friction_velocity)
+seed = None
 
-#######################################################################################
-# Scaling of the field (normalization)
-# ------------------------------------
-# WThe generated fluctuation field is normalized and scaled by the logarithmic profile
-#
-# .. math:: \left\langle U_1(z)\right\rangle=\frac{u_*}{\kappa} \ln \left(\frac{z}{z_0}+1\right)
-#
-# where :math:`u_*` is the friction velocity and :math:`z_0` is the roughness height.
-#
-
-spacing = tuple(grid_dimensions / (2.0**grid_levels + 1))
-
-fig_magnitude_mann = plot_velocity_magnitude(
-    spacing, fluctuation_field_mann, transparent=True
-)
-
-# this is a Plotly figure, which can be visualized with the ``.show()`` method in different contexts. While these utilities
-# may be useful for quick visualization, we recommend using Paraview to visualize higher resolution output. We will cover
-# saving to a portable VTK format further in this example.
-
-fig_magnitude_mann  # .show("browser")
 
 #######################################################################################
 # Fluctuation Field Generation from Pre-Trained DRD Model
@@ -123,16 +88,30 @@ Type_Model = "NN"  ### 'Mann', 'VK', 'NN'
 nBlocks = 3
 
 gen_drd = GenerateFluctuationField(
-    friction_velocity,
-    reference_height,
+    ustar,
+    zref,
     grid_dimensions,
     grid_levels,
+    length_scale=L,
+    time_scale=Gamma,
+    energy_spectrum_scale=sigma,
     model=Type_Model,
     path_to_parameters=path_to_parameters,
     seed=seed,
 )
 
-fluctuation_field_drd = gen_drd.generate(nBlocks, roughness_height, friction_velocity)
+#######################################################################################
+# Scaling of the field (normalization)
+# ------------------------------------
+# The generated fluctuation field is normalized and scaled by the logarithmic profile
+#
+# .. math:: \left\langle U_1(z)\right\rangle=\frac{u_*}{\kappa} \ln \left(\frac{z}{z_0}+1\right)
+#
+# where :math:`u_*` is the friction velocity and :math:`z_0` is the roughness height.
+#
+
+fluctuation_field_drd = gen_drd.generate(nBlocks, zref, uref, z0, windprofiletype)
+
 
 #######################################################################################
 # Evaluating Divergence Properties and Plotting
@@ -152,7 +131,7 @@ fig_magnitude_drd = plot_velocity_magnitude(
 )
 
 # this is a Plotly figure, which can be visualized with the ``.show()`` method in different contexts.
-fig_magnitude_drd  # .show("browser")
+fig_magnitude_drd  # .show("browser"), or for specific browser, use .show("firefox")
 
 #######################################################################################
 # Saving Generated Fluctuation Field as VTK
@@ -160,9 +139,9 @@ fig_magnitude_drd  # .show("browser")
 # For higher resolution fluctuation fields, we suggest using Paraview. To transfer the generated data
 # from our package, we provide the ``.save_to_vtk()`` method.
 filename = str(
-    path / "../docs/source/results/fluctuation_simple"
+    path / "../docs/source/results/fluctuation_drd"
     if path.name == "examples"
-    else path / "../results/fluctuation_simple"
+    else path / "../results/fluctuation_drd"
 )
 
 gen_drd.save_to_vtk(filename)

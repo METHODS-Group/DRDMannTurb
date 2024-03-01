@@ -5,11 +5,11 @@ Changing MLP Architecture and Fitting
 
 This example is nearly identical to the Synthetic Data fit, however we use
 a different neural network architecture in hopes of obtaining a better spectra fitting.
-The same set-up using the Mann model under the Kaimal spectra is used here as in other synthetic 
-data fitting examples. The only difference here is in the neural network architecture. 
+The same set-up using the Mann model under the Kaimal spectra is used here as in other synthetic
+data fitting examples. The only difference here is in the neural network architecture.
 Although certain combinations of activation functions, such as ``GELU`` result in considerably
-improved spectra fitting and terminal loss values, the resulting eddy lifetime functions are 
-usually non-physical. 
+improved spectra fitting and terminal loss values, the resulting eddy lifetime functions are
+usually non-physical.
 
 See again the `original DRD paper <https://arxiv.org/abs/2107.11046>`_.
 """
@@ -37,21 +37,21 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 #######################################################################################
-# The following cell sets the necessary physical constants, including the characteristic
-# scales for non-dimensionalization, the reference velocity, and the domain.
-# We consider the range :math:`\mathcal{D} = [0.1, 100]` and sample the data points
-# :math:`f_j \in \mathcal{D}` using a logarithmic grid of :math:`20` nodes.
+# Set up physical parameters and domain associated with the Kaimal spectrum. We perform the spectra fitting over the :math:`k_1` space :math:`[10^{{-1}}, 10^2]`
+# with 20 points.
+
+
+zref = 40  # reference height
+ustar = 1.773  # friction velocity
 
 # Scales associated with Kaimal spectrum
-L = 0.59  # length scale
+L = 0.59 * zref  # length scale
 Gamma = 3.9  # time scale
-sigma = 3.2  # energy spectrum scale
+sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # energy spectrum scale
 
-Uref = 21.0  # reference velocity
-zref = 1  # reference height
+print(f"Physical Parameters: {L,Gamma,sigma}")
 
-
-domain = torch.logspace(-1, 2, 20)
+k1 = torch.logspace(-1, 2, 20) / zref
 
 ##############################################################################
 # %%
@@ -78,7 +78,7 @@ pb = CalibrationProblem(
     prob_params=ProblemParameters(nepochs=25, wolfe_iter_count=20),
     loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1.0e-5),
     phys_params=PhysicalParameters(
-        L=L, Gamma=Gamma, sigma=sigma, Uref=Uref, domain=domain
+        L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1
     ),
     logging_directory="runs/synthetic_fit_deep_arch",
     device=device,
@@ -91,7 +91,7 @@ pb = CalibrationProblem(
 # generate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.
 # It is worth noting that the second element of each tuple in ``DataPoints`` is the
 # corresponding reference height, which we have chosen to be uniformly `zref`.
-Data = OnePointSpectraDataGenerator(zref=zref, data_points=domain).Data
+Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
 
 ##############################################################################
 # Training

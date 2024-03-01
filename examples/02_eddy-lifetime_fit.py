@@ -7,11 +7,11 @@ The IEC-recommended spectral tensor model is calibrated to fit the Kaimal spectr
 There are three free parameters: :math:`L, T, C`, which have been precomputed in
 `Mann's original work <https://www.sciencedirect.com/science/article/pii/S0266892097000362>`_
 to be :math:`L=0.59, T=3.9, C=3.2`, which will be used to compare against a DRD model fit.
-In this example, the exponent :math:`\\nu=-\\frac{1}{3}` is fixed so that 
-:math:`\\tau(\\boldsymbol{k})` matches the slope of :math:`\\tau^{IEC}` for 
-:math:`k \\rightarrow 0`. 
+In this example, the exponent :math:`\\nu=-\\frac{1}{3}` is fixed so that
+:math:`\\tau(\\boldsymbol{k})` matches the slope of :math:`\\tau^{IEC}` for
+:math:`k \\rightarrow 0`.
 
-The following example is also discussed in the `original DRD paper <https://arxiv.org/abs/2107.11046>`_. 
+The following example is also discussed in the `original DRD paper <https://arxiv.org/abs/2107.11046>`_.
 """
 
 #######################################################################################
@@ -49,17 +49,17 @@ if torch.cuda.is_available():
 # time scale, and :math:`\sigma` is the spectrum amplitude.
 
 
-# Characteristic scales associated with Kaimal spectrum
-L = 0.59  # length scale
+zref = 40  # reference height
+ustar = 1.773  # friction velocity
+
+# Scales associated with Kaimal spectrum
+L = 0.59 * zref  # length scale
 Gamma = 3.9  # time scale
-sigma = 3.2  # energy spectrum scale
+sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # energy spectrum scale
 
-Uref = 21.0  # reference velocity
+print(f"Physical Parameters: {L,Gamma,sigma}")
 
-zref = 1  # reference height
-
-# We consider the range :math:`\mathcal{D} =[0.1, 100]` and sample the data points :math:`f_j \in \mathcal{D}` using a logarithmic grid of :math:`20` nodes.
-domain = torch.logspace(-1, 2, 20)
+k1 = torch.logspace(-1, 2, 20) / zref
 
 #######################################################################################
 # ``CalibrationProblem`` construction
@@ -96,7 +96,7 @@ pb = CalibrationProblem(
     # Note that we have not activated the first order term, but this can be done by passing a value for ``alpha_pen1``
     loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1.0e-5),
     phys_params=PhysicalParameters(
-        L=L, Gamma=Gamma, sigma=sigma, Uref=Uref, domain=domain
+        L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1
     ),
     logging_directory="runs/synthetic_fit",
     device=device,
@@ -109,7 +109,7 @@ pb = CalibrationProblem(
 # generate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.
 # It is worth noting that the second element of each tuple in ``DataPoints`` is the corresponding
 # reference height, which we have chosen to be uniformly `zref`.
-Data = OnePointSpectraDataGenerator(zref=zref, data_points=domain).Data
+Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
 
 ##############################################################################
 # Calibration
@@ -144,7 +144,7 @@ pb.plot_losses(run_number=0)
 # which make saving your ``DRDMannTurb`` fit very straightforward. The following line
 # automatically pickles and writes out a trained model along with the various
 # parameter dataclasses in ``../results``.
-pb.save_model("../results/")
+pb.save_model("./outputs/")
 
 ##############################################################################
 # Loading Model and Problem Metadata
@@ -154,7 +154,7 @@ pb.save_model("../results/")
 # %%
 import pickle
 
-path_to_parameters = "../results/EddyLifetimeType.TAUNET_DataType.KAIMAL.pkl"
+path_to_parameters = "./outputs/EddyLifetimeType.TAUNET_DataType.KAIMAL.pkl"
 
 with open(path_to_parameters, "rb") as file:
     (

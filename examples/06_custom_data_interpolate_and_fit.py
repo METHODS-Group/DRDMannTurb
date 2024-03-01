@@ -5,31 +5,31 @@ Interpolating Spectra Data and Fitting
 
 In this example, we're using real-world data, but importantly the data points are not over
 the same spatial coordinates. Since that congruency is required, we need to interpolate the
-data values and obtain them over a common set of points. Furthermore, we filter the noisy data to obtain smoother 
+data values and obtain them over a common set of points. Furthermore, we filter the noisy data to obtain smoother
 curves for the DRD model to fit. ``DRDMannTurb`` has built-in utilities for handling this.
 
-This process involves new sources of error: interpolation error and filtering error, in addition to the sources from 
-data collection and DRD model training. 
+This process involves new sources of error: interpolation error and filtering error, in addition to the sources from
+data collection and DRD model training.
 
-The filtering is based on differential evolution to perform a non-linear fit onto functions of the following form: 
+The filtering is based on differential evolution to perform a non-linear fit onto functions of the following form:
 
-.. math:: 
+.. math::
 
     \frac{k_1 F_{11}\left(k_1 z\right)}{u_*^2}=J_1(f):=\frac{a_1 f}{(1+b_1 f)^{c_1}}
 
-.. math:: 
+.. math::
 
     \frac{k_1 F_{22}\left(k_1 z\right)}{u_*^2}=J_2(f):=\frac{a_2 f}{(1+b_2 f)^{c_2}}
 
-.. math:: 
+.. math::
 
     \frac{k_1 F_{33}\left(k_1 z\right)}{u_*^2}=J_3(f):=\frac{a_3 f}{1+ b_3 f^{ c_3}}
 
-.. math:: 
+.. math::
 
     -\frac{k_1 F_{13}\left(k_1 z\right)}{u_*^2}=J_4(f):=\frac{a_4 f}{(1+ b_4 f)^{c_4}}
 
-with :math:`F_{12}=F_{23}=0`. Here, :math:`f = (2\pi)^{-1} k_1 z`. In the above, the :math:`a_i, b_i, c_i` are free parameters which are optimized by differential evolution. The result is a spectra model that is similar in form to the Kaimal spectra and which filters/smooths the spectra data from the real world and eases fitting by DRD models. This option is highly suggested in cases where spectra data have large deviations. 
+with :math:`F_{12}=F_{23}=0`. Here, :math:`f = (2\pi)^{-1} k_1 z`. In the above, the :math:`a_i, b_i, c_i` are free parameters which are optimized by differential evolution. The result is a spectra model that is similar in form to the Kaimal spectra and which filters/smooths the spectra data from the real world and eases fitting by DRD models. This option is highly suggested in cases where spectra data have large deviations.
 """
 
 ##############################################################################
@@ -55,9 +55,7 @@ from drdmannturb.parameters import (
 from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 
 path = Path().resolve()
-datapath = (
-    path / "../docs/source/data" if path.name == "examples" else path / "../data/"
-)
+datapath = path / "./inputs" if path.name == "examples" else path / "../data/"
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
