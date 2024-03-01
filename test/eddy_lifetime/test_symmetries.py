@@ -125,7 +125,7 @@ def test_synth_basic():
     k4_n2 = torch.stack([k_gd, -k_gd, k_gd], dim=-1) / 3 ** (1 / 2)
     tau_model4_neg2 = pb.OPS.EddyLifetime(k4_n2).cpu().detach().numpy()
 
-    assert np.array_equal(tau_model4, tau_model4_neg2), "tau function is even wrt k2"
+    assert np.array_equal(tau_model4, tau_model4_neg2), "tau function is even wrt k4"
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ from pyevtk.hl import imageToVTK
 
 from drdmannturb.fluctuation_generation import (
     plot_velocity_components,  # utility function for plotting each velocity component in the field, not used in this example
+    format_wind_field
 )
 from drdmannturb.fluctuation_generation import (
     GenerateFluctuationField,
@@ -73,9 +74,8 @@ for nBlocks in range(1, 15+1):
     fluctuation_field_drd += mean_profile
     fluctuation_field_drd *= 40/63
 
-    wind_field_vtk = tuple([np.copy(fluctuation_field_drd[...,i], order='C') for i in range(3)])
+    wind_field_vtk = format_wind_field(fluctuation_field_drd)
     cellData = {'grid': np.zeros_like(fluctuation_field_drd[...,0]), 'wind': wind_field_vtk}
-
     FileName = f"dat/block_{nBlocks}"
     imageToVTK(FileName, cellData = cellData, spacing=spacing)
 

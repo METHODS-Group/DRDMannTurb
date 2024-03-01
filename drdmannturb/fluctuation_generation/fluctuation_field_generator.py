@@ -356,7 +356,7 @@ class GenerateFluctuationField:
             import warnings
 
             warnings.warn(
-                "Fluctuation field has already been generated, additional blocks will be appended to existing field. If this is undesirable behavior, instantiate a new object."
+                "Fluctuation field has already been generated, additional blocks will be appended to existing field. If this is undesired behavior, you should instead create a new instance."
             )
 
         for _ in range(num_blocks):
@@ -400,7 +400,7 @@ class GenerateFluctuationField:
         """
         if not np.any(self.total_fluctuation):
             raise ValueError(
-                "No fluctuation field has been generated, call the .generate() method first."
+                "No fluctuation field has been generated. Call the .generate() method first."
             )
 
         sd = np.sqrt(np.mean(self.total_fluctuation**2))
@@ -417,29 +417,6 @@ class GenerateFluctuationField:
         )
 
         return self.total_fluctuation + mean_profile
-
-    def save_to_vtk(self, filepath: Union[str, Path] = "./"):
-        """Saves generated fluctuation field in VTK format to specified filepath.
-
-        Parameters
-        ----------
-        filepath : Union[str, Path]
-           Filepath to which to save generated fluctuation field.
-        """
-        from pyevtk.hl import imageToVTK
-
-        spacing = tuple(self.grid_dimensions / (2.0**self.grid_levels + 1))
-
-        wind_field_vtk = tuple(
-            [np.copy(self.total_fluctuation[..., i], order="C") for i in range(3)]
-        )
-
-        cellData = {
-            "grid": np.zeros_like(self.total_fluctuation[..., 0]),
-            "wind": wind_field_vtk,
-        }
-
-        imageToVTK(filepath, cellData=cellData, spacing=spacing)
 
     def evaluate_divergence(
         self, spacing: Union[tuple, np.ndarray], field: Optional[np.ndarray] = None
@@ -492,3 +469,78 @@ class GenerateFluctuationField:
         return np.ufunc.reduce(
             np.add, [np.gradient(field[..., i], spacing[i], axis=i) for i in range(3)]
         )
+
+    def save_to_vtk(self, filename: str, filepath: Union[str, Path] = "./DRDMT_out") -> None:
+        """Saves generated fluctuation field in VTK format to specified filepath.
+
+        Parameters
+        ----------
+        filename : str
+            File name to write out with
+        filepath : Union[str, Path], optional
+            File path to which the generated fluctuation field VTK should be written, by default "./DRDMT_out"
+
+        Raises
+        ------
+        ValueError
+            Thrown if provided filepath does not lead to a directory
+        ValueError
+            Thrown if provided filename is empty/invalid
+        """
+        from pyevtk.hl import imageToVTK
+        from .wind_plot import format_wind_field
+
+        path : Path
+        if isinstance(filepath, str):           
+            path = Path(filepath)
+        else:
+            path = filepath
+
+        if not path.is_dir():
+            raise ValueError("Provided value for filepath does not lead to a directory")
+        
+        if not (len(filename) > 0):
+            raise ValueError("Was passed an empty string as a file name")
+
+        spacing = tuple(self.grid_dimensions / (2.0**self.grid_levels + 1))
+        wind_field_vtk = format_wind_field(self.total_fluctuation)
+        cellData = {
+            "grid": np.zeros_like(self.total_fluctuation[..., 0]),
+            "wind": wind_field_vtk,
+        }
+
+        imageToVTK(filepath, cellData=cellData, spacing=spacing)
+
+
+    def save_to_netcdf(self, filename: str, filepath: Union[str, Path] = "./DRDMT_out") -> None:
+        """Saves generated fluctuation field in NetCDF format to specified filepath.
+
+        Parameters
+        ----------
+        filename : str
+            File name to write out with
+        filepath : Union[str, Path], optional
+            File path to which the generated fluctuation field NetCDF should be written, by default "./DRDMT_out"
+
+        Raises
+        ------
+        ValueError
+            Thrown if provided filepath does not lead to a directory
+        ValueError
+            Thrown if provided filename is nonsensical/invalid
+        """        
+        from .wind_plot import format_wind_field
+
+        path : Path
+        if isinstance(filepath, str):
+            path = Path(filepath)
+        else:
+            path = filepath
+
+        if not path.is_dir():
+            raise ValueError("Provided value for filepath does not lead to a directory")
+        
+        if not (len(filename) > 0):
+            raise ValueError("Was passed an empty string as a file name")
+
+        pass
