@@ -59,7 +59,7 @@ Lx = 720
 Ly = 64
 Lz = 64
 
-nBlocks = 3
+nBlocks = 2
 grid_dimensions = np.array([Lx / 4, Ly, Lz])
 
 grid_levels = np.array([6, 4, 4])

@@ -85,7 +85,7 @@ path_to_parameters = (
 )
 
 Type_Model = "NN"  ### 'Mann', 'VK', 'NN'
-nBlocks = 3
+nBlocks = 2
 
 gen_drd = GenerateFluctuationField(
     ustar,
