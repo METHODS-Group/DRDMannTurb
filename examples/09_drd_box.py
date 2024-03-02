@@ -85,7 +85,7 @@ path_to_parameters = (
 )
 
 Type_Model = "NN"  ### 'Mann', 'VK', 'NN'
-nBlocks = 3
+nBlocks = 2
 
 gen_drd = GenerateFluctuationField(
     ustar,
@@ -122,7 +122,7 @@ fluctuation_field_drd = gen_drd.generate(nBlocks, zref, uref, z0, windprofiletyp
 #  resolution of the fluctuation field is improved.
 spacing = tuple(grid_dimensions / (2.0**grid_levels + 1))
 
-gen_drd.evaluate_divergence(spacing, fluctuation_field_drd).max()
+gen_drd.evaluate_divergence(spacing, fluctuation_field_drd).mean()
 
 #######################################################################################
 # We now visualize the output fluctuation field.

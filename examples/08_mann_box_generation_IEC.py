@@ -59,7 +59,7 @@ Lx = 720
 Ly = 64
 Lz = 64
 
-nBlocks = 3
+nBlocks = 2
 grid_dimensions = np.array([Lx / 4, Ly, Lz])
 
 grid_levels = np.array([6, 4, 4])
@@ -126,7 +126,7 @@ fig_magnitude_mann  # .show("browser"), or for specific browser, use .show("fire
 #  resolution of the fluctuation field is improved.
 spacing = tuple(grid_dimensions / (2.0**grid_levels + 1))
 
-gen_mann.evaluate_divergence(spacing, fluctuation_field_mann).max()
+gen_mann.evaluate_divergence(spacing, fluctuation_field_mann).mean()
 
 
 #######################################################################################
