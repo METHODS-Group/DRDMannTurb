@@ -3,7 +3,7 @@
 Fluctuation Field Generation from DRD Model
 ===========================================
 
-This example demonstrates the utilities for generating fluctuation fields, which can be either from a pre-trained DRD model, or based on some well-known spectra models. ``DRDMannTurb`` provides several utilities for plotting the resulting fields through Plotly, which can be done in several contexts as well as utilities for saving to VTK for downstream analysis. 
+This example demonstrates the utilities for generating fluctuation fields, which can be either from a pre-trained DRD model, or based on some well-known spectra models. ``DRDMannTurb`` provides several utilities for plotting the resulting fields through Plotly, which can be done in several contexts as well as utilities for saving to VTK for downstream analysis.
 
 """
 
@@ -101,14 +101,15 @@ gen_drd = GenerateFluctuationField(
 )
 
 #######################################################################################
-# Scaling of the field (normalization)
+# Adding the mean velocity profile
 # ------------------------------------
-# The generated fluctuation field is normalized and scaled by the logarithmic profile
+# The mean velocity profile follows the power law profile
 #
-# .. math:: \left\langle U_1(z)\right\rangle=\frac{u_*}{\kappa} \ln \left(\frac{z}{z_0}+1\right)
+# .. math:: \left\langle U_1(z)\right\rangle= U_{\text{ref}}\left( \frac{z}{z_{\text{ref}}} \right)^\alpha
 #
-# where :math:`u_*` is the friction velocity and :math:`z_0` is the roughness height.
+# where :math:`U_{\text{ref}}` is the reference velocity and :math:`z_{\text{ref}}` is the reference height.
 #
+
 
 fluctuation_field_drd = gen_drd.generate(nBlocks, zref, uref, z0, windprofiletype)
 
