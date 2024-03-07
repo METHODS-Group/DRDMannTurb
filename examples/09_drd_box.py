@@ -105,9 +105,9 @@ gen_drd = GenerateFluctuationField(
 # ------------------------------------
 # The mean velocity profile follows the power law profile
 #
-# .. math:: \left\langle U_1(z)\right\rangle= U_{\text{ref}}\left( \frac{z}{z_{\text{ref}}} \right)^\alpha
+# .. math:: \left\langle U_1(z)\right\rangle= U_{\text{ref}} \frac{\ln \left( \frac{z}{z_0} + 1 \right)}{\ln \left( \frac{z_{\text{ref}}}{z_0} \right)}
 #
-# where :math:`U_{\text{ref}}` is the reference velocity and :math:`z_{\text{ref}}` is the reference height.
+# where :math:`U_{\text{ref}}` is the reference velocity, :math:`z_0` is the roughness height, and :math:`z_{\text{ref}}` is the reference height.
 #
 
 

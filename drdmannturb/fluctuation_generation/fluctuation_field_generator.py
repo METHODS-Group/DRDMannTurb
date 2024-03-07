@@ -317,7 +317,7 @@ class GenerateFluctuationField:
             Type of wind profile by which to normalize, either ``"LOG"`` for logarithmic scaling or ``"PL"`` for power law scaling: for ``"LOG"``,
 
             .. math::
-                \left\langle U_1(z)\right\rangle=\frac{u_*}{\kappa} \ln \left(\frac{z}{z_0}+1\right)
+                \left\langle U_1(z)\right\rangle= U_{\text{ref}} \frac{\ln \left( \frac{z}{z_0} + 1 \right)}{\ln \left( \frac{z_{\text{ref}}}{z_0} \right)}
 
             or for ``"PL"``,
 
