@@ -95,13 +95,13 @@ fluctuation_field_mann = gen_mann.generate(
 )
 
 #######################################################################################
-# Scaling of the field (normalization)
+# Adding the mean velocity profile
 # ------------------------------------
-# The generated fluctuation field is normalized and scaled by the power law profile
+# The mean velocity profile follows the power law profile
 #
-# .. math:: \left\langle U_1(z)\right\rangle= u_* \left( \frac{z}{z_{\text{ref}}} \right)^\alpha
+# .. math:: \left\langle U_1(z)\right\rangle= U_{\text{ref}}\left( \frac{z}{z_{\text{ref}}} \right)^\alpha
 #
-# where :math:`u_*` is the friction velocity and :math:`z_{\text{ref}}` is the reference height.
+# where :math:`U_{\text{ref}}` is the reference velocity and :math:`z_{\text{ref}}` is the reference height.
 #
 
 spacing = tuple(grid_dimensions / (2.0**grid_levels + 1))
