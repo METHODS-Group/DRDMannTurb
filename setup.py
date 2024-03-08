@@ -1,8 +1,16 @@
+# read contents of README for PyPi description
+from pathlib import Path
+
 from setuptools import setup
+
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="drdmannturb",
-    version="0.1.0",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    version="1.0.0",
     description="Mann turbulence modelling",
     url="https://github.com/mjachi/WindGenerator",
     author="Alexey Izmailov, Matthew Meeker based on code by Brendan Keith et al",
