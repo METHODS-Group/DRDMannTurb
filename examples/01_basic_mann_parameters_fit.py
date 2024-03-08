@@ -1,19 +1,19 @@
 r"""
-===================
-Basic Mann Model Fit
-===================
+===============================
+Example 1: Basic Mann Model Fit
+===============================
 
-This example demonstrates the a simple configuration of ``DRDMannTurb`` to spectra fitting while using the Mann model as the eddy lifetime function under the Kaimal one-point spectra.
+This example demonstrates fitting the Mann model eddy lifetime function to the Kaimal one-point spectra.
 
-For reference, the full Mann eddy lifetime function is given by
+For reference, the Mann eddy lifetime function is given by
 
 .. math::
 
-    \tau^{\mathrm{Mann}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}
+    \tau^{\mathrm{Mann}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}\,.
 
-and the Kaimal one-point spectra. This set of models has classically been most useful for flat homogeneous terrains.
+This set of models it widely used for flat, homogeneous terrains.
 
-Also, the resulting fitting can be used directly to generate a 3D Mann fluctuation field, as demonstrated in our wind generation example.
+``drdmannturb`` can also be used directly to generate the corresponding 3D turbulence field, as demonstrated in Examples 8 and 9.
 
 """
 
@@ -41,8 +41,7 @@ if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
 #######################################################################################
-# Set up physical parameters and domain associated with the Kaimal spectrum. We perform the spectra fitting over the :math:`k_1` space :math:`[10^{{-1}}, 10^2]`
-# with 20 points.
+# Set up physical parameters and domain. We perform the spectra fitting over the :math:`k_1 z` space :math:`[10^{{-1}}, 10^2]` with 20 points.
 
 
 zref = 40  # reference height
@@ -61,13 +60,10 @@ k1 = torch.logspace(-1, 2, 20) / zref
 # ``CalibrationProblem`` Construction
 # -----------------------------------
 # The following cell defines the ``CalibrationProblem`` using default values
-# for the ``NNParameters`` and ``LossParameters`` dataclasses. Importantly,
-# these data classes are not necessary, see their respective documentations for the default values.
-# The current set-up involves using the Mann model for the eddy lifetime function, meaning no
-# neural network is used in learning the :math:`\tau` function. Additionally, the physical parameters
-# are taken from the reference values for the Kaimal spectra. Finally, in this scenario the regression
-# occurs as an MSE fit to the spectra, which are generated from Mann turbulence (i.e., a synthetic data fit).
-# The ``EddyLifetimeType.MANN`` argument determines the type of eddy lifetime function to use.
+# for the ``NNParameters`` and ``LossParameters`` dataclasses.
+# Notice that ``EddyLifetimeType.MANN`` specifies the Mann model for the eddy lifetime
+# function, meaning no neural network is used in learning the :math:`\tau` function.
+# Thus, we only learn the parameters :math:`L`, :math:`\Gamma`, and :math:`\sigma`.
 pb = CalibrationProblem(
     nn_params=NNParameters(),
     prob_params=ProblemParameters(eddy_lifetime=EddyLifetimeType.MANN, nepochs=2),
@@ -100,7 +96,8 @@ Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
 # which only has a CPU implementation through ``Scipy``. When using this function
 # with a neural network task, consider either learning this function as well or
 # using a linear approximation from your data that provides a GPU kernel for
-# fast evaluation of a similar model. See the final example in the collection where a linear regression is used in log-log space to generate this.
+# fast evaluation of a similar model. See the Example 7, where linear regression
+# is used in log-log space to generate this.
 #
 # Having the necessary components, the model is "calibrated" (fit) to the provided spectra
 # and we conclude with a plot.
