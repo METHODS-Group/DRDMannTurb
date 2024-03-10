@@ -1,9 +1,11 @@
 r"""
-====================================
-Mann Eddy Lifetime Linear Regression
-====================================
+===============================================
+Example 7: Mann Eddy Lifetime Linear Regression
+===============================================
 
-This example demonstrates the a simple configuration of ``DRDMannTurb`` to spectra fitting while using a linear approximation to the Mann eddy lifetime function (in log-log space) under the Kaimal one-point spectra.
+This example demonstrates the a simple configuration of ``DRDMannTurb`` to spectra fitting
+while using a linear approximation to the Mann eddy lifetime function (in log-log space)
+under the Kaimal one-point spectra.
 
 For reference, the full Mann eddy lifetime function is given by
 
@@ -11,9 +13,13 @@ For reference, the full Mann eddy lifetime function is given by
 
     \tau^{\mathrm{IEC}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}
 
-where the hypergeometric function can only be evaluated on the CPU. The purpose of this example is to show how a GPU kernel of a linear approximation (in log-log space) of the Mann eddy lifetime can be generated automatically to speed up tasks that require the GPU. As before, the Kaimal spectra is used for the one-point-spectra model.
+where the hypergeometric function can only be evaluated on the CPU. The purpose of this example is
+to show how a GPU kernel of a linear approximation (in log-log space) of the Mann eddy lifetime can
+be generated automatically to speed up tasks that require the GPU. As before, the Kaimal spectra is
+used for the one-point-spectra model.
 
-The external API works the same as with other models, but the following may speed up some tasks that rely exclusively on the Mann eddy lifetime function.
+The external API works the same as with other models, but the following may speed up some tasks
+that rely exclusively on the Mann eddy lifetime function.
 """
 
 #######################################################################################
@@ -36,19 +42,19 @@ from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataG
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# v2: torch.set_default_device('cuda:0')
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
 
 #######################################################################################
-# Set up physical parameters and domain associated with the Kaimal spectrum. We perform the spectra fitting over the :math:`k_1` space :math:`[10^{{-1}}, 10^2]`
+# Set up physical parameters and domain associated with the Kaimal spectrum.
+# We perform the spectra fitting over the :math:`k_1` space :math:`[10^{{-1}}, 10^2]`
 # with 20 points.
 
 # Scales associated with Kaimal spectrum
 L = 0.59  # length scale
 Gamma = 3.9  # time scale
-sigma = 3.2  # energy spectrum scale
+sigma = 3.2  # magnitude (σ = αϵ^{2/3})
 
 zref = 1  # reference height
 

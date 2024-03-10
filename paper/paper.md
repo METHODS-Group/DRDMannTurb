@@ -23,7 +23,7 @@ affiliations:
    index: 1
  - name: National Wind Technology Center, National Renewable Energy Laboratory, Golden, CO, 80401, USA
    index: 2
-date: 8 March 2024     
+date: 10 March 2024     
 bibliography: paper.bib
 ---
 

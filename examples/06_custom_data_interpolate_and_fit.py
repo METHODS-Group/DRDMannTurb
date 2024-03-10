@@ -1,12 +1,13 @@
 r"""
-======================================
-Interpolating Spectra Data and Fitting
-======================================
+=================================================
+Example 6: Interpolating Spectra Data and Fitting
+=================================================
 
 In this example, we're using real-world data, but importantly the data points are not over
 the same spatial coordinates. Since that congruency is required, we need to interpolate the
-data values and obtain them over a common set of points. Furthermore, we filter the noisy data to obtain smoother
-curves for the DRD model to fit. ``DRDMannTurb`` has built-in utilities for handling this.
+data values and obtain them over a common set of points. Furthermore, we filter the noisy data
+to obtain smoother curves for the DRD model to fit. ``DRDMannTurb`` has built-in utilities
+for handling this.
 
 This process involves new sources of error: interpolation error and filtering error, in addition to the sources from
 data collection and DRD model training.
@@ -29,7 +30,11 @@ The filtering is based on differential evolution to perform a non-linear fit ont
 
     -\frac{k_1 F_{13}\left(k_1 z\right)}{u_*^2}=J_4(f):=\frac{a_4 f}{(1+ b_4 f)^{c_4}}
 
-with :math:`F_{12}=F_{23}=0`. Here, :math:`f = (2\pi)^{-1} k_1 z`. In the above, the :math:`a_i, b_i, c_i` are free parameters which are optimized by differential evolution. The result is a spectra model that is similar in form to the Kaimal spectra and which filters/smooths the spectra data from the real world and eases fitting by DRD models. This option is highly suggested in cases where spectra data have large deviations.
+with :math:`F_{12}=F_{23}=0`. Here, :math:`f = (2\pi)^{-1} k_1 z`.
+In the above, the :math:`a_i, b_i, c_i` are free parameters which are optimized by differential evolution.
+The result is a spectra model that is similar in form to the Kaimal spectra and which filters/smooths
+the spectra data from the real world and eases fitting by DRD models. This option is highly suggested
+in cases where spectra data have large deviations.
 """
 
 ##############################################################################
@@ -59,7 +64,6 @@ datapath = path / "./inputs" if path.name == "examples" else path / "../data/"
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# v2: torch.set_default_device('cuda:0')
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
@@ -67,12 +71,12 @@ if torch.cuda.is_available():
 ##############################################################################
 # Setting Physical Parameters
 # ---------------------------
-# Here, we define our charateristic scales :math:`L, \Gamma, \sigma`, the
+# Here, we define our charateristic scales :math:`L, \Gamma, \alpha\epsilon^{2/3}`, the
 # log-scale domain, and the reference height `zref` and velocity `Uref`.
 # for interpolation, log10-scaled k1 is used, regular values of the domain used for fitting
 L = 70  # length scale
 Gamma = 3.7  # time scale
-sigma = 0.04  # energy spectrum scale
+sigma = 0.04  # magnitude (σ = αϵ^{2/3})
 
 Uref = 21.0  # reference velocity
 zref = 1  # reference height

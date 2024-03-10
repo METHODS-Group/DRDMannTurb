@@ -1,19 +1,16 @@
 """
-=====================================
-Changing MLP Architecture and Fitting
-=====================================
+================================================
+Example 4: Changing MLP Architecture and Fitting
+================================================
 
 This example is nearly identical to the Synthetic Data fit, however we use
 a different neural network architecture in hopes of obtaining a better spectra fitting.
-The same set-up using the Mann model under the Kaimal spectra is used here as in other synthetic
-data fitting examples. The only difference here is in the neural network architecture.
+The same set-up for fitting the Kaimal spectra is used here as in Examples 2 and 3.
+The only difference here is in the neural network architecture.
 Although certain combinations of activation functions, such as ``GELU`` result in considerably
-improved spectra fitting and terminal loss values, the resulting eddy lifetime functions are
-usually non-physical.
-
-See again the `original DRD paper <https://arxiv.org/abs/2107.11046>`_.
+improved spectra fitting and terminal loss values, the resulting eddy lifetime functions may
+be non-physical.
 """
-
 
 #######################################################################################
 # Import packages
@@ -37,9 +34,9 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 #######################################################################################
-# Set up physical parameters and domain associated with the Kaimal spectrum. We perform the spectra fitting over the :math:`k_1` space :math:`[10^{{-1}}, 10^2]`
+# Set up physical parameters and domain associated with the Kaimal spectrum.
+# We perform the spectra fitting over the :math:`k_1` space :math:`[10^{{-1}}, 10^2]`
 # with 20 points.
-
 
 zref = 40  # reference height
 ustar = 1.773  # friction velocity
@@ -47,7 +44,7 @@ ustar = 1.773  # friction velocity
 # Scales associated with Kaimal spectrum
 L = 0.59 * zref  # length scale
 Gamma = 3.9  # time scale
-sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # energy spectrum scale
+sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # magnitude (σ = αϵ^{2/3})
 
 print(f"Physical Parameters: {L,Gamma,sigma}")
 
@@ -57,7 +54,7 @@ k1 = torch.logspace(-1, 2, 20) / zref
 # %%
 # Now, we construct our ``CalibrationProblem``.
 #
-# Compared to the first Synthetic Fit example, as noted already, we are using
+# Compared to Examples 2 and 3, we are using
 # a more complicated neural network architecture. This time, specifically, our
 # network will have 4 layers of width 10, 20, 20, 10 respectively, and we
 # use both ``GELU`` and ``RELU`` activations. We have
@@ -71,7 +68,7 @@ k1 = torch.logspace(-1, 2, 20) / zref
 pb = CalibrationProblem(
     nn_params=NNParameters(
         nlayers=4,
-        # Specifying the activations is done similarly.
+        # Specifying the activations is done as in Examples 2 and 3.
         hidden_layer_sizes=[10, 20, 20, 10],
         activations=[nn.ReLU(), nn.GELU(), nn.GELU(), nn.ReLU()],
     ),
@@ -89,8 +86,6 @@ pb = CalibrationProblem(
 # ---------------
 # In the following cell, we construct our :math:`k_1` data points grid and
 # generate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.
-# It is worth noting that the second element of each tuple in ``DataPoints`` is the
-# corresponding reference height, which we have chosen to be uniformly `zref`.
 Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
 
 ##############################################################################
