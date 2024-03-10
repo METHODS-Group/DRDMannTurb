@@ -1,5 +1,5 @@
 ---
-title: 'DRDMannTurb'
+title: 'DRDMannTurb: A python package for scalable, data-driven synthetic turbulence'
 tags:
   - Python
   - Torch
