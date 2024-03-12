@@ -75,7 +75,7 @@ seed = None
 # Fluctuation Field Generation from Pre-Trained DRD Model
 # -------------------------------------------------------
 # We now generate a similar fluctuation field in the same physical setting and domain but using a pre-trained DRD model.
-# This model is the result of fitting to the Kaimal spectrum, showcased in `Example 8 <https://methods-group.github.io/DRDMannTurb/auto_examples/08_mann_box_generation_IEC.html>`_, so we anticipate the resulting
+# This model is the result of fitting to the Kaimal spectrum, showcased in `Example 2 <https://methods-group.github.io/DRDMannTurb/auto_examples/02_eddy-lifetime_fit.html>`_, so we anticipate the resulting
 # fluctuation fields to be similar. Note that since DRD models learn the scales, these are taken from the
 # saved object, which has these values as parameters.
 # The field generation process can be summarized by the following diagram of a 2D domain (a transversal cross-section of a 3D turbulence block).

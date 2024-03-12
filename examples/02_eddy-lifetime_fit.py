@@ -4,7 +4,7 @@ Example 2: Synthetic Data Fit
 =============================
 
 In this example, we compare the DRD model to the Mann model, using the three IEC-recommended Mann model
-parameters: :math:`L/zref=0.59, Γ=3.9, αϵ^{2/3}=3.2 * (zref^{2/3} / ustar²)`.
+parameters: :math:`L/\\text{zref}=0.59, Γ=3.9, αϵ^{2/3}=3.2 * (\\text{zref}^{2/3} / \\text{ustar}^2)`.
 In this example, the exponent :math:`\\nu=-\\frac{1}{3}` is fixed so that :math:`\\tau(\\boldsymbol{k})`
 matches the slope of :math:`\\tau^{IEC}` for in the energy-containing range, :math:`k \\rightarrow 0`.
 
@@ -43,13 +43,16 @@ if torch.cuda.is_available():
 # :math:`L` is our characteristic length scale, :math:`\Gamma` is our characteristic
 # time scale, and :math:`\sigma = \alpha\epsilon^{2/3}` is the spectrum amplitude.
 
-zref = 40  # reference height
-ustar = 1.773  # friction velocity
+zref = 90  # reference height
+z0 = 0.02
+zref = 90
+uref = 11.4
+ustar = 0.556  # friction velocity
 
 # Scales associated with Kaimal spectrum
-L = 0.59 * zref  # length scale
-Gamma = 3.9  # time scale
-sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # magnitude (σ = αϵ^{2/3})
+L = 0.593 * zref  # length scale
+Gamma = 3.89  # time scale
+sigma = 0.052  # magnitude (σ = αϵ^{2/3})
 
 print(f"Physical Parameters: {L,Gamma,sigma}")
 
