@@ -514,9 +514,7 @@ class CalibrationProblem:
         print("=" * 40)
 
         for k, v in self.calibrated_params.items():
-            print(
-                f"{OKGREEN}Optimal calibrated {k} : {v:8.4f} {ENDC}"
-            )
+            print(f"{OKGREEN}Optimal calibrated {k} : {v:8.4f} {ENDC}")
 
         print("=" * 40)
 
