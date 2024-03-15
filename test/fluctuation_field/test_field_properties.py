@@ -22,8 +22,7 @@ sigma = 3.4
 
 domain = torch.logspace(-1, 2, 20)
 
-path = Path().resolve()
-path_to_trained = path.parent / "docs/source/results"
+path_to_trained = Path(__file__).parent.parent.parent / "docs/source/results"
 
 
 @pytest.mark.parametrize(
