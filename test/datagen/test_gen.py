@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 import torch
 
@@ -16,6 +18,8 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 # v2: torch.set_default_device('cuda:0')
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
+
+fp = Path(__file__).parent
 
 
 def test_kaimal_mann():
@@ -36,6 +40,6 @@ def test_kaimal_mann():
 
     kaimal_mann_spectra_new = Data[1]
 
-    kaimal_mann_spectra_true = torch.load("kaimal_mann_data_raw.pt")
+    kaimal_mann_spectra_true = torch.load(fp / "kaimal_mann_data_raw.pt")
 
     assert torch.equal(kaimal_mann_spectra_new, kaimal_mann_spectra_true)

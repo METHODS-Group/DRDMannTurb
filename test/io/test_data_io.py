@@ -10,7 +10,7 @@ import torch
 from drdmannturb.enums import DataType
 from drdmannturb.spectra_fitting import OnePointSpectraDataGenerator
 
-path = Path().resolve()
+path = Path(__file__).parent
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 

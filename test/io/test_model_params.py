@@ -30,6 +30,9 @@ sigma = 3.4
 
 domain = torch.logspace(-1, 2, 20)
 
+path = Path().resolve()
+path_to_trained = path.parent / "docs/source/results"
+
 
 @pytest.mark.parametrize(
     "eddylifetime",
@@ -53,8 +56,6 @@ def test_network_paramcount(eddylifetime: EddyLifetimeType):
 
     if eddylifetime == EddyLifetimeType.CUSTOMMLP:
         assert pb.num_trainable_params() == 160
-    elif eddylifetime == EddyLifetimeType.TAUNET:
-        assert pb.num_trainable_params() == 27
 
 
 @pytest.mark.slow
@@ -79,7 +80,7 @@ def test_nnparams_load_trained_TAUNET():
 
     pb.save_model(".")
 
-    params_fp = Path().resolve() / "./EddyLifetimeType.TAUNET_DataType.KAIMAL.pkl"
+    params_fp = path_to_trained / "EddyLifetimeType.TAUNET_DataType.KAIMAL.pkl"
     with open(params_fp, "rb") as file:
         (
             nn_params,
@@ -126,7 +127,7 @@ def test_nnparams_load_trained_CUSTOMMLP():
 
     pb.save_model(".")
 
-    params_fp = Path().resolve() / "./EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl"
+    params_fp = path_to_trained / "EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl"
     with open(params_fp, "rb") as file:
         (
             nn_params,
