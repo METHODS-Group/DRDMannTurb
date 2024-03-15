@@ -11,6 +11,7 @@ from typing import Optional, Union
 import numpy as np
 from torch.cuda import is_available
 
+from ..common import CPU_Unpickler
 from ..spectra_fitting import CalibrationProblem
 from .covariance_kernels import MannCovariance, VonKarmanCovariance
 from .gaussian_random_fields import VectorGaussianRandomField
@@ -122,16 +123,13 @@ class GenerateFluctuationField:
             )
 
         if model == "DRD":
-            with open(path_to_parameters, "rb") as file:
-                (
-                    nn_params,
-                    prob_params,
-                    loss_params,
-                    phys_params,
-                    model_params,
-                ) = pickle.load(file)
-
             device = "cuda" if is_available() else "cpu"
+
+            # safely load saved parameters with reference to Tensor device(s)
+            with open(path_to_parameters, "rb") as file:
+                (nn_params, prob_params, loss_params, phys_params, model_params,) = (
+                    pickle.load(file) if device == "cpu" else CPU_Unpickler(file).load()
+                )
 
             pb = CalibrationProblem(
                 nn_params=nn_params,

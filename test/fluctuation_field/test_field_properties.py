@@ -40,10 +40,6 @@ def test_field_divergence(model_save_filename: str):
     model_save_filename : str
         Filename of the pre-trained model.
     """
-    friction_velocity = 0.45
-    reference_height = 180.0
-    roughness_height = 0.0001
-
     z0 = 0.02
     zref = 90
     uref = 11.4
@@ -92,7 +88,3 @@ def test_field_divergence(model_save_filename: str):
     avg_div = gen_drd.evaluate_divergence(spacing, fluctuation_field_drd).mean()
 
     assert isclose(abs(avg_div), 1e-4, abs_tol=1e-3)
-
-
-if __name__ == "__main__":
-    test_field_divergence("EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl")

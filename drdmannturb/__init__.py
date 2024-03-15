@@ -1,4 +1,5 @@
 from .common import (
+    CPU_Unpickler,
     Mann_linear_exponential_approx,
     MannEddyLifetime,
     VKEnergySpectrum,
