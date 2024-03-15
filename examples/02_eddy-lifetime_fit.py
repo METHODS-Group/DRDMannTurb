@@ -52,7 +52,7 @@ ustar = 0.556  # friction velocity
 # Scales associated with Kaimal spectrum
 L = 0.593 * zref  # length scale
 Gamma = 3.89  # time scale
-sigma = 0.052  # magnitude (σ = αϵ^{2/3})
+sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # magnitude (σ = αϵ^{2/3})
 
 print(f"Physical Parameters: {L,Gamma,sigma}")
 
