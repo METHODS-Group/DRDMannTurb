@@ -24,7 +24,8 @@ domain = torch.logspace(-1, 2, 20)
 
 path_to_trained = Path(__file__).parent.parent.parent / "docs/source/results"
 
-
+# TODO: this requires the GPU for testing, but passes as of release 0.1.0
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "model_save_filename",
     [

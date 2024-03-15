@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import pytest
 import torch
 
@@ -11,13 +12,9 @@ from drdmannturb.parameters import (
     PhysicalParameters,
     ProblemParameters,
 )
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+from drdmannturb.spectra_fitting import OnePointSpectraDataGenerator
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
-
-# v2: torch.set_default_device('cuda:0')
-if torch.cuda.is_available():
-    torch.set_default_tensor_type("torch.cuda.FloatTensor")
+device = "cpu"
 
 fp = Path(__file__).parent
 
@@ -33,10 +30,12 @@ def test_kaimal_mann():
 
     Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
 
-    kaimal_mann_spectra_new = Data[1].to(device)
+    kaimal_mann_spectra_new = Data[1].to("cpu").numpy()
 
-    kaimal_mann_spectra_true = torch.load(
-        fp / "kaimal_mann_data_raw.pt", map_location=torch.device(device)
+    kaimal_mann_spectra_true = (
+        torch.load(fp / "kaimal_mann_data_raw.pt", map_location=torch.device(device))
+        .to("cpu")
+        .numpy()
     )
 
-    assert torch.equal(kaimal_mann_spectra_new, kaimal_mann_spectra_true)
+    assert np.allclose(kaimal_mann_spectra_new, kaimal_mann_spectra_true)

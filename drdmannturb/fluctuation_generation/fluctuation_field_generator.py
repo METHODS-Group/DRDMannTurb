@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 import numpy as np
-from torch.cuda import is_available
+import torch
 
 from ..common import CPU_Unpickler
 from ..spectra_fitting import CalibrationProblem
@@ -123,7 +123,7 @@ class GenerateFluctuationField:
             )
 
         if model == "DRD":
-            device = "cuda" if is_available() else "cpu"
+            device = "cuda" if torch.cuda.is_available() else "cpu"
 
             # safely load saved parameters with reference to Tensor device(s)
             with open(path_to_parameters, "rb") as file:
