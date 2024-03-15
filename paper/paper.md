@@ -39,20 +39,23 @@ Synthetic turbulence models (STMs) are commonly used to generate realistic flow 
 
 # Results
 
-The output of the fitting component of ``DRDMannTurb`` consists of two parts: the spectra fit by a DRD model and the learned eddy lifetime function. Below, a sample fitting is provided for the Kaimal spectra and Mann model. Our spectra fit is more accurate than that of the Mann uniform shear model. 
+The output of the fitting component of ``DRDMannTurb`` consists of two parts: the spectra fit by a DRD model and the learned eddy lifetime function. Below, a sample fitting is provided for the Kaimal spectra and Mann model with an MSE loss of $3.7 \times 10^{-2}$. 
 
-![Mann Model Fit](mann_fit.png)  
+![Mann Model Fit](mann_fit.png) 
+
+Our spectra fit is more accurate than that of the Mann uniform shear model with an MSE loss of $7.0 \times 10^{-3}$ as well as close estimates of the physical parameters. 
+
 ![Synthetic DRD Model Fit](synthetic_fit.png)
 
 After fitting to the spectra, the resulting models can also be used to generate 3D wind fields with spectra closely resembling those of the observations used in training. 
 
-For more detailed discussions of results, please see the official examples.  
+For more detailed discussions of results, including a variety of utilities for interpolating and filtering noisy real-world data and generating wind turbulence, please see the official examples.  
 
 # Package Features
 
-- Generates synthetic turbulence fields using the classical Mann model
 - Calibrate the Mann model parameters using reference "textbook" or in-situ spectra and co-spectra
 - Calibrate the DRD model using a flexible suite of neural network architectures for the eddy lifetime functions
+- Generates synthetic turbulence fields using the classical Mann model
 - Fast synthetic turbulence generation using a state-of-the-art domain decomposition approach
 
 # Acknowledgements
