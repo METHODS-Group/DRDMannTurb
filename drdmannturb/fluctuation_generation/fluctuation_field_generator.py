@@ -138,7 +138,7 @@ class GenerateFluctuationField:
                 prob_params=prob_params,
                 loss_params=loss_params,
                 phys_params=phys_params,
-                device="cuda",
+                device=device,
             )
             pb.parameters = model_params
             L, T, M = pb.OPS.exp_scales()

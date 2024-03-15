@@ -40,6 +40,8 @@ def test_kaimal_mann():
 
     kaimal_mann_spectra_new = Data[1]
 
-    kaimal_mann_spectra_true = torch.load(fp / "kaimal_mann_data_raw.pt")
+    kaimal_mann_spectra_true = torch.load(
+        fp / "kaimal_mann_data_raw.pt", map_location=torch.device(device)
+    )
 
     assert torch.equal(kaimal_mann_spectra_new, kaimal_mann_spectra_true)
