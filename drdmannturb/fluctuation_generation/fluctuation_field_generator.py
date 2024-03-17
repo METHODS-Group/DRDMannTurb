@@ -9,8 +9,9 @@ from pathlib import Path
 from typing import Optional, Union
 
 import numpy as np
-from torch.cuda import is_available
+import torch
 
+from ..common import CPU_Unpickler
 from ..spectra_fitting import CalibrationProblem
 from .covariance_kernels import MannCovariance, VonKarmanCovariance
 from .gaussian_random_fields import VectorGaussianRandomField
@@ -83,7 +84,7 @@ class GenerateFluctuationField:
         grid_levels : np.ndarray
             Numpy array denoting the grid levels; number of discretization points used in each dimension, which evaluates as 2^k for each dimension for FFT-based sampling methods.
         model : str
-            One of ``"NN"``, ``"VK"``, or ``"Mann"`` denoting
+            One of ``"DRD"``, ``"VK"``, or ``"Mann"`` denoting
             "Neural Network," "Von Karman," and "Mann model".
         length_scale : Optional[float]
             The length scale :math:`L:`, used only if non-DRD model is used. By default, None.
@@ -101,15 +102,15 @@ class GenerateFluctuationField:
         Raises
         ------
         ValueError
-            If ``model`` doesn't match one of the 3 available models: NN, VK and Mann.
+            If ``model`` doesn't match one of the 3 available models: DRD, VK and Mann.
         """
 
-        if model not in ["NN", "VK", "Mann"]:
+        if model not in ["DRD", "VK", "Mann"]:
             raise ValueError(
-                "Provided model type not supported, must be one of NN, VK, Mann"
+                "Provided model type not supported, must be one of DRD, VK, Mann"
             )
 
-        if model == "NN" and path_to_parameters is None:
+        if model == "DRD" and path_to_parameters is None:
             raise ValueError(
                 "Please provide the path to saved pre-trained DRD model, or else choose a different model type."
             )
@@ -121,24 +122,21 @@ class GenerateFluctuationField:
                 "Must provide all physical scalar quantities (length, time, energy spectrum scales) to use current model type."
             )
 
-        if model == "NN":
-            with open(path_to_parameters, "rb") as file:
-                (
-                    nn_params,
-                    prob_params,
-                    loss_params,
-                    phys_params,
-                    model_params,
-                ) = pickle.load(file)
+        if model == "DRD":
+            device = "cuda" if torch.cuda.is_available() else "cpu"
 
-            device = "cuda" if is_available() else "cpu"
+            # safely load saved parameters with reference to Tensor device(s)
+            with open(path_to_parameters, "rb") as file:
+                (nn_params, prob_params, loss_params, phys_params, model_params,) = (
+                    pickle.load(file) if device == "cpu" else CPU_Unpickler(file).load()
+                )
 
             pb = CalibrationProblem(
                 nn_params=nn_params,
                 prob_params=prob_params,
                 loss_params=loss_params,
                 phys_params=phys_params,
-                device="cuda",
+                device=device,
             )
             pb.parameters = model_params
             L, T, M = pb.OPS.exp_scales()
@@ -245,7 +243,7 @@ class GenerateFluctuationField:
                 grid_shape=self.noise_shape[:-1],
                 Covariance=self.Covariance,
             )
-        elif model == "NN":
+        elif model == "DRD":
             self.Covariance = NNCovariance(
                 ndim=3,
                 length_scale=L,

@@ -1,15 +1,12 @@
 """
-==================
-Synthetic Data Fit
-==================
+=============================
+Example 2: Synthetic Data Fit
+=============================
 
-The IEC-recommended spectral tensor model is calibrated to fit the Kaimal spectra.
-There are three free parameters: :math:`L, T, C`, which have been precomputed in
-`Mann's original work <https://www.sciencedirect.com/science/article/pii/S0266892097000362>`_
-to be :math:`L=0.59, T=3.9, C=3.2`, which will be used to compare against a DRD model fit.
-In this example, the exponent :math:`\\nu=-\\frac{1}{3}` is fixed so that
-:math:`\\tau(\\boldsymbol{k})` matches the slope of :math:`\\tau^{IEC}` for
-:math:`k \\rightarrow 0`.
+In this example, we compare the DRD model to the Mann model, using the three IEC-recommended Mann model
+parameters: :math:`L/\\text{zref}=0.59, Γ=3.9, αϵ^{2/3}=3.2 * (\\text{zref}^{2/3} / \\text{ustar}^2)`.
+In this example, the exponent :math:`\\nu=-\\frac{1}{3}` is fixed so that :math:`\\tau(\\boldsymbol{k})`
+matches the slope of :math:`\\tau^{IEC}` for in the energy-containing range, :math:`k \\rightarrow 0`.
 
 The following example is also discussed in the `original DRD paper <https://arxiv.org/abs/2107.11046>`_.
 """
@@ -35,27 +32,27 @@ from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataG
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# v2: torch.set_default_device('cuda:0')
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
 #######################################################################################
 # Setting Physical Parameters
 # ---------------------------
-# The following cell sets the necessary physical constants, including the characteristic
-# scales for non-dimensionalization, the reference velocity, and the domain.
+# The following cell sets the necessary physical parameters
 #
 # :math:`L` is our characteristic length scale, :math:`\Gamma` is our characteristic
-# time scale, and :math:`\sigma` is the spectrum amplitude.
+# time scale, and :math:`\sigma = \alpha\epsilon^{2/3}` is the spectrum amplitude.
 
-
-zref = 40  # reference height
-ustar = 1.773  # friction velocity
+zref = 90  # reference height
+z0 = 0.02
+zref = 90
+uref = 11.4
+ustar = 0.556  # friction velocity
 
 # Scales associated with Kaimal spectrum
-L = 0.59 * zref  # length scale
-Gamma = 3.9  # time scale
-sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # energy spectrum scale
+L = 0.593 * zref  # length scale
+Gamma = 3.89  # time scale
+sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # magnitude (σ = αϵ^{2/3})
 
 print(f"Physical Parameters: {L,Gamma,sigma}")
 
@@ -105,10 +102,9 @@ pb = CalibrationProblem(
 ##############################################################################
 # Data Generation
 # ---------------
-# In the following cell, we construct our :math:`k_1` data points grid and
-# generate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.
-# It is worth noting that the second element of each tuple in ``DataPoints`` is the corresponding
-# reference height, which we have chosen to be uniformly `zref`.
+# We now collect ``Data = (<data points>, <data values>)`` and specify the
+# reference height (``zref``) to be used during calibration. Note that ``DataType.KAIMAL``
+# is used by default.
 Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
 
 ##############################################################################
@@ -128,7 +124,7 @@ pb.print_calibrated_params()
 # which make visualizing results and various aspects of training performance
 # very simple.
 #
-# The following will plot our fit.
+# The following will plot the fit.
 pb.plot()
 
 ##############################################################################
@@ -141,7 +137,7 @@ pb.plot_losses(run_number=0)
 # Save Model with Problem Metadata
 # --------------------------------
 # Here, we'll make use of the model saving utilities,
-# which make saving your ``DRDMannTurb`` fit very straightforward. The following line
+# which make saving the ``DRDMannTurb`` fit very straightforward. The following line
 # automatically pickles and writes out a trained model along with the various
 # parameter dataclasses in ``../results``.
 pb.save_model("./outputs/")

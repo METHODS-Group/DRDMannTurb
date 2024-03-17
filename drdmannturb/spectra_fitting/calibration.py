@@ -484,9 +484,9 @@ class CalibrationProblem:
 
         # physical parameters are stored as natural logarithms internally
         self.calibrated_params = {
-            "L": np.exp(self.parameters[0]),
-            "Gamma": np.exp(self.parameters[1]),
-            "sigma": np.exp(self.parameters[2]),
+            "L       ": np.exp(self.parameters[0]),
+            "Γ       ": np.exp(self.parameters[1]),
+            "αϵ^{2/3}": np.exp(self.parameters[2]),
         }
 
         return self.calibrated_params
@@ -514,9 +514,7 @@ class CalibrationProblem:
         print("=" * 40)
 
         for k, v in self.calibrated_params.items():
-            print(
-                f"{OKGREEN}Optimal calibrated {k+' '*4 if k == 'L' else k} : {v:8.4f} {ENDC}"
-            )
+            print(f"{OKGREEN}Optimal calibrated {k} : {v:8.4f} {ENDC}")
 
         print("=" * 40)
 

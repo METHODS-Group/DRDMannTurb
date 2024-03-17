@@ -1,9 +1,12 @@
 r"""
-===============
-Custom Data Fit
-===============
+==========================
+Example 5: Custom Data Fit
+==========================
 
-In this example, we use ``drdmannturb`` to fit a simple neural network model to real-world data without any preprocessing. This involves data that are observed in the real world, specifically near a North Sea wind turbine farm. The physical parameters are determined from those measurements. Additionally, the :math:`\nu` parameter is also learned.
+In this example, we use ``drdmannturb`` to fit a simple neural network model to real-world
+data without any preprocessing. This involves data that are observed in the real world,
+specifically near a North Sea wind turbine farm. The physical parameters are determined
+from those measurements. Additionally, the :math:`\nu` parameter is also learned.
 is learned for the rational function for :math:`\tau` given by
 
 .. math::
@@ -36,7 +39,6 @@ path = Path().resolve()
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# v2: torch.set_default_device('cuda:0')
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
@@ -50,14 +52,14 @@ spectra_file = (
 ##############################################################################
 # Setting Physical Parameters
 # ---------------------------
-# Here, we define our characteristic scales :math:`L, \Gamma, \sigma`, the
+# Here, we define our characteristic scales :math:`L, \Gamma, \alpha\epsilon^{2/3}`, the
 # log-scale domain, and the reference height `zref` and velocity `Uref`.
 
 domain = torch.logspace(-1, 3, 40)
 
 L = 70  # length scale
-GAMMA = 3.7  # time scale
-SIGMA = 0.04  # energy spectrum scale
+Gamma = 3.7  # time scale
+sigma = 0.04  # magnitude (σ = αϵ^{2/3})
 
 Uref = 21  # reference velocity
 zref = 1  # reference height
@@ -95,8 +97,8 @@ pb = CalibrationProblem(
     loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1e-5),
     phys_params=PhysicalParameters(
         L=L,
-        Gamma=GAMMA,
-        sigma=SIGMA,
+        Gamma=Gamma,
+        sigma=sigma,
         domain=domain,
         Uref=Uref,
         zref=zref,

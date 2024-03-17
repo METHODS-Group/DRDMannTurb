@@ -1,15 +1,11 @@
 """
-==================================================
-Adding Regularization and Penalty Terms to Fitting
-==================================================
+=============================================================
+Example 3: Adding Regularization and Penalty Terms to Fitting
+=============================================================
 
-This example is nearly identical to the Synthetic Data fit, however we
+This example is nearly identical to Example 2, however we
 use a more sophisticated loss function, introducing an additional first-order
 penalty term. The previous synthetic fit relied only on MSE loss and a second-order penalty.
-All other models remain the same: Mann turbulence under the Kaimal spectra.
-
-
-See again the `original DRD paper <https://arxiv.org/abs/2107.11046>`_.
 """
 
 #######################################################################################
@@ -32,7 +28,6 @@ from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataG
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# v2: torch.set_default_device('cuda:0')
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
@@ -42,7 +37,7 @@ ustar = 1.773  # friction velocity
 # Scales associated with Kaimal spectrum
 L = 0.59 * zref  # length scale
 Gamma = 3.9  # time scale
-sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # energy spectrum scale
+sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # magnitude (σ = αϵ^{2/3})
 
 print(f"Physical Parameters: {L,Gamma,sigma}")
 
@@ -52,7 +47,7 @@ k1 = torch.logspace(-1, 2, 20) / zref
 # %%
 # Now, we construct our ``CalibrationProblem``.
 #
-# Compared to the first Synthetic Fit example, we are instead using GELU
+# Compared to Example 2, we are instead using GELU
 # activations and will train for fewer epochs. The more interesting difference
 # is that we will have activated a first order term in the loss function by passing
 # ``alpha_pen1`` a value in the ``LossParameters`` constructor.
@@ -75,8 +70,6 @@ pb = CalibrationProblem(
 ##############################################################################
 # In the following cell, we construct our :math:`k_1` data points grid and
 # generate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.
-# It is worth noting that the second element of each tuple in ``DataPoints`` is the
-# corresponding reference height, which we have chosen to be uniformly `zref`.
 Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
 
 ##############################################################################

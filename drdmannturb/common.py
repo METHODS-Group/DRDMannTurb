@@ -4,6 +4,8 @@ This module contains implementations of common functions, specifically the Mann 
 
 __all__ = ["VKEnergySpectrum", "MannEddyLifetime", "Mann_linear_exponential_approx"]
 
+import io
+import pickle
 from dataclasses import astuple
 from pathlib import Path
 from typing import Union
@@ -97,6 +99,16 @@ def Mann_linear_exponential_approx(
     """
 
     return torch.exp(coefficient * torch.log(kL) + intercept)
+
+
+class CPU_Unpickler(pickle.Unpickler):
+    """Utility for loading tensors onto CPU; credit: https://github.com/pytorch/pytorch/issues/16797#issuecomment-633423219"""
+
+    def find_class(self, module, name):
+        if module == "torch.storage" and name == "_load_from_bytes":
+            return lambda b: torch.load(io.BytesIO(b), map_location="cpu")
+        else:
+            return super().find_class(module, name)
 
 
 def plot_loss_logs(log_file: Union[str, Path]):

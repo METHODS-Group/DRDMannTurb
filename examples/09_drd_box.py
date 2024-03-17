@@ -1,16 +1,19 @@
 """
-===========================================
-Fluctuation Field Generation from DRD Model
-===========================================
+======================================================
+Example 9: Fluctuation Field Generation from DRD Model
+======================================================
 
-This example demonstrates the utilities for generating fluctuation fields, which can be either from a pre-trained DRD model, or based on some well-known spectra models. ``DRDMannTurb`` provides several utilities for plotting the resulting fields through Plotly, which can be done in several contexts as well as utilities for saving to VTK for downstream analysis.
+This example demonstrates the utilities for generating fluctuation fields,
+which can be either from a pre-trained DRD model, or based on some well-known spectra models.
+``DRDMannTurb`` provides several utilities for plotting the resulting fields through Plotly,
+which can be done in several contexts as well as utilities for saving to VTK for downstream analysis.
 
 """
 
 #######################################################################################
 #   .. centered::
-#       This example may take a few seconds to load. Please be patient,
-#       Plotly requires some time to render 3D graphics.
+#       This example may take a few seconds to load. Please be patient if using
+#       Plotly, as it requires some time to render 3D graphics.
 #
 
 #######################################################################################
@@ -42,8 +45,9 @@ if torch.cuda.is_available():
 #######################################################################################
 # Setting Physical Parameters
 # ---------------------------
-# Here, we set the physical parameters of the environment in which the fluctuation field is generated.
-# The physical domain is determined by dimensions in 3D as well as the discretization size (grid levels) in each dimension.
+# Here, we set the physical parameters of the environment in which the synthetic wind field is generated.
+# The physical domain is determined by dimensions in 3D as well as the discretization size (grid levels)
+# in each dimension.
 
 z0 = 0.02
 zref = 90
@@ -51,9 +55,9 @@ uref = 11.4
 ustar = uref * 0.41 / np.log(zref / z0)
 windprofiletype = "LOG"  # choosing log law, use power law with "PL" here instead
 
-L = 0.593 * zref
-Gamma = 3.89
-sigma = 0.052
+L = 0.593 * zref  # length scale
+Gamma = 3.89  # time scale
+sigma = 0.052  # magnitude (σ = αϵ^{2/3})
 
 Lx = 720
 Ly = 64
@@ -70,9 +74,10 @@ seed = None
 #######################################################################################
 # Fluctuation Field Generation from Pre-Trained DRD Model
 # -------------------------------------------------------
-# We now generate a similar fluctuation field in the same physical setting and domain but using a pre-trained DRD model. This model is the result of
-# fitting the Mann model with a Kaimal spectrum, showcased in an earlier example, so we anticipate the resulting fluctuation fields to be similar. Note
-# that since DRD models learn the scales, these are taken from the saved object, which has these values as parameters.
+# We now generate a similar fluctuation field in the same physical setting and domain but using a pre-trained DRD model.
+# This model is the result of fitting to the Kaimal spectrum, showcased in `Example 2 <https://methods-group.github.io/DRDMannTurb/auto_examples/02_eddy-lifetime_fit.html>`_, so we anticipate the resulting
+# fluctuation fields to be similar. Note that since DRD models learn the scales, these are taken from the
+# saved object, which has these values as parameters.
 # The field generation process can be summarized by the following diagram of a 2D domain (a transversal cross-section of a 3D turbulence block).
 #
 # .. image:: https://github.com/METHODS-Group/DRDMannTurb/blob/main/paper/fluct_gen_box_by_box.png?raw=true
@@ -84,7 +89,7 @@ path_to_parameters = (
     else path / "../results/EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl"
 )
 
-Type_Model = "NN"  ### 'Mann', 'VK', 'NN'
+Type_Model = "DRD"  ### 'Mann', 'VK', 'DRD'
 nBlocks = 2
 
 gen_drd = GenerateFluctuationField(
@@ -110,23 +115,22 @@ gen_drd = GenerateFluctuationField(
 # where :math:`U_{\text{ref}}` is the reference velocity, :math:`z_0` is the roughness height, and :math:`z_{\text{ref}}` is the reference height.
 #
 
-
 fluctuation_field_drd = gen_drd.generate(nBlocks, zref, uref, z0, windprofiletype)
 
 
 #######################################################################################
 # Evaluating Divergence Properties and Plotting
 # ---------------------------------------------
-# ``DRDMannTurb`` provides utilities for computing the divergence of the resulting fluctuation field as well as
-# visualizing results. At the continuum level, the DRD model should yield an approximately divergence-free fluctuation
+# ``DRDMannTurb`` provides utilities for computing the divergence of the resulting wind field as well as
+# visualizing results. At the continuum level, the DRD model should yield an approximately divergence-free wind
 # field, which we observe to within a reasonable tolerance. Also, the divergence is expected to decrease as the
-#  resolution of the fluctuation field is improved.
+#  resolution of the wind field is improved.
 spacing = tuple(grid_dimensions / (2.0**grid_levels + 1))
 
 gen_drd.evaluate_divergence(spacing, fluctuation_field_drd).max()
 
 #######################################################################################
-# We now visualize the output fluctuation field.
+# We now visualize the output wind field.
 fig_magnitude_drd = plot_velocity_magnitude(
     spacing, fluctuation_field_drd, transparent=True
 )
@@ -137,7 +141,7 @@ fig_magnitude_drd  # .show("browser"), or for specific browser, use .show("firef
 #######################################################################################
 # Saving Generated Fluctuation Field as VTK
 # -----------------------------------------
-# For higher resolution fluctuation fields, we suggest using Paraview. To transfer the generated data
+# For higher resolution wind fields, we suggest using Paraview. To transfer the generated data
 # from our package, we provide the ``.save_to_vtk()`` method.
 filename = str(
     path / "../docs/source/results/fluctuation_drd"

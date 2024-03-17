@@ -1,13 +1,12 @@
 # Deep Rapid Distortion theory Mann Turbulence model
 
-![](https://github.com/METHODS-Group/DRDMannTurb/blob/main/.github/assets/anim_gh.gif)
+![](https://github.com/METHODS-Group/DRDMannTurb/assets/74629347/604fcde9-41e1-4671-8c10-b1493cadfa88)
 
 
 The code is based on the original work of Jacob Mann in [1994](https://doi.org/10.1017/S0022112094001886) and [1998](https://doi.org/10.1016/S0266-8920(97)00036-2)
-as well as in the deep-learning enhancement developed by Keith et al in [this 2021 publication](https://arxiv.org/pdf/2107.11046.pdf). 
+as well as in the deep-learning enhancement developed by Keith et al. in [this 2021 publication](https://arxiv.org/pdf/2107.11046.pdf). 
 
 ## Basic Usage
-
 
 See the ``/examples/`` folder for baselines from the paper and for examples of the many functionalities of the package.
 
@@ -25,5 +24,5 @@ Docs are in the ``/docs/`` folder. Make sure the dependencies listed in ``./requ
 
 Run ``make html`` to generate html pages in the ``/docs/build/html`` folder, which can be hosted locally with ``python -m http.server <PORT-NUMBER>``. 
 
-## Attribution
+<!-- ## Attribution -->
 
