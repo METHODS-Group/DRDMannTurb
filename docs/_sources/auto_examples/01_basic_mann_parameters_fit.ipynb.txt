@@ -4,14 +4,14 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "\n# Basic Mann Model Fit\n\nThis example demonstrates the a simple configuration of ``DRDMannTurb`` to spectra fitting while using the Mann model as the eddy lifetime function under the Kaimal one-point spectra.\n\nFor reference, the full Mann eddy lifetime function is given by\n\n\\begin{align}\\tau^{\\mathrm{Mann}}(k)=\\frac{(k L)^{-\\frac{2}{3}}}{\\sqrt{{ }_2 F_1\\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\\right)}}\\end{align}\n\nand the Kaimal one-point spectra. This set of models has classically been most useful for flat homogeneous terrains.\n\nAlso, the resulting fitting can be used directly to generate a 3D Mann fluctuation field, as demonstrated in our wind generation example.\n"
+        "\n# Example 1: Basic Mann Model Fit\n\nThis example demonstrates fitting the Mann model eddy lifetime function to the Kaimal one-point spectra and cross-spectra.\n\nFor reference, the Mann eddy lifetime function is given by\n\n\\begin{align}\\tau^{\\mathrm{Mann}}(k)=\\frac{(k L)^{-\\frac{2}{3}}}{\\sqrt{{ }_2 F_1\\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\\right)}}\\,.\\end{align}\n\nThis set of models it widely used for flat, homogeneous terrains.\n\n``drdmannturb`` can also be used directly to generate the corresponding 3D turbulence field, as demonstrated in Examples 8 and 9.\n"
       ]
     },
     {
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "## Import packages\n\nFirst, we import the packages we need for this example.\n\n"
+        "## Import packages\n\nFirst, we import the packages needed for this example.\n\n"
       ]
     },
     {
@@ -22,14 +22,14 @@
       },
       "outputs": [],
       "source": [
-        "import torch\n\nfrom drdmannturb import EddyLifetimeType\nfrom drdmannturb.parameters import (\n    LossParameters,\n    NNParameters,\n    PhysicalParameters,\n    ProblemParameters,\n)\nfrom drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\n# v2: torch.set_default_device('cuda:0')\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")"
+        "import torch\n\nfrom drdmannturb import EddyLifetimeType\nfrom drdmannturb.parameters import (\n    LossParameters,\n    NNParameters,\n    PhysicalParameters,\n    ProblemParameters,\n)\nfrom drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")"
       ]
     },
     {
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "Set up physical parameters and domain associated with the Kaimal spectrum. We perform the spectra fitting over the $k_1$ space $[10^{{-1}}, 10^2]$\nwith 20 points.\n\n"
+        "Set up physical parameters and domain. We perform the spectra fitting over the\n$k_1 z$ space $[10^{{-1}}, 10^2]$ with 20 points.\n\n"
       ]
     },
     {
@@ -40,14 +40,14 @@
       },
       "outputs": [],
       "source": [
-        "zref = 40  # reference height\nustar = 1.773  # friction velocity\n\n# Scales associated with Kaimal spectrum\nL = 0.59 * zref  # length scale\nGamma = 3.9  # time scale\nsigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # energy spectrum scale\n\nprint(f\"Physical Parameters: {L,Gamma,sigma}\")\n\nk1 = torch.logspace(-1, 2, 20) / zref"
+        "zref = 40  # reference height\nustar = 1.773  # friction velocity\n\n# Intitial parameter guesses for fitting the Mann model\nL = 0.59 * zref  # length scale\nGamma = 3.9  # time scale\nsigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # magnitude (\u03c3 = \u03b1\u03f5^{2/3})\n\nprint(f\"Physical Parameters: {L,Gamma,sigma}\")\n\nk1 = torch.logspace(-1, 2, 20) / zref"
       ]
     },
     {
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "## ``CalibrationProblem`` Construction\nThe following cell defines the ``CalibrationProblem`` using default values\nfor the ``NNParameters`` and ``LossParameters`` dataclasses. Importantly,\nthese data classes are not necessary, see their respective documentations for the default values.\nThe current set-up involves using the Mann model for the eddy lifetime function, meaning no\nneural network is used in learning the $\\tau$ function. Additionally, the physical parameters\nare taken from the reference values for the Kaimal spectra. Finally, in this scenario the regression\noccurs as an MSE fit to the spectra, which are generated from Mann turbulence (i.e., a synthetic data fit).\nThe ``EddyLifetimeType.MANN`` argument determines the type of eddy lifetime function to use.\n\n"
+        "## ``CalibrationProblem`` Construction\nThe following cell defines the ``CalibrationProblem`` using default values\nfor the ``NNParameters`` and ``LossParameters`` dataclasses.\nNotice that ``EddyLifetimeType.MANN`` specifies the Mann model for the eddy lifetime\nfunction, $\\tau$, meaning no neural network is used in learning $\\tau$.\nThus, we only learn the parameters $L$, $\\Gamma$, and $\\sigma$.\n\n"
       ]
     },
     {
@@ -65,7 +65,7 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "## Data Generation\nThe following cell generates the dataset required for calibration.\n\nThe first two lines are required to construct the spatial grid of points.\nSpecifically, ``DataPoints`` is a list of tuples of the observed spectra data\npoints at each of the $k_1$\ncoordinates and the reference height (in our case, this is just $1$).\n\nLastly, we collect ``Data = (<data points>, <data values>)`` to be used in calibration.\n\n"
+        "## Data Generation\nWe now collect ``Data = (<data points>, <data values>)`` and specify the\nreference height (``zref``) to be used during calibration. Note that ``DataType.KAIMAL``\nis used by default.\n\n"
       ]
     },
     {
@@ -83,7 +83,7 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "The model is now \"calibrated\" to the provided spectra from the synthetic\ndata generated from ``OnePointSpectraDataGenerator``.\n\nThe Mann eddy lifetime function relies on evaluating a hypergeometric function,\nwhich only has a CPU implementation through ``Scipy``. When using this function\nwith a neural network task, consider either learning this function as well or\nusing a linear approximation from your data that provides a GPU kernel for\nfast evaluation of a similar model. See the final example in the collection where a linear regression is used in log-log space to generate this.\n\nHaving the necessary components, the model is \"calibrated\" (fit) to the provided spectra\nand we conclude with a plot.\n\n"
+        "The model is now fit to the provided spectra given in ``Data``.\n\nNotee that the Mann eddy lifetime function relies on evaluating a hypergeometric function,\nwhich only has a CPU implementation through ``Scipy``; cf. Example 7.\n\nHaving the necessary components, the model is \"calibrated\" (fit) to the provided spectra.\n\n"
       ]
     },
     {
@@ -94,14 +94,14 @@
       },
       "outputs": [],
       "source": [
-        "optimal_parameters = pb.calibrate(data=Data)\n\npb.print_calibrated_params()"
+        "optimal_parameters = pb.calibrate(data=Data)"
       ]
     },
     {
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "The following plot shows the best fit to the synthetic Mann data. Notice that\nthe eddy lifetime function is precisely $\\tau^{\\mathrm{Mann}}(k)$\n\n"
+        "We conclude by printing the optimized parameters and generating a plot showing the\nfit to the Kaimal spectra.\n\n"
       ]
     },
     {
@@ -112,7 +112,7 @@
       },
       "outputs": [],
       "source": [
-        "pb.plot()"
+        "pb.print_calibrated_params()\npb.plot()"
       ]
     }
   ],

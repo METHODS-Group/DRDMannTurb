@@ -411,7 +411,7 @@ document.write(`
 <li><p><strong>reference_height</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – Reference height <span class="math notranslate nohighlight">\(L\)</span></p></li>
 <li><p><strong>grid_dimensions</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">np.ndarray</span></code>) – Numpy array denoting the grid size; the real dimensions of the domain of interest.</p></li>
 <li><p><strong>grid_levels</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">np.ndarray</span></code>) – Numpy array denoting the grid levels; number of discretization points used in each dimension, which evaluates as 2^k for each dimension for FFT-based sampling methods.</p></li>
-<li><p><strong>model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – One of <code class="docutils literal notranslate"><span class="pre">&quot;NN&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;VK&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;Mann&quot;</span></code> denoting
+<li><p><strong>model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – One of <code class="docutils literal notranslate"><span class="pre">&quot;DRD&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;VK&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;Mann&quot;</span></code> denoting
 “Neural Network,” “Von Karman,” and “Mann model”.</p></li>
 <li><p><strong>length_scale</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Optional[float]</span></code>) – The length scale <span class="math notranslate nohighlight">\(L:\)</span>, used only if non-DRD model is used. By default, None.</p></li>
 <li><p><strong>time_scale</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Optional[float]</span></code>) – The time scale <span class="math notranslate nohighlight">\(T\)</span>, used only if non-DRD model is used. By default, None.</p></li>
@@ -422,7 +422,7 @@ document.write(`
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">model</span></code> doesn’t match one of the 3 available models: NN, VK and Mann.</p>
+<dd class="field-even"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">model</span></code> doesn’t match one of the 3 available models: DRD, VK and Mann.</p>
 </dd>
 </dl>
 <dl class="py method">

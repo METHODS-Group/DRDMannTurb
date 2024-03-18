@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Synthetic Data Fit &#8212; DRDMannTurb 0.1 documentation</title>
+    <title>Example 2: Synthetic Data Fit &#8212; DRDMannTurb 0.1 documentation</title>
   
   
   
@@ -50,8 +50,8 @@
     <script src="../_static/custom.js?v=9aa989ff"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Adding Regularization and Penalty Terms to Fitting" href="03_eddy-lifetime_fit_3term_loss.html" />
-    <link rel="prev" title="Basic Mann Model Fit" href="01_basic_mann_parameters_fit.html" />
+    <link rel="next" title="Example 3: Adding Regularization and Penalty Terms to Fitting" href="03_eddy-lifetime_fit_3term_loss.html" />
+    <link rel="prev" title="Example 1: Basic Mann Model Fit" href="01_basic_mann_parameters_fit.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -344,7 +344,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">Synthetic Data Fit</li>
+    <li class="breadcrumb-item active" aria-current="page">Example 2:...</li>
   </ul>
 </nav>
 </div>
@@ -362,10 +362,9 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <script src='http://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js'></script>
-<script>require=requirejs;</script><section id="Synthetic-Data-Fit">
-<h1>Synthetic Data Fit<a class="headerlink" href="#Synthetic-Data-Fit" title="Link to this heading">#</a></h1>
-<p>The IEC-recommended spectral tensor model is calibrated to fit the Kaimal spectra. There are three free parameters: <span class="math notranslate nohighlight">\(L, T, C\)</span>, which have been precomputed in <a class="reference external" href="https://www.sciencedirect.com/science/article/pii/S0266892097000362">Mann’s original work</a> to be <span class="math notranslate nohighlight">\(L=0.59, T=3.9, C=3.2\)</span>, which will be used to compare against a DRD model fit. In this example, the exponent <span class="math notranslate nohighlight">\(\nu=-\frac{1}{3}\)</span> is fixed so that <span class="math notranslate nohighlight">\(\tau(\boldsymbol{k})\)</span> matches the slope of <span class="math notranslate nohighlight">\(\tau^{IEC}\)</span> for
-<span class="math notranslate nohighlight">\(k \rightarrow 0\)</span>.</p>
+<script>require=requirejs;</script><section id="Example-2:-Synthetic-Data-Fit">
+<h1>Example 2: Synthetic Data Fit<a class="headerlink" href="#Example-2:-Synthetic-Data-Fit" title="Link to this heading">#</a></h1>
+<p>In this example, we compare the DRD model to the Mann model, using the three IEC-recommended Mann model parameters: <span class="math notranslate nohighlight">\(L/\text{zref}=0.59, Γ=3.9, αϵ^{2/3}=3.2 * (\text{zref}^{2/3} / \text{ustar}^2)\)</span>. In this example, the exponent <span class="math notranslate nohighlight">\(\nu=-\frac{1}{3}\)</span> is fixed so that <span class="math notranslate nohighlight">\(\tau(\boldsymbol{k})\)</span> matches the slope of <span class="math notranslate nohighlight">\(\tau^{IEC}\)</span> for in the energy-containing range, <span class="math notranslate nohighlight">\(k \rightarrow 0\)</span>.</p>
 <p>The following example is also discussed in the <a class="reference external" href="https://arxiv.org/abs/2107.11046">original DRD paper</a>.</p>
 <section id="Import-packages">
 <h2>Import packages<a class="headerlink" href="#Import-packages" title="Link to this heading">#</a></h2>
@@ -388,7 +387,6 @@ document.write(`
 
 <span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
 
-<span class="c1"># v2: torch.set_default_device(&#39;cuda:0&#39;)</span>
 <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="s2">&quot;torch.cuda.FloatTensor&quot;</span><span class="p">)</span>
 </pre></div>
@@ -397,19 +395,22 @@ document.write(`
 </section>
 <section id="Setting-Physical-Parameters">
 <h2>Setting Physical Parameters<a class="headerlink" href="#Setting-Physical-Parameters" title="Link to this heading">#</a></h2>
-<p>The following cell sets the necessary physical constants, including the characteristic scales for non-dimensionalization, the reference velocity, and the domain.</p>
-<p><span class="math notranslate nohighlight">\(L\)</span> is our characteristic length scale, <span class="math notranslate nohighlight">\(\Gamma\)</span> is our characteristic time scale, and <span class="math notranslate nohighlight">\(\sigma\)</span> is the spectrum amplitude.</p>
+<p>The following cell sets the necessary physical parameters</p>
+<p><span class="math notranslate nohighlight">\(L\)</span> is our characteristic length scale, <span class="math notranslate nohighlight">\(\Gamma\)</span> is our characteristic time scale, and <span class="math notranslate nohighlight">\(\sigma = \alpha\epsilon^{2/3}\)</span> is the spectrum amplitude.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">zref</span> <span class="o">=</span> <span class="mi">40</span>  <span class="c1"># reference height</span>
-<span class="n">ustar</span> <span class="o">=</span> <span class="mf">1.773</span>  <span class="c1"># friction velocity</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">zref</span> <span class="o">=</span> <span class="mi">90</span>  <span class="c1"># reference height</span>
+<span class="n">z0</span> <span class="o">=</span> <span class="mf">0.02</span>
+<span class="n">zref</span> <span class="o">=</span> <span class="mi">90</span>
+<span class="n">uref</span> <span class="o">=</span> <span class="mf">11.4</span>
+<span class="n">ustar</span> <span class="o">=</span> <span class="mf">0.556</span>  <span class="c1"># friction velocity</span>
 
 <span class="c1"># Scales associated with Kaimal spectrum</span>
-<span class="n">L</span> <span class="o">=</span> <span class="mf">0.59</span> <span class="o">*</span> <span class="n">zref</span>  <span class="c1"># length scale</span>
-<span class="n">Gamma</span> <span class="o">=</span> <span class="mf">3.9</span>  <span class="c1"># time scale</span>
-<span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.2</span> <span class="o">*</span> <span class="n">ustar</span><span class="o">**</span><span class="mf">2.0</span> <span class="o">/</span> <span class="n">zref</span> <span class="o">**</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">)</span>  <span class="c1"># energy spectrum scale</span>
+<span class="n">L</span> <span class="o">=</span> <span class="mf">0.593</span> <span class="o">*</span> <span class="n">zref</span>  <span class="c1"># length scale</span>
+<span class="n">Gamma</span> <span class="o">=</span> <span class="mf">3.89</span>  <span class="c1"># time scale</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.2</span> <span class="o">*</span> <span class="n">ustar</span><span class="o">**</span><span class="mf">2.0</span> <span class="o">/</span> <span class="n">zref</span> <span class="o">**</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">)</span>  <span class="c1"># magnitude (σ = αϵ^{2/3})</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Physical Parameters: </span><span class="si">{</span><span class="n">L</span><span class="p">,</span><span class="n">Gamma</span><span class="p">,</span><span class="n">sigma</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
@@ -422,7 +423,7 @@ document.write(`
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Physical Parameters: (23.599999999999998, 3.9, 0.8600574364289042)
+Physical Parameters: (53.37, 3.89, 0.04925737023046032)
 </pre></div></div>
 </div>
 </section>
@@ -461,7 +462,7 @@ Physical Parameters: (23.599999999999998, 3.9, 0.8600574364289042)
 </section>
 <section id="Data-Generation">
 <h2>Data Generation<a class="headerlink" href="#Data-Generation" title="Link to this heading">#</a></h2>
-<p>In the following cell, we construct our <span class="math notranslate nohighlight">\(k_1\)</span> data points grid and generate the values. <code class="docutils literal notranslate"><span class="pre">Data</span></code> will be a tuple <code class="docutils literal notranslate"><span class="pre">(&lt;data</span> <span class="pre">points&gt;,</span> <span class="pre">&lt;data</span> <span class="pre">values&gt;)</span></code>. It is worth noting that the second element of each tuple in <code class="docutils literal notranslate"><span class="pre">DataPoints</span></code> is the corresponding reference height, which we have chosen to be uniformly <code class="docutils literal notranslate"><span class="pre">zref</span></code>.</p>
+<p>We now collect <code class="docutils literal notranslate"><span class="pre">Data</span> <span class="pre">=</span> <span class="pre">(&lt;data</span> <span class="pre">points&gt;,</span> <span class="pre">&lt;data</span> <span class="pre">values&gt;)</span></code> and specify the reference height (<code class="docutils literal notranslate"><span class="pre">zref</span></code>) to be used during calibration. Note that <code class="docutils literal notranslate"><span class="pre">DataType.KAIMAL</span></code> is used by default.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
@@ -490,29 +491,315 @@ Physical Parameters: (23.599999999999998, 3.9, 0.8600574364289042)
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 ========================================
-Initial loss: 0.04727533236511994
+Initial loss: 0.04379645758866301
 ========================================
 </pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">more-to-come<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">class<span class="colon">:</span></dt>
+<dd class="field-even"><p>stderr</p>
+</dd>
+</dl>
+<div class="highlight"><pre></div></div></blockquote>
+<dl>
+<dt>0%|                                                                         | 0/10 [00:00&amp;lt;?, ?it/s]</dt><dd><blockquote>
+<div><p>&lt;/pre&gt;</p>
+</div></blockquote>
+</dd>
+<dt>0%|                                                                         | 0/10 [00:00&lt;?, ?it/s]</dt><dd><blockquote>
+<div><p>end{sphinxVerbatim}</p>
+</div></blockquote>
+</dd>
+</dl>
+<p>0%|                                                                         | 0/10 [00:00&lt;?, ?it/s]</p>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">more-to-come<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">class<span class="colon">:</span></dt>
+<dd class="field-even"><p>stderr</p>
+</dd>
+</dl>
+<div class="highlight"><pre></div></div></blockquote>
+<dl>
+<dt>10%|██████▌                                                          | 1/10 [00:03&amp;lt;00:31,  3.46s/it]</dt><dd><blockquote>
+<div><p>&lt;/pre&gt;</p>
+</div></blockquote>
+</dd>
+<dt>10%|██████▌                                                          | 1/10 [00:03&lt;00:31,  3.46s/it]</dt><dd><blockquote>
+<div><p>end{sphinxVerbatim}</p>
+</div></blockquote>
+</dd>
+</dl>
+<p>10%|██████▌                                                          | 1/10 [00:03&lt;00:31,  3.46s/it]</p>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">more-to-come<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">class<span class="colon">:</span></dt>
+<dd class="field-even"><p>stderr</p>
+</dd>
+</dl>
+<div class="highlight"><pre></div></div></blockquote>
+<dl>
+<dt>20%|█████████████                                                    | 2/10 [00:05&amp;lt;00:20,  2.56s/it]</dt><dd><blockquote>
+<div><p>&lt;/pre&gt;</p>
+</div></blockquote>
+</dd>
+<dt>20%|█████████████                                                    | 2/10 [00:05&lt;00:20,  2.56s/it]</dt><dd><blockquote>
+<div><p>end{sphinxVerbatim}</p>
+</div></blockquote>
+</dd>
+</dl>
+<p>20%|█████████████                                                    | 2/10 [00:05&lt;00:20,  2.56s/it]</p>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">more-to-come<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">class<span class="colon">:</span></dt>
+<dd class="field-even"><p>stderr</p>
+</dd>
+</dl>
+<div class="highlight"><pre></div></div></blockquote>
+<dl>
+<dt>30%|███████████████████▌                                             | 3/10 [00:07&amp;lt;00:15,  2.28s/it]</dt><dd><blockquote>
+<div><p>&lt;/pre&gt;</p>
+</div></blockquote>
+</dd>
+<dt>30%|███████████████████▌                                             | 3/10 [00:07&lt;00:15,  2.28s/it]</dt><dd><blockquote>
+<div><p>end{sphinxVerbatim}</p>
+</div></blockquote>
+</dd>
+</dl>
+<p>30%|███████████████████▌                                             | 3/10 [00:07&lt;00:15,  2.28s/it]</p>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">more-to-come<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">class<span class="colon">:</span></dt>
+<dd class="field-even"><p>stderr</p>
+</dd>
+</dl>
+<div class="highlight"><pre></div></div></blockquote>
+<dl>
+<dt>40%|██████████████████████████                                       | 4/10 [00:09&amp;lt;00:13,  2.18s/it]</dt><dd><blockquote>
+<div><p>&lt;/pre&gt;</p>
+</div></blockquote>
+</dd>
+<dt>40%|██████████████████████████                                       | 4/10 [00:09&lt;00:13,  2.18s/it]</dt><dd><blockquote>
+<div><p>end{sphinxVerbatim}</p>
+</div></blockquote>
+</dd>
+</dl>
+<p>40%|██████████████████████████                                       | 4/10 [00:09&lt;00:13,  2.18s/it]</p>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">more-to-come<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">class<span class="colon">:</span></dt>
+<dd class="field-even"><p>stderr</p>
+</dd>
+</dl>
+<div class="highlight"><pre></div></div></blockquote>
+<dl>
+<dt>50%|████████████████████████████████▌                                | 5/10 [00:11&amp;lt;00:10,  2.12s/it]</dt><dd><blockquote>
+<div><p>&lt;/pre&gt;</p>
+</div></blockquote>
+</dd>
+<dt>50%|████████████████████████████████▌                                | 5/10 [00:11&lt;00:10,  2.12s/it]</dt><dd><blockquote>
+<div><p>end{sphinxVerbatim}</p>
+</div></blockquote>
+</dd>
+</dl>
+<p>50%|████████████████████████████████▌                                | 5/10 [00:11&lt;00:10,  2.12s/it]</p>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">more-to-come<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">class<span class="colon">:</span></dt>
+<dd class="field-even"><p>stderr</p>
+</dd>
+</dl>
+<div class="highlight"><pre></div></div></blockquote>
+<dl>
+<dt>60%|███████████████████████████████████████                          | 6/10 [00:13&amp;lt;00:08,  2.09s/it]</dt><dd><blockquote>
+<div><p>&lt;/pre&gt;</p>
+</div></blockquote>
+</dd>
+<dt>60%|███████████████████████████████████████                          | 6/10 [00:13&lt;00:08,  2.09s/it]</dt><dd><blockquote>
+<div><p>end{sphinxVerbatim}</p>
+</div></blockquote>
+</dd>
+</dl>
+<p>60%|███████████████████████████████████████                          | 6/10 [00:13&lt;00:08,  2.09s/it]</p>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">more-to-come<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">class<span class="colon">:</span></dt>
+<dd class="field-even"><p>stderr</p>
+</dd>
+</dl>
+<div class="highlight"><pre></div></div></blockquote>
+<dl>
+<dt>70%|█████████████████████████████████████████████▌                   | 7/10 [00:15&amp;lt;00:06,  2.07s/it]</dt><dd><blockquote>
+<div><p>&lt;/pre&gt;</p>
+</div></blockquote>
+</dd>
+<dt>70%|█████████████████████████████████████████████▌                   | 7/10 [00:15&lt;00:06,  2.07s/it]</dt><dd><blockquote>
+<div><p>end{sphinxVerbatim}</p>
+</div></blockquote>
+</dd>
+</dl>
+<p>70%|█████████████████████████████████████████████▌                   | 7/10 [00:15&lt;00:06,  2.07s/it]</p>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">more-to-come<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">class<span class="colon">:</span></dt>
+<dd class="field-even"><p>stderr</p>
+</dd>
+</dl>
+<div class="highlight"><pre></div></div></blockquote>
+<dl>
+<dt>80%|████████████████████████████████████████████████████             | 8/10 [00:17&amp;lt;00:04,  2.03s/it]</dt><dd><blockquote>
+<div><p>&lt;/pre&gt;</p>
+</div></blockquote>
+</dd>
+<dt>80%|████████████████████████████████████████████████████             | 8/10 [00:17&lt;00:04,  2.03s/it]</dt><dd><blockquote>
+<div><p>end{sphinxVerbatim}</p>
+</div></blockquote>
+</dd>
+</dl>
+<p>80%|████████████████████████████████████████████████████             | 8/10 [00:17&lt;00:04,  2.03s/it]</p>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">more-to-come<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">class<span class="colon">:</span></dt>
+<dd class="field-even"><p>stderr</p>
+</dd>
+</dl>
+<div class="highlight"><pre></div></div></blockquote>
+<dl>
+<dt>90%|██████████████████████████████████████████████████████████▌      | 9/10 [00:19&amp;lt;00:02,  2.00s/it]</dt><dd><blockquote>
+<div><p>&lt;/pre&gt;</p>
+</div></blockquote>
+</dd>
+<dt>90%|██████████████████████████████████████████████████████████▌      | 9/10 [00:19&lt;00:02,  2.00s/it]</dt><dd><blockquote>
+<div><p>end{sphinxVerbatim}</p>
+</div></blockquote>
+</dd>
+</dl>
+<p>90%|██████████████████████████████████████████████████████████▌      | 9/10 [00:19&lt;00:02,  2.00s/it]</p>
+</div>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-100%|████████████████████████████████████████████████████████████████| 10/10 [00:21&lt;00:00,  2.11s/it]
-</pre></div></div>
+<div class="highlight"><pre></div></div>
 </div>
+<dl>
+<dt>100%|████████████████████████████████████████████████████████████████| 10/10 [00:21&amp;lt;00:00,  2.03s/it]</dt><dd><blockquote>
+<div><p>&lt;/pre&gt;</p>
+</div></blockquote>
+</dd>
+<dt>100%|████████████████████████████████████████████████████████████████| 10/10 [00:21&lt;00:00,  2.03s/it]</dt><dd><blockquote>
+<div><p>end{sphinxVerbatim}</p>
+</div></blockquote>
+</dd>
+</dl>
+<p>100%|████████████████████████████████████████████████████████████████| 10/10 [00:21&lt;00:00,  2.03s/it]</p>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre></div></div>
+</div>
+<dl>
+<dt>100%|████████████████████████████████████████████████████████████████| 10/10 [00:21&amp;lt;00:00,  2.14s/it]</dt><dd><blockquote>
+<div><p>&lt;/pre&gt;</p>
+</div></blockquote>
+</dd>
+<dt>100%|████████████████████████████████████████████████████████████████| 10/10 [00:21&lt;00:00,  2.14s/it]</dt><dd><blockquote>
+<div><p>end{sphinxVerbatim}</p>
+</div></blockquote>
+</dd>
+</dl>
+<p>100%|████████████████████████████████████████████████████████████████| 10/10 [00:21&lt;00:00,  2.14s/it]</p>
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 ========================================
-Spectra fitting concluded with final loss: 0.0070446695943156765
+Spectra fitting concluded with final loss: 0.009693270118761371
 ========================================
-<span class="ansi-green-intense-fg">Optimal calibrated L     :  22.1053 </span>
-<span class="ansi-green-intense-fg">Optimal calibrated Gamma :   1.6605 </span>
-<span class="ansi-green-intense-fg">Optimal calibrated sigma :   0.8205 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated L        :  56.5606 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated Γ        :   2.7994 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated αϵ^{2/3} :   0.0451 </span>
 ========================================
 </pre></div></div>
 </div>
@@ -528,7 +815,7 @@ Spectra fitting concluded with final loss: 0.0070446695943156765
 <section id="Plotting">
 <h2>Plotting<a class="headerlink" href="#Plotting" title="Link to this heading">#</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">DRDMannTurb</span></code> offers built-in plotting utilities and Tensorboard integration which make visualizing results and various aspects of training performance very simple.</p>
-<p>The following will plot our fit.</p>
+<p>The following will plot the fit.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
@@ -563,7 +850,7 @@ Spectra fitting concluded with final loss: 0.0070446695943156765
 </section>
 <section id="Save-Model-with-Problem-Metadata">
 <h2>Save Model with Problem Metadata<a class="headerlink" href="#Save-Model-with-Problem-Metadata" title="Link to this heading">#</a></h2>
-<p>Here, we’ll make use of the model saving utilities, which make saving your <code class="docutils literal notranslate"><span class="pre">DRDMannTurb</span></code> fit very straightforward. The following line automatically pickles and writes out a trained model along with the various parameter dataclasses in <code class="docutils literal notranslate"><span class="pre">../results</span></code>.</p>
+<p>Here, we’ll make use of the model saving utilities, which make saving the <code class="docutils literal notranslate"><span class="pre">DRDMannTurb</span></code> fit very straightforward. The following line automatically pickles and writes out a trained model along with the various parameter dataclasses in <code class="docutils literal notranslate"><span class="pre">../results</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
@@ -638,7 +925,7 @@ Spectra fitting concluded with final loss: 0.0070446695943156765
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Basic Mann Model Fit</p>
+        <p class="prev-next-title">Example 1: Basic Mann Model Fit</p>
       </div>
     </a>
     <a class="right-next"
@@ -646,7 +933,7 @@ Spectra fitting concluded with final loss: 0.0070446695943156765
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Adding Regularization and Penalty Terms to Fitting</p>
+        <p class="prev-next-title">Example 3: Adding Regularization and Penalty Terms to Fitting</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

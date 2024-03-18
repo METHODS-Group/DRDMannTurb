@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Interpolating Spectra Data and Fitting &#8212; DRDMannTurb 0.1 documentation</title>
+    <title>Example 6: Interpolating Spectra Data and Fitting &#8212; DRDMannTurb 0.1 documentation</title>
   
   
   
@@ -50,8 +50,8 @@
     <script src="../_static/custom.js?v=9aa989ff"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Mann Eddy Lifetime Linear Regression" href="07_mann_linear_regression.html" />
-    <link rel="prev" title="Custom Data Fit" href="05_custom_noisy_data_fit.html" />
+    <link rel="next" title="Example 7: Mann Eddy Lifetime Linear Regression" href="07_mann_linear_regression.html" />
+    <link rel="prev" title="Example 5: Custom Data Fit" href="05_custom_noisy_data_fit.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -344,7 +344,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">Interpolatin...</li>
+    <li class="breadcrumb-item active" aria-current="page">Example 6:...</li>
   </ul>
 </nav>
 </div>
@@ -362,8 +362,8 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <script src='http://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js'></script>
-<script>require=requirejs;</script><section id="Interpolating-Spectra-Data-and-Fitting">
-<h1>Interpolating Spectra Data and Fitting<a class="headerlink" href="#Interpolating-Spectra-Data-and-Fitting" title="Link to this heading">#</a></h1>
+<script>require=requirejs;</script><section id="Example-6:-Interpolating-Spectra-Data-and-Fitting">
+<h1>Example 6: Interpolating Spectra Data and Fitting<a class="headerlink" href="#Example-6:-Interpolating-Spectra-Data-and-Fitting" title="Link to this heading">#</a></h1>
 <p>In this example, we’re using real-world data, but importantly the data points are not over the same spatial coordinates. Since that congruency is required, we need to interpolate the data values and obtain them over a common set of points. Furthermore, we filter the noisy data to obtain smoother curves for the DRD model to fit. <code class="docutils literal notranslate"><span class="pre">DRDMannTurb</span></code> has built-in utilities for handling this.</p>
 <p>This process involves new sources of error: interpolation error and filtering error, in addition to the sources from data collection and DRD model training.</p>
 <p>The filtering is based on differential evolution to perform a non-linear fit onto functions of the following form:</p>
@@ -400,7 +400,6 @@ document.write(`
 
 <span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
 
-<span class="c1"># v2: torch.set_default_device(&#39;cuda:0&#39;)</span>
 <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="s2">&quot;torch.cuda.FloatTensor&quot;</span><span class="p">)</span>
 </pre></div>
@@ -409,14 +408,14 @@ document.write(`
 </section>
 <section id="Setting-Physical-Parameters">
 <h2>Setting Physical Parameters<a class="headerlink" href="#Setting-Physical-Parameters" title="Link to this heading">#</a></h2>
-<p>Here, we define our charateristic scales <span class="math notranslate nohighlight">\(L, \Gamma, \sigma\)</span>, the log-scale domain, and the reference height <code class="docutils literal notranslate"><span class="pre">zref</span></code> and velocity <code class="docutils literal notranslate"><span class="pre">Uref</span></code>. for interpolation, log10-scaled k1 is used, regular values of the domain used for fitting</p>
+<p>Here, we define our charateristic scales <span class="math notranslate nohighlight">\(L, \Gamma, \alpha\epsilon^{2/3}\)</span>, the log-scale domain, and the reference height <code class="docutils literal notranslate"><span class="pre">zref</span></code> and velocity <code class="docutils literal notranslate"><span class="pre">Uref</span></code>. for interpolation, log10-scaled k1 is used, regular values of the domain used for fitting</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">L</span> <span class="o">=</span> <span class="mi">70</span>  <span class="c1"># length scale</span>
 <span class="n">Gamma</span> <span class="o">=</span> <span class="mf">3.7</span>  <span class="c1"># time scale</span>
-<span class="n">sigma</span> <span class="o">=</span> <span class="mf">0.04</span>  <span class="c1"># energy spectrum scale</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mf">0.04</span>  <span class="c1"># magnitude (σ = αϵ^{2/3})</span>
 
 <span class="n">Uref</span> <span class="o">=</span> <span class="mf">21.0</span>  <span class="c1"># reference velocity</span>
 <span class="n">zref</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># reference height</span>
@@ -535,7 +534,7 @@ Filtering provided spectra interpolation.
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 ========================================
-Initial loss: 7.967291243777818
+Initial loss: 7.707574696804095
 ========================================
 </pre></div></div>
 </div>
@@ -544,7 +543,7 @@ Initial loss: 7.967291243777818
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|██████████████████████████████████████████████████████████████████| 5/5 [00:20&lt;00:00,  4.19s/it]
+100%|██████████████████████████████████████████████████████████████████| 5/5 [00:20&lt;00:00,  4.05s/it]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -553,11 +552,11 @@ Initial loss: 7.967291243777818
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 ========================================
-Spectra fitting concluded with final loss: 0.06328845627732528
+Spectra fitting concluded with final loss: 0.05668436288880432
 ========================================
-<span class="ansi-green-intense-fg">Optimal calibrated L     :  15.2186 </span>
-<span class="ansi-green-intense-fg">Optimal calibrated Gamma :   2.2476 </span>
-<span class="ansi-green-intense-fg">Optimal calibrated sigma :   0.8352 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated L        :  16.8054 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated Γ        :   2.9040 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated αϵ^{2/3} :   0.8251 </span>
 ========================================
 </pre></div></div>
 </div>
@@ -624,7 +623,7 @@ Spectra fitting concluded with final loss: 0.06328845627732528
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Custom Data Fit</p>
+        <p class="prev-next-title">Example 5: Custom Data Fit</p>
       </div>
     </a>
     <a class="right-next"
@@ -632,7 +631,7 @@ Spectra fitting concluded with final loss: 0.06328845627732528
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Mann Eddy Lifetime Linear Regression</p>
+        <p class="prev-next-title">Example 7: Mann Eddy Lifetime Linear Regression</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

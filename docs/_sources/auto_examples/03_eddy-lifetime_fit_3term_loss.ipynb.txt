@@ -4,7 +4,7 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "\n# Adding Regularization and Penalty Terms to Fitting\n\nThis example is nearly identical to the Synthetic Data fit, however we\nuse a more sophisticated loss function, introducing an additional first-order\npenalty term. The previous synthetic fit relied only on MSE loss and a second-order penalty.\nAll other models remain the same: Mann turbulence under the Kaimal spectra.\n\n\nSee again the [original DRD paper](https://arxiv.org/abs/2107.11046).\n"
+        "\n# Example 3: Adding Regularization and Penalty Terms to Fitting\n\nThis example is nearly identical to Example 2, however we\nuse a more sophisticated loss function, introducing an additional first-order\npenalty term. The previous synthetic fit relied only on MSE loss and a second-order penalty.\n"
       ]
     },
     {
@@ -22,14 +22,14 @@
       },
       "outputs": [],
       "source": [
-        "import torch\nimport torch.nn as nn\n\nfrom drdmannturb.parameters import (\n    LossParameters,\n    NNParameters,\n    PhysicalParameters,\n    ProblemParameters,\n)\nfrom drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\n# v2: torch.set_default_device('cuda:0')\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")\n\nzref = 40  # reference height\nustar = 1.773  # friction velocity\n\n# Scales associated with Kaimal spectrum\nL = 0.59 * zref  # length scale\nGamma = 3.9  # time scale\nsigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # energy spectrum scale\n\nprint(f\"Physical Parameters: {L,Gamma,sigma}\")\n\nk1 = torch.logspace(-1, 2, 20) / zref"
+        "import torch\nimport torch.nn as nn\n\nfrom drdmannturb.parameters import (\n    LossParameters,\n    NNParameters,\n    PhysicalParameters,\n    ProblemParameters,\n)\nfrom drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")\n\nzref = 40  # reference height\nustar = 1.773  # friction velocity\n\n# Scales associated with Kaimal spectrum\nL = 0.59 * zref  # length scale\nGamma = 3.9  # time scale\nsigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # magnitude (\u03c3 = \u03b1\u03f5^{2/3})\n\nprint(f\"Physical Parameters: {L,Gamma,sigma}\")\n\nk1 = torch.logspace(-1, 2, 20) / zref"
       ]
     },
     {
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "%%\nNow, we construct our ``CalibrationProblem``.\n\nCompared to the first Synthetic Fit example, we are instead using GELU\nactivations and will train for fewer epochs. The more interesting difference\nis that we will have activated a first order term in the loss function by passing\n``alpha_pen1`` a value in the ``LossParameters`` constructor.\n\n"
+        "%%\nNow, we construct our ``CalibrationProblem``.\n\nCompared to Example 2, we are instead using GELU\nactivations and will train for fewer epochs. The more interesting difference\nis that we will have activated a first order term in the loss function by passing\n``alpha_pen1`` a value in the ``LossParameters`` constructor.\n\n"
       ]
     },
     {
@@ -47,7 +47,7 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "In the following cell, we construct our $k_1$ data points grid and\ngenerate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.\nIt is worth noting that the second element of each tuple in ``DataPoints`` is the\ncorresponding reference height, which we have chosen to be uniformly `zref`.\n\n"
+        "In the following cell, we construct our $k_1$ data points grid and\ngenerate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.\n\n"
       ]
     },
     {

@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Mann Eddy Lifetime Linear Regression &#8212; DRDMannTurb 0.1 documentation</title>
+    <title>Example 7: Mann Eddy Lifetime Linear Regression &#8212; DRDMannTurb 0.1 documentation</title>
   
   
   
@@ -50,8 +50,8 @@
     <script src="../_static/custom.js?v=9aa989ff"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Fluctuation Field Generation" href="08_mann_box_generation_IEC.html" />
-    <link rel="prev" title="Interpolating Spectra Data and Fitting" href="06_custom_data_interpolate_and_fit.html" />
+    <link rel="next" title="Example 8: Fluctuation Field Generation" href="08_mann_box_generation_IEC.html" />
+    <link rel="prev" title="Example 6: Interpolating Spectra Data and Fitting" href="06_custom_data_interpolate_and_fit.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -344,7 +344,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">Mann Eddy...</li>
+    <li class="breadcrumb-item active" aria-current="page">Example 7:...</li>
   </ul>
 </nav>
 </div>
@@ -362,8 +362,8 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <script src='http://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js'></script>
-<script>require=requirejs;</script><section id="Mann-Eddy-Lifetime-Linear-Regression">
-<h1>Mann Eddy Lifetime Linear Regression<a class="headerlink" href="#Mann-Eddy-Lifetime-Linear-Regression" title="Link to this heading">#</a></h1>
+<script>require=requirejs;</script><section id="Example-7:-Mann-Eddy-Lifetime-Linear-Regression">
+<h1>Example 7: Mann Eddy Lifetime Linear Regression<a class="headerlink" href="#Example-7:-Mann-Eddy-Lifetime-Linear-Regression" title="Link to this heading">#</a></h1>
 <p>This example demonstrates the a simple configuration of <code class="docutils literal notranslate"><span class="pre">DRDMannTurb</span></code> to spectra fitting while using a linear approximation to the Mann eddy lifetime function (in log-log space) under the Kaimal one-point spectra.</p>
 <p>For reference, the full Mann eddy lifetime function is given by</p>
 <p><span class="math">\begin{align}\tau^{\mathrm{IEC}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}\end{align}</span></p>
@@ -390,7 +390,6 @@ document.write(`
 
 <span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
 
-<span class="c1"># v2: torch.set_default_device(&#39;cuda:0&#39;)</span>
 <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="s2">&quot;torch.cuda.FloatTensor&quot;</span><span class="p">)</span>
 </pre></div>
@@ -404,7 +403,7 @@ document.write(`
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Scales associated with Kaimal spectrum</span>
 <span class="n">L</span> <span class="o">=</span> <span class="mf">0.59</span>  <span class="c1"># length scale</span>
 <span class="n">Gamma</span> <span class="o">=</span> <span class="mf">3.9</span>  <span class="c1"># time scale</span>
-<span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.2</span>  <span class="c1"># energy spectrum scale</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.2</span>  <span class="c1"># magnitude (σ = αϵ^{2/3})</span>
 
 <span class="n">zref</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># reference height</span>
 
@@ -482,7 +481,7 @@ Initial loss: 1.670480683735509
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|████████████████████████████████████████████████████████████████| 10/10 [00:03&lt;00:00,  3.33it/s]
+100%|████████████████████████████████████████████████████████████████| 10/10 [00:02&lt;00:00,  3.49it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -493,9 +492,9 @@ Initial loss: 1.670480683735509
 ========================================
 Spectra fitting concluded with final loss: 0.04383332913789145
 ========================================
-<span class="ansi-green-intense-fg">Optimal calibrated L     :   0.5803 </span>
-<span class="ansi-green-intense-fg">Optimal calibrated Gamma :   0.4354 </span>
-<span class="ansi-green-intense-fg">Optimal calibrated sigma :   3.2239 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated L        :   0.5803 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated Γ        :   0.4354 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated αϵ^{2/3} :   3.2239 </span>
 ========================================
 </pre></div></div>
 </div>
@@ -542,7 +541,7 @@ Spectra fitting concluded with final loss: 0.04383332913789145
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Interpolating Spectra Data and Fitting</p>
+        <p class="prev-next-title">Example 6: Interpolating Spectra Data and Fitting</p>
       </div>
     </a>
     <a class="right-next"
@@ -550,7 +549,7 @@ Spectra fitting concluded with final loss: 0.04383332913789145
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Fluctuation Field Generation</p>
+        <p class="prev-next-title">Example 8: Fluctuation Field Generation</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

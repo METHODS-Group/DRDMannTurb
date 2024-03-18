@@ -4,14 +4,14 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "\n# Fluctuation Field Generation\n\nThis example demonstrates the utilities for generating fluctuation fields, which can be either from a pre-trained DRD model, or based on some well-known spectra models. ``DRDMannTurb`` provides several utilities for plotting the resulting fields through Plotly, which can be done in several contexts as well as utilities for saving to VTK for downstream analysis.\n"
+        "\n# Example 8: Fluctuation Field Generation\n\nThis example demonstrates the utilities for generating synthetic turbulence, which can be either\nfrom a pre-trained DRD model, or based on some well-known spectra models. ``DRDMannTurb``\nprovides several utilities for plotting the resulting fields through Plotly, which can be done\nin several contexts as well as utilities for saving to VTK for downstream analysis in, e.g.,\nParaView.\n"
       ]
     },
     {
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        ".. centered::\n    This example may take a few seconds to load. Please be patient,\n    Plotly requires some time to render 3D graphics.\n\n\n"
+        ".. centered::\n    This example may take a few seconds to load. Please be patient if using\n    Plotly, as it requires some time to render 3D graphics.\n\n\n"
       ]
     },
     {
@@ -29,14 +29,14 @@
       },
       "outputs": [],
       "source": [
-        "from pathlib import Path\n\nimport numpy as np\nimport torch\n\nfrom drdmannturb.fluctuation_generation import (\n    plot_velocity_components,  # utility function for plotting each velocity component in the field, not used in this example\n)\nfrom drdmannturb.fluctuation_generation import (\n    GenerateFluctuationField,\n    plot_velocity_magnitude,\n)\n\npath = Path().resolve()\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\n# v2: torch.set_default_device('cuda:0')\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")"
+        "from pathlib import Path\n\nimport numpy as np\nimport torch\n\nfrom drdmannturb.fluctuation_generation import (\n    plot_velocity_components,  # utility function for plotting each velocity component in the field, not used in this example\n)\nfrom drdmannturb.fluctuation_generation import (\n    GenerateFluctuationField,\n    plot_velocity_magnitude,\n)\n\npath = Path().resolve()\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")"
       ]
     },
     {
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "## Setting Physical Parameters\nHere, we set the physical parameters of the environment in which the fluctuation field is generated: the friction velocity $u_* = 0.45$, roughness height $z_0=0.0001$ and reference height of $180$.\nThe physical domain is determined by dimensions in 3D as well as the discretization size (grid levels) in each dimension.\n\n"
+        "## Setting Physical Parameters\nHere, we set the physical parameters of the environment in which the synthetic wind field is generated:\nthe friction velocity $u_\\mathrm{red} = 11.4$ roughness height $z_0=0.02$ and reference height\nof $90$. The physical domain is determined by dimensions in 3D as well as the discretization\nsize (grid levels) in each dimension.\n\n"
       ]
     },
     {
@@ -47,14 +47,14 @@
       },
       "outputs": [],
       "source": [
-        "z0 = 0.02\nzref = 90\nuref = 11.4\nustar = uref * 0.41 / np.log(zref / z0)\nplexp = 0.2  # power law exponent\nwindprofiletype = \"PL\"  # choosing power law, use log with \"LOG\" here instead\n\nL = 0.593 * zref\nGamma = 3.89\nsigma = 0.052\n\nLx = 720\nLy = 64\nLz = 64\n\nnBlocks = 2\ngrid_dimensions = np.array([Lx / 4, Ly, Lz])\n\ngrid_levels = np.array([6, 4, 4])\n\nseed = None"
+        "z0 = 0.02\nzref = 90\nuref = 11.4\nustar = uref * 0.41 / np.log(zref / z0)\nplexp = 0.2  # power law exponent\nwindprofiletype = \"PL\"  # choosing power law, use log with \"LOG\" here instead\n\nL = 0.593 * zref  # length scale\nGamma = 3.89  # time scale\nsigma = 0.052  # magnitude (\u03c3 = \u03b1\u03f5^{2/3})\n\nLx = 720\nLy = 64\nLz = 64\n\nnBlocks = 2\ngrid_dimensions = np.array([Lx / 4, Ly, Lz])\n\ngrid_levels = np.array([6, 4, 4])\n\nseed = None"
       ]
     },
     {
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "## Generating Fluctuation Field from Mann Model\nFluctuation fields are generated block-by-block, rather than over the domain entirely. Please see section V, B of the original DRD paper for further discussion. Here, we will use 4 blocks.\n\n"
+        "## Generating Fluctuation Field from Mann Model\nFluctuation fields are generated block-by-block, rather than over the domain entirely.\nPlease see section V, B of the original DRD paper for further discussion. Here, we will use 4 blocks.\n\n"
       ]
     },
     {
@@ -65,14 +65,14 @@
       },
       "outputs": [],
       "source": [
-        "Type_Model = \"Mann\"  ### 'Mann', 'VK', 'NN'"
+        "Type_Model = \"Mann\"  ### 'Mann', 'VK', 'DRD'"
       ]
     },
     {
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "## Physical Parameters from Kaimal Spectrum\nThe Mann model requires three parameters, length scale, time scale, and spectrum amplitude scale, which we take from the Kaimal spectrum.\n\n\n"
+        "## Physical Parameters\nThe Mann model requires three parameters, length scale, time scale, and spectrum amplitude scale,\nwhich are defined above\n\n\n"
       ]
     },
     {
@@ -90,7 +90,7 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "## Scaling of the field (normalization)\nThe generated fluctuation field is normalized and scaled by the power law profile\n\n\\begin{align}\\left\\langle U_1(z)\\right\\rangle= u_* \\left( \\frac{z}{z_{\\text{ref}}} \\right)^\\alpha\\end{align}\n\nwhere $u_*$ is the friction velocity and $z_{\\text{ref}}$ is the reference height.\n\n\n"
+        "## Adding the mean velocity profile\nThe mean velocity profile follows the power law profile\n\n\\begin{align}\\left\\langle U_1(z)\\right\\rangle= U_{\\text{ref}}\\left( \\frac{z}{z_{\\text{ref}}} \\right)^\\alpha\\end{align}\n\nwhere $U_{\\text{ref}}$ is the reference velocity and $z_{\\text{ref}}$ is the reference height.\n\n\n"
       ]
     },
     {
@@ -119,7 +119,7 @@
       },
       "outputs": [],
       "source": [
-        "spacing = tuple(grid_dimensions / (2.0**grid_levels + 1))\n\ngen_mann.evaluate_divergence(spacing, fluctuation_field_mann).mean()"
+        "spacing = tuple(grid_dimensions / (2.0**grid_levels + 1))\n\ngen_mann.evaluate_divergence(spacing, fluctuation_field_mann).max()"
       ]
     },
     {

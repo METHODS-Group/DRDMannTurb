@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Custom Data Fit &#8212; DRDMannTurb 0.1 documentation</title>
+    <title>Example 5: Custom Data Fit &#8212; DRDMannTurb 0.1 documentation</title>
   
   
   
@@ -50,8 +50,8 @@
     <script src="../_static/custom.js?v=9aa989ff"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Interpolating Spectra Data and Fitting" href="06_custom_data_interpolate_and_fit.html" />
-    <link rel="prev" title="Changing MLP Architecture and Fitting" href="04_eddy-lifetime_fit_gelu.html" />
+    <link rel="next" title="Example 6: Interpolating Spectra Data and Fitting" href="06_custom_data_interpolate_and_fit.html" />
+    <link rel="prev" title="Example 4: Changing MLP Architecture and Fitting" href="04_eddy-lifetime_fit_gelu.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -344,7 +344,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">Custom Data Fit</li>
+    <li class="breadcrumb-item active" aria-current="page">Example 5:...</li>
   </ul>
 </nav>
 </div>
@@ -362,8 +362,8 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <script src='http://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js'></script>
-<script>require=requirejs;</script><section id="Custom-Data-Fit">
-<h1>Custom Data Fit<a class="headerlink" href="#Custom-Data-Fit" title="Link to this heading">#</a></h1>
+<script>require=requirejs;</script><section id="Example-5:-Custom-Data-Fit">
+<h1>Example 5: Custom Data Fit<a class="headerlink" href="#Example-5:-Custom-Data-Fit" title="Link to this heading">#</a></h1>
 <p>In this example, we use <code class="docutils literal notranslate"><span class="pre">drdmannturb</span></code> to fit a simple neural network model to real-world data without any preprocessing. This involves data that are observed in the real world, specifically near a North Sea wind turbine farm. The physical parameters are determined from those measurements. Additionally, the <span class="math notranslate nohighlight">\(\nu\)</span> parameter is also learned. is learned for the rational function for <span class="math notranslate nohighlight">\(\tau\)</span> given by</p>
 <p><span class="math">\begin{align}\tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}).\end{align}</span></p>
 <section id="Import-packages">
@@ -392,7 +392,6 @@ document.write(`
 
 <span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
 
-<span class="c1"># v2: torch.set_default_device(&#39;cuda:0&#39;)</span>
 <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="s2">&quot;torch.cuda.FloatTensor&quot;</span><span class="p">)</span>
 
@@ -408,7 +407,7 @@ document.write(`
 </section>
 <section id="Setting-Physical-Parameters">
 <h2>Setting Physical Parameters<a class="headerlink" href="#Setting-Physical-Parameters" title="Link to this heading">#</a></h2>
-<p>Here, we define our characteristic scales <span class="math notranslate nohighlight">\(L, \Gamma, \sigma\)</span>, the log-scale domain, and the reference height <code class="docutils literal notranslate"><span class="pre">zref</span></code> and velocity <code class="docutils literal notranslate"><span class="pre">Uref</span></code>.</p>
+<p>Here, we define our characteristic scales <span class="math notranslate nohighlight">\(L, \Gamma, \alpha\epsilon^{2/3}\)</span>, the log-scale domain, and the reference height <code class="docutils literal notranslate"><span class="pre">zref</span></code> and velocity <code class="docutils literal notranslate"><span class="pre">Uref</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
@@ -416,8 +415,8 @@ document.write(`
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">domain</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">40</span><span class="p">)</span>
 
 <span class="n">L</span> <span class="o">=</span> <span class="mi">70</span>  <span class="c1"># length scale</span>
-<span class="n">GAMMA</span> <span class="o">=</span> <span class="mf">3.7</span>  <span class="c1"># time scale</span>
-<span class="n">SIGMA</span> <span class="o">=</span> <span class="mf">0.04</span>  <span class="c1"># energy spectrum scale</span>
+<span class="n">Gamma</span> <span class="o">=</span> <span class="mf">3.7</span>  <span class="c1"># time scale</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mf">0.04</span>  <span class="c1"># magnitude (σ = αϵ^{2/3})</span>
 
 <span class="n">Uref</span> <span class="o">=</span> <span class="mi">21</span>  <span class="c1"># reference velocity</span>
 <span class="n">zref</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># reference height</span>
@@ -446,8 +445,8 @@ document.write(`
     <span class="n">loss_params</span><span class="o">=</span><span class="n">LossParameters</span><span class="p">(</span><span class="n">alpha_pen2</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">beta_reg</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">),</span>
     <span class="n">phys_params</span><span class="o">=</span><span class="n">PhysicalParameters</span><span class="p">(</span>
         <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
-        <span class="n">Gamma</span><span class="o">=</span><span class="n">GAMMA</span><span class="p">,</span>
-        <span class="n">sigma</span><span class="o">=</span><span class="n">SIGMA</span><span class="p">,</span>
+        <span class="n">Gamma</span><span class="o">=</span><span class="n">Gamma</span><span class="p">,</span>
+        <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span>
         <span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">,</span>
         <span class="n">Uref</span><span class="o">=</span><span class="n">Uref</span><span class="p">,</span>
         <span class="n">zref</span><span class="o">=</span><span class="n">zref</span><span class="p">,</span>
@@ -499,7 +498,7 @@ document.write(`
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 ========================================
-Initial loss: 5.1983089797306805
+Initial loss: 5.176901996532603
 ========================================
 </pre></div></div>
 </div>
@@ -508,7 +507,7 @@ Initial loss: 5.1983089797306805
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|██████████████████████████████████████████████████████████████████| 5/5 [00:27&lt;00:00,  5.44s/it]
+100%|██████████████████████████████████████████████████████████████████| 5/5 [00:27&lt;00:00,  5.45s/it]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -517,12 +516,12 @@ Initial loss: 5.1983089797306805
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 ========================================
-Spectra fitting concluded with final loss: 0.1584388689732236
-Learned nu value: 0.3340852657309988
+Spectra fitting concluded with final loss: 0.18358625822060076
+Learned nu value: 0.4616777100279633
 ========================================
-<span class="ansi-green-intense-fg">Optimal calibrated L     :  50.0690 </span>
-<span class="ansi-green-intense-fg">Optimal calibrated Gamma :   8.8683 </span>
-<span class="ansi-green-intense-fg">Optimal calibrated sigma :   0.0041 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated L        :  55.0772 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated Γ        :   3.4446 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated αϵ^{2/3} :   0.0040 </span>
 ========================================
 </pre></div></div>
 </div>
@@ -589,7 +588,7 @@ Learned nu value: 0.3340852657309988
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Changing MLP Architecture and Fitting</p>
+        <p class="prev-next-title">Example 4: Changing MLP Architecture and Fitting</p>
       </div>
     </a>
     <a class="right-next"
@@ -597,7 +596,7 @@ Learned nu value: 0.3340852657309988
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Interpolating Spectra Data and Fitting</p>
+        <p class="prev-next-title">Example 6: Interpolating Spectra Data and Fitting</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

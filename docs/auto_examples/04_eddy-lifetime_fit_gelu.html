@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Changing MLP Architecture and Fitting &#8212; DRDMannTurb 0.1 documentation</title>
+    <title>Example 4: Changing MLP Architecture and Fitting &#8212; DRDMannTurb 0.1 documentation</title>
   
   
   
@@ -50,8 +50,8 @@
     <script src="../_static/custom.js?v=9aa989ff"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Custom Data Fit" href="05_custom_noisy_data_fit.html" />
-    <link rel="prev" title="Adding Regularization and Penalty Terms to Fitting" href="03_eddy-lifetime_fit_3term_loss.html" />
+    <link rel="next" title="Example 5: Custom Data Fit" href="05_custom_noisy_data_fit.html" />
+    <link rel="prev" title="Example 3: Adding Regularization and Penalty Terms to Fitting" href="03_eddy-lifetime_fit_3term_loss.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -344,7 +344,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">Changing...</li>
+    <li class="breadcrumb-item active" aria-current="page">Example 4:...</li>
   </ul>
 </nav>
 </div>
@@ -362,11 +362,10 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <script src='http://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js'></script>
-<script>require=requirejs;</script><section id="Changing-MLP-Architecture-and-Fitting">
-<h1>Changing MLP Architecture and Fitting<a class="headerlink" href="#Changing-MLP-Architecture-and-Fitting" title="Link to this heading">#</a></h1>
-<p>This example is nearly identical to the Synthetic Data fit, however we use a different neural network architecture in hopes of obtaining a better spectra fitting. The same set-up using the Mann model under the Kaimal spectra is used here as in other synthetic data fitting examples. The only difference here is in the neural network architecture. Although certain combinations of activation functions, such as <code class="docutils literal notranslate"><span class="pre">GELU</span></code> result in considerably improved spectra fitting and terminal loss values, the
-resulting eddy lifetime functions are usually non-physical.</p>
-<p>See again the <a class="reference external" href="https://arxiv.org/abs/2107.11046">original DRD paper</a>.</p>
+<script>require=requirejs;</script><section id="Example-4:-Changing-MLP-Architecture-and-Fitting">
+<h1>Example 4: Changing MLP Architecture and Fitting<a class="headerlink" href="#Example-4:-Changing-MLP-Architecture-and-Fitting" title="Link to this heading">#</a></h1>
+<p>This example is nearly identical to the Synthetic Data fit, however we use a different neural network architecture in hopes of obtaining a better spectra fitting. The same set-up for fitting the Kaimal spectra is used here as in Examples 2 and 3. The only difference here is in the neural network architecture. Although certain combinations of activation functions, such as <code class="docutils literal notranslate"><span class="pre">GELU</span></code> result in considerably improved spectra fitting and terminal loss values, the resulting eddy lifetime functions may
+be non-physical.</p>
 <section id="Import-packages">
 <h2>Import packages<a class="headerlink" href="#Import-packages" title="Link to this heading">#</a></h2>
 <p>First, we import the packages we need for this example. Additionally, we choose to use CUDA if it is available.</p>
@@ -403,7 +402,7 @@ resulting eddy lifetime functions are usually non-physical.</p>
 <span class="c1"># Scales associated with Kaimal spectrum</span>
 <span class="n">L</span> <span class="o">=</span> <span class="mf">0.59</span> <span class="o">*</span> <span class="n">zref</span>  <span class="c1"># length scale</span>
 <span class="n">Gamma</span> <span class="o">=</span> <span class="mf">3.9</span>  <span class="c1"># time scale</span>
-<span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.2</span> <span class="o">*</span> <span class="n">ustar</span><span class="o">**</span><span class="mf">2.0</span> <span class="o">/</span> <span class="n">zref</span> <span class="o">**</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">)</span>  <span class="c1"># energy spectrum scale</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.2</span> <span class="o">*</span> <span class="n">ustar</span><span class="o">**</span><span class="mf">2.0</span> <span class="o">/</span> <span class="n">zref</span> <span class="o">**</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">)</span>  <span class="c1"># magnitude (σ = αϵ^{2/3})</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Physical Parameters: </span><span class="si">{</span><span class="n">L</span><span class="p">,</span><span class="n">Gamma</span><span class="p">,</span><span class="n">sigma</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
@@ -420,8 +419,8 @@ Physical Parameters: (23.599999999999998, 3.9, 0.8600574364289042)
 </pre></div></div>
 </div>
 <p>Now, we construct our <code class="docutils literal notranslate"><span class="pre">CalibrationProblem</span></code>.</p>
-<p>Compared to the first Synthetic Fit example, as noted already, we are using a more complicated neural network architecture. This time, specifically, our network will have 4 layers of width 10, 20, 20, 10 respectively, and we use both <code class="docutils literal notranslate"><span class="pre">GELU</span></code> and <code class="docutils literal notranslate"><span class="pre">RELU</span></code> activations. We have prescribed more Wolfe iterations. Finally, this task is considerably more difficult than before since the exponent of the eddy lifetime function <span class="math notranslate nohighlight">\(\nu\)</span> is to be learned. Much more training may be necessary to obtain a
-close fit to the eddy lifetime function. Interestingly, learning this parameter results in models that more accurately describe the spectra of Mann turbulence than using the Mann model itself.</p>
+<p>Compared to Examples 2 and 3, we are using a more complicated neural network architecture. This time, specifically, our network will have 4 layers of width 10, 20, 20, 10 respectively, and we use both <code class="docutils literal notranslate"><span class="pre">GELU</span></code> and <code class="docutils literal notranslate"><span class="pre">RELU</span></code> activations. We have prescribed more Wolfe iterations. Finally, this task is considerably more difficult than before since the exponent of the eddy lifetime function <span class="math notranslate nohighlight">\(\nu\)</span> is to be learned. Much more training may be necessary to obtain a close fit to the eddy lifetime
+function. Interestingly, learning this parameter results in models that more accurately describe the spectra of Mann turbulence than using the Mann model itself.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
@@ -429,7 +428,7 @@ close fit to the eddy lifetime function. Interestingly, learning this parameter 
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pb</span> <span class="o">=</span> <span class="n">CalibrationProblem</span><span class="p">(</span>
     <span class="n">nn_params</span><span class="o">=</span><span class="n">NNParameters</span><span class="p">(</span>
         <span class="n">nlayers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-        <span class="c1"># Specifying the activations is done similarly.</span>
+        <span class="c1"># Specifying the activations is done as in Examples 2 and 3.</span>
         <span class="n">hidden_layer_sizes</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
         <span class="n">activations</span><span class="o">=</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span> <span class="n">nn</span><span class="o">.</span><span class="n">GELU</span><span class="p">(),</span> <span class="n">nn</span><span class="o">.</span><span class="n">GELU</span><span class="p">(),</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">()],</span>
     <span class="p">),</span>
@@ -447,7 +446,7 @@ close fit to the eddy lifetime function. Interestingly, learning this parameter 
 </section>
 <section id="Data-Generation">
 <h2>Data Generation<a class="headerlink" href="#Data-Generation" title="Link to this heading">#</a></h2>
-<p>In the following cell, we construct our <span class="math notranslate nohighlight">\(k_1\)</span> data points grid and generate the values. <code class="docutils literal notranslate"><span class="pre">Data</span></code> will be a tuple <code class="docutils literal notranslate"><span class="pre">(&lt;data</span> <span class="pre">points&gt;,</span> <span class="pre">&lt;data</span> <span class="pre">values&gt;)</span></code>. It is worth noting that the second element of each tuple in <code class="docutils literal notranslate"><span class="pre">DataPoints</span></code> is the corresponding reference height, which we have chosen to be uniformly <code class="docutils literal notranslate"><span class="pre">zref</span></code>.</p>
+<p>In the following cell, we construct our <span class="math notranslate nohighlight">\(k_1\)</span> data points grid and generate the values. <code class="docutils literal notranslate"><span class="pre">Data</span></code> will be a tuple <code class="docutils literal notranslate"><span class="pre">(&lt;data</span> <span class="pre">points&gt;,</span> <span class="pre">&lt;data</span> <span class="pre">values&gt;)</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
@@ -476,7 +475,7 @@ close fit to the eddy lifetime function. Interestingly, learning this parameter 
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 ========================================
-Initial loss: 0.045089010235689016
+Initial loss: 0.044577288180681074
 ========================================
 </pre></div></div>
 </div>
@@ -485,7 +484,7 @@ Initial loss: 0.045089010235689016
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|████████████████████████████████████████████████████████████████| 25/25 [01:44&lt;00:00,  4.17s/it]
+100%|████████████████████████████████████████████████████████████████| 25/25 [01:43&lt;00:00,  4.14s/it]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -494,11 +493,11 @@ Initial loss: 0.045089010235689016
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 ========================================
-Spectra fitting concluded with final loss: 0.00258780039475945
+Spectra fitting concluded with final loss: 0.0012721015139415945
 ========================================
-<span class="ansi-green-intense-fg">Optimal calibrated L     :  23.6964 </span>
-<span class="ansi-green-intense-fg">Optimal calibrated Gamma :   3.6677 </span>
-<span class="ansi-green-intense-fg">Optimal calibrated sigma :   0.8157 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated L        :  25.3808 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated Γ        :  10.3377 </span>
+<span class="ansi-green-intense-fg">Optimal calibrated αϵ^{2/3} :   0.8224 </span>
 ========================================
 </pre></div></div>
 </div>
@@ -564,7 +563,7 @@ Spectra fitting concluded with final loss: 0.00258780039475945
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Adding Regularization and Penalty Terms to Fitting</p>
+        <p class="prev-next-title">Example 3: Adding Regularization and Penalty Terms to Fitting</p>
       </div>
     </a>
     <a class="right-next"
@@ -572,7 +571,7 @@ Spectra fitting concluded with final loss: 0.00258780039475945
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Custom Data Fit</p>
+        <p class="prev-next-title">Example 5: Custom Data Fit</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

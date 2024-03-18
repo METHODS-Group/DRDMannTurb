@@ -380,8 +380,9 @@ document.write(`
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">torch.cuda</span> <span class="kn">import</span> <span class="n">is_available</span>
+<span class="kn">import</span> <span class="nn">torch</span>
 
+<span class="kn">from</span> <span class="nn">..common</span> <span class="kn">import</span> <span class="n">CPU_Unpickler</span>
 <span class="kn">from</span> <span class="nn">..spectra_fitting</span> <span class="kn">import</span> <span class="n">CalibrationProblem</span>
 <span class="kn">from</span> <span class="nn">.covariance_kernels</span> <span class="kn">import</span> <span class="n">MannCovariance</span><span class="p">,</span> <span class="n">VonKarmanCovariance</span>
 <span class="kn">from</span> <span class="nn">.gaussian_random_fields</span> <span class="kn">import</span> <span class="n">VectorGaussianRandomField</span>
@@ -456,7 +457,7 @@ document.write(`
 <span class="sd">        grid_levels : np.ndarray</span>
 <span class="sd">            Numpy array denoting the grid levels; number of discretization points used in each dimension, which evaluates as 2^k for each dimension for FFT-based sampling methods.</span>
 <span class="sd">        model : str</span>
-<span class="sd">            One of ``&quot;NN&quot;``, ``&quot;VK&quot;``, or ``&quot;Mann&quot;`` denoting</span>
+<span class="sd">            One of ``&quot;DRD&quot;``, ``&quot;VK&quot;``, or ``&quot;Mann&quot;`` denoting</span>
 <span class="sd">            &quot;Neural Network,&quot; &quot;Von Karman,&quot; and &quot;Mann model&quot;.</span>
 <span class="sd">        length_scale : Optional[float]</span>
 <span class="sd">            The length scale :math:`L:`, used only if non-DRD model is used. By default, None.</span>
@@ -474,15 +475,15 @@ document.write(`
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
 <span class="sd">        ValueError</span>
-<span class="sd">            If ``model`` doesn&#39;t match one of the 3 available models: NN, VK and Mann.</span>
+<span class="sd">            If ``model`` doesn&#39;t match one of the 3 available models: DRD, VK and Mann.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">if</span> <span class="n">model</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;NN&quot;</span><span class="p">,</span> <span class="s2">&quot;VK&quot;</span><span class="p">,</span> <span class="s2">&quot;Mann&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">model</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;DRD&quot;</span><span class="p">,</span> <span class="s2">&quot;VK&quot;</span><span class="p">,</span> <span class="s2">&quot;Mann&quot;</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Provided model type not supported, must be one of NN, VK, Mann&quot;</span>
+                <span class="s2">&quot;Provided model type not supported, must be one of DRD, VK, Mann&quot;</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;NN&quot;</span> <span class="ow">and</span> <span class="n">path_to_parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;DRD&quot;</span> <span class="ow">and</span> <span class="n">path_to_parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;Please provide the path to saved pre-trained DRD model, or else choose a different model type.&quot;</span>
             <span class="p">)</span>
@@ -494,24 +495,21 @@ document.write(`
                 <span class="s2">&quot;Must provide all physical scalar quantities (length, time, energy spectrum scales) to use current model type.&quot;</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;NN&quot;</span><span class="p">:</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_to_parameters</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-                <span class="p">(</span>
-                    <span class="n">nn_params</span><span class="p">,</span>
-                    <span class="n">prob_params</span><span class="p">,</span>
-                    <span class="n">loss_params</span><span class="p">,</span>
-                    <span class="n">phys_params</span><span class="p">,</span>
-                    <span class="n">model_params</span><span class="p">,</span>
-                <span class="p">)</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;DRD&quot;</span><span class="p">:</span>
+            <span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
 
-            <span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
+            <span class="c1"># safely load saved parameters with reference to Tensor device(s)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_to_parameters</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+                <span class="p">(</span><span class="n">nn_params</span><span class="p">,</span> <span class="n">prob_params</span><span class="p">,</span> <span class="n">loss_params</span><span class="p">,</span> <span class="n">phys_params</span><span class="p">,</span> <span class="n">model_params</span><span class="p">,)</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="k">if</span> <span class="n">device</span> <span class="o">==</span> <span class="s2">&quot;cpu&quot;</span> <span class="k">else</span> <span class="n">CPU_Unpickler</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+                <span class="p">)</span>
 
             <span class="n">pb</span> <span class="o">=</span> <span class="n">CalibrationProblem</span><span class="p">(</span>
                 <span class="n">nn_params</span><span class="o">=</span><span class="n">nn_params</span><span class="p">,</span>
                 <span class="n">prob_params</span><span class="o">=</span><span class="n">prob_params</span><span class="p">,</span>
                 <span class="n">loss_params</span><span class="o">=</span><span class="n">loss_params</span><span class="p">,</span>
                 <span class="n">phys_params</span><span class="o">=</span><span class="n">phys_params</span><span class="p">,</span>
-                <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">pb</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">model_params</span>
             <span class="n">L</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">M</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">OPS</span><span class="o">.</span><span class="n">exp_scales</span><span class="p">()</span>
@@ -618,7 +616,7 @@ document.write(`
                 <span class="n">grid_shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
                 <span class="n">Covariance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">Covariance</span><span class="p">,</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;NN&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;DRD&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">Covariance</span> <span class="o">=</span> <span class="n">NNCovariance</span><span class="p">(</span>
                 <span class="n">ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
                 <span class="n">length_scale</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
@@ -690,7 +688,7 @@ document.write(`
 <span class="sd">            Type of wind profile by which to normalize, either ``&quot;LOG&quot;`` for logarithmic scaling or ``&quot;PL&quot;`` for power law scaling: for ``&quot;LOG&quot;``,</span>
 
 <span class="sd">            .. math::</span>
-<span class="sd">                \left\langle U_1(z)\right\rangle=\frac{u_*}{\kappa} \ln \left(\frac{z}{z_0}+1\right)</span>
+<span class="sd">                \left\langle U_1(z)\right\rangle= U_{\text{ref}} \frac{\ln \left( \frac{z}{z_0} + 1 \right)}{\ln \left( \frac{z_{\text{ref}}}{z_0} \right)}</span>
 
 <span class="sd">            or for ``&quot;PL&quot;``,</span>
 

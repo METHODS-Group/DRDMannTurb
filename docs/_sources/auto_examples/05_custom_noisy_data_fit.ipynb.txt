@@ -4,7 +4,7 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "\n# Custom Data Fit\n\nIn this example, we use ``drdmannturb`` to fit a simple neural network model to real-world data without any preprocessing. This involves data that are observed in the real world, specifically near a North Sea wind turbine farm. The physical parameters are determined from those measurements. Additionally, the $\\nu$ parameter is also learned.\nis learned for the rational function for $\\tau$ given by\n\n\\begin{align}\\tau(\\boldsymbol{k})=\\frac{T|\\boldsymbol{a}|^{\\nu-\\frac{2}{3}}}{\\left(1+|\\boldsymbol{a}|^2\\right)^{\\nu / 2}}, \\quad \\boldsymbol{a}=\\boldsymbol{a}(\\boldsymbol{k}).\\end{align}\n"
+        "\n# Example 5: Custom Data Fit\n\nIn this example, we use ``drdmannturb`` to fit a simple neural network model to real-world\ndata without any preprocessing. This involves data that are observed in the real world,\nspecifically near a North Sea wind turbine farm. The physical parameters are determined\nfrom those measurements. Additionally, the $\\nu$ parameter is also learned.\nis learned for the rational function for $\\tau$ given by\n\n\\begin{align}\\tau(\\boldsymbol{k})=\\frac{T|\\boldsymbol{a}|^{\\nu-\\frac{2}{3}}}{\\left(1+|\\boldsymbol{a}|^2\\right)^{\\nu / 2}}, \\quad \\boldsymbol{a}=\\boldsymbol{a}(\\boldsymbol{k}).\\end{align}\n"
       ]
     },
     {
@@ -22,14 +22,14 @@
       },
       "outputs": [],
       "source": [
-        "from pathlib import Path\n\nimport numpy as np\nimport torch\nimport torch.nn as nn\n\nfrom drdmannturb.enums import DataType\nfrom drdmannturb.parameters import (\n    LossParameters,\n    NNParameters,\n    PhysicalParameters,\n    ProblemParameters,\n)\nfrom drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator\n\npath = Path().resolve()\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\n# v2: torch.set_default_device('cuda:0')\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")\n\n\nspectra_file = (\n    path / \"./inputs/Spectra.dat\"\n    if path.name == \"examples\"\n    else path / \"../data/Spectra.dat\"\n)"
+        "from pathlib import Path\n\nimport numpy as np\nimport torch\nimport torch.nn as nn\n\nfrom drdmannturb.enums import DataType\nfrom drdmannturb.parameters import (\n    LossParameters,\n    NNParameters,\n    PhysicalParameters,\n    ProblemParameters,\n)\nfrom drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator\n\npath = Path().resolve()\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")\n\n\nspectra_file = (\n    path / \"./inputs/Spectra.dat\"\n    if path.name == \"examples\"\n    else path / \"../data/Spectra.dat\"\n)"
       ]
     },
     {
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "## Setting Physical Parameters\nHere, we define our characteristic scales $L, \\Gamma, \\sigma$, the\nlog-scale domain, and the reference height `zref` and velocity `Uref`.\n\n"
+        "## Setting Physical Parameters\nHere, we define our characteristic scales $L, \\Gamma, \\alpha\\epsilon^{2/3}$, the\nlog-scale domain, and the reference height `zref` and velocity `Uref`.\n\n"
       ]
     },
     {
@@ -40,7 +40,7 @@
       },
       "outputs": [],
       "source": [
-        "domain = torch.logspace(-1, 3, 40)\n\nL = 70  # length scale\nGAMMA = 3.7  # time scale\nSIGMA = 0.04  # energy spectrum scale\n\nUref = 21  # reference velocity\nzref = 1  # reference height"
+        "domain = torch.logspace(-1, 3, 40)\n\nL = 70  # length scale\nGamma = 3.7  # time scale\nsigma = 0.04  # magnitude (\u03c3 = \u03b1\u03f5^{2/3})\n\nUref = 21  # reference velocity\nzref = 1  # reference height"
       ]
     },
     {
@@ -58,7 +58,7 @@
       },
       "outputs": [],
       "source": [
-        "pb = CalibrationProblem(\n    nn_params=NNParameters(\n        nlayers=2, hidden_layer_sizes=[10, 10], activations=[nn.ReLU(), nn.ReLU()]\n    ),\n    prob_params=ProblemParameters(\n        data_type=DataType.CUSTOM, tol=1e-9, nepochs=5, learn_nu=True\n    ),\n    loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1e-5),\n    phys_params=PhysicalParameters(\n        L=L,\n        Gamma=GAMMA,\n        sigma=SIGMA,\n        domain=domain,\n        Uref=Uref,\n        zref=zref,\n    ),\n    logging_directory=\"runs/custom_data\",\n    device=device,\n)"
+        "pb = CalibrationProblem(\n    nn_params=NNParameters(\n        nlayers=2, hidden_layer_sizes=[10, 10], activations=[nn.ReLU(), nn.ReLU()]\n    ),\n    prob_params=ProblemParameters(\n        data_type=DataType.CUSTOM, tol=1e-9, nepochs=5, learn_nu=True\n    ),\n    loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1e-5),\n    phys_params=PhysicalParameters(\n        L=L,\n        Gamma=Gamma,\n        sigma=sigma,\n        domain=domain,\n        Uref=Uref,\n        zref=zref,\n    ),\n    logging_directory=\"runs/custom_data\",\n    device=device,\n)"
       ]
     },
     {

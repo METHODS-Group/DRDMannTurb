@@ -4,7 +4,7 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "\n# Mann Eddy Lifetime Linear Regression\n\nThis example demonstrates the a simple configuration of ``DRDMannTurb`` to spectra fitting while using a linear approximation to the Mann eddy lifetime function (in log-log space) under the Kaimal one-point spectra.\n\nFor reference, the full Mann eddy lifetime function is given by\n\n\\begin{align}\\tau^{\\mathrm{IEC}}(k)=\\frac{(k L)^{-\\frac{2}{3}}}{\\sqrt{{ }_2 F_1\\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\\right)}}\\end{align}\n\nwhere the hypergeometric function can only be evaluated on the CPU. The purpose of this example is to show how a GPU kernel of a linear approximation (in log-log space) of the Mann eddy lifetime can be generated automatically to speed up tasks that require the GPU. As before, the Kaimal spectra is used for the one-point-spectra model.\n\nThe external API works the same as with other models, but the following may speed up some tasks that rely exclusively on the Mann eddy lifetime function.\n"
+        "\n# Example 7: Mann Eddy Lifetime Linear Regression\n\nThis example demonstrates the a simple configuration of ``DRDMannTurb`` to spectra fitting\nwhile using a linear approximation to the Mann eddy lifetime function (in log-log space)\nunder the Kaimal one-point spectra.\n\nFor reference, the full Mann eddy lifetime function is given by\n\n\\begin{align}\\tau^{\\mathrm{IEC}}(k)=\\frac{(k L)^{-\\frac{2}{3}}}{\\sqrt{{ }_2 F_1\\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\\right)}}\\end{align}\n\nwhere the hypergeometric function can only be evaluated on the CPU. The purpose of this example is\nto show how a GPU kernel of a linear approximation (in log-log space) of the Mann eddy lifetime can\nbe generated automatically to speed up tasks that require the GPU. As before, the Kaimal spectra is\nused for the one-point-spectra model.\n\nThe external API works the same as with other models, but the following may speed up some tasks\nthat rely exclusively on the Mann eddy lifetime function.\n"
       ]
     },
     {
@@ -22,14 +22,14 @@
       },
       "outputs": [],
       "source": [
-        "import torch\nimport torch.nn as nn\n\nfrom drdmannturb import EddyLifetimeType\nfrom drdmannturb.parameters import (\n    LossParameters,\n    NNParameters,\n    PhysicalParameters,\n    ProblemParameters,\n)\nfrom drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\n# v2: torch.set_default_device('cuda:0')\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")"
+        "import torch\nimport torch.nn as nn\n\nfrom drdmannturb import EddyLifetimeType\nfrom drdmannturb.parameters import (\n    LossParameters,\n    NNParameters,\n    PhysicalParameters,\n    ProblemParameters,\n)\nfrom drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\nif torch.cuda.is_available():\n    torch.set_default_tensor_type(\"torch.cuda.FloatTensor\")"
       ]
     },
     {
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "Set up physical parameters and domain associated with the Kaimal spectrum. We perform the spectra fitting over the $k_1$ space $[10^{{-1}}, 10^2]$\nwith 20 points.\n\n"
+        "Set up physical parameters and domain associated with the Kaimal spectrum.\nWe perform the spectra fitting over the $k_1$ space $[10^{{-1}}, 10^2]$\nwith 20 points.\n\n"
       ]
     },
     {
@@ -40,7 +40,7 @@
       },
       "outputs": [],
       "source": [
-        "# Scales associated with Kaimal spectrum\nL = 0.59  # length scale\nGamma = 3.9  # time scale\nsigma = 3.2  # energy spectrum scale\n\nzref = 1  # reference height\n\ndomain = torch.logspace(-1, 2, 20)"
+        "# Scales associated with Kaimal spectrum\nL = 0.59  # length scale\nGamma = 3.9  # time scale\nsigma = 3.2  # magnitude (\u03c3 = \u03b1\u03f5^{2/3})\n\nzref = 1  # reference height\n\ndomain = torch.logspace(-1, 2, 20)"
       ]
     },
     {
