@@ -7,13 +7,10 @@ tags:
   - wind-engineering
 authors:
   - name: Alexey Izmailov
-    equal-contrib: true
     affiliation: 1
   - name: Matthew Meeker
-    equal-contrib: true
     affiliation: 1
   - name: Georgios Deskos
-    corresponding: true
     affiliation: 2
   - name: Brendan Keith
     affiliation: 1
@@ -47,7 +44,7 @@ After fitting to the spectra, the resulting models can also be used to generate 
 
 ![Simulated Wind Tunnel](wind.png)
 
-For more detailed discussions of results, including a variety of utilities for interpolating and filtering noisy real-world data and generating wind turbulence, please see the official examples.  
+For more detailed discussions of results, including a variety of utilities for interpolating and filtering noisy real-world data and generating wind turbulence, please see the [official examples](https://methods-group.github.io/DRDMannTurb/examples.html).  
 
 # Package Features
 

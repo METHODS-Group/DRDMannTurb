@@ -22,7 +22,9 @@ Fluctuation field generation involves one class and is performed in an efficient
 Installation
 =============
 
-The following sections will guide you through the installtion of DRDMannTurb and its dependencies. The following instructions should work on any operating system (OS) that is supported by `Anaconda <https://docs.conda.io/projects/conda/en/stable/user-guide/getting-started.html>`_, including **Windows**, **macOS**, and **Linux**. 
+For users, pre-compiled wheels for the package are available via ``pip install drdmannturb``. 
+
+Alternatively, the following section will guide you through the installation of DRDMannTurb and its dependencies in a fresh environment. The following instructions should work on any operating system (OS) that is supported by `Anaconda <https://docs.conda.io/projects/conda/en/stable/user-guide/getting-started.html>`_, including **Windows**, **macOS**, and **Linux**. 
 
 #. Clone DRDMannTurb from its `GitHub repository <https://github.com/METHODS-Group/DRDMannTurb>`_.
    Enter the directory and check out the branch of your choice.

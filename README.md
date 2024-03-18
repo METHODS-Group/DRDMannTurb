@@ -35,12 +35,13 @@ If you use this software, please cite it as below.
 ```
 @software{Izmailov_DRDMannTurb_2023,
 author = {Izmailov, Alexey and Meeker, Matthew and Deskos, Georgios and Keith, Brendan},
-month = dec,
+month = mar,
 title = {{DRDMannTurhb}},
 version = {0.1.0},
-year = {2023}
+year = {2024}
 }
 ```
 
-<!-- ## Attribution -->
+## Acknowledgements
 
+This work was authored in part by the National Renewable Energy Laboratory, operated by Alliance for Sustainable Energy, LLC, for the U.S. Department of Energy (DOE) under Contract No. DE-AC36-08GO28308. Funding provided by the U.S. Department of Energy Office of Energy Efficiency and Renewable Energy Wind Energy Technologies Office. The views expressed in the article do not necessarily represent the views of the DOE or the U.S. Government. The U.S. Government retains and the publisher, by accepting the article for publication, acknowledges that the U.S. Government retains a nonexclusive, paid-up, irrevocable, worldwide license to publish or reproduce the published form of this work, or allow others to do so, for U.S. Government purposes. BK was supported in part by the U.S. Department of Energy Office of Science, Early Career Research Program under Award Number DE-SC0024335.
