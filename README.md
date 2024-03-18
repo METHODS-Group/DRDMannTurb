@@ -36,7 +36,8 @@ If you use this software, please cite it as below.
 @software{Izmailov_DRDMannTurb_2023,
 author = {Izmailov, Alexey and Meeker, Matthew and Deskos, Georgios and Keith, Brendan},
 month = mar,
-title = {{DRDMannTurhb}},
+title = {{DRDMannTurb}},
+url= {https://github.com/METHODS-Group/DRDMannTurb}, 
 version = {0.1.0},
 year = {2024}
 }
