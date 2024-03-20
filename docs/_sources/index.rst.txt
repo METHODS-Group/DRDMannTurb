@@ -7,9 +7,6 @@ wind engineers in applications requiring rapid simulation of realistic wind turb
 
 .. figure:: ../../drd.gif
 
-.. note::
-   This project is still under development.
-
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
