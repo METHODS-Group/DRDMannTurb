@@ -12,3 +12,6 @@ nbsphinx
 sphinx-gallery
 myst_parser
 tensorboard
+plotly
+enum_tools
+sphinx_toolbox
