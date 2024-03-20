@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:26.714** total execution time for 9 files **from auto_examples**:
+**00:25.322** total execution time for 9 files **from auto_examples**:
 
 .. container::
 
@@ -33,10 +33,7 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_auto_examples_02_eddy-lifetime_fit.py` (``02_eddy-lifetime_fit.py``)
-     - 00:23.020
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_09_drd_box.py` (``09_drd_box.py``)
-     - 00:03.694
+     - 00:25.322
      - 0.0
    * - :ref:`sphx_glr_auto_examples_01_basic_mann_parameters_fit.py` (``01_basic_mann_parameters_fit.py``)
      - 00:00.000
@@ -57,5 +54,8 @@ Computation times
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_auto_examples_08_mann_box_generation_IEC.py` (``08_mann_box_generation_IEC.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_09_drd_box.py` (``09_drd_box.py``)
      - 00:00.000
      - 0.0
