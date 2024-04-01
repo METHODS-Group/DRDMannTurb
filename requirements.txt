@@ -9,5 +9,5 @@ scipy==1.10.1
 setuptools==67.8.0
 sphinx_gallery==0.15.0
 tensorboard==2.15.0
-torch==1.13.0
+torch==2.2.2
 tqdm==4.65.0
