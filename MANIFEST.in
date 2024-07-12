@@ -1,0 +1,6 @@
+# This file is used to include extra files in source distributions.
+
+include LICENSE
+recursive-include drdmannturb *.py
+recursive-include examples *.py
+recursive-include docs/source/ *.rst

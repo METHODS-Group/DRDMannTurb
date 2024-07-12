@@ -38,7 +38,7 @@ author = {Izmailov, Alexey and Meeker, Matthew and Deskos, Georgios and Keith, B
 month = mar,
 title = {{DRDMannTurb}},
 url= {https://github.com/METHODS-Group/DRDMannTurb}, 
-version = {0.1.0},
+version = {1.0.2},
 year = {2024}
 }
 ```
