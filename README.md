@@ -16,21 +16,6 @@ Pre-compiled wheels for the package are available via ``pip install drdmannturb`
 See the ``/examples/`` folder for baselines from the paper and for examples of the many functionalities of the package.
 
 
-## Citation 
-
-If you use this software, please cite it as below.
-
-```
-@software{Izmailov_DRDMannTurb_2023,
-author = {Izmailov, Alexey and Meeker, Matthew and Deskos, Georgios and Keith, Brendan},
-month = mar,
-title = {{DRDMannTurb}},
-url= {https://github.com/METHODS-Group/DRDMannTurb}, 
-version = {1.0.2},
-year = {2024}
-}
-```
-
 ## Contribute
 
 We always welcome new contributors! The best way to contribute to DRDMannTurb is through opening an issue, making a feature request, or creating a pull request directly.
@@ -51,9 +36,35 @@ Our documentation source lives in the ``/docs/`` folder. You shoudl ensure that 
 
 Running ``make html`` will generate html pages in the ``/docs/build/html`` folder; these can be hosted locally with ``python -m http.server <PORT-NUMBER>``.
 
+### Running Tests Locally
+
+DRDMannTurb's test suite is built with [Pytest](https://docs.pytest.org/en/stable/). Running the tests locally can be done by invoking `pytest`. Tests decorated with `slow` can be run the `--runslow` flag; they are otherwise skipped.
+
+Note that certain components of the test suite require CUDA; these are also
+skipped if a CUDA device is not available.
+
+
 ## Questions?
 
 If you have any questions, the best way to receive help is by creating a thread in our Discussions or by contacting the authors (Alexey Izmailov, Matthew Meeker) directly. If your question pertains to a problem with the package itself, please open an Issue so that it can addressed.
+
+
+
+
+## Citation 
+
+If you use this software, please cite it as below.
+
+```
+@software{Izmailov_DRDMannTurb_2023,
+author = {Izmailov, Alexey and Meeker, Matthew and Deskos, Georgios and Keith, Brendan},
+month = mar,
+title = {{DRDMannTurb}},
+url= {https://github.com/METHODS-Group/DRDMannTurb}, 
+version = {1.0.2},
+year = {2024}
+}
+```
 
 
 ## Acknowledgements

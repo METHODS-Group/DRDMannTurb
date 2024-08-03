@@ -612,7 +612,7 @@ class CalibrationProblem:
             torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord
         )
 
-    def save_model(self, save_dir: Optional[str] = None):
+    def save_model(self, save_dir: Optional[Union[str, Path]] = None):
         """Saves model with current weights, model configuration, and training histories to file.
         The written filename is of the form ``save_dir/<EddyLifetimeType>_<DataType>.pkl``
 
@@ -630,7 +630,7 @@ class CalibrationProblem:
 
         Parameters
         ----------
-        save_dir : Optional[str], optional
+        save_dir : Optional[Union[str, Path]], optional
             Directory to save to, by default None; defaults to provided output_dir field for object.
 
         Raises
@@ -640,10 +640,19 @@ class CalibrationProblem:
         """
 
         if save_dir is None and self.output_directory is None:
-            raise ValueError("Must provide directory to save output to.")
+            raise ValueError(
+                "Must provide directory to save output to. Both save_dir and self.output_directory are None"
+            )
 
         if save_dir is None:
             save_dir = self.output_directory
+
+        if isinstance(save_dir, Path):
+
+            if not save_dir.is_dir():
+                raise ValueError("Provided save_dir is not actually a directory")
+
+            save_dir = str(save_dir)
 
         filename = (
             save_dir

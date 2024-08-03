@@ -1,6 +1,8 @@
 """Tests for io of model storage and parameter operations."""
 
+import os
 import pickle
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -17,21 +19,24 @@ from drdmannturb.parameters import (
 )
 from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 
+"""
+Define necessary global variables for this suite.
+"""
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# v2: torch.set_default_device('cuda:0')
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
 L = 0.59
-
 Gamma = 3.9
 sigma = 3.4
 
 domain = torch.logspace(-1, 2, 20)
 
-path = Path().resolve()
-path_to_trained = path.parent / "docs/source/results"
+"""
+Begin tests
+"""
 
 
 @pytest.mark.parametrize(
@@ -57,10 +62,40 @@ def test_network_paramcount(eddylifetime: EddyLifetimeType):
     if eddylifetime == EddyLifetimeType.CUSTOMMLP:
         assert pb.num_trainable_params() == 160
 
+    # TODO: What about TAUNET?
+
 
 @pytest.mark.slow
 def test_nnparams_load_trained_TAUNET():
-    pb = CalibrationProblem(
+    """
+    Ensures file I/O utilities are correctly reading and writing for TAUNET
+
+    Specifically, trains a model (A), writes parameters out to file,
+    immediately reads into (B), and compares (A) to (B).
+    """
+
+    # Create and cd into temporary directory
+    CWD_PATH = Path().cwd()
+    TEMP_VAR_DIR = CWD_PATH / "TEMP_VAR_DIR"
+
+    Path(TEMP_VAR_DIR).mkdir(parents=False, exist_ok=True)
+    os.chdir(TEMP_VAR_DIR)
+
+    def clean_exit():
+        os.chdir(CWD_PATH)
+
+        def rm_tree(pth: Path):
+            for child in pth.iterdir():
+                if child.is_file():
+                    child.unlink()
+                else:
+                    rm_tree(child)
+            pth.rmdir()
+
+        rm_tree(TEMP_VAR_DIR)
+
+    # Create (A)
+    pb_A = CalibrationProblem(
         nn_params=NNParameters(
             nlayers=2, hidden_layer_size=10, hidden_layer_sizes=[10, 10]
         ),
@@ -71,17 +106,20 @@ def test_nnparams_load_trained_TAUNET():
     )
 
     k1_data_pts = domain
-    DataPoints = [(k1, 1) for k1 in k1_data_pts]
+    Data = OnePointSpectraDataGenerator(zref=1, data_points=k1_data_pts).Data
 
-    Data = OnePointSpectraDataGenerator(data_points=DataPoints).Data
+    # Train, write out (A)
+    pb_A.eval(k1_data_pts)
+    pb_A.calibrate(data=Data)
+    pb_A.save_model(TEMP_VAR_DIR)
 
-    pb.eval(k1_data_pts)
-    pb.calibrate(data=Data)
+    MODEL_SAVE = TEMP_VAR_DIR / "EddyLifetimeType.TAUNET_DataType.KAIMAL.pkl"
 
-    pb.save_model(".")
+    # Ensure file exists
+    assert os.path.exists(MODEL_SAVE)
 
-    params_fp = path_to_trained / "EddyLifetimeType.TAUNET_DataType.KAIMAL.pkl"
-    with open(params_fp, "rb") as file:
+    # Read in (A)
+    with open("./EddyLifetimeType.TAUNET_DataType.KAIMAL.pkl", "rb") as file:
         (
             nn_params,
             prob_params,
@@ -90,22 +128,57 @@ def test_nnparams_load_trained_TAUNET():
             model_params,
         ) = pickle.load(file)
 
-    pb_new = CalibrationProblem(
+    pb_B = CalibrationProblem(
         nn_params=nn_params,
         prob_params=prob_params,
         loss_params=loss_params,
         phys_params=phys_params,
         device=device,
     )
+    pb_B.parameters = model_params
 
-    pb_new.parameters = model_params
+    # Test (A) and (B) match
+    assert (pb_A.parameters == pb_B.parameters).all()
 
-    assert (pb.parameters == pb_new.parameters).all()
+    clean_exit()
 
 
 @pytest.mark.slow
 def test_nnparams_load_trained_CUSTOMMLP():
-    pb = CalibrationProblem(
+    """
+    Ensures file I/O utilities are correctly reading and writing for CUSTOMMLP
+
+    Specifically, trains a model
+    """
+
+    # Create and cd into temporary directory
+    CWD_PATH = Path().cwd()
+    TEMP_VAR_DIR = CWD_PATH / "TEMP_VAR_DIR"
+
+    Path(TEMP_VAR_DIR).mkdir(parents=False, exist_ok=True)
+    os.chdir(TEMP_VAR_DIR)
+
+    def clean_exit():
+        """
+        Chdir to .. and rm -rf the temporary directory.
+        """
+        os.chdir(CWD_PATH)
+
+        def rm_tree(pth: Path):
+            """
+            Recursive deletion for a Path to a Dir
+            """
+            for child in pth.iterdir():
+                if child.is_file():
+                    child.unlink()
+                else:
+                    rm_tree(child)
+            pth.rmdir()
+
+        rm_tree(TEMP_VAR_DIR)
+
+    # Create (A)
+    pb_A = CalibrationProblem(
         nn_params=NNParameters(
             nlayers=2, hidden_layer_sizes=[10, 10], activations=[nn.GELU(), nn.ReLU()]
         ),
@@ -118,17 +191,20 @@ def test_nnparams_load_trained_CUSTOMMLP():
     )
 
     k1_data_pts = domain
-    DataPoints = [(k1, 1) for k1 in k1_data_pts]
+    Data = OnePointSpectraDataGenerator(zref=1, data_points=k1_data_pts).Data
 
-    Data = OnePointSpectraDataGenerator(data_points=DataPoints).Data
+    # Train, write out (A)
+    pb_A.eval(k1_data_pts)
+    pb_A.calibrate(data=Data)
+    pb_A.save_model(TEMP_VAR_DIR)
 
-    pb.eval(k1_data_pts)
-    pb.calibrate(data=Data)
+    MODEL_SAVE = TEMP_VAR_DIR / "EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl"
 
-    pb.save_model(".")
+    # Ensure file actually exists
+    assert os.path.exists(MODEL_SAVE)
 
-    params_fp = path_to_trained / "EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl"
-    with open(params_fp, "rb") as file:
+    # Read in (A)
+    with open(MODEL_SAVE, "rb") as file:
         (
             nn_params,
             prob_params,
@@ -137,14 +213,16 @@ def test_nnparams_load_trained_CUSTOMMLP():
             model_params,
         ) = pickle.load(file)
 
-    pb_new = CalibrationProblem(
+    pb_B = CalibrationProblem(
         nn_params=nn_params,
         prob_params=prob_params,
         loss_params=loss_params,
         phys_params=phys_params,
         device=device,
     )
+    pb_B.parameters = model_params
 
-    pb_new.parameters = model_params
+    # Test (A) and (B) match
+    assert (pb_A.parameters == pb_B.parameters).all()
 
-    assert (pb.parameters == pb_new.parameters).all()
+    clean_exit()
