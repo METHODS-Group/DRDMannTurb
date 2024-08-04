@@ -59,21 +59,24 @@ it is sufficient to use `pip install -e .`
 > change for version 2.0, DRDMannTurb has currently pinned ``numpy<2.0``
 > for temporary compatibility.
 
-Under `conda_spec_files`, you can find explicit exports of complete development
-environments for Linux 64-bit and Apple ARM64 macOS environments, however it
-is not mandatory to use these exact environments.
+A Conda environment with all development dependencies can be created off of 
+`environment.yml` in the project root.
 
-To recreate the development Conda environments, run ``conda create --name <ENV_NAME> --file conda_spec_files/<linux64/macOS_arm64>.txt`` from the
-project root. Then, run ``pip install -e .`` to load ``drdmannturb`` into the new environment. Note that this will likely err if there is a platform
-mismatch.
+Alternatively, under `conda_spec_files`, you can find explicit exports of complete development
+environments for Linux 64-bit and Apple ARM64 macOS. It is not mandatory that you
+use these environments.
 
-If you intend to contribute, we also ask that you install our ``pre-commit`` configuration by running ``pre-commit install`` in the root directory of this repository. If you are unfamiliar with ``pre-commit``,
-the documentation can be found [here](https://pre-commit.com/). We
-use this to run simple hooks
+To recreate the development Conda environments with any of these options, run ``conda create --name <ENV_NAME> --file <conda_environment_file>`` from the
+project root. After activating `<ENV_NAME>`, run ``pip install -e .`` to load ``drdmannturb`` into the new environment.
+
+We also ask that you install our
+``pre-commit`` configuration by running ``pre-commit install`` in the root directory 
+of this repository. If you are unfamiliar with ``pre-commit``,
+the documentation can be found [here](https://pre-commit.com/).
 
 ### Local Documentation Building Instructions 
 
-Our documentation source lives in the ``/docs/`` folder. You shoudl ensure that the dependencies listed in ``./requirements-docs.txt`` are installed.
+Our documentation source lives in the ``/docs/`` folder. You should ensure that the dependencies listed in ``./requirements-docs.txt`` are installed.
 
 Running ``make html`` will generate html pages in the ``/docs/build/html`` folder; these can be hosted locally with ``python -m http.server <PORT-NUMBER>``.
 
