@@ -24,7 +24,7 @@ setup(
     description="Mann turbulence modelling",
     url="https://github.com/METHODS-Group/DRDMannTurb",
     author="Alexey Izmailov, Matthew Meeker, Yorgos Deskos based on code by Brendan Keith et al.",
-    author_email="alizma@brown.edu, matthew_meeker@brown.edu",
+    author_email="alizma@brown.edu, meeker.matthew@pm.me",
     license="BSD 2-clause",
     packages=["drdmannturb"],
     include_package_data=True,
