@@ -16,19 +16,35 @@ Pre-compiled wheels for the package are available via ``pip install drdmannturb`
 See the ``/examples/`` folder for baselines from the paper and for examples of the many functionalities of the package.
 
 
-## Contribute
+## Contributing
 
 We always welcome new contributors! The best way to contribute to DRDMannTurb is through opening an issue, making a feature request, or creating a pull request directly.
 
 See also the below instructions for installing DRDMannTurb for development purposes.
 
-### Development Installation Instructions 
+### Development Version Installation Instructions 
 
-This package is provided as a locally ``pip``-installable package. It is recommended that Python 3.9 is used in your local environment. 
+DRDMannTurb source as provided is a locally ``pip``-installable. We recommended that you use Python 3.9 in your local environment.
 
-A Conda spec-file is included, to install a functioning environment, run ``conda create --name ENV_NAME_HERE --file spec-file.txt``. Then run ``pip install -e .`` to load ``drdmannturb`` into your environment. 
+To install the package from source without development dependencies, 
+it is sufficient to use `pip` as in `pip install -e .`
+A Conda spec-file is included, however it is not mandatory to use this exact environment.
 
-We also suggest installing the local ``pre-commit`` configuration by running ``pre-commit install`` in the root directory of this repository. 
+> [!WARNING]
+> Due to current incomptabilities between dependencies and Numpy's API
+> change for version 2.0, DRDMannTurb has currently pinned ``numpy<2.0``
+> for temporary compatibility.
+
+To recreate the development Conda environment, run ``conda create --name <ENV_NAME> --file spec-file.txt`` from the
+project root. Then, run ``pip install -e .`` to load ``drdmannturb`` into your environment.
+
+> [!NOTE]
+> This environment is for 64-bit Linux based machines.
+
+If you intend to contribute, we also ask that you install our ``pre-commit`` configuration by running ``pre-commit install`` in the root directory of this repository. If you are unfamiliar with ``pre-commit``,
+the documentation can be found [here](https://pre-commit.com/). We
+use this to run simple hooks for linting and formatting, among other
+tasks.
 
 ### Local Documentation Building Instructions 
 

@@ -34,7 +34,7 @@ setup(
     },
     install_requires=[
         "torch",
-        "numpy",
+        "numpy<2.0",
         "tqdm",
         "scipy",
         "matplotlib",
