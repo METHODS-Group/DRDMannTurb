@@ -10,62 +10,21 @@ as well as in the deep-learning enhancement developed by Keith et al. in [this 2
 ## Installation 
 
 Pre-compiled wheels for the package are available via ``pip install drdmannturb``. 
+See our [development environment instructions](#development-version-installation-instructions)
+for instructions on installing development versions.
 
 ## Basic Usage
 
-See the ``/examples/`` folder for baselines from the paper and for examples of the many functionalities of the package.
+See the ``/examples/`` folder for baselines from the paper and for examples of the many functionalities of the package. These examples are rendered in a more readily readable
+format on our documentation [here](https://methods-group.github.io/DRDMannTurb/examples.html) also.
 
-
-## Contributing
-
-We always welcome new contributors! The best way to contribute to DRDMannTurb is through opening an issue, making a feature request, or creating a pull request directly.
-
-See also the below instructions for installing DRDMannTurb for development purposes.
-
-### Development Version Installation Instructions 
-
-DRDMannTurb source as provided is a locally ``pip``-installable. We recommended that you use Python 3.9 in your local environment.
-
-To install the package from source without development dependencies, 
-it is sufficient to use `pip` as in `pip install -e .`
-A Conda spec-file is included, however it is not mandatory to use this exact environment.
-
-> [!WARNING]
-> Due to current incomptabilities between dependencies and Numpy's API
-> change for version 2.0, DRDMannTurb has currently pinned ``numpy<2.0``
-> for temporary compatibility.
-
-To recreate the development Conda environment, run ``conda create --name <ENV_NAME> --file spec-file.txt`` from the
-project root. Then, run ``pip install -e .`` to load ``drdmannturb`` into your environment.
-
-> [!NOTE]
-> This environment is for 64-bit Linux based machines.
-
-If you intend to contribute, we also ask that you install our ``pre-commit`` configuration by running ``pre-commit install`` in the root directory of this repository. If you are unfamiliar with ``pre-commit``,
-the documentation can be found [here](https://pre-commit.com/). We
-use this to run simple hooks for linting and formatting, among other
-tasks.
-
-### Local Documentation Building Instructions 
-
-Our documentation source lives in the ``/docs/`` folder. You shoudl ensure that the dependencies listed in ``./requirements-docs.txt`` are installed.
-
-Running ``make html`` will generate html pages in the ``/docs/build/html`` folder; these can be hosted locally with ``python -m http.server <PORT-NUMBER>``.
-
-### Running Tests Locally
-
-DRDMannTurb's test suite is built with [Pytest](https://docs.pytest.org/en/stable/). Running the tests locally can be done by invoking `pytest`. Tests decorated with `slow` can be run the `--runslow` flag; they are otherwise skipped.
-
-Note that certain components of the test suite require CUDA; these are also
-skipped if a CUDA device is not available.
-
+DRDMannTurb consists of two primary submodules ``spectra_fitting`` and ``fluctuation_generation``
+which are respectively focused on fitting a Deep Rapid Distortion (DRD) model and
+on generating synthetic turbulence "boxes."
 
 ## Questions?
 
 If you have any questions, the best way to receive help is by creating a thread in our Discussions or by contacting the authors (Alexey Izmailov, Matthew Meeker) directly. If your question pertains to a problem with the package itself, please open an Issue so that it can addressed.
-
-
-
 
 ## Citation 
 
@@ -81,6 +40,57 @@ version = {1.0.2},
 year = {2024}
 }
 ```
+
+## Contributing
+
+We always welcome new contributors! The best way to contribute to DRDMannTurb is through opening an issue, making a feature request, or creating a pull request directly.
+
+See also the below instructions for installing DRDMannTurb for development purposes.
+
+### Development Version Installation Instructions 
+
+DRDMannTurb source as provided is a locally ``pip``-installable. We recommended that you use Python 3.9 in your local environment.
+
+To install the package from source without development dependencies, 
+it is sufficient to use `pip install -e .`
+
+> [!WARNING]
+> Due to current incomptabilities between dependencies and Numpy's API
+> change for version 2.0, DRDMannTurb has currently pinned ``numpy<2.0``
+> for temporary compatibility.
+
+Under `conda_spec_files`, you can find explicit exports of complete development
+environments for Linux 64-bit and Apple ARM64 macOS environments, however it
+is not mandatory to use these exact environments.
+
+To recreate the development Conda environments, run ``conda create --name <ENV_NAME> --file conda_spec_files/<linux64/macOS_arm64>.txt`` from the
+project root. Then, run ``pip install -e .`` to load ``drdmannturb`` into the new environment. Note that this will likely err if there is a platform
+mismatch.
+
+If you intend to contribute, we also ask that you install our ``pre-commit`` configuration by running ``pre-commit install`` in the root directory of this repository. If you are unfamiliar with ``pre-commit``,
+the documentation can be found [here](https://pre-commit.com/). We
+use this to run simple hooks
+
+### Local Documentation Building Instructions 
+
+Our documentation source lives in the ``/docs/`` folder. You shoudl ensure that the dependencies listed in ``./requirements-docs.txt`` are installed.
+
+Running ``make html`` will generate html pages in the ``/docs/build/html`` folder; these can be hosted locally with ``python -m http.server <PORT-NUMBER>``.
+
+### Running Tests Locally
+
+DRDMannTurb's test suite is built with [Pytest](https://docs.pytest.org/en/stable/). Running the tests locally can be done by invoking `pytest`. Tests decorated with `slow` can be run the `--runslow` flag; they are otherwise skipped.
+
+Note that certain components of the test suite require CUDA; these are also
+skipped if a CUDA device is not available.
+
+
+
+
+
+
+
+
 
 
 ## Acknowledgements
