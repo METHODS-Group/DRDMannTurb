@@ -74,18 +74,22 @@ We also ask that you install our
 of this repository. If you are unfamiliar with ``pre-commit``,
 the documentation can be found [here](https://pre-commit.com/).
 
+### Running Tests Locally
+
+DRDMannTurb's test suite is built with [Pytest](https://docs.pytest.org/en/stable/). Running the tests locally can be done by invoking `pytest`. 
+
+Tests decorated with `slow` can be run the `--runslow` flag; they are otherwise skipped. Note that several of these tests require (at least
+``partially'') training a DRD model and so the suite may take several minutes to complete.
+Note also that certain components of the test suite require CUDA; these are also
+skipped if a CUDA device is not available.
+
 ### Local Documentation Building Instructions 
 
 Our documentation source lives in the ``/docs/`` folder. You should ensure that the dependencies listed in ``./requirements-docs.txt`` are installed.
 
 Running ``make html`` will generate html pages in the ``/docs/build/html`` folder; these can be hosted locally with ``python -m http.server <PORT-NUMBER>``.
 
-### Running Tests Locally
 
-DRDMannTurb's test suite is built with [Pytest](https://docs.pytest.org/en/stable/). Running the tests locally can be done by invoking `pytest`. Tests decorated with `slow` can be run the `--runslow` flag; they are otherwise skipped.
-
-Note that certain components of the test suite require CUDA; these are also
-skipped if a CUDA device is not available.
 
 
 
