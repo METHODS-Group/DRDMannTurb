@@ -1,5 +1,5 @@
 matplotlib==3.7.1
-numpy==1.26.4
+numpy==2.0.1
 plotly==5.17.0
 pyevtk==1.6.0
 pyFFTW==0.13.1
