@@ -1,6 +1,6 @@
 matplotlib==3.7.1
 numpy==1.26.4
-plotly==5.17.0
+plotly==5.23.0
 pyevtk==1.6.0
 pyFFTW==0.13.1
 pytest==7.4.2
