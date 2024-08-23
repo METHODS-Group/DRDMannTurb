@@ -29,44 +29,45 @@ bibliography: paper.bib
 Synthetic turbulence models (STMs) are used in wind engineering to generate realistic flow fields 
 and employed as inputs to wind simulations. Examples include prescribing inlet conditions and 
 inflow wind fields to model loads on wind turbines and tall buildings. We are interested in STMs 
-capable of generating fluctuations based on prescribed second-moment statistics, as this allows for 
-simulating environmental conditions closely resembling on-site observations. To this end, the 
+capable of generating fluctuations based on prescribed second-moment statistics since such models can
+simulate environmental conditions that closely resemble on-site observations. 
+To this end, the 
 widely used Mann model [@mann_spatial:1994; @mann_wind:1998] is the inspiration for `DRDMannTurb`. 
-Three physical parameters describe turbulence in this model: a magnitude parameter corresponding to 
+The Mann model is described by three physical parameters: a magnitude parameter corresponding to 
 the Kolmogorov constant multiplied by the rate of viscous dissipation of the turbulent kinetic 
 energy to the two thirds, $\alpha \epsilon^{2/3}$, a turbulence length scale parameter $L$, and a 
-non-dimensional parameter $\Gamma$ related to the lifetime of the eddies. A number of studies as 
-well as international standards (e.g., the International Electrotechnical Commission) include 
-recommendations for values of these three parameters with the goal of standardizing wind 
-simulations to realistic energy spectra. Yet, having only three parameters, the Mann model faces 
+non-dimensional parameter $\Gamma$ related to the lifetime of the eddies. A number of studies, as 
+well as international standards (e.g., those by the International Electrotechnical Commission (IEC)), include 
+recommended values for these three parameters with the goal of standardizing wind 
+simulations according to observed energy spectra. Yet, having only three parameters, the Mann model faces 
 limitations in accurately representing the diversity of observable spectra. This Python package 
-allows users to extend the Mann model and more accurately fit field measurements through a 
+enables users to extend the Mann model and more accurately fit field measurements through a 
 data-driven model of the eddy lifetime function. Following [@Keith:2021], we refer to this class 
 of models as Deep Rapid Distortion (DRD) models. 
-`DRDMannTurb` also includes an efficient method for synthetic turbulence generation
-based on domain decomposition-based simulator for generating turbulence boxes for both Mann and DRD models.
+`DRDMannTurb` also includes a module implementing an efficient method for synthetic turbulence generation based on
+a domain decomposition technique for all; this technique is also described in [@Keith:2021].
 
 # Statement of need
 
 `DRDMannTurb` aims to create an easy-to-use framework to (1) fit one-point spectra from data using
 the DRD model introduced in [@Keith:2021] and (2) efficiently generate synthetic turbulence 
 velocity fields to be used by scientists and engineers in downstream tasks. Existing methodologies 
-for generating synthetic turbulence frequently incur a large computational overhead and lack the 
-DRD model's flexibility to represent the diverse spectral properties of real-world observations, 
-cf. [@Liew:2022]. `DRDMannTurb` addresses these two issues by introducing (1) a module for fitting 
-neural network-based DRD models to observed one-point spectra data as well as (2) a module for 
-efficiently generating synthetic turbulence boxes. Rather than generating turbulence for the 
-entire box at once, which is a highly memory-intensive practice used in other software, 
-`DRDMannTurb` uses a state-of-the-art domain decomposition approach to generate smaller sub-boxes 
+for generating synthetic turbulence frequently incur a large computational overhead and lack 
+DRD models' flexibility to represent the diverse spectral properties of real-world observations, 
+cf. [@Liew:2022]. `DRDMannTurb` addresses these two issues by introducing (1) a module for fitting DRD 
+models to observed one-point spectra data as well as (2) a module for 
+efficiently generating synthetic turbulence boxes. Rather than generating turbulence over an
+entire domain at once, which can end up being a highly memory-intensive practice, 
+`DRDMannTurb` uses a domain decomposition approach to generate smaller sub-boxes 
 sequentially.
 
 `DRDMannTurb` is written in Python and leverages computationally powerful backend packages like
-`numpy` and `PyTorch`. The implementation renders DRD models easily portable to GPU and other backends via `PyTorch` also. 
+`numpy` and `PyTorch`. The implementation makes DRD models easily portable to GPU and other backends via `PyTorch` also. 
 This is an additional advantage compared to other software packages that implement the 
 Mann model but for which the source code may not be public or freely available (e.g., HAWC2 [@hawc2:2007]). 
 Finally, `DRDMannTurb` is designed to be more general-purpose, allowing it to be applied to a broader range of scenarios,
 and very accessible, with clear documentation and examples spanning a variety of tasks that researchers
-are often interested in. 
+may be interested in. 
 
 # Results
 
