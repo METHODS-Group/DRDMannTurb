@@ -42,9 +42,9 @@ simulations to realistic energy spectra. Yet, having only three parameters, the 
 limitations in accurately representing the diversity of observable spectra. This Python package 
 allows users to extend the Mann model and more accurately fit field measurements through a 
 data-driven model of the eddy lifetime function. Following [@Keith:2021], we refer to this class 
-of models as deep rapid distortion (DRD) models. Once calibrated, a DRD model is no more expensive 
-for simulating turbulence than a Mann model. Moreover, `DRDMannTurb` comes with a state-of-the-art 
-domain decomposition-based simulator for generating turbulence boxes for both Mann and DRD models.
+of models as Deep Rapid Distortion (DRD) models. 
+`DRDMannTurb` also includes an efficient method for synthetic turbulence generation
+based on domain decomposition-based simulator for generating turbulence boxes for both Mann and DRD models.
 
 # Statement of need
 
