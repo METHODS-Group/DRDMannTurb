@@ -60,13 +60,13 @@ entire box at once, which is a highly memory-intensive practice used in other so
 `DRDMannTurb` uses a state-of-the-art domain decomposition approach to generate smaller sub-boxes 
 sequentially.
 
-`DRDMannTurb` is completely written in Python, leveraging computationally powerful backend packages 
-(`numpy`, `PyTorch`). Our implementation allows for easy GPU-portability using `cuda`. This is an 
-additional advantage compared to previously developed software packages that have implemented the 
-Mann model but do not provide the source code (e.g., HAWC2 [@hawc2:2007]). Finally, `DRDMannTurb` 
-is designed to be more general-purpose, allowing it to be applied to a broader range of scenarios 
-and making it more accessible with clear documentation for a variety of tasks that researchers in 
-this area are often interested in. 
+`DRDMannTurb` is written in Python and leverages computationally powerful backend packages like
+`numpy` and `PyTorch`. The implementation renders DRD models easily portable to GPU and other backends via `PyTorch` also. 
+This is an additional advantage compared to other software packages that implement the 
+Mann model but for which the source code may not be public or freely available (e.g., HAWC2 [@hawc2:2007]). 
+Finally, `DRDMannTurb` is designed to be more general-purpose, allowing it to be applied to a broader range of scenarios,
+and very accessible, with clear documentation and examples spanning a variety of tasks that researchers
+are often interested in. 
 
 # Results
 
