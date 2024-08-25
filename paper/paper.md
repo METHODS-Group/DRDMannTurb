@@ -75,12 +75,12 @@ DRD model and the learned eddy lifetime function. For example, in the case of th
 DRD spectra fit is more accurate than the Mann uniform shear model while providing an 
 estimate of the same three physical parameters.
 
-![Synthetic DRD Model Fit](synthetic_fit.png)
+![Synthetic DRD model fit.](synthetic_fit.png)
 
 After fitting to the spectra, the resulting models can also be used to generate 3D wind fields with 
 spectra more closely resembling the same observations used in training.
 
-![Simulated Wind Tunnel](wind.png)
+![Simulated wind tunnel.](wind.png)
 
 For more detailed discussions of results, including a variety of utilities for interpolating and 
 filtering noisy real-world data and generating wind turbulence; please see the 
