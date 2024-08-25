@@ -40,40 +40,40 @@ well as international standards (e.g., those by the International Electrotechnic
 recommended values for these three parameters with the goal of standardizing wind 
 simulations according to observed energy spectra. Yet, having only three parameters, the Mann model faces 
 limitations in accurately representing the diversity of observable spectra. This Python package 
-enables users to extend the Mann model and more accurately fit field measurements through a flexible,
-neural network model of the eddy lifetime function. Following [@Keith:2021], we refer to this class 
+enables users to extend the Mann model and more accurately fit field measurements through flexible
+neural network models of the eddy lifetime function. Following [@Keith:2021], we refer to this class 
 of models as Deep Rapid Distortion (DRD) models.
 `DRDMannTurb` also includes a general module implementing an efficient method for synthetic turbulence generation based on
 a domain decomposition technique. This technique is also described in [@Keith:2021].
 
 # Statement of need
 
-`DRDMannTurb` aims to create an easy-to-use framework to (1) fit one-point spectra from data using
+`DRDMannTurb` aims to provide an easy-to-use framework to (1) fit one-point spectra from data using
 the DRD model introduced in [@Keith:2021] and (2) efficiently generate synthetic turbulence 
 velocity fields to be used by scientists and engineers in downstream tasks. Existing methodologies 
 for generating synthetic turbulence frequently incur a large computational overhead and lack 
 DRD models' flexibility to represent the diverse spectral properties of real-world observations, 
 cf. [@Liew:2022]. `DRDMannTurb` addresses these two issues by introducing (1) a module for fitting DRD 
-models to observed one-point spectra data as well as (2) a module for 
+models to observed one-point spectra data, as well as (2) a module for 
 efficiently generating synthetic turbulence boxes. Rather than generating turbulence over an
 entire domain at once, which can end up being a highly memory-intensive practice, 
 `DRDMannTurb` uses a domain decomposition approach to generate smaller sub-boxes 
 sequentially.
 
 `DRDMannTurb` is written in Python and leverages computationally powerful backend packages like
-`numpy` and `PyTorch`. The implementation makes DRD models easily portable to GPU and other backends via `PyTorch` also. 
+`numpy` and `PyTorch`. The implementation makes DRD models easily portable to GPU and other backends via `PyTorch`. 
 This is an additional advantage compared to other software packages that implement the 
-Mann model but for which the source code may not be public or freely available (e.g., HAWC2 [@hawc2:2007]). 
-Finally, `DRDMannTurb` is designed to be more general-purpose, allowing it to be applied to a broader range of scenarios,
-and very accessible, with clear documentation and examples spanning a variety of tasks that researchers
+Mann model, but for which the source code may not be public or freely available (e.g., HAWC2 [@hawc2:2007]). 
+Finally, `DRDMannTurb` is designed to be more general-purpose, allowing it to be applied to a broader range of scenarios
+and to be very accessible, with clear documentation and examples spanning a variety of tasks that researchers
 may be interested in. 
 
 # Results
 
 The output of the fitting component of ``DRDMannTurb`` consists of two parts: the spectra fit by a 
-DRD model and the learned eddy lifetime function. For example, in the case of a Kaimal spectra, the 
-DRD spectra fit is more accurate than that of the Mann uniform shear model while providing an 
-estimate of the physical parameters. 
+DRD model and the learned eddy lifetime function. For example, in the case of the Kaimal spectra, the 
+DRD spectra fit is more accurate than the Mann uniform shear model while providing an 
+estimate of the same three physical parameters.
 
 ![Synthetic DRD Model Fit](synthetic_fit.png)
 
@@ -83,7 +83,7 @@ spectra more closely resembling the same observations used in training.
 ![Simulated Wind Tunnel](wind.png)
 
 For more detailed discussions of results, including a variety of utilities for interpolating and 
-filtering noisy real-world data and generating wind turbulence, please see the 
+filtering noisy real-world data and generating wind turbulence; please see the 
 [official examples](https://methods-group.github.io/DRDMannTurb/examples.html).
 
 # Package Features
