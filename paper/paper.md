@@ -27,25 +27,24 @@ bibliography: paper.bib
 # Summary
 
 Synthetic turbulence models (STMs) are used in wind engineering to generate realistic flow fields 
-and employed as inputs to wind simulations. Examples include prescribing inlet conditions and 
-inflow wind fields to model loads on wind turbines and tall buildings. We are interested in STMs 
+and are employed as inputs to industrial wind simulations. Examples include prescribing inlet conditions
+in large eddy simulations that model loads on wind turbines and tall buildings. We are interested in STMs 
 capable of generating fluctuations based on prescribed second-moment statistics since such models can
-simulate environmental conditions that closely resemble on-site observations. 
-To this end, the 
+simulate environmental conditions that closely resemble on-site observations. To this end, the 
 widely used Mann model [@mann_spatial:1994; @mann_wind:1998] is the inspiration for `DRDMannTurb`. 
-The Mann model is described by three physical parameters: a magnitude parameter corresponding to 
-the Kolmogorov constant multiplied by the rate of viscous dissipation of the turbulent kinetic 
-energy to the two thirds, $\alpha \epsilon^{2/3}$, a turbulence length scale parameter $L$, and a 
+The Mann model is described by three physical parameters: a magnitude parameter influencing the global variance of
+the wind field and corresponding to the Kolmogorov constant multiplied by the rate of viscous dissipation of the
+turbulent kinetic energy to the two-thirds, $\alpha \epsilon^{2/3}$, a turbulence length scale parameter $L$, and a 
 non-dimensional parameter $\Gamma$ related to the lifetime of the eddies. A number of studies, as 
 well as international standards (e.g., those by the International Electrotechnical Commission (IEC)), include 
 recommended values for these three parameters with the goal of standardizing wind 
 simulations according to observed energy spectra. Yet, having only three parameters, the Mann model faces 
 limitations in accurately representing the diversity of observable spectra. This Python package 
-enables users to extend the Mann model and more accurately fit field measurements through a 
-data-driven model of the eddy lifetime function. Following [@Keith:2021], we refer to this class 
-of models as Deep Rapid Distortion (DRD) models. 
-`DRDMannTurb` also includes a module implementing an efficient method for synthetic turbulence generation based on
-a domain decomposition technique for all; this technique is also described in [@Keith:2021].
+enables users to extend the Mann model and more accurately fit field measurements through a flexible,
+neural network model of the eddy lifetime function. Following [@Keith:2021], we refer to this class 
+of models as Deep Rapid Distortion (DRD) models.
+`DRDMannTurb` also includes a general module implementing an efficient method for synthetic turbulence generation based on
+a domain decomposition technique. This technique is also described in [@Keith:2021].
 
 # Statement of need
 
