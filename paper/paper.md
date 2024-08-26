@@ -63,7 +63,7 @@ sequentially.
 `DRDMannTurb` is written in Python and leverages computationally powerful backend packages like
 `numpy` and `PyTorch`. The implementation makes DRD models easily portable to GPU and other backends via `PyTorch`. 
 This is an additional advantage compared to other software packages that implement the 
-Mann model, but for which the source code may not be public or freely available (e.g., HAWC2 [@hawc2:2007]). 
+Mann model, but for which the source code may not be public or freely available (e.g., HAWC2 [@wes-5-1-2020]). 
 Finally, `DRDMannTurb` is designed to be more general-purpose, allowing it to be applied to a broader range of scenarios
 and to be very accessible, with clear documentation and examples spanning a variety of tasks that researchers
 may be interested in. 
