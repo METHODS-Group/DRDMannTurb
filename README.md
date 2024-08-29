@@ -49,25 +49,31 @@ See also the below instructions for installing DRDMannTurb for development purpo
 
 ### Development Version Installation Instructions 
 
-DRDMannTurb source is provided as a locally ``pip``-installable package. We recommended that you use Python 3.9 in your local environment.
+DRDMannTurb source is provided as a locally ``pip``-installable package, meaning that
+the package can be installed locally with `pip install -e .` from the package root folder.
 
-To install the package from source without development dependencies, 
-it is sufficient to use `pip install -e .`
+In `conda_env_files`, we provide a [``conda-lock``](https://github.com/conda/conda-lock) file,
+which supports (64-bit) Intel macOS, ARM macOS, Linux, and Windows,
+as well as an `environment.yml`.
+These include all requirements for DRDMannTurb and building the documentation locally,
+which is discussed below.
+Either of these can be used to create a Conda environment for development
+and documentation purposes,
+however this is not mandatory.
+
+Recreating the environment off the ``conda-lock`` can be done with 
+``conda-lock install -n ENV_NAME``. Once this is completed, you should ``cd ..`` to
+the project root folder and run ``pip install -e .`` to install an editable version 
+of DRDMannTurb in this environment.
+
+If you choose to use your own environment, we ask that you use Python 3.9. You may wish
+to reference `environment.yml` to ensure that all dependencies are installed.
 
 > [!WARNING]
 > Due to current incompatibilities between dependencies and Numpy's API
-> changes for version 2.0, DRDMannTurb has currently pinned ``numpy<2.0``
+> changes in version 2.0, we have currently pinned ``numpy=1.26.4``
 > as a temporary fix.
 
-A Conda environment with all development dependencies can be created off of 
-`environment.yml` under `conda_env_files`.
-
-Alternatively, also under `conda_env_files`, you can find explicit exports of complete development
-environments for Linux 64-bit and Apple ARM64 macOS. It is not mandatory that you
-use these environments.
-
-To recreate the development Conda environments with any of these options, run ``conda create --name <ENV_NAME> --file <conda_environment_file>`` from the
-project root. After activating `<ENV_NAME>`, run ``pip install -e .`` to load ``drdmannturb`` into the new environment.
 
 We also ask that you install our
 ``pre-commit`` configuration by running ``pre-commit install`` in the root directory 
@@ -86,7 +92,9 @@ skipped if a CUDA device is not available.
 
 ### Local Documentation Building Instructions 
 
-Our documentation source lives in the ``/docs/`` folder. You should ensure that the dependencies listed in ``./requirements-docs.txt`` are installed.
+Our documentation source lives in the ``/docs/`` folder. 
+You should ensure that the dependencies listed in ``./requirements-docs.txt`` are installed;
+if you chose to use one of our provided environments, this will have been done already.
 
 Running ``make html`` will generate html pages in the ``/docs/build/html`` folder; these can be hosted locally with ``python -m http.server <PORT-NUMBER>``.
 
