@@ -23,3 +23,16 @@ dependencies:
   - pandas
   - tqdm=4.66.4
   - scikit-learn
+  - sphinx-gallery
+  - nbsphinx
+  - myst-parser
+  - enum_tools
+  - sphinx-toolbox
+  - sphinxcontrib-mermaid
+  - sphinxcontrib-jsmath
+  - pydata-sphinx-theme
+  - sphinx-panels
+  - sphinx-notfound-page
+  - sphinx-copybutton
+  - pydocstyle
+  - pip
