@@ -1,5 +1,7 @@
 # DRDMannTurb
 
+[![DOI](https://zenodo.org/badge/649495955.svg)](https://doi.org/10.5281/zenodo.13922330)
+
 ![](https://github.com/METHODS-Group/DRDMannTurb/assets/74629347/604fcde9-41e1-4671-8c10-b1493cadfa88)
 
 DRDMannTurb (short for *Deep Rapid Distortion Theory Mann Turbulence model*) is a data-driven framework
