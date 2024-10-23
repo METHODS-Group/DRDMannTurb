@@ -159,3 +159,7 @@ dmypy.json
 *.vti
 *.pvd
 runs/
+
+## Open Journals compilation intermediates and results
+paper/jats
+paper/paper.pdf
