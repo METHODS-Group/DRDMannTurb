@@ -2,6 +2,8 @@
 
 [![DOI](https://zenodo.org/badge/649495955.svg)](https://doi.org/10.5281/zenodo.13922330)
 
+[![DOI](https://camo.githubusercontent.com/8297af3b00072c1c2b0c4357a0ba3c8f3ac2517f4eb737eb020f3fa35fbdd13e/68747470733a2f2f6a6f73732e7468656f6a2e6f72672f7061706572732f31302e32313130352f6a6f73732e30363833382f7374617475732e737667)](https://doi.org/10.21105/joss.06838)
+
 ![](https://github.com/METHODS-Group/DRDMannTurb/assets/74629347/604fcde9-41e1-4671-8c10-b1493cadfa88)
 
 DRDMannTurb (short for *Deep Rapid Distortion Theory Mann Turbulence model*) is a data-driven framework
