@@ -4,14 +4,27 @@ repos:
     rev: v3.2.0
     hooks:
     -   id: check-yaml
- # isort should run before black as black sometimes tweaks the isort output
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
+    -   id: trailing-whitespace
+    -   id: debug-statements
+    -   id: end-of-file-fixer
+    -   id: check-json
+    -   id: check-added-large-files
+  # Add ruff linting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.3
     hooks:
-      - id: isort
-        args: ["--profile", "black"]
-  # https://github.com/python/black#version-control-integration
-  - repo: https://github.com/psf/black
-    rev: 22.3.0
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+  # MyPy
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.0
     hooks:
-      - id: black
+      - id: mypy
+        args: ["--ignore-missing-imports"]
+  # Pyupgrade
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.1.0
+    hooks:
+      - id: pyupgrade
+        args: ["--py39-plus"]

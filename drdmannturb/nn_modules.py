@@ -16,7 +16,9 @@ class Rational(nn.Module):
     Learnable rational kernel; a neural network that learns the rational function
 
         .. math::
-            \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}),
+            \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}
+            {\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}},
+            \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}),
 
         specifically, the neural network part of the augmented wavevector
 
@@ -62,12 +64,11 @@ class Rational(nn.Module):
 
 class SimpleNN(nn.Module):
     """
-    A simple feed-forward neural network consisting of n layers with a ReLU activation function. The default initialization is to random noise of magnitude 1e-9.
+    A simple feed-forward neural network consisting of n layers with a ReLU activation function. The default
+    initialization is to random noise of magnitude 1e-9.
     """
 
-    def __init__(
-        self, nlayers: int = 2, inlayer: int = 3, hlayer: int = 3, outlayer: int = 3
-    ) -> None:
+    def __init__(self, nlayers: int = 2, inlayer: int = 3, hlayer: int = 3, outlayer: int = 3) -> None:
         """
         Parameters
         ----------
@@ -81,9 +82,7 @@ class SimpleNN(nn.Module):
             Number of output features, by default 3
         """
         super().__init__()
-        self.linears = nn.ModuleList(
-            [nn.Linear(hlayer, hlayer, bias=False).double() for _ in range(nlayers - 1)]
-        )
+        self.linears = nn.ModuleList([nn.Linear(hlayer, hlayer, bias=False).double() for _ in range(nlayers - 1)])
         self.linears.insert(0, nn.Linear(inlayer, hlayer, bias=False).double())
         self.linear_out = nn.Linear(hlayer, outlayer, bias=False).double()
 
@@ -121,7 +120,8 @@ class SimpleNN(nn.Module):
 
 class CustomMLP(nn.Module):
     """
-    Feed-forward neural network with variable widths of layers and activation functions. Useful for DNN configurations and experimentation with different activation functions.
+    Feed-forward neural network with variable widths of layers and activation functions. Useful for DNN
+    configurations and experimentation with different activation functions.
     """
 
     def __init__(
@@ -147,10 +147,7 @@ class CustomMLP(nn.Module):
 
         num_layers = len(hlayers)
         self.linears = nn.ModuleList(
-            [
-                nn.Linear(hlayers[k], hlayers[k + 1], bias=False).double()
-                for k in range(num_layers - 1)
-            ]
+            [nn.Linear(hlayers[k], hlayers[k + 1], bias=False).double() for k in range(num_layers - 1)]
         )
         self.linears.insert(0, nn.Linear(inlayer, hlayers[0], bias=False).double())
         self.linear_out = nn.Linear(hlayers[-1], outlayer, bias=False).double()
@@ -197,17 +194,21 @@ Learnable eddy lifetime models
 
 class TauNet(nn.Module):
     r"""
-    Classical implementation of neural network that learns the eddy lifetime function :math:`\tau(\boldsymbol{k})`. A SimpleNN and Rational network comprise this class. The network widths are determined by a single integer and thereafter the networks have hidden layers of only that width.
+    Classical implementation of neural network that learns the eddy lifetime function :math:`\tau(\boldsymbol{k})`.
+    A SimpleNN and Rational network comprise this class. The network widths are determined by a single integer and
+    thereafter the networks have hidden layers of only that width.
 
     The objective is to learn the function
 
     .. math::
-            \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}),
+            \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}
+            {\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}),
 
     where
 
     .. math::
-        \boldsymbol{a}(\boldsymbol{k}) = \operatorname{abs}(\boldsymbol{k}) + \mathrm{NN}(\operatorname{abs}(\boldsymbol{k})).
+        \boldsymbol{a}(\boldsymbol{k}) = \operatorname{abs}(\boldsymbol{k}) +
+        \mathrm{NN}(\operatorname{abs}(\boldsymbol{k})).
 
     This class implements the simplest architectures which solve this problem.
     """
@@ -235,9 +236,7 @@ class TauNet(nn.Module):
         self.hidden_layer_size = hidden_layer_size
         self.fg_learn_nu = learn_nu
 
-        self.NN = SimpleNN(
-            nlayers=self.n_layers, inlayer=3, hlayer=self.hidden_layer_size, outlayer=3
-        )
+        self.NN = SimpleNN(nlayers=self.n_layers, inlayer=3, hlayer=self.hidden_layer_size, outlayer=3)
         self.Ra = Rational(learn_nu=self.fg_learn_nu)
 
         self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
@@ -263,7 +262,9 @@ class TauNet(nn.Module):
 
 class CustomNet(nn.Module):
     r"""
-    A more versatile version of the tauNet. The objective is the same: to learn the eddy lifetime function :math:`\tau(\boldsymbol{k})` in the same way. This class allows for neural networks of variable widths and different kinds of activation functions used between layers.
+    A more versatile version of the tauNet. The objective is the same: to learn the eddy lifetime function
+    :math:`\tau(\boldsymbol{k})` in the same way. This class allows for neural networks of variable widths and
+    different kinds of activation functions used between layers.
     """
 
     def __init__(
@@ -292,15 +293,13 @@ class CustomNet(nn.Module):
 
         self.fg_learn_nu = learn_nu
 
-        hls = None
-        if type(hidden_layer_sizes) is int:
+        hls: List[int]
+        if isinstance(hidden_layer_sizes, int):
             hls = [hidden_layer_sizes for _ in range(n_layers)]
         else:
             hls = hidden_layer_sizes
 
-        self.NN = CustomMLP(
-            hlayers=hls, activations=self.activations, inlayer=3, outlayer=3
-        )
+        self.NN = CustomMLP(hlayers=hls, activations=self.activations, inlayer=3, outlayer=3)
         self.Ra = Rational(learn_nu=self.fg_learn_nu)
 
         self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()

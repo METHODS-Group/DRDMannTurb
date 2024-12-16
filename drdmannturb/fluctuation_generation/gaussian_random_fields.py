@@ -12,12 +12,24 @@ from typing import Optional
 import numpy as np
 
 from .covariance_kernels import Covariance as covariance_metaclass
-from .sampling_methods import *
+from .sampling_methods import (
+    METHOD_DCT,
+    METHOD_DST,
+    METHOD_FFT,
+    METHOD_FFTW,
+    METHOD_VF_FFTW,
+    Sampling_DCT,
+    Sampling_DST,
+    Sampling_FFT,
+    Sampling_FFTW,
+    Sampling_VF_FFTW,
+)
 
 
 class GaussianRandomField:
     r"""
-    Generator for a discrete Gaussian random field: a random Gaussian variable at each point in a domain. Several sampling methods are provided by default:
+    Generator for a discrete Gaussian random field: a random Gaussian variable at each point in a domain. Several
+    sampling methods are provided by default:
 
     #. fft - usual Fast Fourier Transform
     #. fftw - "Fastest Fourier Transform in the West"
@@ -41,17 +53,22 @@ class GaussianRandomField:
         Parameters
         ----------
         Covariance : Covariance
-            An instantiation of one of the Covariance classes (VonKarman, Mann, or NN) provided in the package that subclass from the Covariance metaclass.
+            An instantiation of one of the Covariance classes (VonKarman, Mann, or NN) provided in the package that
+            subclass from the Covariance metaclass.
         grid_level : np.ndarray
-            Numpy array denoting the grid levels; number of discretization points used in each dimension, which evaluates as 2^k for each dimension for FFT-based sampling methods.
+            Numpy array denoting the grid levels; number of discretization points used in each dimension, which
+            evaluates as 2^k for each dimension for FFT-based sampling methods.
         grid_shape : np.ndarray, optional
             _description_, by default None
         grid_dimensions : np.ndarray, optional
-            Numpy array denoting the grid size; the real dimensions of the domain of interest, by default [1.0, 1.0, 1.0]
+            Numpy array denoting the grid size; the real dimensions of the domain of interest,
+            by default [1.0, 1.0, 1.0]
         ndim : int, optional
-           Number of dimensions of the random field, by default 3, which is currently forced (only 3D field generation is implemented).
+           Number of dimensions of the random field, by default 3, which is currently forced (only 3D field
+           generation is implemented).
         sampling_method : str, optional
-            Sampling method to be used in correlating with field generated from underlying distribution (Gaussian), by default "fft"
+            Sampling method to be used in correlating with field generated from underlying distribution
+            (Gaussian), by default "fft"
 
         Raises
         ------
@@ -63,9 +80,7 @@ class GaussianRandomField:
 
         if np.isscalar(grid_level):
             if not np.isscalar(grid_shape):
-                raise ValueError(
-                    "grid_level and grid_shape must have the same dimensions."
-                )
+                raise ValueError("grid_level and grid_shape must have the same dimensions.")
             h = 1 / 2**grid_level
             self.grid_shape = np.array([grid_shape] * ndim)
         else:
@@ -86,9 +101,7 @@ class GaussianRandomField:
         N_margin = 0
         self.ext_grid_shape = self.grid_shape
         self.nvoxels = self.ext_grid_shape.prod()
-        self.DomainSlice = tuple(
-            [slice(N_margin, N_margin + self.grid_shape[j]) for j in range(self.ndim)]
-        )
+        self.DomainSlice = tuple([slice(N_margin, N_margin + self.grid_shape[j]) for j in range(self.ndim)])
 
         ### Covariance kernel
         self.Covariance = Covariance
@@ -154,7 +167,8 @@ class GaussianRandomField:
         Parameters
         ----------
         grid_shape : Optional[np.ndarray], optional
-            Number of grid points in each dimension, by default None, which results in a field over the grid determined during construction of this object.
+            Number of grid points in each dimension, by default None, which results in a field over the grid
+            determined during construction of this object.
 
         Returns
         -------
@@ -173,12 +187,14 @@ class GaussianRandomField:
     ### Sample GRF
     def sample(self, noise: Optional[np.ndarray] = None) -> np.ndarray:
         """
-        Samples the Gaussian Random Field with specified sampling method. Note this is not just what is sampled from the distribution; this field is also correlated with the covariance kernel provided during construction.
+        Samples the Gaussian Random Field with specified sampling method. Note this is not just what is sampled
+        from the distribution; this field is also correlated with the covariance kernel provided during construction.
 
         Parameters
         ----------
         noise : Optional[np.ndarray], optional
-            Random field from underlying distribution, by default None, which results in an additional sampling of the domain from the distribution.
+            Random field from underlying distribution, by default None, which results in an additional sampling of
+            the domain from the distribution.
 
         Returns
         -------
@@ -207,8 +223,9 @@ class VectorGaussianRandomField(GaussianRandomField):
     Gaussian random vector field generator
     """
 
-    def __init__(self, vdim=3, **kwargs):
-        """Constructor for vector of GRFs in specified number of dimensions (presently only 3). ``kwargs`` must contain all information required by :py:class:`GaussianRandomField`.
+    def __init__(self, vdim: int = 3, **kwargs):
+        """Constructor for vector of GRFs in specified number of dimensions (presently only 3). ``kwargs`` must
+        contain all information required by :py:class:`GaussianRandomField`.
 
         Parameters
         ----------
