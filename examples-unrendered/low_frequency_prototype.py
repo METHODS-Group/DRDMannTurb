@@ -1,188 +1,146 @@
+import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.pyplot as plt
-import torch
+from scipy.special import gamma
 
-from drdmannturb.fluctuation_generation import (
-    GenerateFluctuationField,
-    plot_velocity_magnitude,
-    plot_velocity_components,
-)
 
-from scipy.special import gamma, hyp2f1
-
-sigma2_2d = 0 # variance of the 2D spectrum, excluding attentuation
-L_2d = 0 # length scale of the 2D spectrum, corresponding to
-         # peak of mesoscale turbulence
-psi = 0 # anisotropy parameter
-z_i = 0 # Attenutation parameter
-
-# NOTE: WE ARE GOING TO ASSUME THAT PSI IS GIVEN IN DEGREES FOR PROTOTYPE
-
-def deg_to_rad(deg):
+def calculate_rho(k1, L_2D, psi):
     """
-    Convert degrees to radians
+    Calculate ρ according to equation (18)
 
-    NOTE: the psi anisotropy parameter is in degrees but
-    numpy functions expect radians.
-    """
-    return deg * np.pi / 180
+    Args:
+        k1: Wavenumber k₁
+        L_2D: Length scale L₂ᴰ
+        psi: Anisotropy parameter ψ
 
-def compute_kappa(k1, k2, psi):
+    Returns:
+        ρ = √(1 + 2k₁²L₂ᴰ² cos² ψ)
     """
-    Compute kappa, how the scale-independent anisotropy
-    is introduced to the energy spectrum.
+    return np.sqrt(1 + 2 * (k1 * L_2D) ** 2 * np.cos(psi) ** 2)
+
+
+def F11_2D(k1, sigma_squared, L_2D, psi):
     """
-    return np.sqrt(
-        (k1**2 * np.cos(psi)**2)
-        + (k2**2 * np.sin(psi)**2)
+    Calculate F₁₁²ᴰ according to equation (16)
+
+    Args:
+        k1: Wavenumber k₁
+        sigma_squared: Variance σ²
+        L_2D: Length scale L₂ᴰ
+        psi: Anisotropy parameter ψ
+
+    Returns:
+        F₁₁²ᴰ(k₁)
+    """
+    rho = calculate_rho(k1, L_2D, psi)
+
+    # Calculate the spectrum
+    F11 = (
+        (sigma_squared * L_2D)
+        * ((gamma(5 / 6)) / ((2 ** (3 / 2)) * (np.pi ** (1 / 2)) * gamma(1 / 3) * (np.sin(psi) ** 3)))
+        * (rho ** (-5 / 3))
     )
 
-def compute_Ekappa(kappa, L_2D, c=1.0):
+    return F11
+
+
+def F22_2D(k1, sigma_squared, L_2D, psi):
     """
-    Compute the energy spectrum E(kappa) with attenuation.
-    Following equation (2) in the paper.
+    Calculate F₂₂²ᴰ according to equation (17)
+
+    Args:
+        k1: Wavenumber k₁
+        sigma_squared: Variance σ²
+        L_2D: Length scale L₂ᴰ
+        psi: Anisotropy parameter ψ
+
+    Returns:
+        F₂₂²ᴰ(k₁)
     """
-    energy_spectrum = (c * (kappa**3) / (L_2D**(-2) + kappa**2)**(7/3))
-    attenuation = 1 / (1 + (kappa * z_i)**2)
+    rho = calculate_rho(k1, L_2D, psi)
 
-    return energy_spectrum * attenuation
+    leading_factor = sigma_squared * L_2D
+    numerator = 5 * gamma(5 / 6)
+    denominator = 3 * np.sqrt(2) * np.sqrt(np.pi) * gamma(1 / 3) * np.sin(psi)
+    trailing_factor = (k1 * L_2D) ** 2 / rho ** (11 / 3)
 
-# A few helper functions to compute intermediates
-
-def _compute_a(k1, L_2D, psi):
-    return 1 + (2 * (k1**2) * (L_2D**2) * (np.cos(psi)**2))
-
-def _compute_b(k1, z_i, psi):
-    return 1 + (2 * (k1**2) * (z_i**2) * (np.cos(psi)**2))
-
-def _compute_p(L_2D, z_i, a, b):
-    return (L_2D**2 * b) / (z_i**2 * a)
+    return leading_factor * (numerator / denominator) * trailing_factor
 
 
-def compute_F11(k1, L_2D, z_i, c=1.0):
+def get_normalized_spectra(k1, sigma_squared, L_2D, psi):
     """
-    Compute the F11 component of the spectral tensor.
+    Calculate normalized spectra k₁F(k₁) for both components
+
+    Args:
+        k1: Wavenumber k₁
+        sigma_squared: Variance σ²
+        L_2D: Length scale L₂ᴰ
+        psi: Anisotropy parameter ψ
+
+    Returns:
+        k₁F₁₁²ᴰ(k₁), k₁F₂₂²ᴰ(k₁)
     """
-    # Convert psi to radians for numpy functions
-    psi_rad = deg_to_rad(psi)
-    
-    # Compute intermediate values with checks
-    a = _compute_a(k1, L_2D, psi_rad)
-    b = _compute_b(k1, z_i, psi_rad)
-    p = _compute_p(L_2D, z_i, a, b)
-    
-    print(f"\nDebug for k1 = {k1}:")
-    print(f"a = {a}")
-    print(f"b = {b}")
-    print(f"p = {p}")
-    
-    # Check for valid inputs to hypergeometric functions
-    if p >= 1:
-        print(f"Warning: p = {p} >= 1, hypergeometric function may not converge")
-    
-    try:
-        term1 = hyp2f1(5/6, 1, 1/2, p)
-        term2 = hyp2f1(-1/6, 1, 1/2, p)
-        print(f"hyp2f1 terms: {term1}, {term2}")
-    except Exception as e:
-        print(f"Error in hypergeometric calculation: {e}")
-        return np.nan
-    
-    # Calculate denominator terms separately to check for division by zero
-    denom1 = ((L_2D**2) - (z_i**2))
-    denom2 = np.sin(psi_rad)**3
-    denom3 = a**(5/6)
+    # Calculate base spectra
+    F11 = F11_2D(k1, sigma_squared, L_2D, psi)
+    F22 = F22_2D(k1, sigma_squared, L_2D, psi)
 
-    # print(f"Denominators: {denom1}, {denom2}, {denom3}")
-    
-    if abs(denom1) < 1e-10 or abs(denom2) < 1e-10 or abs(denom3) < 1e-10:
-        print("Warning: Near-zero denominator detected")
-    
-    hyp2f1_sum = (-1 * p * term1) + (-7 * term1) + (2 * term2)
-    
-    first_term = (
-        gamma(11/6) * (L_2D ** (11/3))
-    ) / (
-        10 * np.sqrt(2 * np.pi) * gamma(7/3) * denom1 * denom2 * denom3
-    ) * hyp2f1_sum
-    
-    second_term = (
-        (L_2D**(14/3)) * np.sqrt(b)
-    ) / (
-        2 * np.sqrt(2) * (a**(7/3)) * (z_i**3) * np.sin(psi_rad)**3
-    )
-    
-    result = c * (first_term + second_term)
-    
-    # print(f"First term: {first_term}")
-    # print(f"Second term: {second_term}")
-    # print(f"Final result: {result}")
-    
-    return result
+    # Normalize by multiplying with k1
+    k1F11 = k1 * F11
+    k1F22 = k1 * F22
 
-def compute_F22(k1, L_2D, z_i, c=1.0):
+    return k1F11, k1F22
+
+
+def plot_model_component_spectra():
     """
-    Compute the F22 component of the spectral tensor.
+    Recreate Figure 2 from the paper showing model component spectra
+    for different anisotropy parameters ψ.
     """
-    a = _compute_a(k1, L_2D, psi)
-    b = _compute_b(k1, z_i, psi)
-    p = _compute_p(L_2D, z_i, a, b)
+    # Generate k1L range (x-axis)
+    k1L = np.logspace(-1, 2, 200)
 
-    # First major term
-    prefactor = (z_i**4 * a**(1/6) * L_2D**(11/3) * gamma(17/6)) / (
-        55 * np.sqrt(2*np.pi) * (L_2D**2 - z_i**2)**2 * b * gamma(7/3) * np.sin(deg_to_rad(psi))
-    )
+    # Set parameters
+    L_2D = 1.0  # Length scale
+    sigma_squared = 1.0  # Variance
 
-    # All the hypergeometric function terms
-    hyp2f1_sum = (
-        -9 - (26 * hyp2f1(1/6, 1, 1/2, p))
-        + (p**2) * (15 - (30*hyp2f1(-1/6, 1, 1/2, p)) - (59*hyp2f1(5/6, 1, 1/2, p)))
-        + (35*hyp2f1(5/6, 1, 1/2, p)) + 15*(p**3)*hyp2f1(5/6, 1, 1/2, p)
-        + p*(-54 + 88*hyp2f1(-1/6, 1, 1/2, p) + 9*hyp2f1(5/6, 1, 1/2, p))
-    )
+    # Define anisotropy parameters
+    psi_values = {
+        "isotropic": np.pi / 4,  # Black lines
+        "sigma11_lt_sigma22": np.pi / 6,  # Blue lines
+        "sigma11_gt_sigma22": np.pi / 3,  # Red lines
+    }
 
-    first_term = prefactor * hyp2f1_sum
+    # Create figure
+    plt.figure(figsize=(8, 6))
 
-    # Second term
-    second_term = -L_2D**(14/3) / (np.sqrt(2*b) * a**(7/3) * z_i * np.sin(deg_to_rad(psi)))
+    # Plot spectra for each psi value
+    colors = {"isotropic": "k", "sigma11_lt_sigma22": "b", "sigma11_gt_sigma22": "r"}
 
-    return c * (k1**2) * (first_term + second_term)
+    for case, psi in psi_values.items():
+        # Calculate normalized spectra
+        k1F11, k1F22 = get_normalized_spectra(k1L / L_2D, sigma_squared, L_2D, psi)
+
+        # Plot F11 (solid) and F22 (dashed)
+        plt.plot(k1L, k1F11, color=colors[case], linestyle="-", label=f"F11 (ψ={psi/np.pi:.2f}π)")
+        plt.plot(k1L, k1F22, color=colors[case], linestyle="--", label=f"F22 (ψ={psi/np.pi:.2f}π)")
+
+    # Set plot properties
+    plt.xscale("log")
+    plt.xlabel("k₁L")
+    plt.ylabel("k₁F(k₁) [m²s⁻²]")
+    plt.grid(True, which="both", ls="-", alpha=0.2)
+    plt.legend()
+
+    # Set axis limits to match the paper
+    plt.xlim(1e-1, 1e2)
+    plt.ylim(0, 0.4)
+
+    plt.title("Model Component Spectra")
+    plt.tight_layout()
+
+    return plt.gcf()
 
 
-import matplotlib.pyplot as plt
-
-sigma2_2d = 1.0
-L_2D = 20 # 20000
-z_i = 500
-psi = 43
-
-import sys
-
-# sys.exit()
-
-k1 = np.logspace(-3, 3, 7)
-# k1 = np.logspace(-3, 3, 1400)
-F11 = np.array([k * compute_F11(k, L_2D, z_i, c=1.0) for k in k1])
-
-# Print some debug info
-print("Min F11:", np.min(F11))
-print("Max F11:", np.max(F11))
-print("Any NaN:", np.any(np.isnan(F11)))
-print("Any inf:", np.any(np.isinf(F11)))
-
-# Plot with error checking
-if np.any(F11 <= 0):
-    print("Warning: Some y-values are <= 0, which won't work with log scale")
-    print("Number of non-positive values:", np.sum(F11 <= 0))
-
-plt.figure(figsize=(8, 6))
-plt.plot(k1 * L_2D, F11, '--', label='...')
-plt.xscale('log')
-if np.all(F11 > 0):
-    plt.yscale('log')
-
-plt.xlabel('k₁L₂D [-]')
-plt.ylabel('k₁F₁₁(k₁) [m²/s²]')
-plt.grid(True)
-plt.legend()
-plt.show()
+if __name__ == "__main__":
+    # Generate and show the plot
+    fig = plot_model_component_spectra()
+    plt.show()
