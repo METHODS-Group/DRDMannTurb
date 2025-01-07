@@ -1,70 +1,132 @@
-from typing import Union
-
+import matplotlib.pyplot as plt
 import numpy as np
-
-# For cleanliness
-ArrayType = Union[np.ndarray, float]
+import scipy.integrate as integrate
 
 
-# So, phi_ij (k1, k2) is given by equation 1.
-# phi_ij(k1, k2) = (E(k) / (\pi k)) * (delta_ij - (k_i * k_j) / (k^2))
+def compute_kappa(kx, ky, psi):
+    cos2 = np.cos(psi) ** 2
+    sin2 = np.sin(psi) ** 2
 
-# Then, we want to substitute kappa in for k in E(k), NB psi is a constant at this point.
-
-# k_bold = (k1, k2)
-
-# NB 0 < psi < pi/2
-
-"""
-Input Parameters
-"""
-
-# Physical parameters
-
-L_2D = 15000  # Length scale of the domain
-z_i = 500  # Height of the domain
-c = 1.0  # Scaling factor NOTE: What should this actually be?
-psi = 43  # IN DEGREES; anisotropy angle parameter, 0 < psi < 90 in degrees
-
-# Grid parameters
-
-N1 = 1024  # Number of grid points in x direction
-N2 = 256  # Number of grid points in y direction
-
-dx = 1 / 2  # Grid spacing in x direction
-dy = 1 / 2  # Grid spacing in y direction
-
-"""
-Begin calculations
-"""
-
-L1 = N1 * dx
-L2 = N2 * dy
-
-m1 = np.arange(-N1 // 2, N1 // 2)
-m2 = np.arange(-N2 // 2, N2 // 2)
-
-k1 = m1 * 2 * np.pi / L1
-k2 = m2 * 2 * np.pi / L2
-
-"""Helper functions"""
+    return np.sqrt(2.0 * (kx**2) * cos2 + (ky**2) * sin2)
 
 
-def compute_kappa(k1, k2, psi):
+def compute_E(kappa, c, L2D, z_i):
+    if kappa < 1e-12:
+        return 0.0
+    denom = (1.0 / (L2D**2) + kappa**2) ** (7.0 / 3.0)
+    atten = 1.0 / (1.0 + (kappa * z_i) ** 2)
+    return c * (kappa**3) / denom * atten
+
+
+def solve_for_c(sigma2, L2D, z_i):
     """
-    Compute equation 4 from the paper
+    Solve for c so that integral of E(k) from k=0..inf = sigma2.
+    (1D version for demonstration.)
     """
 
-    return np.sqrt(2 * ((k1**2 * np.cos(psi) ** 2) + (k2**2 * np.sin(psi) ** 2)))
+    def integrand(k):
+        return (k**3 / ((1.0 / (L2D**2) + k**2) ** (7.0 / 3.0))) * (1.0 / (1.0 + (k * z_i) ** 2))
+
+    val, _ = integrate.quad(integrand, 0, np.inf)
+    return sigma2 / val
 
 
-def compute_E_with_attenuation(kappa, L_2D, c, z_i):
+def generate_2D_lowfreq_approx(Nx, Ny, L1, L2, psi_degs, sigma2, L2D, z_i):
     """
-    Compute equation 9 from the paper
+    Approx approach:
+      1) compute c from sigma2
+      2) for each k1, compute phi_11(k1) using e.g. E(kappa)/(pi*kappa)
+         or the simpler "2D swirl" formula
+      3) multiply by factor ~ 2 * pi^2 / L1
+      4) randomize phases in k2
+      5) iFFT => real field
+    We'll do just the 'u' field for demonstration, but you can do 'v' similarly.
     """
+    psi = np.deg2rad(psi_degs)
+    c_val = solve_for_c(sigma2, L2D, z_i)
 
-    energy_spectrum = (c * (kappa**3)) / (((L_2D ** (-2)) + (kappa**2)) ** (7 / 3))
+    dx = L1 / Nx
+    dy = L2 / Ny
 
-    attenuation_factor = 1 / (1 + (kappa * z_i) ** 2)
+    kx_arr = 2.0 * np.pi * np.fft.fftfreq(Nx, d=dx)
+    ky_arr = 2.0 * np.pi * np.fft.fftfreq(Ny, d=dy)
+    kx_arr = np.fft.fftshift(kx_arr)  # sort from negative to positive
+    ky_arr = np.fft.fftshift(ky_arr)
 
-    return energy_spectrum * attenuation_factor
+    Amp2 = np.zeros((Nx, Ny), dtype=np.float64)
+
+    factor_16 = (2.0 * np.pi**2) / L1
+
+    for ix in range(Nx):
+        for iy in range(Ny):
+            kx = kx_arr[ix]
+            ky = ky_arr[iy]
+
+            kappa = compute_kappa(kx, ky, psi)
+            E_val = compute_E(kappa, c_val, L2D, z_i)
+
+            if kappa < 1e-12:
+                phi_11 = 0.0
+            else:
+                phi_11 = E_val / (np.pi * kappa)
+
+            amp2_kx = factor_16 * phi_11
+            Amp2[ix, iy] = amp2_kx
+
+    Uhat = np.zeros((Nx, Ny), dtype=np.complex128)
+    for ix in range(Nx):
+        for iy in range(Ny):
+            amp = np.sqrt(Amp2[ix, iy])
+            phase = (np.random.normal() + 1j * np.random.normal()) / np.sqrt(2.0)
+            Uhat[ix, iy] = amp * phase
+
+    Uhat_unshift = np.fft.ifftshift(Uhat, axes=(0, 1))
+    u_field_complex = np.fft.ifft2(Uhat_unshift, s=(Nx, Ny))
+    u_field = np.real(u_field_complex)
+
+    var_now = np.var(u_field)
+    if var_now > 1e-12:
+        u_field *= np.sqrt(sigma2 / var_now)
+
+    return u_field
+
+
+if __name__ == "__main__":
+    # Domain: 60 km x 15 km
+    L1 = 60_000.0
+    L2 = 15_000.0
+    Nx = 1024
+    Ny = 256
+
+    # Figure 3 parameters
+    L2D = 15000.0  # [m]
+    sigma2 = 0.6  # [m^2/s^2]
+    z_i = 500.0  # [m]
+    psi_degs = 43.0  # anisotropy angle
+
+    # Generate large-scale u-component
+    u_field = generate_2D_lowfreq_approx(Nx, Ny, L1, L2, psi_degs, sigma2, L2D, z_i)
+
+    # Generate large-scale v-component similarly
+    # (Here, we assume same sigma^2 and same approach.)
+    v_field = generate_2D_lowfreq_approx(Nx, Ny, L1, L2, psi_degs, sigma2, L2D, z_i)
+
+    x = np.linspace(0, L1 / 1000, Nx)
+    y = np.linspace(0, L2 / 1000, Ny)
+    X, Y = np.meshgrid(x, y, indexing="ij")
+
+    fig, axs = plt.subplots(2, 1, figsize=(10, 8))
+    im1 = axs[0].pcolormesh(X, Y, u_field, shading="auto", cmap="RdBu_r")
+    cb1 = plt.colorbar(im1, ax=axs[0], label="m/s")
+    axs[0].set_title("(a) u")
+    axs[0].set_xlabel("x [km]")
+    axs[0].set_ylabel("y [km]")
+
+    im2 = axs[1].pcolormesh(X, Y, v_field, shading="auto", cmap="RdBu_r")
+    cb2 = plt.colorbar(im2, ax=axs[1], label="m/s")
+    axs[1].set_title("(b) v")
+    axs[1].set_xlabel("x [km]")
+    axs[1].set_ylabel("y [km]")
+
+    plt.tight_layout()
+    plt.show()

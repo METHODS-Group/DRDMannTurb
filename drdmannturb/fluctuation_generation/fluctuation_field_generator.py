@@ -339,6 +339,15 @@ class GenerateFluctuationField:
         if not np.any(curr_block):
             raise ValueError("No fluctuation field has been generated, call the .generate() method first.")
 
+        if windprofiletype not in ["LOG", "PL"]:
+            raise ValueError('windprofiletype must be either "LOG" or "PL"')
+
+        if any(param <= 0 for param in [zref, uref, z0]):
+            raise ValueError("zref, uref, and z0 must all be positive")
+
+        if windprofiletype == "PL" and plexp is None:
+            raise ValueError("Power law exponent (plexp) is required when using power law profile")
+
         sd = np.sqrt(np.mean(curr_block**2))
         curr_block /= sd
 
