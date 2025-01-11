@@ -7,7 +7,7 @@ def compute_kappa(kx, ky, psi):
     cos2 = np.cos(psi) ** 2
     sin2 = np.sin(psi) ** 2
 
-    return np.sqrt(2.0 * (kx**2) * cos2 + (ky**2) * sin2)
+    return np.sqrt(2.0 * ((kx**2) * cos2 + (ky**2) * sin2))
 
 
 def compute_E(kappa, c, L2D, z_i):
@@ -88,7 +88,7 @@ def generate_2D_lowfreq_approx(Nx, Ny, L1, L2, psi_degs, sigma2, L2D, z_i):
     if var_now > 1e-12:
         u_field *= np.sqrt(sigma2 / var_now)
 
-    return u_field
+    return np.linspace(0, L1, Nx), np.linspace(0, L2, Ny), u_field
 
 
 if __name__ == "__main__":

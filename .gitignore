@@ -1,20 +1,20 @@
-# csv data 
+# csv data
 *.csv
 
-# model pickles 
-*.pkl 
+# model pickles
+*.pkl
 
 # overrides for data used in examples
-# necessary for interpolation data example 
-!/docs/source/data/*.csv 
-# necessary for model saving, loading, and viz examples 
+# necessary for interpolation data example
+!/docs/source/data/*.csv
+# necessary for model saving, loading, and viz examples
 !/docs/source/results/*.pkl
 
 docs/source/auto_examples
 
 examples/runs/*
 
-# runtimes for sphinx-gallery 
+# runtimes for sphinx-gallery
 docs/source/sg_execution_times.rst
 
 test/io/runs
@@ -71,6 +71,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+.ruff_cache/
 
 # Translations
 *.mo
@@ -152,6 +153,7 @@ dmypy.json
 # Others
 **.vscode
 **.DS_Store
+examples-unrendered/2d_plus_3d.ipynb
 
 ## Data/ Paraview Files
 

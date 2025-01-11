@@ -7,8 +7,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: psf/black@stable
+
+      - uses: chartboost/ruff-action@v1
         with:
-          # options: "--check --verbose"
           src: "./drdmannturb"
-          version: "~= 22.3.0"
+          args: "--fix"
+
+      - uses: jpetrucciani/mypy-check@master
+        with:
+          src: "./drdmannturb"
+          args: "--ignore-missing-imports"
