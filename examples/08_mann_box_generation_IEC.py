@@ -28,7 +28,7 @@ import numpy as np
 import torch
 
 from drdmannturb.fluctuation_generation import (
-    GenerateFluctuationField,
+    FluctuationFieldGenerator,
     plot_velocity_magnitude,
 )
 
@@ -82,7 +82,7 @@ Type_Model = "Mann"  ### 'Mann', 'VK', 'DRD'
 # The Mann model requires three parameters, length scale, time scale, and spectrum amplitude scale,
 # which are defined above
 #
-gen_mann = GenerateFluctuationField(
+gen_mann = FluctuationFieldGenerator(
     ustar,
     zref,
     grid_dimensions,

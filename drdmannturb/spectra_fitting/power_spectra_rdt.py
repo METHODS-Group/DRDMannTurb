@@ -3,8 +3,7 @@ This module implements the RDT Power Spectra.
 """
 
 import torch
-
-Tensor = torch.Tensor  # type: ignore
+from torch import Tensor
 
 
 @torch.jit.script

@@ -5,7 +5,7 @@ Example 10: 2D Low Frequency + 3D High Frequency
 
 This example demonstrates the addition of the low-frequency wind fluctuation field to a complete
 3D wind field, following Syed-Mann (2024). ``DRDMannTurb`` includes this functionality through
-an instance of the ``GenerateFluctuationField`` class. This example uses the Mann model for the
+an instance of the ``FluctuationFieldGenerator`` class. This example uses the Mann model for the
 "high-frequency" component, though any other model could be used.
 """
 

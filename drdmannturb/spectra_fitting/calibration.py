@@ -7,7 +7,7 @@ import pickle
 from collections.abc import Iterable
 from functools import partial
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -33,21 +33,24 @@ class CalibrationProblem:
     r"""
     .. _calibration-problem-reference:
 
-    Class which manages the spectra fitting and eddy lifetime function learning based on the deep rapid distortion model developed
-    in `Keith, Khristenko, Wohlmuth (2021) <https://arxiv.org/pdf/2107.11046.pdf>`_.
+    Class which manages the spectra fitting and eddy lifetime function learning based on the deep rapid distortion model
+    developed in `Keith, Khristenko, Wohlmuth (2021) <https://arxiv.org/pdf/2107.11046.pdf>`_.
 
     This class manages the operator regression task which characterizes the best fitting candidate
     in a family of nonlocal covariance kernels that are parametrized by a neural network.
 
-    This class can also be used independently of neural networks via the ``EddyLifetimeType`` used for classical spectra fitting tasks, for instance, using
-    the ``EddyLifetimeType.MANN`` results in a fit that completely relies on the Mann eddy lifetime function. If a neural network model is used, Torch's ``LBFGS`` optimizer is used with cosine annealing for learning rate scheduling. Parameters for these components of the training process are set in ``LossParameters`` and ``ProblemParameters`` during initialization.
+    This class can also be used independently of neural networks via the ``EddyLifetimeType`` used for classical spectra
+    fitting tasks, for instance, using the ``EddyLifetimeType.MANN`` results in a fit that completely relies on the Mann
+    eddy lifetime function. If a neural network model is used, Torch's ``LBFGS`` optimizer is used with cosine annealing
+    for learning rate scheduling. Parameters for these components of the training process are set in ``LossParameters``
+    and ``ProblemParameters`` during initialization.
 
     After instantiating ``CalibrationProblem``, wherein the problem and eddy lifetime function substitution
     type are indicated, the user will need to generate the OPS data using ``OnePointSpectraDataGenerator``,
     after which the model can be fit with ``CalibrationProblem.calibrate``.
 
-    After training, this class can be used in conjunction with the fluctuation generation utilities in this package to generate
-    realistic turbulence fields based on the learned spectra and eddy lifetimes.
+    After training, this class can be used in conjunction with the fluctuation generation utilities in this package to
+    generate realistic turbulence fields based on the learned spectra and eddy lifetimes.
     """
 
     def __init__(
@@ -60,7 +63,8 @@ class CalibrationProblem:
         logging_directory: Optional[str] = None,
         output_directory: Union[Path, str] = Path().resolve() / "results",
     ):
-        r"""Constructor for ``CalibrationProblem`` class. As depicted in the UML diagram, this requires of 4 dataclasses.
+        r"""Constructor for ``CalibrationProblem`` class. As depicted in the UML diagram, this requires
+        4 dataclasses.
 
         Parameters
         ----------
@@ -79,6 +83,8 @@ class CalibrationProblem:
             A ``PhysicalParameters`` dataclass instance, which defines the physical constants governing the
             problem setting; note that the ``PhysicalParameters`` constructor requires three positional
             arguments.
+        logging_directory: Optional[str], optional
+            TODO: Add docs for this
         output_directory : Union[Path, str], optional
             The directory to write output to; by default ``"./results"``
         """
@@ -93,9 +99,9 @@ class CalibrationProblem:
         self.activfuncstr = str(nn_params.activations)
 
         self.input_size = nn_params.input_size
-        self.hidden_layer_size = nn_params.hidden_layer_sizes
-
         self.hidden_layer_size = nn_params.hidden_layer_size
+        self.hidden_layer_sizes = nn_params.hidden_layer_sizes
+
         self.init_with_noise = prob_params.init_with_noise
         self.noise_magnitude = prob_params.noise_magnitude
 
@@ -108,9 +114,7 @@ class CalibrationProblem:
         )
 
         if self.prob_params.eddy_lifetime == EddyLifetimeType.MANN_APPROX:
-            self.OPS.set_scales(
-                self.phys_params.L, self.phys_params.Gamma, self.phys_params.sigma
-            )
+            self.OPS.set_scales(self.phys_params.L, self.phys_params.Gamma, self.phys_params.sigma)
 
         if self.init_with_noise:
             self.initialize_parameters_with_noise()
@@ -154,17 +158,14 @@ class CalibrationProblem:
         Returns
         -------
         np.ndarray
-            Single vector containing all model parameters on the CPU, which can be loaded into an object with the same architecture with the
-            parameters setter method. This automatically offloads any model parameters that were on the GPU, if any.
+            Single vector containing all model parameters on the CPU, which can be loaded into an object with the same
+            architecture with the parameters setter method. This automatically offloads any model parameters that were
+            on the GPU, if any.
         """
         NN_parameters = parameters_to_vector(self.OPS.parameters())
 
         with torch.no_grad():
-            param_vec = (
-                NN_parameters.cpu().numpy()
-                if NN_parameters.is_cuda
-                else NN_parameters.numpy()
-            )
+            param_vec = NN_parameters.cpu().numpy() if NN_parameters.is_cuda else NN_parameters.numpy()
 
         return param_vec
 
@@ -189,20 +190,28 @@ class CalibrationProblem:
         Raises
         ------
         ValueError
-            "Parameter vector must contain at least 3 dimensionless scale quantities (L, Gamma, sigma) as well as network parameters, if using one of TAUNET, CUSTOMMLP."
+            "Parameter vector must contain at least 3 dimensionless scale quantities (L, Gamma, sigma) as well as
+            network parameters, if using one of TAUNET, CUSTOMMLP."
         ValueError
-            "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported against the currently constructed architecture if this mismatch occurs."
+            "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the
+            same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported
+            against the currently constructed architecture if this mismatch occurs."
         ValueError
-            "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported against the currently constructed architecture if this mismatch occurs."
+            "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the
+            same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported
+            against the currently constructed architecture if this mismatch occurs."
         """
         if len(param_vec) < 3:
             raise ValueError(
-                "Parameter vector must contain at least 3 dimensionless scale quantities (L, Gamma, sigma) as well as network parameters, if using one of TAUNET, CUSTOMMLP."
+                "Parameter vector must contain at least 3 dimensionless scale quantities (L, Gamma, sigma) as well as"
+                "network parameters, if using one of TAUNET, CUSTOMMLP."
             )
 
         if len(param_vec) != len(list(self.parameters)):
             raise ValueError(
-                "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported against the currently constructed architecture if this mismatch occurs."
+                "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as"
+                "the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being"
+                "imported against the currently constructed architecture if this mismatch occurs."
             )
 
         if (
@@ -214,7 +223,9 @@ class CalibrationProblem:
             and len(param_vec[3:]) != self.num_trainable_params()
         ):
             raise ValueError(
-                "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported against the currently constructed architecture if this mismatch occurs."
+                "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as"
+                "the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being"
+                "imported against the currently constructed architecture if this mismatch occurs."
             )
 
         if not torch.is_tensor(param_vec):
@@ -235,11 +246,7 @@ class CalibrationProblem:
 
             #.  Spectrum Amplitude
         """
-        if (
-            self.phys_params.L > 0
-            and self.phys_params.Gamma > 0
-            and self.phys_params.sigma > 0
-        ):
+        if self.phys_params.L > 0 and self.phys_params.Gamma > 0 and self.phys_params.sigma > 0:
             parameters = self.parameters
             parameters[:3] = [
                 np.log(self.phys_params.L),
@@ -266,7 +273,8 @@ class CalibrationProblem:
         vector_to_parameters(noise.abs(), self.OPS.Corrector.parameters())
 
     def eval(self, k1: torch.Tensor) -> np.ndarray:
-        r"""Calls the calibrated model on :math:`k_1`. This can be done after training or after loading trained model parameters from file.
+        r"""Calls the calibrated model on :math:`k_1`. This can be done after training or after loading trained model
+        parameters from file.
 
         Parameters
         ----------
@@ -343,28 +351,33 @@ class CalibrationProblem:
         data: tuple[Iterable[float], torch.Tensor],
         tb_comment: str = "",
         optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         r"""Calibration method, which handles the main training loop and some
         data pre-processing. Currently the only supported optimizer is Torch's ``LBFGS``
         and the learning rate scheduler uses cosine annealing. Parameters for these
         components of the training process are set in ``LossParameters`` and ``ProblemParameters``
         during initialization.
 
-        See the ``.print_calibrated_params()`` method to receive a pretty-printed output of the calibrated physical parameters.
+        See the ``.print_calibrated_params()`` method to receive a pretty-printed output of the calibrated
+        physical parameters.
 
         Parameters
         ----------
         data : tuple[Iterable[float], torch.Tensor]
             Tuple of data points and values, respectively, to be used in calibration.
         tb_comment : str
-           Filename comment used by tensorboard; useful for distinguishing between architectures and hyperparameters. Refer to tensorboard documentation for examples of use. By default, the empty string, which results in default tensorboard filenames.
+           Filename comment used by tensorboard; useful for distinguishing between architectures and hyperparameters.
+           Refer to tensorboard documentation for examples of use. By default, the empty string, which results in
+           default tensorboard filenames.
         optimizer_class : torch.optim.Optimizer, optional
            Choice of Torch optimizer, by default torch.optim.LBFGS
 
         Returns
         -------
         Dict[str, float]
-            Physical parameters for the problem, in normal space (not in log-space, as represented internally). Presented as a dictionary in the order ``{L : length scale, Gamma : time scale, sigma : spectrum amplitude}``.
+            Physical parameters for the problem, in normal space (not in log-space, as represented internally).
+            Presented as a dictionary in the order
+            ``{L : length scale, Gamma : time scale, sigma : spectrum amplitude}``.
 
         Raises
         ------
@@ -429,17 +442,13 @@ class CalibrationProblem:
             EddyLifetimeType.TAUNET,
             EddyLifetimeType.CUSTOMMLP,
         ]:
-            self.gen_theta_NN = lambda: parameters_to_vector(
-                self.OPS.tauNet.NN.parameters()
-            )
+            self.gen_theta_NN = lambda: parameters_to_vector(self.OPS.tauNet.NN.parameters())
         else:
             self.gen_theta_NN = lambda: 0.0
 
         theta_NN = self.gen_theta_NN()
 
-        self.loss = self.LossAggregator.eval(
-            y[self.curves], y_data[self.curves], theta_NN, 0
-        )
+        self.loss = self.LossAggregator.eval(y[self.curves], y_data[self.curves], theta_NN, 0)
 
         print("=" * 40)
 
@@ -451,9 +460,7 @@ class CalibrationProblem:
             optimizer.zero_grad()
             y = self.OPS(k1_data_pts)
 
-            self.loss = self.LossAggregator.eval(
-                y[self.curves], y_data[self.curves], self.gen_theta_NN(), self.e_count
-            )
+            self.loss = self.LossAggregator.eval(y[self.curves], y_data[self.curves], self.gen_theta_NN(), self.e_count)
 
             self.loss.backward()
 
@@ -466,21 +473,17 @@ class CalibrationProblem:
             scheduler.step()
 
             if not (torch.isfinite(self.loss)):
-                raise RuntimeError(
-                    "Loss is not a finite value, check initialization and learning hyperparameters."
-                )
+                raise RuntimeError("Loss is not a finite value, check initialization and learning hyperparameters.")
 
             if self.loss.item() < tol:
-                print(
-                    f"Spectra Fitting Concluded with loss below tolerance. Final loss: {self.loss.item()}"
-                )
+                print(f"Spectra Fitting Concluded with loss below tolerance. Final loss: {self.loss.item()}")
                 break
 
         print("=" * 40)
         print(f"Spectra fitting concluded with final loss: {self.loss.item()}")
 
         if self.prob_params.learn_nu and hasattr(self.OPS, "tauNet"):
-            print(f"Learned nu value: {self.OPS.tauNet.Ra.nu.item()}")
+            print(f"Learned nu value: {self.OPS.tauNet.Ra.nu}")
 
         # physical parameters are stored as natural logarithms internally
         self.calibrated_params = {
@@ -496,7 +499,8 @@ class CalibrationProblem:
     # ------------------------------------------------
 
     def print_calibrated_params(self):
-        """Prints out the optimal calibrated parameters ``L``, ``Gamma``, ``sigma``, which are stored in a fitted ``CalibrationProblem`` object under the ``calibrated_params`` dictionary.
+        """Prints out the optimal calibrated parameters ``L``, ``Gamma``, ``sigma``, which are stored in a fitted
+        ``CalibrationProblem`` object under the ``calibrated_params`` dictionary.
 
         Raises
         ------
@@ -504,9 +508,7 @@ class CalibrationProblem:
             Must call ``.calibrate()`` method to compute a fit to physical parameters first.
         """
         if not hasattr(self, "calibrated_params"):
-            raise ValueError(
-                "Must call .calibrate() method to compute a fit to physical parameters first."
-            )
+            raise ValueError("Must call .calibrate() method to compute a fit to physical parameters first.")
 
         OKGREEN = "\033[92m"
         ENDC = "\033[0m"
@@ -545,9 +547,7 @@ class CalibrationProblem:
             EddyLifetimeType.TAUNET,
             EddyLifetimeType.CUSTOMMLP,
         ]:
-            raise ValueError(
-                "Not using trainable model for approximation, must be TAUNET, CUSTOMMLP."
-            )
+            raise ValueError("Not using trainable model for approximation, must be TAUNET, CUSTOMMLP.")
 
         return sum(p.numel() for p in self.OPS.tauNet.parameters())
 
@@ -573,44 +573,40 @@ class CalibrationProblem:
             EddyLifetimeType.TAUNET,
             EddyLifetimeType.CUSTOMMLP,
         ]:
-            raise ValueError(
-                "Not using trainable model for approximation, must be TAUNET, CUSTOMMLP."
-            )
+            raise ValueError("Not using trainable model for approximation, must be TAUNET, CUSTOMMLP.")
 
-        return torch.norm(
-            torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord
-        )
+        return torch.norm(torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord)
 
-    def eval_trainable_norm(self, ord: Optional[Union[float, str]] = "fro"):
-        """Evaluates the magnitude (or other norm) of the
-            trainable parameters in the model.
+    # def eval_trainable_norm(self, ord: Optional[Union[float, str]] = "fro"):
+    #     """Evaluates the magnitude (or other norm) of the
+    #         trainable parameters in the model.
 
-        .. note::
-            The ``EddyLifetimeType`` must be set to one of ``TAUNET`` or ``CUSTOMMLP``, which involve
-            a network surrogate for the eddy lifetime.
+    #     .. note::
+    #         The ``EddyLifetimeType`` must be set to one of ``TAUNET`` or ``CUSTOMMLP``, which involve
+    #         a network surrogate for the eddy lifetime.
 
-        Parameters
-        ----------
-        ord : Optional[Union[float, str]]
-            The order of the norm approximation, follows ``torch.norm`` conventions.
+    #     Parameters
+    #     ----------
+    #     ord : Optional[Union[float, str]]
+    #         The order of the norm approximation, follows ``torch.norm`` conventions.
 
-        Raises
-        ------
-        ValueError
-            If the OPS was not initialized to one of ``TAUNET``, ``CUSTOMMLP``.
+    #     Raises
+    #     ------
+    #     ValueError
+    #         If the OPS was not initialized to one of ``TAUNET``, ``CUSTOMMLP``.
 
-        """
-        if self.OPS.type_EddyLifetime not in [
-            EddyLifetimeType.TAUNET,
-            EddyLifetimeType.CUSTOMMLP,
-        ]:
-            raise ValueError(
-                "Not using trainable model for approximation, must be TAUNET, CUSTOMMLP."
-            )
+    #     """
+    #     if self.OPS.type_EddyLifetime not in [
+    #         EddyLifetimeType.TAUNET,
+    #         EddyLifetimeType.CUSTOMMLP,
+    #     ]:
+    #         raise ValueError(
+    #             "Not using trainable model for approximation, must be TAUNET, CUSTOMMLP."
+    #         )
 
-        return torch.norm(
-            torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord
-        )
+    #     return torch.norm(
+    #         torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord
+    #     )
 
     def save_model(self, save_dir: Optional[Union[str, Path]] = None):
         """Saves model with current weights, model configuration, and training histories to file.
@@ -648,20 +644,12 @@ class CalibrationProblem:
             save_dir = self.output_directory
 
         if isinstance(save_dir, Path):
-
             if not save_dir.is_dir():
                 raise ValueError("Provided save_dir is not actually a directory")
 
             save_dir = str(save_dir)
 
-        filename = (
-            save_dir
-            + "/"
-            + str(self.prob_params.eddy_lifetime)
-            + "_"
-            + str(self.prob_params.data_type)
-            + ".pkl"
-        )
+        filename = save_dir + "/" + str(self.prob_params.eddy_lifetime) + "_" + str(self.prob_params.data_type) + ".pkl"
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, "wb+") as file:
             pickle.dump(
@@ -739,21 +727,19 @@ class CalibrationProblem:
                 k1_data_pts = self.k1_data_pts
             else:
                 raise ValueError(
-                    "Must either provide k1space or re-use what was used for model calibration, neither is currently specified."
+                    "Must either provide k1space or re-use what was used for model calibration, neither is"
+                    "currently specified."
                 )
 
             if hasattr(self, "kF_data_vals") and self.kF_data_vals is not None:
                 kF_data_vals = self.kF_data_vals
             else:
                 raise ValueError(
-                    "Must either provide data points or re-use what was used for model calibration, neither is currently specified."
+                    "Must either provide data points or re-use what was used for model calibration, neither is"
+                    "currently specified."
                 )
 
-        kF_model_vals = (
-            model_vals
-            if model_vals is not None
-            else self.OPS(k1_data_pts) / self.phys_params.ustar**2.0
-        )
+        kF_model_vals = model_vals if model_vals is not None else self.OPS(k1_data_pts) / self.phys_params.ustar**2.0
 
         kF_model_vals = kF_model_vals.cpu().detach()
         kF_data_vals = kF_data_vals.cpu().detach() / self.phys_params.ustar**2
@@ -792,7 +778,7 @@ class CalibrationProblem:
                     kF_model_vals[i].numpy(),
                     "--",
                     color=clr[i],
-                    label=r"$F_{0:d}$ model".format(i + 1),
+                    label=rf"$F_{i + 1:d}$ model",
                 )
 
             s = kF_data_vals.shape[0]
@@ -803,7 +789,7 @@ class CalibrationProblem:
                     kF_data_vals.view(4, s // 4)[i].numpy(),
                     "o-",
                     color=clr[i],
-                    label=r"$F_{0:d}$ data".format(i + 1),
+                    label=rf"$F_{i + 1:d}$ data",
                     alpha=0.5,
                 )
             if 3 in self.curves:
@@ -838,8 +824,7 @@ class CalibrationProblem:
                 self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
 
                 self.tau_ref = (
-                    self.phys_params.Gamma
-                    * MannEddyLifetime(self.phys_params.L * k_gd).cpu().detach().numpy()
+                    self.phys_params.Gamma * MannEddyLifetime(self.phys_params.L * k_gd).cpu().detach().numpy()
                 )
                 (self.lines_LT_model1,) = self.ax[1].plot(
                     k_gd.cpu().detach().numpy() * self.phys_params.L,
@@ -884,9 +869,16 @@ class CalibrationProblem:
             self.fig.canvas.flush_events()
 
         for i in range(self.vdim):
-            self.lines_SP_model[i].set_ydata(kF_model_vals[i])
+            curr = self.lines_SP_model[i]
+            assert curr is not None, "Line not found!"
+
+            curr.set_ydata(kF_model_vals[i])
+
         if 3 in self.curves:
-            self.lines_SP_model[self.vdim].set_ydata(-kF_model_vals[self.vdim])
+            curr = self.lines_SP_model[self.vdim]
+            assert curr is not None, "Line not found!"
+
+            curr.set_ydata(-kF_model_vals[self.vdim])
 
         if plot_tau:
             self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
@@ -900,16 +892,15 @@ class CalibrationProblem:
 
         if save:
             if save_dir is not None:
-                save_dir = save_dir if type(save_dir) == Path else Path(save_dir)
+                save_dir = save_dir if isinstance(save_dir, Path) else Path(save_dir)
             elif self.output_directory is not None:
                 save_dir = (
-                    self.output_directory
-                    if type(self.output_directory) == Path
-                    else Path(self.output_directory)
+                    self.output_directory if isinstance(self.output_directory, Path) else Path(self.output_directory)
                 )
             else:
                 raise ValueError(
-                    "Plot saving is not possible without specifying the save directory or output_directory for the class."
+                    "Plot saving is not possible without specifying the save directory or output_directory"
+                    "for the class."
                 )
 
             if save_filename is not None:
@@ -934,6 +925,9 @@ class CalibrationProblem:
             The number of the run in the logging directory to plot out. This is 0-indexed.
         """
         from os import listdir, path
+
+        # TODO: This is temporary
+        assert self.logging_directory is not None, "Logging directory not set!"
 
         log_fpath = listdir(self.logging_directory)[run_number]
         full_fpath = path.join(self.logging_directory, log_fpath)

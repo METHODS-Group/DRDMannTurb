@@ -6,7 +6,7 @@ import pickle
 from math import ceil
 from os import PathLike
 from pathlib import Path
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 
 import numpy as np
 import torch
@@ -19,7 +19,7 @@ from .gaussian_random_fields import VectorGaussianRandomField
 from .nn_covariance import NNCovariance
 
 
-class GenerateFluctuationField:
+class FluctuationFieldGenerator:
     r"""
     .. _generate-fluctuation-field-reference:
     Class for generating a fluctuation field either from a Mann model or a pre-fit DRD model that generates
@@ -82,7 +82,7 @@ class GenerateFluctuationField:
         energy_spectrum_scale: Optional[float] = None,
         lowfreq_params: Optional[LowFreqParameters] = None,
         path_to_parameters: Optional[Union[str, PathLike]] = None,
-        seed: int = None,
+        seed: Optional[int] = None,
         blend_num=10,
     ):
         r"""
@@ -154,9 +154,10 @@ class GenerateFluctuationField:
             L *= reference_height
             Gamma = T
 
-        else:  # VK or Mann model
-            if any(p is None for p in [length_scale, time_scale, energy_spectrum_scale]):
-                raise ValueError("VK/Mann models require length, time and energy spectrum scales")
+        else:  # VK or Mann model case
+            assert length_scale is not None, "VK/Mann models require length scale"  # for type checker
+            assert time_scale is not None, "VK/Mann models require time scale"
+            assert energy_spectrum_scale is not None, "VK/Mann models require energy spectrum scale"
 
             E0 = energy_spectrum_scale * friction_velocity**2 * reference_height ** (-2 / 3)
             L = length_scale
@@ -235,11 +236,14 @@ class GenerateFluctuationField:
         self.noise = None
         self.total_fluctuation = np.zeros(wind_shape)
 
-        self.log_law = lambda z, z0, zref, uref: uref * np.log(z / z0 + 1.0) / np.log(zref / z0)
-        self.power_law = lambda z, zref, Uref, a: Uref * (z / zref) ** a
+        CovarianceType = Union[
+            type[VonKarmanCovariance],
+            type[MannCovariance],
+            Callable[..., NNCovariance],
+        ]
 
         ### Random field object
-        covariance_map = {
+        covariance_map: dict[str, CovarianceType] = {  # type: ignore
             "VK": VonKarmanCovariance,
             "Mann": MannCovariance,
             "DRD": lambda **kwargs: NNCovariance(**kwargs, ops=pb.OPS, h_ref=reference_height),
@@ -366,10 +370,12 @@ class GenerateFluctuationField:
         if windprofiletype == "LOG":
             mean_profile_z = self.log_law(z_space, z0, zref, uref)
         else:
+            assert plexp is not None, "Power law exponent (plexp) is required when using power law mean profile."
             mean_profile_z = self.power_law(z_space, zref, uref, plexp)
 
         mean_profile = np.zeros_like(curr_block)
-        mean_profile[..., 0] = np.tile(mean_profile_z.T, (mean_profile.shape[0], mean_profile.shape[1], 1))
+        # NOTE: (Leaving for now) this *was* mean_profile_z.T, but that's a float? so there's no transpose.
+        mean_profile[..., 0] = np.tile(mean_profile_z, (mean_profile.shape[0], mean_profile.shape[1], 1))
 
         return curr_block + mean_profile
 

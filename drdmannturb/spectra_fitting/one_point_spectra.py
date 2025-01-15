@@ -15,7 +15,8 @@ from .power_spectra_rdt import PowerSpectraRDT
 
 class OnePointSpectra(nn.Module):
     """
-    One point spectra implementation, including set-up of eddy lifetime function approximation with DRD models, or several classical eddy lifetime functions.
+    One point spectra implementation, including set-up of eddy lifetime function approximation with DRD models, or
+    several classical eddy lifetime functions.
     """
 
     def __init__(
@@ -26,19 +27,25 @@ class OnePointSpectra(nn.Module):
         nn_parameters: Optional[NNParameters] = None,
         learn_nu: bool = False,
     ):
-        r"""Initialization of the one point spectra class. This requires the type of eddy lifetime function to use, the power spectra type (currently only the von Karman spectra is implemented), the neural network parameters to use if a DRD model is selected, and whether or not to learn :math:`\nu` in
+        r"""Initialization of the one point spectra class. This requires the type of eddy lifetime function to use, the
+        power spectra type (currently only the von Karman spectra is implemented), the neural network parameters to use
+        if a DRD model is selected, and whether or not to learn :math:`\nu` in
 
         .. math::
-            \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}).
+            \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}
+            {\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}).
 
         Here,
 
         .. math::
-            \boldsymbol{a}(\boldsymbol{k}):=\operatorname{abs}(\boldsymbol{k})+\mathrm{NN}(\operatorname{abs}(\boldsymbol{k}))
+            \boldsymbol{a}(\boldsymbol{k}):=\operatorname{abs}(\boldsymbol{k})+
+            \mathrm{NN}(\operatorname{abs}(\boldsymbol{k}))
 
-        if a neural network is used to learn the eddy lifetime function. For a discussion of the details and training, refer to the original DRD paper by Keith et al.
+        if a neural network is used to learn the eddy lifetime function. For a discussion of the details and training,
+        refer to the original DRD paper by Keith et al.
 
-        Non-neural network eddy lifetime functions are provided as well, specifically the Mann model. The default power spectra used is due to von Karman.
+        Non-neural network eddy lifetime functions are provided as well, specifically the Mann model. The default power
+        spectra used is due to von Karman.
 
         Parameters
         ----------
@@ -49,28 +56,38 @@ class OnePointSpectra(nn.Module):
         type_power_spectra : PowerSpectraType, optional
             Type of power spectra function to use, by default PowerSpectraType.RDT, the only one currently implemented.
         nn_parameters : NNParameters, optional
-            Dataclass containing neural network initialization if a neural network is used to approximate the eddy lifetime function, by default None.
+            Dataclass containing neural network initialization if a neural network is used to approximate the eddy
+            lifetime function, by default None.
         learn_nu : bool, optional
             Whether or not to learn :math:`\nu`, by default False.
 
         Raises
         ------
         ValueError
-            "Selected neural network-based eddy lifetime function approximation but did not specify neural network parameters. Pass a constructed NNParameters object."
+            "Selected neural network-based eddy lifetime function approximation but did not specify neural network
+            parameters. Pass a constructed NNParameters object."
         """
-        super(OnePointSpectra, self).__init__()
+        super().__init__()
 
-        if (
-            type_eddy_lifetime
-            in [
-                EddyLifetimeType.TAUNET,
-                EddyLifetimeType.CUSTOMMLP,
-            ]
-            and nn_parameters is None
-        ):
-            raise ValueError(
-                "Selected neural network-based eddy lifetime function approximation but did not specify neural network parameters. Pass a constructed NNParameters object."
+        if type_eddy_lifetime == EddyLifetimeType.TAUNET:
+            assert nn_parameters is not None, "TauNet EddyLifetimeType requires NNParameters!"
+            self.tauNet = TauNet(
+                nn_parameters.nlayers,
+                nn_parameters.hidden_layer_size,
+                learn_nu=learn_nu,
             )
+
+        elif type_eddy_lifetime == EddyLifetimeType.CUSTOMMLP:
+            assert nn_parameters is not None, "Custom MLP EddyLifetimeType requires NNParameters!"
+            self.tauNet = CustomNet(
+                nn_parameters.nlayers,
+                nn_parameters.hidden_layer_sizes,
+                nn_parameters.activations,
+                learn_nu=learn_nu,
+            )
+
+        elif type_eddy_lifetime == EddyLifetimeType.MANN_APPROX:
+            self.init_mann_linear_approx = False
 
         self.type_EddyLifetime = type_eddy_lifetime
         self.type_PowerSpectra = type_power_spectra
@@ -92,42 +109,14 @@ class OnePointSpectra(nn.Module):
         self.meshgrid23 = torch.meshgrid(self.grid_k2, self.grid_k3, indexing="ij")
 
         assert physical_params.L > 0, "Length scale L must be positive."
-        assert (
-            physical_params.Gamma > 0
-        ), "Characteristic time scale Gamma must be positive."
+        assert physical_params.Gamma > 0, "Characteristic time scale Gamma must be positive."
         assert physical_params.sigma > 0, "Spectrum amplitude sigma must be positive."
 
-        self.logLengthScale = nn.Parameter(
-            torch.tensor(np.log10(physical_params.L), dtype=torch.float64)
-        )
-        self.logTimeScale = nn.Parameter(
-            torch.tensor(np.log10(physical_params.Gamma), dtype=torch.float64)
-        )
-        self.logMagnitude = nn.Parameter(
-            torch.tensor(np.log10(physical_params.sigma), dtype=torch.float64)
-        )
+        self.logLengthScale = nn.Parameter(torch.tensor(np.log10(physical_params.L), dtype=torch.float64))
+        self.logTimeScale = nn.Parameter(torch.tensor(np.log10(physical_params.Gamma), dtype=torch.float64))
+        self.logMagnitude = nn.Parameter(torch.tensor(np.log10(physical_params.sigma), dtype=torch.float64))
 
-        if self.type_EddyLifetime == EddyLifetimeType.TAUNET:
-            self.tauNet = TauNet(
-                nn_parameters.nlayers,
-                nn_parameters.hidden_layer_size,
-                learn_nu=learn_nu,
-            )
-
-        elif self.type_EddyLifetime == EddyLifetimeType.CUSTOMMLP:
-            self.tauNet = CustomNet(
-                nn_parameters.nlayers,
-                nn_parameters.hidden_layer_sizes,
-                nn_parameters.activations,
-                learn_nu=learn_nu,
-            )
-
-        elif self.type_EddyLifetime == EddyLifetimeType.MANN_APPROX:
-            self.init_mann_linear_approx = False
-
-    def set_scales(
-        self, LengthScale: np.float64, TimeScale: np.float64, Magnitude: np.float64
-    ):
+    def set_scales(self, LengthScale: np.float64, TimeScale: np.float64, Magnitude: np.float64):
         """Sets scalar values for values used in non-dimensionalization.
 
         Parameters
@@ -173,7 +162,8 @@ class OnePointSpectra(nn.Module):
         defined by equations 6 (a-d) in the original DRD paper. Here,
 
         .. math::
-            \widetilde{F}_{i j}\left(k_1 ; \boldsymbol{\theta}\right)=\int_{-\infty}^{\infty} \int_{-\infty}^{\infty} \Phi_{i j}^{\mathrm{DRD}}(\boldsymbol{k}, \boldsymbol{\theta}) \mathrm{d} k_2 \mathrm{~d} k_3.
+            \widetilde{F}_{i j}\left(k_1 ; \boldsymbol{\theta}\right)=\int_{-\infty}^{\infty} \int_{-\infty}^{\infty}
+            \Phi_{i j}^{\mathrm{DRD}}(\boldsymbol{k}, \boldsymbol{\theta}) \mathrm{d} k_2 \mathrm{~d} k_3.
 
         Parameters
         ----------
@@ -186,17 +176,13 @@ class OnePointSpectra(nn.Module):
             Network output
         """
         self.exp_scales()
-        self.k = torch.stack(
-            torch.meshgrid(k1_input, self.grid_k2, self.grid_k3, indexing="ij"), dim=-1
-        )
+        self.k = torch.stack(torch.meshgrid(k1_input, self.grid_k2, self.grid_k3, indexing="ij"), dim=-1)
         self.k123 = self.k[..., 0], self.k[..., 1], self.k[..., 2]
         self.beta = self.EddyLifetime()
         self.k0 = self.k.clone()
         self.k0[..., 2] = self.k[..., 2] + self.beta * self.k[..., 0]
         k0L = self.LengthScale * self.k0.norm(dim=-1)
-        self.E0 = (
-            self.Magnitude * self.LengthScale ** (5.0 / 3.0) * VKEnergySpectrum(k0L)
-        )
+        self.E0 = self.Magnitude * self.LengthScale ** (5.0 / 3.0) * VKEnergySpectrum(k0L)
         self.Phi = self.PowerSpectra()
         kF = torch.stack([k1_input * self.quad23(Phi) for Phi in self.Phi])
         return kF
@@ -214,9 +200,7 @@ class OnePointSpectra(nn.Module):
         kL_temp = np.logspace(-3, 3, 50)
 
         kL_temp = kL_temp.reshape(-1, 1)
-        tau_true = np.log(
-            self.TimeScale_scalar * MannEddyLifetime(self.LengthScale_scalar * kL_temp)
-        )
+        tau_true = np.log(self.TimeScale_scalar * MannEddyLifetime(self.LengthScale_scalar * kL_temp))
 
         kL_temp_log = np.log(kL_temp)
 
@@ -226,9 +210,7 @@ class OnePointSpectra(nn.Module):
 
         print("=" * 40)
 
-        print(
-            f"Mann Linear Approximation R2 Score in log-log space: {regressor.score(kL_temp_log, tau_true)}"
-        )
+        print(f"Mann Linear Approximation R2 Score in log-log space: {regressor.score(kL_temp_log, tau_true)}")
 
         print("=" * 40)
 
@@ -240,12 +222,14 @@ class OnePointSpectra(nn.Module):
     @torch.jit.export
     def EddyLifetime(self, k: Optional[torch.Tensor] = None) -> torch.Tensor:
         r"""
-        Evaluation of eddy lifetime function :math:`\tau` constructed during object initialization. This may be the Mann model or a DRD neural network that learns :math:`\tau`.
+        Evaluation of eddy lifetime function :math:`\tau` constructed during object initialization. This may be the Mann
+        model or a DRD neural network that learns :math:`\tau`.
 
         Parameters
         ----------
         k : Optional[torch.Tensor], optional
-            Wavevector domain on which to evaluate the eddy lifetime function, by default None, which defaults to grids in logspace(-3, 3).
+            Wavevector domain on which to evaluate the eddy lifetime function, by default None, which defaults to grids
+            in logspace(-3, 3).
 
         Returns
         -------
@@ -265,21 +249,16 @@ class OnePointSpectra(nn.Module):
         kL = self.LengthScale * k.norm(dim=-1)
 
         if (
-            hasattr(self, "init_mann_linear_approx")
-            and self.init_mann_linear_approx is False
+            hasattr(self, "init_mann_linear_approx") and self.init_mann_linear_approx is False
         ):  # Mann approximation chosen but not initialized
             self.init_mann_approximation()
 
         if self.type_EddyLifetime == EddyLifetimeType.CONST:
             tau = torch.ones_like(kL)
-        elif (
-            self.type_EddyLifetime == EddyLifetimeType.MANN
-        ):  # uses numpy - can not be backpropagated, also CPU only.
+        elif self.type_EddyLifetime == EddyLifetimeType.MANN:  # uses numpy - can not be backpropagated, also CPU only.
             tau = MannEddyLifetime(kL)
         elif self.type_EddyLifetime == EddyLifetimeType.MANN_APPROX:
-            tau = Mann_linear_exponential_approx(
-                kL, self.tau_approx_coeff_, self.tau_approx_intercept_
-            )
+            tau = Mann_linear_exponential_approx(kL, self.tau_approx_coeff_, self.tau_approx_intercept_)
         elif self.type_EddyLifetime == EddyLifetimeType.TWOTHIRD:
             tau = kL ** (-2 / 3)
         elif self.type_EddyLifetime in [
@@ -297,7 +276,9 @@ class OnePointSpectra(nn.Module):
     @torch.jit.export
     def InitialGuess_EddyLifetime(self):
         r"""
-        Initial guess at the eddy lifetime function which the DRD model uses in learning the :math:`\tau` eddy lifetime function. By default, this is just the :math:`0` function, but later functionality may allow this to be dynamically set.
+        Initial guess at the eddy lifetime function which the DRD model uses in learning the :math:`\tau` eddy lifetime
+        function. By default, this is just the :math:`0` function, but later functionality may allow this to be
+        dynamically set.
 
         Returns
         -------
@@ -310,7 +291,8 @@ class OnePointSpectra(nn.Module):
     @torch.jit.export
     def PowerSpectra(self):
         """
-        Calls the RDT Power Spectra model with current approximation of the eddy lifetime function and the energy spectrum.
+        Calls the RDT Power Spectra model with current approximation of the eddy lifetime function and the
+        energy spectrum.
 
         Returns
         -------
@@ -332,7 +314,8 @@ class OnePointSpectra(nn.Module):
     @torch.jit.export
     def quad23(self, f: torch.Tensor) -> torch.Tensor:
         r"""
-        Computes an approximation of the integral of the discretized function :math:`f` in the dimensions defined by :math:`k_2` and :math:`k_3` using the trapezoidal rule:
+        Computes an approximation of the integral of the discretized function :math:`f` in the dimensions defined by
+        :math:`k_2` and :math:`k_3` using the trapezoidal rule:
 
         .. math::
             \int \int f(k_1 ; \mathbf{\theta}) d k_2 dk_3.
@@ -357,12 +340,14 @@ class OnePointSpectra(nn.Module):
     @torch.jit.export
     def get_div(self, Phi: torch.Tensor) -> torch.Tensor:
         r"""
-        Evaluates the divergence of an evaluated spectral tensor. This is evaluated simply as :math:`\textbf{k} \cdot \Phi_{\textbf{k}}` and normalized by the trace.
+        Evaluates the divergence of an evaluated spectral tensor. This is evaluated simply as :math:`\textbf{k} \cdot
+        \Phi_{\textbf{k}}` and normalized by the trace.
 
         Parameters
         ----------
         Phi : torch.Tensor
-            Discrete evaluated spectral tensor :math:`\Phi(\textbf{k}, \tau)`, which may or may not depend on the eddy lifetime function. For instance, if the von Karman model is used, no :math:`\tau` dependence is present.
+            Discrete evaluated spectral tensor :math:`\Phi(\textbf{k}, \tau)`, which may or may not depend on the eddy
+            lifetime function. For instance, if the von Karman model is used, no :math:`\tau` dependence is present.
 
         Returns
         -------

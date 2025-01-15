@@ -4,10 +4,10 @@ This module implements a random field generator.
 Notes
 -----
 
-This should not be directly used but is needed by ``GenerateFluctuationField``.
+This should not be directly used but is needed by ``FluctuationFieldGenerator``.
 """
 
-from typing import Optional
+from typing import Optional, Protocol, runtime_checkable
 
 import numpy as np
 
@@ -24,6 +24,17 @@ from .sampling_methods import (
     Sampling_FFTW,
     Sampling_VF_FFTW,
 )
+
+
+@runtime_checkable
+class SamplingMethod(Protocol):
+    """
+    Defines an interface for sampling methods for typing purposes.
+    """
+
+    DomainSlice: tuple[slice, ...]
+
+    def __call__(self, noise: np.ndarray) -> np.ndarray: ...
 
 
 class GaussianRandomField:
@@ -113,6 +124,10 @@ class GaussianRandomField:
         self.prng = np.random.RandomState()
         self.noise_std = np.sqrt(np.prod(h))
         self.distribution = self.prng.normal
+
+        # Annotate self.Correlate with the protocol
+        self.Correlate: SamplingMethod
+        self.setSamplingMethod(sampling_method)
 
     def setSamplingMethod(self, method: str):
         """Initialize the sampling method

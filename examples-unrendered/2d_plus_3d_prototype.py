@@ -1,7 +1,7 @@
 import numpy as np
 from low_freq_prototype import generate_2D_lowfreq_approx
 
-from drdmannturb.fluctuation_generation import GenerateFluctuationField
+from drdmannturb.fluctuation_generation import FluctuationFieldGenerator
 
 # DRDMT 3D turbulence parameters.
 Type_Model = "Mann"
@@ -29,7 +29,7 @@ nBlocks = 1
 seed = None
 
 # Generate 3d Mann box
-gen_mann = GenerateFluctuationField(
+gen_mann = FluctuationFieldGenerator(
     ustar,
     zref,
     grid_dimensions,
@@ -41,7 +41,7 @@ gen_mann = GenerateFluctuationField(
     seed=seed,
 )
 
-fluctuation_field = gen_mann.generate_fluctuation_field()
+fluctuation_field = gen_mann.generate(1, zref, uref, z0, windprofiletype)
 
 spacing = tuple(grid_dimensions / (2.0**grid_levels + 1))
 
@@ -57,3 +57,5 @@ Nx, Ny = 2 ** grid_levels[:2]
 
 _, _, u_field = generate_2D_lowfreq_approx(Nx, Ny, L1, L2, psi_degs, sigma2, L_2D, z_i)
 _, _, v_field = generate_2D_lowfreq_approx(Nx, Ny, L1, L2, psi_degs, sigma2, L_2D, z_i)
+
+# TODO: This is not complete yet.
