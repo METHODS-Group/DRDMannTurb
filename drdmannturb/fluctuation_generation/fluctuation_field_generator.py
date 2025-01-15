@@ -12,6 +12,7 @@ import numpy as np
 import torch
 
 from ..common import CPU_Unpickler
+from ..parameters import LowFreqParameters
 from ..spectra_fitting import CalibrationProblem
 from .covariance_kernels import MannCovariance, VonKarmanCovariance
 from .gaussian_random_fields import VectorGaussianRandomField
@@ -79,6 +80,7 @@ class GenerateFluctuationField:
         length_scale: Optional[float] = None,
         time_scale: Optional[float] = None,
         energy_spectrum_scale: Optional[float] = None,
+        lowfreq_params: Optional[LowFreqParameters] = None,
         path_to_parameters: Optional[Union[str, PathLike]] = None,
         seed: int = None,
         blend_num=10,
@@ -89,7 +91,7 @@ class GenerateFluctuationField:
         friction_velocity : float
             The reference wind friction velocity :math:`u_*`
         reference_height : float
-            Reference height :math:`L`
+            Reference height :math:`z_{\text{ref}}`
         grid_dimensions : np.ndarray
             Numpy array denoting the grid size; the real dimensions of the domain of interest.
         grid_levels : np.ndarray
@@ -162,17 +164,19 @@ class GenerateFluctuationField:
 
         # define margins and buffer
         time_buffer = 3 * Gamma * L
-        spatial_margin = 1 * L
+        spatial_margin = 1 * L  # TODO: where is this used?
 
         # Grid calculations
         def calc_grid_size(level):
             return 2**level + 1
 
+        # TODO: why is this needed?
         try:
             grid_levels = [level.GetInt() for level in grid_levels]
         except AttributeError:
             pass
 
+        # TODO: Same as above...
         grid_sizes = [calc_grid_size(level) for level in grid_levels]
         Nx, Ny, Nz = grid_sizes
         grid_spacing = [dim / size for dim, size in zip(grid_dimensions, grid_sizes)]
@@ -334,10 +338,17 @@ class GenerateFluctuationField:
         Raises
         ------
         ValueError
+            In the case that curr_block does not satisfy not np.any (ie, it is empty, or all zeros).
             "No fluctuation field has been generated, call the .generate() method first."
+
+        ValueError
+            If windprofiletype is not one of "LOG" or "PL".
+
+        ValueError
+            In the case that any of the parameters zref, uref, or z0 are not positive.
         """
         if not np.any(curr_block):
-            raise ValueError("No fluctuation field has been generated, call the .generate() method first.")
+            raise ValueError("No fluctuation field has been generated. The .generate() method must be called first.")
 
         if windprofiletype not in ["LOG", "PL"]:
             raise ValueError('windprofiletype must be either "LOG" or "PL"')

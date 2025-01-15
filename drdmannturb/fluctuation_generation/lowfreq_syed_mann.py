@@ -9,7 +9,7 @@ from scipy import integrate
 
 
 def _compute_kappa(k1: float, k2: float, psi: float) -> float:
-    """
+    r"""
     Subroutine to compute the horizontal wavevector :math:`\kappa`, defined by
 
     .. math::
@@ -36,7 +36,7 @@ def _compute_kappa(k1: float, k2: float, psi: float) -> float:
 
 
 def _compute_E(kappa: float, c: float, L2D: float, z_i: float) -> float:
-    """
+    r"""
     Subroutine to compute the energy spectrum :math:`E(\kappa)` with the attenuation factor,
     defined by
 
@@ -64,7 +64,7 @@ def _compute_E(kappa: float, c: float, L2D: float, z_i: float) -> float:
 
 
 def _estimate_c(sigma2: float, L2D: float, z_i: float) -> float:
-    """
+    r"""
     Subroutine to estimate the scaling factor :math:`c` from the target variance :math:`\sigma^2`.
 
     This is achieved by approximating the integral of :math:`E(\kappa)` from :math:`\kappa=0` to
@@ -105,8 +105,9 @@ def generate_2D_lowfreq(
     L2D: float,
     z_i: float,
     c: Optional[float] = None,
+    seed: Optional[int] = None,
 ) -> np.ndarray:
-    """
+    r"""
     Generates the 2D low-frequency wind fluctuation component of the Syed-Mann (2024) 2D+3D model.
 
     Parameters
