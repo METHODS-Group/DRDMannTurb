@@ -41,15 +41,20 @@ class LowFreq2DFieldGenerator:
 
         return np.sqrt(2.0 * ((kx**2) * cos2 + (ky**2) * sin2))
 
-    def _compute_E(self, kappa: float) -> float:
+    def _compute_E(self, kappa: float, with_attenuation: bool = True) -> float:
         """
         Compute the energy spectrum E(kappa) for a given kappa.
         """
         if kappa < 1e-12:
             return 0.0
         denom = (1.0 / (self.L_2D**2) + kappa**2) ** (7.0 / 3.0)
-        atten = 1.0 / (1.0 + (kappa * self.z_i) ** 2)
-        return self.c * (kappa**3) / denom * atten
+        E = self.c * (kappa**3) / denom
+
+        if with_attenuation:
+            atten = 1.0 / (1.0 + (kappa * self.z_i) ** 2)
+            E *= atten
+
+        return E
 
     def _solve_for_c(self):
         """
