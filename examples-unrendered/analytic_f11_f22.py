@@ -18,10 +18,18 @@ def _compute_a_b_p_d(
     # TODO: All of these evaluations can be simplified and sped up
     #       We are doing the same things several times.
 
-    a = 1 + 2 * (k1 * L_2D * np.cos(psi_rad)) ** 2
-    b = 1 + 2 * (k1 * z_i * np.cos(psi_rad)) ** 2
-    p = (L_2D**2 * b) / (z_i**2 * a)
-    d = (L_2D**2 - z_i**2) / (z_i**2)
+    # Calculate a, b
+    common = 2 * (k1 * np.cos(psi_rad)) ** 2
+
+    square_L2D = L_2D**2
+    square_z_i = z_i**2
+
+    a = 1 + (common * square_L2D)
+    b = 1 + (common * square_z_i)
+
+    # Calculate p, d
+    p = (square_L2D * b) / (square_z_i * a)
+    d = (square_L2D / square_z_i) - 1
 
     if p > 1:
         warnings.warn(f"p > 1, p: {p}")
@@ -45,8 +53,8 @@ def analytic_F11_2d(
     print(f"{BLUE}")
     print(" F11 inputs, k1: ", k1, " L_2D: ", L_2D, " z_i: ", z_i, " psi_rad: ", psi_rad)
 
-    # TODO: Note that, without this, we get all the NaNs
     # L_2D /= 1000.0
+    # z_i /= 1000.0
 
     #############################
     # CONSTANTS
@@ -108,35 +116,35 @@ def analytic_F22_2d(
 
 
 if __name__ == "__main__":
+    # NOTE: don't forget these when checking F22!
     do_F11 = True
     do_F22 = False
 
-    # test_a, test_b, test_p, test_d = _compute_a_b_p_d(
-    #     1.0, # k1
-    #     5.0, # L_2D
-    #     2.0, # z_i
-    #     0 # psi_rad
-    # )
+    test_a, test_b, test_p, test_d = _compute_a_b_p_d(
+        1.0,  # k1
+        5.0,  # L_2D
+        2.0,  # z_i
+        0,  # psi_rad
+    )
 
-    # assert test_a == 51
-    # assert test_b == 9
-    # assert test_p == (225/204)
-    # assert test_d == (21/4)
-
-    # print(f"{GREEN}CONSTANTS CHECK OUT!{RESET}")
+    assert test_a == 51
+    assert test_b == 9
+    assert test_p == (225 / 204)
+    assert test_d == (21 / 4)
 
     # TODO: Try everything in [km] instead of [m]
-    k1_times_L2D = np.array([10, 100, 1000])
     c = 1.0
     L_2D = 15_000.0
     z_i = 500.0
     psi_rad = np.pi / 4
-    k1_vals = L_2D
+
+    k1_times_L2D = np.array([10, 100, 1000])
+    k1 = k1_times_L2D / L_2D
 
     if do_F11:
-        print(f"{RED}k1*F11 @ k1*L_2D = 10: {RESET}", analytic_F11_2d(k1_times_L2D[0] / L_2D, L_2D, z_i, psi_rad, c))
-        print(f"{RED}k1*F11 @ k1*L_2D = 100: {RESET}", analytic_F11_2d(k1_times_L2D[1] / L_2D, L_2D, z_i, psi_rad, c))
-        print(f"{RED}k1*F11 @ k1*L_2D = 1000: {RESET}", analytic_F11_2d(k1_times_L2D[2] / L_2D, L_2D, z_i, psi_rad, c))
+        print(f"{RED}k1*F11(k1) @ k1*L_2D = 10: {RESET}", k1[0] * analytic_F11_2d(k1[0], c, L_2D, z_i, psi_rad))
+        print(f"{RED}k1*F11 @ k1*L_2D = 100: {RESET}", analytic_F11_2d(k1[1], c, L_2D, z_i, psi_rad))
+        print(f"{RED}k1*F11 @ k1*L_2D = 1000: {RESET}", analytic_F11_2d(k1[2], c, L_2D, z_i, psi_rad))
 
     if do_F22:
         print(f"{RED}k1*F22 @ k1*L_2D = 10: {RESET}", analytic_F22_2d(10, c))

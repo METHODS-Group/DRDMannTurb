@@ -32,7 +32,7 @@ class LowFreq2DFieldGenerator:
         else:
             self.c = c
 
-    def _compute_kappa(self, kx, ky):
+    def _compute_kappa(self, kx: float, ky: float) -> float:
         """
         Compute the kappa value for a given kx, ky.
         """
