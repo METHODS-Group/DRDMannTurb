@@ -51,8 +51,7 @@ class LowFreq2DFieldGenerator:
         E = self.c * (kappa**3) / denom
 
         if with_attenuation:
-            atten = 1.0 / (1.0 + (kappa * self.z_i) ** 2)
-            E *= atten
+            E *= 1.0 / (1.0 + (kappa * self.z_i) ** 2)
 
         return E
 
