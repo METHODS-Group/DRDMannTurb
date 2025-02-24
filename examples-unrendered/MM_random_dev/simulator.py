@@ -1,6 +1,28 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from colorama import Fore
+from pretty_print import arr_debug, print_header, print_param, print_section
 from scipy.fft import fftfreq, ifft2
+
+"""
+TRACKING:
+- [ ] Check if dy is correct; we are integrating in fourier space
+- [ ] Implement eq16 again
+- [ ] Set up the comparison numerical integration plot
+- [ ] Implement 10 realizations and plot average for F11, F22
+
+
+For N1 = 2**10, N2 = 2**7,
+    Field min is
+    F11 values are
+"""
+
+################################
+# Flags
+plot_field = True
+plot_spectra = True
+use_eq15 = True  # If False, use eq16
+large_domain = True
 
 # Physical params
 sigma2 = 2.0
@@ -11,42 +33,37 @@ z_i = 500.0
 c = (8 * sigma2) / (9 * L_2d ** (2 / 3))
 
 # Domain params
-L1 = 40 * L_2d
-L2 = 5 * L_2d
+L1 = 40 * L_2d if large_domain else L_2d
+L2 = 5 * L_2d if large_domain else L_2d / 8
 N1 = 2**10
 N2 = 2**7
 
 dx = L1 / N1
 dy = L2 / N2
 
+# Replace your print statements with these prettier versions
+print_header("WIND FIELD SIMULATOR")
 
-################################
-# Flags
-plot_field = True
-plot_spectra = True
+print_section("Physical Parameters")
+print_param("sigma2", f"{sigma2:.2f}", "m²/s²")
+print_param("L_2d", f"{L_2d:.2f}", "m")
+print_param("psi", f"{np.rad2deg(psi):.2f}", "degrees")
+print_param("z_i", f"{z_i:.2f}", "m")
+print_param("c", f"{c:.4f}")
 
-use_eq15 = True  # If False, use eq16
+print_section("Domain Parameters")
+print_param("L1", f"{L1:.2f}", "m")
+print_param("L2", f"{L2:.2f}", "m")
+print_param("N1", N1)
+print_param("N2", N2)
+print_param("dx", f"{dx:.2f}", "m")
+print_param("dy", f"{dy:.2f}", "m")
 
-
-print("Physical parameters:")
-print(f"\t sigma2 = {sigma2:.2f}")
-print(f"\t L_2d = {L_2d:.2f}")
-print(f"\t psi = {psi:.2f}")
-print(f"\t z_i = {z_i:.2f}")
-
-print(f"Obtained c: {c:.2f}")
-
-print("Domain parameters:")
-print(f"\t L1 = {L1:.2f}")
-print(f"\t L2 = {L2:.2f}")
-print(f"\t N1 = {N1}")
-print(f"\t N2 = {N2}")
-
-print("Problem parameters:")
-print(f"\t Use Equation 15 = {use_eq15}")
-print(f"\t Plot field = {plot_field}")
-print(f"\t Plot spectra = {plot_spectra}")
-
+print_section("Problem Configuration")
+print_param("Use Equation 15", f"{Fore.GREEN if use_eq15 else Fore.RED}{use_eq15}")
+print_param("Plot field", f"{Fore.GREEN if plot_field else Fore.RED}{plot_field}")
+print_param("Plot spectra", f"{Fore.GREEN if plot_spectra else Fore.RED}{plot_spectra}")
+print_param("Large domain", f"{Fore.GREEN if large_domain else Fore.RED}{large_domain}")
 
 ###############################################################################################################
 ###############################################################################################################
@@ -120,8 +137,6 @@ else:
                 # C_12[i, j] = ((2 * np.pi)**2 / (L1 * L2) * phi_12[i, j])
                 C_12[i, j] = 1
 
-exit()
-
 # Generate Gaussian white noise
 eta_1 = np.random.normal(0, 1, size=(N1, N2)) + 1j * np.random.normal(0, 1, size=(N1, N2))
 eta_2 = np.random.normal(0, 1, size=(N1, N2)) + 1j * np.random.normal(0, 1, size=(N1, N2))
@@ -133,28 +148,40 @@ eta_2 /= np.sqrt(2)
 u1 = np.real(ifft2((C_11 * eta_1) + (C_12 * eta_2)))  # Longitudinal component
 u2 = np.real(ifft2((C_12 * eta_1) + (C_22 * eta_2)))  # Transverse component
 
+arr_debug(u1, "u1", plot_heatmap=False)
+arr_debug(u2, "u2", plot_heatmap=False)
+
+
 # Verify total variance (should match sigma2)
 var_u1 = np.var(u1)
 var_u2 = np.var(u2)
-print(f"Variance of u1: {var_u1:.8f}, Variance of u2: {var_u2:.8f}")
-print(f"Target variance: {sigma2:.4f}")
+
+# Later in your code, replace the variance print statements with:
+print_section("Variance Verification")
+print_param("Variance of u1", f"{var_u1:.8f}", "m²/s²")
+print_param("Variance of u2", f"{var_u2:.8f}", "m²/s²")
+print_param("Target variance", f"{sigma2:.4f}", "m²/s²")
+print_param("Ratio u1/target", f"{var_u1/sigma2:.4f}")
+print_param("Ratio u2/target", f"{var_u2/sigma2:.4f}")
 
 # Now plot
 if plot_field:
-    plt.figure(figsize=(12, 5))
+    plt.figure(figsize=(10, 6), dpi=100)
 
-    # Longitudinal (u) wind field - subplot (a)
-    plt.subplot(211)  # 1 row, 2 columns, 1st plot
-    plt.imshow(u1.T, cmap="coolwarm")
-    plt.colorbar(label="m/s")
+    x_km = np.linspace(0, L1 / 1000, N1)
+    y_km = np.linspace(0, L2 / 1000, N2)
+    X_km, Y_km = np.meshgrid(x_km, y_km, indexing="ij")
+
+    plt.subplot(211)
+    im1 = plt.pcolormesh(X_km.T, Y_km.T, u1.T, cmap="RdBu_r", shading="auto")
+    cbar1 = plt.colorbar(im1, label="[m s$^{-1}$]")
     plt.xlabel("x [km]")
     plt.ylabel("y [km]")
     plt.title("(a) u")
 
-    # Transverse (v) wind field - subplot (b)
-    plt.subplot(212)  # 1 row, 2 columns, 2nd plot
-    plt.imshow(u2.T, cmap="coolwarm")
-    plt.colorbar(label="m/s")
+    plt.subplot(212)
+    im2 = plt.pcolormesh(X_km.T, Y_km.T, u2.T, cmap="RdBu_r", shading="auto")
+    cbar2 = plt.colorbar(im2, label="[m s$^{-1}$]")
     plt.xlabel("x [km]")
     plt.ylabel("y [km]")
     plt.title("(b) v")
@@ -162,6 +189,7 @@ if plot_field:
     plt.tight_layout()
     plt.show()
 
+exit()
 
 #####################################################################################################
 #####################################################################################################
@@ -181,16 +209,6 @@ F22 = np.mean(psd_u2, axis=1) * dy
 
 positive_mask = k1_arr >= 0
 k1_positive = k1_arr[positive_mask]  # Positive wavenumbers
-
-print("k1_arr.shape: ", k1_arr.shape)
-print("k1.shape: ", k1.shape)
-
-print("u1_fft.shape: ", u1_fft.shape)
-print("psd_u1.shape: ", psd_u1.shape)
-print("F11.shape: ", F11.shape)
-
-print("k1_positive.shape: ", k1_positive.shape)
-print("positive_mask.shape: ", positive_mask.shape)
 
 F11_positive = F11[positive_mask]
 F22_positive = F22[positive_mask]
