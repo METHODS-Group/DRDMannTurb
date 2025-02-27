@@ -18,33 +18,86 @@ For N1 = 2**10, N2 = 2**7,
 """
 
 ################################
+# Type
+config_type = "figure2_a"
+
 # Flags
 plot_field = True
 plot_spectra = True
-use_eq15 = True  # If False, use eq16
-large_domain = True
+
+param_sets = {
+    "figure3_standard_eq14": {
+        "sigma2": 0.6,  # m2/s2
+        "L_2d": 15_000.0,  # m
+        "psi": np.deg2rad(43.0),  # degrees
+        "z_i": 500.0,  # m
+        "L1_factor": 4,
+        "L2_factor": 1,
+        "N1": 2**10,
+        "N2": 2**7,
+        "equation": "eq14",
+    },
+    "figure3_fast_eq14": {
+        "sigma2": 0.6,  # m2/s2
+        "L_2d": 15_000.0,  # m
+        "psi": np.deg2rad(43.0),  # degrees
+        "z_i": 500.0,  # m
+        "L1_factor": 4,
+        "L2_factor": 1,
+        "N1": 2**8,
+        "N2": 2**5,
+        "equation": "eq14",
+    },
+    "figure2_a": {
+        "sigma2": 2.0,  # m2/s2
+        "L_2d": 15_000.0,  # m
+        "psi": np.deg2rad(45.0),  # degrees
+        "z_i": 500.0,  # m
+        "L1_factor": 40,
+        "L2_factor": 5,
+        "N1": 2**10,
+        "N2": 2**7,
+        "equation": "eq15",
+    },
+    "figure2_b": {
+        "sigma2": 2.0,  # m2/s2
+        "L_2d": 15_000.0,  # m
+        "psi": np.deg2rad(45.0),  # degrees
+        "z_i": 500.0,  # m
+        "L1_factor": 1,
+        "L2_factor": 0.125,
+        "N1": 2**10,
+        "N2": 2**7,
+        "equation": "eq16",
+    },
+}
+
+params = param_sets[config_type]
 
 # Physical params
-sigma2 = 2.0
-L_2d = 15000.0
-psi = np.deg2rad(45.0)
-z_i = 500.0
+sigma2 = params["sigma2"]
+L_2d = params["L_2d"]
+psi = params["psi"]
+z_i = params["z_i"]
 
 c = (8 * sigma2) / (9 * L_2d ** (2 / 3))
 
 # Domain params
-L1 = 40 * L_2d if large_domain else L_2d
-L2 = 5 * L_2d if large_domain else L_2d / 8
-N1 = 2**10
-N2 = 2**7
+L1 = params["L1_factor"] * L_2d
+L2 = params["L2_factor"] * L_2d
+N1 = params["N1"]
+N2 = params["N2"]
 
 dx = L1 / N1
 dy = L2 / N2
+
+equation = params["equation"]
 
 # Replace your print statements with these prettier versions
 print_header("WIND FIELD SIMULATOR")
 
 print_section("Physical Parameters")
+print_param("config_type", config_type)
 print_param("sigma2", f"{sigma2:.2f}", "m²/s²")
 print_param("L_2d", f"{L_2d:.2f}", "m")
 print_param("psi", f"{np.rad2deg(psi):.2f}", "degrees")
@@ -60,10 +113,9 @@ print_param("dx", f"{dx:.2f}", "m")
 print_param("dy", f"{dy:.2f}", "m")
 
 print_section("Problem Configuration")
-print_param("Use Equation 15", f"{Fore.GREEN if use_eq15 else Fore.RED}{use_eq15}")
+print_param("Using equation", f"{equation}")
 print_param("Plot field", f"{Fore.GREEN if plot_field else Fore.RED}{plot_field}")
 print_param("Plot spectra", f"{Fore.GREEN if plot_spectra else Fore.RED}{plot_spectra}")
-print_param("Large domain", f"{Fore.GREEN if large_domain else Fore.RED}{large_domain}")
 
 ###############################################################################################################
 ###############################################################################################################
@@ -90,13 +142,12 @@ E_kappa_attenuated = c * (kappa**3) / (((L_2d**-2) + kappa**2) ** (7 / 3) * (1 +
 kappa_mask = np.isclose(kappa, 0.0)
 k_mag_mask = np.isclose(k_mag, 0.0)
 
-_intermediate = E_kappa_attenuated / np.pi
 phi_common = np.zeros_like(kappa, dtype=float)
 
 for i in range(N1):
     for j in range(N2):
         if not k_mag_mask[i, j]:
-            phi_common[i, j] = _intermediate[i, j] / k_mag[i, j]
+            phi_common[i, j] = E_kappa_attenuated[i, j] / (np.pi * k_mag[i, j])
 
 # Calculate spectral tensor
 phi_11 = np.zeros_like(phi_common, dtype=float)
@@ -115,7 +166,86 @@ C_11 = np.zeros_like(phi_11, dtype=complex)
 C_22 = np.zeros_like(phi_22, dtype=complex)
 C_12 = np.zeros_like(phi_12, dtype=complex)
 
-if use_eq15:
+########################################################################################################
+# Begin eq14
+if equation == "eq14":
+    # TODO: implement eq14 CORRECTLY
+
+    def sinc2(x: float) -> float:
+        if np.isclose(x, 0.0):
+            return 1.0
+        else:
+            return np.sin(x) ** 2 / x**2
+
+    n_int_k1 = 21
+    n_int_k2 = 21
+
+    for i in range(N1):
+        for j in range(N2):
+            if i % 50 == 0 and j == 0:
+                print(f"Processing wavenumber {i}/{N1}, {j}/{N2}")
+
+            k1_target = k1[i, j]
+            k2_target = k2[i, j]
+
+            # Skip if k_mag is zero (DC component)
+            if k_mag_mask[i, j]:
+                continue
+
+            # Define integration range centered on the target wavenumber
+            # The range should cover the main lobe of the sinc² function
+            dk1_range = 2 * np.pi / L1 * 4  # Cover 4 periods
+            dk2_range = 2 * np.pi / L2 * 4
+
+            k1_min = k1_target - dk1_range / 2
+            k1_max = k1_target + dk1_range / 2
+            k2_min = k2_target - dk2_range / 2
+            k2_max = k2_target + dk2_range / 2
+
+            # Create integration grid
+            k1_int = np.linspace(k1_min, k1_max, n_int_k1)
+            k2_int = np.linspace(k2_min, k2_max, n_int_k2)
+            dk1_int = (k1_max - k1_min) / (n_int_k1 - 1)
+            dk2_int = (k2_max - k2_min) / (n_int_k2 - 1)
+
+            ###################################
+            # Integrate
+            integral_11 = 0.0
+            integral_22 = 0.0
+            integral_12 = 0.0
+
+            for k1_prime_idx, k1_prime in enumerate(k1_int):
+                for k2_prime_idx, k2_prime in enumerate(k2_int):
+                    i_prime = np.argmin(np.abs(k1_arr - k1_prime))
+                    j_prime = np.argmin(np.abs(k2_arr - k2_prime))
+
+                    if 0 <= i_prime < N1 and 0 <= j_prime < N2:
+                        phi_11_val = phi_11[i_prime, j_prime]
+                        phi_22_val = phi_22[i_prime, j_prime]
+                        phi_12_val = phi_12[i_prime, j_prime]
+
+                        sinc2_k1 = sinc2((k1_target - k1_prime) * L1 / 2)
+                        sinc2_k2 = sinc2((k2_target - k2_prime) * L2 / 2)
+
+                        sinc2_product = sinc2_k1 * sinc2_k2
+
+                        integral_11 += phi_11_val * sinc2_product * dk1_int * dk2_int
+                        integral_22 += phi_22_val * sinc2_product * dk1_int * dk2_int
+                        integral_12 += phi_12_val * sinc2_product * dk1_int * dk2_int
+
+            # Calculate C_ij values
+            C_11[i, j] = np.sqrt(integral_11 + 0j)
+            C_22[i, j] = np.sqrt(integral_22 + 0j)
+
+            if integral_12 != 0:
+                # sign = np.sign(integral_12)
+                sign = 1
+                C_12[i, j] = sign * np.sqrt(abs(integral_12) + 0j)
+
+
+########################################################################################################
+# Begin eq15
+elif equation == "eq15":
     C_11 = np.sqrt((2 * np.pi) ** 2 / (L1 * L2) * phi_11 + 0j)
     C_22 = np.sqrt((2 * np.pi) ** 2 / (L1 * L2) * phi_22 + 0j)
 
@@ -125,17 +255,12 @@ if use_eq15:
                 sign = np.sign(phi_12[i, j])
                 C_12[i, j] = sign * np.sqrt(abs((2 * np.pi) ** 2 / (L1 * L2) * phi_12[i, j]) + 0j)
 
-else:
-    # TODO: Implement this
-    C_11 = np.sqrt((2 * np.pi) ** 2 / (L1 * L2) * phi_11 + 0j)
-    C_22 = np.sqrt((2 * np.pi) ** 2 / (L1 * L2) * phi_22 + 0j)
-    C_12 = np.zeros_like(phi_12)
+########################################################################################################
+# Begin eq16
+elif equation == "eq16":
+    # TODO: implement eq16 CORRECTLY
+    pass
 
-    for i in range(N1):
-        for j in range(N2):
-            if k_mag_mask[i, j]:
-                # C_12[i, j] = ((2 * np.pi)**2 / (L1 * L2) * phi_12[i, j])
-                C_12[i, j] = 1
 
 # Generate Gaussian white noise
 eta_1 = np.random.normal(0, 1, size=(N1, N2)) + 1j * np.random.normal(0, 1, size=(N1, N2))
@@ -156,7 +281,6 @@ arr_debug(u2, "u2", plot_heatmap=False)
 var_u1 = np.var(u1)
 var_u2 = np.var(u2)
 
-# Later in your code, replace the variance print statements with:
 print_section("Variance Verification")
 print_param("Variance of u1", f"{var_u1:.8f}", "m²/s²")
 print_param("Variance of u2", f"{var_u2:.8f}", "m²/s²")
