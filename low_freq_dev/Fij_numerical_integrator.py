@@ -6,7 +6,7 @@ def _safe_division(numerator: float, denominator: float, safe_value=0.0):
     """
     Safe division
     """
-    return np.where(np.isclose(denominator, 0.0), safe_value, numerator/denominator)
+    return np.where(np.isclose(denominator, 0.0), safe_value, numerator / denominator)
 
 
 def _calculate_kappa(k1: float, k2: float, psi: float) -> float:
@@ -62,6 +62,7 @@ def spectral_tensor_11(k1: float, k2: float, psi: float, L2D: float, z_i: float,
 
     return leading_factor * parenthetical
 
+
 def spectral_tensor_12(k1: float, k2: float, psi: float, L2D: float, z_i: float, c: float) -> float:
     """
     Simulated spectral tensor i = 1, j = 2 component
@@ -75,11 +76,13 @@ def spectral_tensor_12(k1: float, k2: float, psi: float, L2D: float, z_i: float,
 
     return leading_factor * parenthetical
 
+
 def spectral_tensor_21(k1: float, k2: float, psi: float, L2D: float, z_i: float, c: float) -> float:
     """
     Simulated spectral tensor i = 2, j = 1 component
     """
     return spectral_tensor_12(k1, k2, psi, L2D, z_i, c)
+
 
 def spectral_tensor_22(k1: float, k2: float, psi: float, L2D: float, z_i: float, c: float) -> float:
     """
@@ -96,6 +99,7 @@ def spectral_tensor_22(k1: float, k2: float, psi: float, L2D: float, z_i: float,
 
     return leading_factor * parenthetical
 
+
 ######################################################################################################################
 # "Public" integrator methods
 
@@ -107,6 +111,7 @@ def eq6_numerical_F11_2D(k1: float, psi: float, L2D: float, z_i: float, c: float
     res, err = integrate.quad(lambda k2: spectral_tensor_11(k1, k2, psi, L2D, z_i, c), -np.inf, np.inf)
 
     return res, err
+
 
 def eq6_numerical_F22_2D(k1: float, psi: float, L2D: float, z_i: float, c: float) -> tuple[float, float]:
     """
