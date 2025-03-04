@@ -12,7 +12,6 @@ import numpy as np
 import torch
 
 from ..common import CPU_Unpickler
-from ..parameters import LowFreqParameters
 from ..spectra_fitting import CalibrationProblem
 from .covariance_kernels import MannCovariance, VonKarmanCovariance
 from .gaussian_random_fields import VectorGaussianRandomField
@@ -80,8 +79,8 @@ class FluctuationFieldGenerator:
         length_scale: Optional[float] = None,
         time_scale: Optional[float] = None,
         energy_spectrum_scale: Optional[float] = None,
-        lowfreq_params: Optional[LowFreqParameters] = None,
         path_to_parameters: Optional[Union[str, PathLike]] = None,
+        lowfreq_params: Optional[dict] = None,
         seed: Optional[int] = None,
         blend_num=10,
     ):
@@ -167,21 +166,16 @@ class FluctuationFieldGenerator:
         time_buffer = 3 * Gamma * L
         spatial_margin = 1 * L  # TODO: where is this used?
 
-        # Grid calculations
-        def calc_grid_size(level):
-            return 2**level + 1
+        # TODO: this should not be needed
+        # grid_levels = [level.GetInt() for level in grid_levels]
 
-        # TODO: why is this needed?
-        try:
-            grid_levels = [level.GetInt() for level in grid_levels]
-        except AttributeError:
-            pass
+        # Expand on grid_levels parameter to get grid node counts in each direction
+        grid_node_counts = 2**grid_levels + 1
+        Nx, Ny, Nz = grid_node_counts
 
-        # TODO: Same as above...
-        grid_sizes = [calc_grid_size(level) for level in grid_levels]
-        Nx, Ny, Nz = grid_sizes
-        grid_spacing = [dim / size for dim, size in zip(grid_dimensions, grid_sizes)]
-        hx, hy, hz = grid_spacing
+        # Use grid_dimensions and grid_node_counts to get grid spacings in each direction
+        grid_spacings = [dim / size for dim, size in zip(grid_dimensions, grid_node_counts)]
+        hx, hy, hz = grid_spacings
 
         # Calculate buffer and margin sizes
         n_buffer = ceil(time_buffer / hx)

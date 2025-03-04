@@ -42,7 +42,7 @@ class GaussianRandomField:
     Generator for a discrete Gaussian random field: a random Gaussian variable at each point in a domain. Several
     sampling methods are provided by default:
 
-    #. fft - usual Fast Fourier Transform
+    #. fft - SciPy Fast Fourier Transform (default)
     #. fftw - "Fastest Fourier Transform in the West"
     #. vf_fftw - vector field version of Fastest Fourier Transform in the West
     #. dst - Discrete Sine Transform
@@ -89,6 +89,7 @@ class GaussianRandomField:
         self.ndim = ndim  # dimension 2D or 3D
         self.all_axes = np.arange(self.ndim)
 
+        # TODO: This is a strange block of code
         if np.isscalar(grid_level):
             if not np.isscalar(grid_shape):
                 raise ValueError("grid_level and grid_shape must have the same dimensions.")
@@ -98,17 +99,12 @@ class GaussianRandomField:
             assert len(grid_dimensions) == 3
             assert len(grid_level) == 3
 
-            h = np.array(
-                [
-                    grid_dimensions[0] / (2 ** grid_level[0] + 1),
-                    grid_dimensions[1] / (2 ** grid_level[1] + 1),
-                    grid_dimensions[2] / (2 ** grid_level[2] + 1),
-                ]
-            )
+            h = grid_dimensions / (2**grid_level + 1)
             self.grid_shape = np.array(grid_shape[:ndim])
         self.L = h * self.grid_shape
 
         ### Extended window (NOTE: extension is done outside)
+        # TODO: This is also a strange block of code. Vestigial?
         N_margin = 0
         self.ext_grid_shape = self.grid_shape
         self.nvoxels = self.ext_grid_shape.prod()
