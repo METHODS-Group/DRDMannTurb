@@ -2,7 +2,8 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.ndimage import gaussian_filter
+
+#########################################################################
 
 
 class Mann2DWindField:
@@ -30,7 +31,7 @@ class Mann2DWindField:
         self.psi = config.get("psi", np.pi / 4)  # 45 degrees by default
         self.z_i = config.get("z_i", 500.0)
 
-        # Computational parameters
+        # Grid parameters
         self.L1 = config.get("L1_factor", 40) * self.L_2d
         self.L2 = config.get("L2_factor", 5) * self.L_2d
         self.N1 = config.get("N1", 2**10)
@@ -47,12 +48,6 @@ class Mann2DWindField:
         # Initialize grid
         self._initialize_grid()
 
-        # Initialize results
-        self.u1 = None
-        self.u2 = None
-        self.u1_freq = None
-        self.u2_freq = None
-
     def _initialize_grid(self):
         """Initialize the computational grid in physical and wavenumber space."""
         # Physical grid
@@ -61,12 +56,14 @@ class Mann2DWindField:
         self.X, self.Y = np.meshgrid(self.x, self.y, indexing="ij")
 
         # Wavenumber grid
-        k1_fft = 2 * np.pi * np.fft.fftfreq(self.N1, self.dx)
-        k2_fft = 2 * np.pi * np.fft.fftfreq(self.N2, self.dy)
-        self.k1, self.k2 = np.meshgrid(k1_fft, k2_fft, indexing="ij")
+        # TODO: check against Frequencies in sampling_methods
+        self.k1_fft = 2 * np.pi * np.fft.fftfreq(self.N1, self.dx)
+        self.k2_fft = 2 * np.pi * np.fft.fftfreq(self.N2, self.dy)
 
+        self.k1, self.k2 = np.meshgrid(self.k1_fft, self.k2_fft, indexing="ij")
+
+        # Compute k magnitude and kappa
         self.k_mag = np.sqrt(self.k1**2 + self.k2**2)
-
         self.kappa = np.sqrt(2 * ((self.k1 * np.cos(self.psi)) ** 2 + (self.k2 * np.sin(self.psi)) ** 2))
 
         self.k_mag_mask = np.isclose(self.k_mag, 0.0)
@@ -76,8 +73,6 @@ class Mann2DWindField:
         """Calculate the energy spectrum with anisotropy parameter (equation 5)."""
         E_kappa = self.c * (self.kappa**3) / ((self.L_2d**-2 + self.kappa**2) ** (7 / 3))
         E_kappa_attenuated = E_kappa / (1 + (self.kappa * self.z_i) ** 2)
-
-        # E_kappa_attenuated[self.kappa_mask] = 0.0
 
         return E_kappa_attenuated
 
@@ -106,7 +101,8 @@ class Mann2DWindField:
 
         if self.equation == "eq14":
             # TODO:
-            raise NotImplementedError("Equation 14 not yet implemented")
+            print("Equation 14 not yet implemented")
+            # raise NotImplementedError("Equation 14 not yet implemented")
 
         elif self.equation == "eq15":
             """
@@ -121,7 +117,8 @@ class Mann2DWindField:
 
         elif self.equation == "eq16":
             # TODO:
-            raise NotImplementedError("Equation 16 not yet implemented")
+            print("Equation 16 not yet implemented")
+            # raise NotImplementedError("Equation 16 not yet implemented")
 
         return C_11, C_12, C_22
 
@@ -131,26 +128,51 @@ class Mann2DWindField:
         # TODO: should be normalized by some spatial factor, won't fix things totally, but may help
         #       Convince myself of the need
 
-        eta_1 = np.random.normal(0, 1, size=(self.N1, self.N2)) + 1j * np.random.normal(0, 1, size=(self.N1, self.N2))
-        eta_2 = np.random.normal(0, 1, size=(self.N1, self.N2)) + 1j * np.random.normal(0, 1, size=(self.N1, self.N2))
-        eta_1 /= np.sqrt(2)  # Divide by sqrt(2) to get unit variance for complex numbers
-        eta_2 /= np.sqrt(2)
+        # Returns a complex array of shape (N1, N2, 2), where [:,:,i] is meant
+        # for producing u_i
 
-        # NOTE:
+        vol_scale = (self.N1 * self.N2) / np.sqrt(self.L1 * self.L2)
 
-        u1_freq = (C_11 * eta_1) + (C_12 * eta_2)
-        u2_freq = (C_12 * eta_1) + (C_22 * eta_2)
+        # eta = np.random.normal(0, 1/np.sqrt(2), size=(self.N1, self.N2, 2))\
+        #     + 1j * np.random.normal(0, 1/np.sqrt(2), size=(self.N1, self.N2, 2))
 
+        # TODO: multiply by prod h analogue from gaussian_random_fields.py
+        eta = np.random.normal(0, 1, size=(self.N1, self.N2, 2))
+
+        # eta *= vol_scale
+
+        # TODO: Should be FT of real-valued noise
+        eta_freq = np.zeros_like(eta, dtype=complex)
+
+        eta_freq[:, :, 0] = np.fft.fft2(eta[:, :, 0])
+        eta_freq[:, :, 1] = np.fft.fft2(eta[:, :, 1])
+
+        u1_freq = (C_11 * eta_freq[:, :, 0]) + (C_12 * eta_freq[:, :, 1])
+        u2_freq = (C_12 * eta_freq[:, :, 0]) + (C_22 * eta_freq[:, :, 1])
         # NOTE: numpy's ifft2 includes 1/(N1*N2) normalization
-        u1 = np.real(np.fft.ifft2(u1_freq)) * self.N1 * self.N2
-        u2 = np.real(np.fft.ifft2(u2_freq)) * self.N1 * self.N2
+        # TODO: Maybe check the FFT outputs with deterministic/easier things instead of white noise
+        u1 = np.real(np.fft.ifft2(u1_freq) * self.N1 * self.N2)
+        u2 = np.real(np.fft.ifft2(u2_freq) * self.N1 * self.N2)
 
-        return u1, u2, u1_freq, u2_freq
+        u = np.stack([u1, u2], axis=-1) * vol_scale
+
+        """
+        self.fft_x[:] = noise
+        self.fft_plan()
+        self.fft_y[:] *= self.Spectrum_half
+        self.ifft_plan()
+        return self.fft_x[self.DomainSlice] / self.TransformNorm
+        """
+
+        # concatenate u1 and u2 for a [N1, N2, 2] array
+        self.u_freq = np.stack([u1_freq, u2_freq], axis=-1)
+        u = np.stack([u1, u2], axis=-1)
+        self.u = u
+
+        return u
 
     def generate(self):
         """Generate the 2D wind field and return the velocity components."""
-        t_start = time.time()
-        print(f"Generating 2D wind field using {self.equation}...")
 
         # Calculate energy spectrum
         E_kappa = self._calculate_energy_spectrum()
@@ -162,11 +184,11 @@ class Mann2DWindField:
         C_11, C_12, C_22 = self._calculate_fourier_coefficients(phi_11, phi_12, phi_22)
 
         # Generate wind field
-        self.u1, self.u2, self.u1_freq, self.u2_freq = self._generate_wind_field(C_11, C_12, C_22)
+        self._generate_wind_field(C_11, C_12, C_22)
 
         # Verify variance
-        var_u1 = np.var(self.u1)
-        var_u2 = np.var(self.u2)
+        var_u1 = np.var(self.u[:, :, 0])
+        var_u2 = np.var(self.u[:, :, 1])
 
         print(f"Generation completed in {time.time() - t_start:.2f} seconds")
         print(f"Variance u1: {var_u1:.6f} m²/s² (target: {self.sigma2:.6f} m²/s²)")
@@ -185,11 +207,11 @@ class Mann2DWindField:
         #     print(f"Corrected variance u1: {np.var(self.u1):.6f} m²/s²")
         #     print(f"Corrected variance u2: {np.var(self.u2):.6f} m²/s²")
 
-        return self.u1, self.u2
+        return self.u
 
-    def plot_field(self, smooth=False, sigma=10):
+    def plot_field(self):
         """Plot the generated wind field."""
-        if self.u1 is None or self.u2 is None:
+        if self.u is None:
             print("No wind field generated yet. Call generate() first.")
             return
 
@@ -199,164 +221,152 @@ class Mann2DWindField:
         y_km = self.y / 1000
         X_km, Y_km = np.meshgrid(x_km, y_km, indexing="ij")
 
-        if smooth:
-            u1_plot = gaussian_filter(self.u1, sigma=sigma)
-            u2_plot = gaussian_filter(self.u2, sigma=sigma)
-            title_suffix = f" (Smoothed σ={sigma})"
-        else:
-            u1_plot = self.u1
-            u2_plot = self.u2
-            title_suffix = ""
+        u1_plot = self.u[:, :, 0]
+        u2_plot = self.u[:, :, 1]
 
         plt.subplot(2, 1, 1)
         im1 = plt.pcolormesh(
-            X_km, Y_km, u1_plot, cmap="RdBu_r", shading="auto", vmin=-3 * np.std(self.u1), vmax=3 * np.std(self.u1)
+            X_km, Y_km, u1_plot, cmap="RdBu_r", shading="auto", vmin=-3 * np.std(u1_plot), vmax=3 * np.std(u1_plot)
         )
         plt.colorbar(im1, label="u [m/s]")
         plt.xlabel("x [km]")
         plt.ylabel("y [km]")
-        plt.title(f"Longitudinal component (u){title_suffix}")
+        plt.title("Longitudinal component (u)")
 
         # Plot u2 component
         plt.subplot(2, 1, 2)
         im2 = plt.pcolormesh(
-            X_km, Y_km, u2_plot, cmap="RdBu_r", shading="auto", vmin=-3 * np.std(self.u2), vmax=3 * np.std(self.u2)
+            X_km, Y_km, u2_plot, cmap="RdBu_r", shading="auto", vmin=-3 * np.std(u2_plot), vmax=3 * np.std(u2_plot)
         )
         plt.colorbar(im2, label="v [m/s]")
         plt.xlabel("x [km]")
         plt.ylabel("y [km]")
-        plt.title(f"Transverse component (v){title_suffix}")
+        plt.title("Transverse component (v)")
 
         plt.tight_layout()
         plt.show()
 
-    def plot_spectrum(self):
+    def plot_spectrum(self, plot_ratio=True):
         """Plot the energy spectrum."""
-        if self.u1_freq is None:
-            print("No wind field generated yet. Call generate() first.")
-            return
+        if self.u is None:
+            raise ValueError("No wind field generated yet. Call generate() first.")
 
         # Calculate 1D spectra
-        k1_1d = 2 * np.pi * np.fft.fftfreq(self.N1, self.dx)
-        positive_idx = k1_1d > 0
-        k1_1d = k1_1d[positive_idx]
+        k1_fft_pos_mask = self.k1_fft > 0
+        k1 = self.k1_fft[k1_fft_pos_mask]
+
+        u_freq_pos = self.u_freq[k1_fft_pos_mask]
 
         # Calculate power spectrum (average over k2)
-        power_u1 = np.abs(self.u1_freq) ** 2 / (self.N1 * self.N2) ** 2
-        power_u2 = np.abs(self.u2_freq) ** 2 / (self.N1 * self.N2) ** 2
+        power_u = (np.abs(u_freq_pos) / (self.N1 * self.N2)) ** 2
 
         # Average over k2 to get 1D spectrum
-        spectrum_u1 = np.mean(power_u1, axis=1)[positive_idx] * self.dy
-        spectrum_u2 = np.mean(power_u2, axis=1)[positive_idx] * self.dy
-
-        # Theoretical spectrum
-        # E_kappa = self._calculate_energy_spectrum()
-        # phi_11, phi_12, phi_22 = self._calculate_spectral_tensor(E_kappa)
-
-        # # Extract 1D theoretical spectrum (central values)
-        # mid_idx = self.N2 // 2
-        # theo_idx = np.logical_and(positive_idx, ~self.kappa_mask[0:self.N1, mid_idx])
-        # k1_theo = k1_1d[theo_idx[positive_idx]]
-        # spectrum_theo = phi_11[0:self.N1, mid_idx][theo_idx[0:self.N1]]
+        spectrum_u = np.mean(power_u, axis=1) * self.dy
 
         plt.figure(figsize=(10, 6))
-        plt.loglog(k1_1d, k1_1d * spectrum_u1, "b-", label="$k_1 F_{11}(k_1)$ (simulated)")
-        plt.loglog(k1_1d, k1_1d * spectrum_u2, "r-", label="$k_1 F_{22}(k_1)$ (simulated)")
-
-        # if len(k1_theo) > 0:
-        #     plt.loglog(k1_theo, k1_theo * spectrum_theo, 'k--', label='Theory')
+        plt.semilogx(self.L_2d * k1, k1 * spectrum_u[:, 0], "b-", label="$k_1 F_{11}(k_1)$ (simulated)")
+        plt.semilogx(self.L_2d * k1, k1 * spectrum_u[:, 1], "r-", label="$k_1 F_{22}(k_1)$ (simulated)")
 
         plt.grid(True, which="both", ls="-", alpha=0.2)
-        plt.xlabel("$k_1$ [rad/m]")
+        plt.xlabel("$L_{2d}k_1$ [rad/m]")
         plt.ylabel("$k_1 F(k_1)$ [m²/s²]")
         plt.title("1D Energy Spectrum")
         plt.legend()
         plt.tight_layout()
         plt.show()
 
-        # Also plot the ratio F11/F22 to check anisotropy
-        ratio = spectrum_u1 / (spectrum_u2 + 1e-10)
-        expected_ratio = 3 / 5 * (1 / np.cos(self.psi) ** 2)  # For psi=45°, should be 3/5
+        if plot_ratio:
+            actual_ratio = spectrum_u[:, 0] / (spectrum_u[:, 1] + 1e-16)
+            expected_ratio = 3 * (np.reciprocal(np.tan(self.psi)) ** 2) / 5
 
-        plt.figure(figsize=(10, 6))
-        plt.semilogx(k1_1d, ratio, "b-", label="$F_{11}/F_{22}$ (simulated)")
-        plt.axhline(expected_ratio, color="r", linestyle="--", label=f"Expected ratio: {expected_ratio:.3f}")
-        plt.grid(True, which="both", ls="-", alpha=0.2)
-        plt.xlabel("$k_1$ [rad/m]")
-        plt.ylabel("$F_{11}/F_{22}$")
-        plt.title("Anisotropy Ratio")
-        plt.legend()
-        plt.ylim(0, 5)  # Limit y-axis for better visualization
-        plt.tight_layout()
-        plt.show()
-
-    def plot_visualization_panel(self):
-        """Create a panel of visualizations with different smoothing levels."""
-        if self.u1 is None or self.u2 is None:
-            print("No wind field generated yet. Call generate() first.")
-            return
-
-        plt.figure(figsize=(15, 10))
-
-        # Convert to km for plotting
-        x_km = self.x / 1000
-        y_km = self.y / 1000
-        X_km, Y_km = np.meshgrid(x_km, y_km, indexing="ij")
-
-        # Apply different levels of smoothing
-        smoothing_levels = [0, 5, 15, 30]  # No smoothing, light, medium, heavy
-        for i, sigma in enumerate(smoothing_levels):
-            plt.subplot(2, 4, i + 1)
-            if sigma == 0:
-                field_smooth = self.u1
-                title = "u - Raw"
-            else:
-                field_smooth = gaussian_filter(self.u1, sigma=sigma)
-                title = f"u - sigma={sigma}"
-
-            im = plt.pcolormesh(
-                X_km,
-                Y_km,
-                field_smooth,
-                cmap="RdBu_r",
-                shading="auto",
-                vmin=-3 * np.std(self.u1),
-                vmax=3 * np.std(self.u1),
-            )
-            plt.colorbar(im, label="[m/s]")
-            plt.xlabel("x [km]")
-            plt.ylabel("y [km]")
-            plt.title(title)
-
-            plt.subplot(2, 4, i + 5)
-            if sigma == 0:
-                field_smooth = self.u2
-                title = "v - Raw"
-            else:
-                field_smooth = gaussian_filter(self.u2, sigma=sigma)
-                title = f"v - sigma={sigma}"
-
-            im = plt.pcolormesh(
-                X_km,
-                Y_km,
-                field_smooth,
-                cmap="RdBu_r",
-                shading="auto",
-                vmin=-3 * np.std(self.u2),
-                vmax=3 * np.std(self.u2),
-            )
-            plt.colorbar(im, label="[m/s]")
-            plt.xlabel("x [km]")
-            plt.ylabel("y [km]")
-            plt.title(title)
-
-        plt.tight_layout()
-        plt.show()
+            plt.figure(figsize=(10, 6))
+            plt.semilogx(self.L_2d * k1, actual_ratio, "b-", label="$F_{11}/F_{22}$ (simulated)")
+            plt.axhline(expected_ratio, color="r", linestyle="--", label=f"Expected ratio: {expected_ratio:.3f}")
+            plt.grid(True, which="both", ls="-", alpha=0.2)
+            plt.xlabel("$L_{2d}k_1$ [rad/m]")
+            plt.ylabel("$F_{11}/F_{22}$")
+            plt.title("Anisotropy Ratio")
+            plt.legend()
+            plt.ylim(0, 2 * expected_ratio)  # Limit y-axis for better visualization
+            plt.tight_layout()
+            plt.show()
 
 
-# Example usage
+########################################################################################
+# END class definition
+# BEGIN figure recreation code
+
+
+def figure_3p1():
+    "Recreates figure 3.1 from the simulation paper"
+
+    config_base = {
+        "sigma2": 2.0,  # m²/s²
+        "L_2d": 15_000.0,  # m
+        "psi": np.deg2rad(45.0),  # radians
+        "z_i": 500.0,  # m
+        "N1": 2**10,
+        "N2": 2**7,
+    }
+
+    config_a = config_base.copy()
+    config_a["L1_factor"] = 40
+    config_a["L2_factor"] = 5
+
+    config_b = config_base.copy()
+    config_b["L1_factor"] = 40
+    config_b["L2_factor"] = 10
+
+    accumulator_eq15_a = np.zeros((2**10, 2**7, 2))
+    accumulator_eq16_a = np.zeros((2**10, 2**7, 2))
+    accumulator_eq15_b = np.zeros((2**10, 2**7, 2))
+    accumulator_eq16_b = np.zeros((2**10, 2**7, 2))
+
+    # Build 10-realization average of config a for eq15
+    config_a["equation"] = "eq15"
+
+    model = Mann2DWindField(config_a)
+    for _ in range(10):
+        u = model.generate()
+        accumulator_eq15_a += u
+    accumulator_eq15_a /= 10
+
+    # Build 10-realization average of config a for eq16
+    config_a["equation"] = "eq16"
+
+    model = Mann2DWindField(config_a)
+    for _ in range(10):
+        u = model.generate()
+        accumulator_eq16_a += u
+    accumulator_eq16_a /= 10
+
+    # Build 10-realization average of config b for eq15
+    config_b["equation"] = "eq15"
+
+    model = Mann2DWindField(config_b)
+    for _ in range(10):
+        u = model.generate()
+        accumulator_eq15_b += u
+    accumulator_eq15_b /= 10
+
+    # Build 10-realization average of config b for eq16
+    config_b["equation"] = "eq16"
+
+    model = Mann2DWindField(config_b)
+    for _ in range(10):
+        u = model.generate()
+        accumulator_eq16_b += u
+    accumulator_eq16_b /= 10
+
+    # Plot the results
+
+
+########################################################################################
+# END figure recreation code
+# BEGIN driver
 if __name__ == "__main__":
     # Configuration for Figure 2a from the paper
+
     config = {
         "sigma2": 2.0,  # m²/s²
         "L_2d": 15_000.0,  # m
@@ -364,10 +374,10 @@ if __name__ == "__main__":
         "z_i": 500.0,  # m
         "L1_factor": 40,  # Domain length = L1_factor * L_2d
         "L2_factor": 5,  # Domain length = L2_factor * L_2d
-        "N1": 2**8,  # Grid points in x direction
-        "N2": 2**5,  # Grid points in y direction
-        # "N1": 2**10,             # Grid points in x direction
-        # "N2": 2**7,              # Grid points in y direction
+        # "N1": 2**8,  # Grid points in x direction
+        # "N2": 2**5,  # Grid points in y direction
+        "N1": 2**10,  # Grid points in x direction
+        "N2": 2**7,  # Grid points in y direction
         "equation": "eq15",  # Which equation to use
     }
 
@@ -375,10 +385,13 @@ if __name__ == "__main__":
     model = Mann2DWindField(config)
 
     # Generate wind field
-    u1, u2 = model.generate()
+    t_start = time.time()
+    u = model.generate()
+    print(f"Generation completed in {time.time() - t_start:.2f} seconds")
 
     # Plot results
     model.plot_field()
-    model.plot_field(smooth=True, sigma=15)
-    model.plot_spectrum()
-    model.plot_visualization_panel()
+    # model.plot_field(smooth=True, sigma=15)
+    # model.plot_spectrum()
+    # figure_3p1()
+    # model.plot_visualization_panel()
