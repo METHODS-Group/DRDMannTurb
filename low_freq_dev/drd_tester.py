@@ -64,6 +64,8 @@ nBlocks = 2
 grid_dimensions = np.array([Lx, Ly, Lz])
 
 grid_levels = np.array([6, 4, 4])
+# grid_levels = np.array([5, 3, 3])
+grid_levels = np.array([7, 5, 5])
 
 seed = None
 
@@ -94,4 +96,9 @@ gen_mann = FluctuationFieldGenerator(
     blend_num=0,
 )
 
-fluctuation_field_mann = gen_mann.generate(1, zref, uref, z0, windprofiletype, plexp)
+fluctuation_field = gen_mann.generate(1, zref, uref, z0, windprofiletype, plexp)
+
+print("\n")
+print("x var: ", np.var(fluctuation_field[:, :, :, 0]))
+print("y var: ", np.var(fluctuation_field[:, :, :, 1]))
+print("z var: ", np.var(fluctuation_field[:, :, :, 2]))

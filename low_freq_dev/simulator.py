@@ -1,4 +1,5 @@
 import time
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -26,16 +27,16 @@ class Mann2DWindField:
             - equation: Which equation to use ('eq14', 'eq15', 'eq16')
         """
         # Physical parameters
-        self.sigma2 = config.get("sigma2", 2.0)
-        self.L_2d = config.get("L_2d", 15000.0)
+        self.sigma2 = config.get("sigma2")
+        self.L_2d = config.get("L_2d")
         self.psi = config.get("psi", np.pi / 4)  # 45 degrees by default
-        self.z_i = config.get("z_i", 500.0)
+        self.z_i = config.get("z_i")
 
         # Grid parameters
-        self.L1 = config.get("L1_factor", 40) * self.L_2d
-        self.L2 = config.get("L2_factor", 5) * self.L_2d
-        self.N1 = config.get("N1", 2**10)
-        self.N2 = config.get("N2", 2**7)
+        self.L1 = config.get("L1_factor") * self.L_2d
+        self.L2 = config.get("L2_factor") * self.L_2d
+        self.N1 = config.get("N1")
+        self.N2 = config.get("N2")
         self.equation = config.get("equation", "eq15")
 
         # Calculate grid spacing
@@ -62,95 +63,108 @@ class Mann2DWindField:
 
         self.k1, self.k2 = np.meshgrid(self.k1_fft, self.k2_fft, indexing="ij")
 
-        # Compute k magnitude and kappa
-        self.k_mag = np.sqrt(self.k1**2 + self.k2**2)
-        self.kappa = np.sqrt(2 * ((self.k1 * np.cos(self.psi)) ** 2 + (self.k2 * np.sin(self.psi)) ** 2))
+    def sqrtSpectralTensor_isotropic(self):
+        """
+        
+        """
+        common_factor = self.c / (
+                np.pi * 
+                (self.L_2d**-2 + self.kappa**2) ** (7 / 3) *
+                (1 + (self.kappa * self.z_i)**2)
+        )
 
-        self.k_mag_mask = np.isclose(self.k_mag, 0.0)
-        self.kappa_mask = np.isclose(self.kappa, 0.0)
-
-    def _calculate_energy_spectrum(self):
-        """Calculate the energy spectrum with anisotropy parameter (equation 5)."""
-        E_kappa = self.c * (self.kappa**3) / ((self.L_2d**-2 + self.kappa**2) ** (7 / 3))
-        E_kappa_attenuated = E_kappa / (1 + (self.kappa * self.z_i) ** 2)
-
-        return E_kappa_attenuated
-
-    def _calculate_spectral_tensor(self, E_kappa):
-        """Calculate the spectral tensor components (equation 1)."""
-        phi_common = np.zeros_like(self.kappa)
-        idx = ~self.k_mag_mask
-        phi_common[idx] = E_kappa[idx] / (np.pi * self.k_mag[idx])
-
-        phi_11 = np.zeros_like(phi_common)
-        phi_12 = np.zeros_like(phi_common)
-        phi_22 = np.zeros_like(phi_common)
-
-        idx = ~self.k_mag_mask
-        phi_11[idx] = phi_common[idx] * (1 - (self.k1[idx] / self.k_mag[idx]) ** 2)
-        phi_12[idx] = phi_common[idx] * (-1 * self.k1[idx] * self.k2[idx] / self.k_mag[idx] ** 2)
-        phi_22[idx] = phi_common[idx] * (1 - (self.k2[idx] / self.k_mag[idx]) ** 2)
+        # print("<isotropic_attenuated_spectral_tensor> common_factor: ", common_factor)
+        phi_11 = common_factor * (self.k_mag**2 - self.k1**2)
+        phi_12 = common_factor * (-1 * self.k1 * self.k2)
+        phi_22 = common_factor * (self.k_mag**2 - self.k2**2)
 
         return phi_11, phi_12, phi_22
 
+    # def _calculate_energy_spectrum(self):
+    #     """Calculate the energy spectrum with anisotropy parameter."""
+    #     E_kappa = self.c * (self.kappa**3) / ((self.L_2d**-2 + self.kappa**2) ** (7 / 3))
+    #     E_kappa_attenuated = E_kappa / (1 + (self.kappa * self.z_i) ** 2)
+
+    #     return E_kappa_attenuated
+
+    # def _calculate_spectral_tensor(self, E_kappa):
+    #     """Calculate the spectral tensor components (equation 1)."""
+
+    #     # TODO: move k^3 from energy spectrum into parenthetical and div by zero goes away
+    #     phi_common = np.zeros_like(self.kappa)
+    #     idx = ~self.k_mag_mask
+    #     phi_common[idx] = E_kappa[idx] / (np.pi * self.k_mag[idx])
+
+    #     phi_11 = np.zeros_like(phi_common)
+    #     phi_12 = np.zeros_like(phi_common)
+    #     phi_22 = np.zeros_like(phi_common)
+
+    #     idx = ~self.k_mag_mask
+    #     phi_11[idx] = phi_common[idx] * (1 - (self.k1[idx] / self.k_mag[idx]) ** 2)
+    #     phi_12[idx] = phi_common[idx] * (-1 * self.k1[idx] * self.k2[idx] / self.k_mag[idx] ** 2)
+    #     phi_22[idx] = phi_common[idx] * (1 - (self.k2[idx] / self.k_mag[idx]) ** 2)
+
+    #     return phi_11, phi_12, phi_22
+
     def _calculate_fourier_coefficients(self, phi_11, phi_12, phi_22):
         """Calculate Fourier coefficients based on spectral tensor."""
-        C_11 = np.zeros_like(phi_11, dtype=complex)
-        C_22 = np.zeros_like(phi_22, dtype=complex)
-        C_12 = np.zeros_like(phi_12, dtype=complex)
+        C1= 1j
 
-        if self.equation == "eq14":
-            # TODO:
-            print("Equation 14 not yet implemented")
-            # raise NotImplementedError("Equation 14 not yet implemented")
-
-        elif self.equation == "eq15":
-            """
-            Simplified approximation (equation 15) for L_i >> L_2d
-            """
-            norm_factor = (2 * np.pi) ** 2 / (self.L1 * self.L2)
-            C_11 = np.sqrt(norm_factor * phi_11 + 0j)
-            C_22 = np.sqrt(norm_factor * phi_22 + 0j)
-
-            idx = ~self.k_mag_mask
-            C_12[idx] = np.sign(phi_12[idx]) * np.sqrt(abs(norm_factor * phi_12[idx]) + 0j)
-
-        elif self.equation == "eq16":
-            # TODO:
-            print("Equation 16 not yet implemented")
-            # raise NotImplementedError("Equation 16 not yet implemented")
 
         return C_11, C_12, C_22
 
     def _generate_wind_field(self, C_11, C_12, C_22):
-        """Generate the wind field using Fourier synthesis with random phases."""
+        """
+        Generate the wind field using Fourier synthesis with random phases.
 
-        # TODO: should be normalized by some spatial factor, won't fix things totally, but may help
-        #       Convince myself of the need
+        Parameters
+        ----------
+        C_11 : np.ndarray
+            Fourier coefficients for the 11 component of the spectral tensor
+        C_12 : np.ndarray
+            Fourier coefficients for the 12 component of the spectral tensor
+        C_22 : np.ndarray
+            Fourier coefficients for the 22 component of the spectral tensor
 
-        # Returns a complex array of shape (N1, N2, 2), where [:,:,i] is meant
-        # for producing u_i
-
-        vol_scale = (self.N1 * self.N2) / np.sqrt(self.L1 * self.L2)
-
-        # eta = np.random.normal(0, 1/np.sqrt(2), size=(self.N1, self.N2, 2))\
-        #     + 1j * np.random.normal(0, 1/np.sqrt(2), size=(self.N1, self.N2, 2))
+        Returns
+        -------
+        u : np.ndarray
+            Generated wind field with shape (N1, N2, 2), where [:,:,i] represents u_i
+        """
 
         # TODO: multiply by prod h analogue from gaussian_random_fields.py
+
         eta = np.random.normal(0, 1, size=(self.N1, self.N2, 2))
 
         # eta *= vol_scale
 
-        # TODO: Should be FT of real-valued noise
+        # NOTE: Should be FT of real-valued noise
+        # TODO: (1) check convolutions against dirac delta, ones, etc. which are nicer on paper
+        # TODO: also try no spectral tensor/ ones'ing it out; then try to recreate covariance (identity)
         eta_freq = np.zeros_like(eta, dtype=complex)
 
         eta_freq[:, :, 0] = np.fft.fft2(eta[:, :, 0])
         eta_freq[:, :, 1] = np.fft.fft2(eta[:, :, 1])
 
+        # Dirac delta
+        ss = eta_freq.shape
+        eta_freq = np.zeros_like(eta_freq)
+        eta_freq[ss[0] // 2, ss[1] // 2, :] = 1
+
+        # Ones
+        # eta_freq = np.ones_like(eta_freq)
+
         u1_freq = (C_11 * eta_freq[:, :, 0]) + (C_12 * eta_freq[:, :, 1])
         u2_freq = (C_12 * eta_freq[:, :, 0]) + (C_22 * eta_freq[:, :, 1])
-        # NOTE: numpy's ifft2 includes 1/(N1*N2) normalization
+
+        # u1_freq = eta_freq
+        # u2_freq = eta_freq
+
         # TODO: Maybe check the FFT outputs with deterministic/easier things instead of white noise
+        # NOTE: numpy's ifft2 includes 1/(N1*N2) normalization
+        print("u1 complex part", np.mean(np.imag(u1_freq)))
+        print("u2 complex part", np.mean(np.imag(u2_freq)), "\n\n")
+
         u1 = np.real(np.fft.ifft2(u1_freq) * self.N1 * self.N2)
         u2 = np.real(np.fft.ifft2(u2_freq) * self.N1 * self.N2)
 
@@ -174,11 +188,10 @@ class Mann2DWindField:
     def generate(self):
         """Generate the 2D wind field and return the velocity components."""
 
-        # Calculate energy spectrum
-        E_kappa = self._calculate_energy_spectrum()
+        # E_kappa = self._calculate_energy_spectrum()
+        # phi_11, phi_12, phi_22 = self._calculate_spectral_tensor(E_kappa)
 
-        # Calculate spectral tensor components
-        phi_11, phi_12, phi_22 = self._calculate_spectral_tensor(E_kappa)
+        phi_11, phi_12, phi_22 = self.isotropic_attenuated_spectral_tensor()
 
         # Calculate Fourier coefficients
         C_11, C_12, C_22 = self._calculate_fourier_coefficients(phi_11, phi_12, phi_22)
@@ -193,19 +206,6 @@ class Mann2DWindField:
         print(f"Generation completed in {time.time() - t_start:.2f} seconds")
         print(f"Variance u1: {var_u1:.6f} m²/s² (target: {self.sigma2:.6f} m²/s²)")
         print(f"Variance u2: {var_u2:.6f} m²/s² (target: {self.sigma2:.6f} m²/s²)")
-
-        # Scale to match target variance
-        # if abs(var_u1 - self.sigma2) / self.sigma2 > 0.05 or abs(var_u2 - self.sigma2) / self.sigma2 > 0.05:
-        #     print("Applying variance correction...")
-        #     scale_u1 = np.sqrt(self.sigma2 / var_u1) if var_u1 > 0 else 1.0
-        #     scale_u2 = np.sqrt(self.sigma2 / var_u2) if var_u2 > 0 else 1.0
-
-        #     self.u1 *= scale_u1
-        #     self.u2 *= scale_u2
-
-        #     print(f"Scaling factors: u1={scale_u1:.4f}, u2={scale_u2:.4f}")
-        #     print(f"Corrected variance u1: {np.var(self.u1):.6f} m²/s²")
-        #     print(f"Corrected variance u2: {np.var(self.u2):.6f} m²/s²")
 
         return self.u
 
@@ -360,7 +360,45 @@ def figure_3p1():
 
     # Plot the results
 
+########################################################################################
+# BEGIN tests
 
+
+def test_spectral_tensor_isotropicSimp():
+    config = {
+        "sigma2": 2.0,  # m²/s²
+        "L_2d": 5.0,  # m
+        "psi": np.deg2rad(45.0),  # radians
+        "z_i": 5.0,  # m
+        "L1_factor": 40,  # Domain length = L1_factor * L_2d
+        "L2_factor": 5,  # Domain length = L2_factor * L_2d
+        "N1": 2**0,  # Grid points in x direction
+        "N2": 2**0,  # Grid points in y direction
+        "equation": "eq15",  # Which equation to use
+    }
+    model = Mann2DWindField(config)
+
+    model.k_mag = 0
+    model.kappa = 0
+    model.k1 = 1
+    model.k2 = -1
+
+    p11, p12, p22 = model.isotropic_attenuated_spectral_tensor()
+
+    expected_common_factor = model.c * (model.L_2d**(14 / 3)) / np.pi
+
+    print("\n")
+    print("EXPECTED common_factor = ", expected_common_factor)
+    print("EXPECTED P11 = ", -1 * (model.k1**2))
+    print("EXPECTED P12 = ", -1 * (model.k1 * model.k2))
+    print("EXPECTED P22 = ", -1 * (model.k2**2))
+    print("<isotropic_attenuated_spectral_tensor> Phi11 ", p11)
+    print("<isotropic_attenuated_spectral_tensor> Phi12 ", p12)
+    print("<isotropic_attenuated_spectral_tensor> Phi22 ", p22)
+    print("\n\n")
+
+
+# TODO: Get outputs from Mann-Syed code via Docker/vm
 ########################################################################################
 # END figure recreation code
 # BEGIN driver
@@ -374,10 +412,10 @@ if __name__ == "__main__":
         "z_i": 500.0,  # m
         "L1_factor": 40,  # Domain length = L1_factor * L_2d
         "L2_factor": 5,  # Domain length = L2_factor * L_2d
-        # "N1": 2**8,  # Grid points in x direction
-        # "N2": 2**5,  # Grid points in y direction
-        "N1": 2**10,  # Grid points in x direction
-        "N2": 2**7,  # Grid points in y direction
+        "N1": 2**8,  # Grid points in x direction
+        "N2": 2**5,  # Grid points in y direction
+        # "N1": 2**10,  # Grid points in x direction
+        # "N2": 2**7,  # Grid points in y direction
         "equation": "eq15",  # Which equation to use
     }
 
@@ -388,6 +426,8 @@ if __name__ == "__main__":
     t_start = time.time()
     u = model.generate()
     print(f"Generation completed in {time.time() - t_start:.2f} seconds")
+
+    # test_spectral_tensor_isotropicSimp()
 
     # Plot results
     model.plot_field()
