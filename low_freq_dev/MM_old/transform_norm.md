@@ -70,4 +70,3 @@ We set `blend_num` to `0`, so `buffer_extension = 2 * self.n_buffer` where
 `self.n_buffer` is the somewhat arbitrary buffer size `ceil( (3 * Gamma * L) / dx)`
 
 Now, `n_margin_y, n_margin_z` are just `ceil(L / dy), ceil(L / dz)`
-

@@ -45,7 +45,7 @@ class generator:
         self.c = (8.0 * self.sigma2) / (9.0 * (self.L_2d**(2 / 3)))
 
 
-    def generate(self):
+    def generate(self, eta_ones=False):
 
         # Fourier space
         k_mag = self.k1**2 + self.k2**2
@@ -55,7 +55,11 @@ class generator:
         C2 = 1j * phi_ * (-1 * self.k1)
 
         # Random noise
-        eta = np.fft.fft2(np.random.normal(0, 1, size=(self.N1, self.N2)))
+        eta: np.ndarray
+        if eta_ones:
+            eta = np.ones_like(self.k1)
+        else:
+            eta = np.random.normal(0, 1, size=(self.N1, self.N2))
 
         u1_freq = C1 * eta
         u2_freq = C2 * eta
@@ -71,7 +75,15 @@ class generator:
         return u1, u2
 
 
-def mesh_study():
+def mesh_independence_study(von_karman=False):
+    """
+    Mesh independence study.
+    """
+
+    print("="*80)
+    print("MESH INDEPENDENCE STUDY")
+    print("="*80)
+    print("  Square mesh")
 
     config = {
         "sigma2": 2.0,  # m²/s²
@@ -85,40 +97,98 @@ def mesh_study():
         "N2": 9,  # Grid points in y direction
     }
 
-
-    gen = generator(config)
-
-    # Ok, x-axis = exponent of 2 for N1 and N2
-
-    exponents = np.arange(4, 12)
+    exponents = np.arange(4, 15)
 
     u1_norms = []
     u2_norms = []
 
     for x in exponents:
-
         config["N1"] = x
         config["N2"] = x
 
         gen = generator(config)
+        u1, u2 = gen.generate_von_karman(epsilon=1.0, L=1.0, eta_ones=True) if von_karman else gen.generate(eta_ones=True)
 
-        u1, u2 = gen.generate()
+        u1_norms.append(
+            np.linalg.norm(u1) * gen.dx * gen.dy
+        )
+        u2_norms.append(
+            np.linalg.norm(u2) * gen.dx * gen.dy
+        )
 
-        u1_norm = np.linalg.norm(u1) * gen.dx * gen.dy
-        u2_norm = np.linalg.norm(u2) * gen.dx * gen.dy
 
-
-        u1_norms.append(u1_norm)
-        u2_norms.append(u2_norm)
-
+    print("\tvariance of u1 norm", np.var(u1_norms))
+    print("\tvariance of u2 norm", np.var(u2_norms), "\n")
+    print("\tmean of u1 norm", np.mean(u1_norms))
+    print("\tmean of u2 norm", np.mean(u2_norms))
 
     plt.plot(exponents, u1_norms, label="u1")
     plt.plot(exponents, u2_norms, label="u2")
+    plt.title(r"Square mesh, $N_1 = N_2 \in [4,14]$")
+    plt.legend()
+    plt.show()
+
+    print("  Rectangular mesh")
+
+    u1_norms = []
+    u2_norms = []
+
+    for x in exponents:
+        config["N1"] = x
+        config["N2"] = 4
+
+        gen = generator(config)
+        u1, u2 = gen.generate_von_karman(epsilon=1.0, L=1.0) if von_karman else gen.generate(eta_ones=True)
+
+        u1_norms.append(
+            np.linalg.norm(u1) * gen.dx * gen.dy
+        )
+        u2_norms.append(
+            np.linalg.norm(u2) * gen.dx * gen.dy
+        )
+
+    print("\tvariance of u1 norm", np.var(u1_norms))
+    print("\tvariance of u2 norm", np.var(u2_norms))
+    print("\tmean of u1 norm", np.mean(u1_norms))
+    print("\tmean of u2 norm", np.mean(u2_norms))
+
+    plt.plot(exponents, u1_norms, label="u1")
+    plt.plot(exponents, u2_norms, label="u2")
+    plt.title(r"Rectangular mesh, $N_1 \in [4,14], N_2 = 4$")
     plt.legend()
     plt.show()
 
 
+def length_independence_study():
+    """
+    Tests several length scales L_2d as well as several L1_factor and L2_factor
+    values to determine how dependent the method is on these domain sizes.
+    """
+
+    print("="*80)
+    print("LENGTH INDEPENDENCE STUDY")
+    print("="*80)
+
+    config = {
+        "sigma2": 2.0,
+        "L_2d": 1.0,
+        "psi": np.deg2rad(45.0),
+        "z_i": 1.0,
+
+        "L1_factor": 1,
+        "L2_factor": 1,
+
+        "N1": 9,
+        "N2": 9,
+    }
+
+    pass
+
+
 def debug_plot(u1, u2):
+    """Recreates roughly fig 3 from simulation paper."""
+
+    fig, axs = plt.subplots(2, 1)
 
     pass
 
@@ -137,14 +207,11 @@ if __name__ == "__main__":
         "N2": 9,  # Grid points in y direction
     }
 
-    gen = generator(fig2a_full_dom)
+    # gen = generator(fig2a_full_dom)
 
-    u1, u2 = gen.generate()
+    # u1, u2 = gen.generate()
 
-    mesh_study()
+    mesh_independence_study(von_karman=True)
 
 
     # for _ in range(10):
-
-
-

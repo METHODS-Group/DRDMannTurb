@@ -65,10 +65,10 @@ class Mann2DWindField:
 
     def sqrtSpectralTensor_isotropic(self):
         """
-        
+
         """
         common_factor = self.c / (
-                np.pi * 
+                np.pi *
                 (self.L_2d**-2 + self.kappa**2) ** (7 / 3) *
                 (1 + (self.kappa * self.z_i)**2)
         )
