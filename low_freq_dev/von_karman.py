@@ -3,14 +3,12 @@ import concurrent.futures
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-import seaborn as sns
 
 """
-- Generate a von karman spectrum
-- Mesh independence study
-- Scale independence study
-- Plot
-- Match spectrum
+- [X] Mesh independence study
+- [X] Scale independence study
+- [ ] Plot velocity fields
+- [ ] Match spectrum
 """
 
 
@@ -35,24 +33,52 @@ class generator:
         y = np.linspace(0, self.L2, self.N2, endpoint=False)
         self.X, self.Y = np.meshgrid(x, y, indexing="ij")
 
+        # Wavenumber generation
         self.k1_fft = 2 * np.pi * np.fft.fftfreq(self.N1, self.dx)
         self.k2_fft = 2 * np.pi * np.fft.fftfreq(self.N2, self.dy)
-
         self.k1, self.k2 = np.meshgrid(self.k1_fft, self.k2_fft, indexing="ij")
+
+        # Useful for calculations
+        self.k_mag = np.sqrt(self.k1**2 + self.k2**2)
+
+        # Useful for plotting
+        self.k1L = self.k1 * self.L
+        self.k2L = self.k2 * self.L
+        self.kL = self.k_mag * self.L
 
 
     def generate(self, eta_ones=False):
+        """
+        Generate turbulent velocity fields using the von Karman spectrum
 
-        c0 = 1.7
+        Parameters
+        ----------
+        eta_ones: bool, optional
+            If True, replaces the white noise with a unit field (all ones)
 
+        Returns
+        -------
+        u1: np.ndarray
+            x- or longitudinal component of velocity field
+        u2: np.ndarray
+            y- or transversal component of velocity field
+        """
         k_mag_sq = self.k1**2 + self.k2**2
 
-        # Sqrt of all leading factors, does NOT include sqrt P(k)
-        phi_ = c0 * np.cbrt(self.epsilon) * \
-            np.sqrt(( self.L / np.sqrt(1 + (k_mag_sq * self.L**2)))**(17/3) / (4 * np.pi))
+        k_mag_sq_safe = np.copy(k_mag_sq)
+        k_mag_sq_safe[k_mag_sq_safe == 0] = 1e-10
 
-        C1 = 1j * phi_ * self.k2
-        C2 = 1j * phi_ * (-1 * self.k1)
+        # Sqrt of all leading factors, does NOT include sqrt P(k)
+        phi_ = self.c0 * np.cbrt(self.epsilon) * \
+            np.sqrt((self.L / np.sqrt(1 + (k_mag_sq * self.L**2)))**(17/3) / (4 * np.pi))
+
+        # TODO: OLD
+        # C1 = 1j * phi_ * self.k2
+        # C2 = 1j * phi_ * (-1 * self.k1)
+
+        # TODO: NEW
+        C1 = 1j * phi_ * self.k2 #/ k_mag_sq_safe
+        C2 = 1j * phi_ * (-1 * self.k1) #/ k_mag_sq_safe
 
         eta: np.ndarray
         if eta_ones:
@@ -68,10 +94,81 @@ class generator:
         transform_norm = np.sqrt(self.dx * self.dy)
         normalization = 1 / (self.dx * self.dy)
 
+
         u1 = np.real(np.fft.ifft2(u1_freq) / transform_norm) * normalization
         u2 = np.real(np.fft.ifft2(u2_freq) / transform_norm) * normalization
 
+        self.u1 = u1
+        self.u2 = u2
+
         return u1, u2
+
+    def compute_spectrum(self, u1 = None, u2 = None):
+        """
+        Compute the spectrum of generated velocity fields. If no fields are provided, checks
+        class attributes for self.u1 and self.u2
+
+        Parameters
+        ----------
+        u1: np.ndarray, optional
+            x- or longitudinal component of velocity field
+        u2: np.ndarray, optional
+            y- or transversal component of velocity field
+        """
+
+        if u1 is None and u2 is None:
+            u1 = self.u1
+            u2 = self.u2
+
+        u1_fft = np.fft.fft2(u1) / (self.dx * self.dy)
+        u2_fft = np.fft.fft2(u2) / (self.dx * self.dy)
+
+        k1_pos_mask = self.k1_fft > 0
+        k1_pos = self.k1_fft[k1_pos_mask]
+
+        power_u1 = (np.abs(u1_fft) / (self.N1 * self.N2))**2
+        power_u2 = (np.abs(u2_fft) / (self.N1 * self.N2))**2
+
+        F11 = np.zeros_like(k1_pos)
+        F22 = np.zeros_like(k1_pos)
+
+        for i, k1_val in enumerate(k1_pos):
+            mask = (self.k1 == k1_val)
+            F11[i] = np.mean(power_u1[mask]) * self.dy
+            F22[i] = np.mean(power_u2[mask]) * self.dy
+
+        return k1_pos, F11, F22
+
+
+    def analytical_spectrum(self, k1_arr):
+        """
+        Compute the analytical spectrum of the von Karman spectrum
+
+        Parameters
+        ----------
+        k1_arr: np.ndarray
+            Wavenumber array
+
+        Returns
+        -------
+        F11: np.ndarray
+            Analytical spectrum of u1
+        F22: np.ndarray
+            Analytical spectrum of u2
+        """
+        F11_constant = (self.c0**2 * self.epsilon**(2/3) * self.L**(8/3) * scipy.special.gamma(4/3))\
+            / (8 * np.sqrt(np.pi) * scipy.special.gamma(17/6))
+
+        F11 = F11_constant / (1 + (self.L * k1_arr)**2)**(4/3)
+
+        F22_constant = (self.c0**2 * self.epsilon**(2/3) * self.L**(14/3) * scipy.special.gamma(7/3))\
+            / (4 * np.sqrt(np.pi) * scipy.special.gamma(17/6))
+
+        F22 = F22_constant * k1_arr**2 / ((1 + (self.L * k1_arr)**2)**(7/3))
+
+        return F11, F22
+
+
 
 # ------------------------------------------------------------------------------------------------ #
 
@@ -90,7 +187,7 @@ def run_single_mesh(exponent, config):
     return exponent, u1_norm, u2_norm
 
 
-def mesh_independence_study():
+def mesh_independence_study(low = 4, high = 15):
 
     print("="*80)
     print("MESH INDEPENDENCE STUDY")
@@ -107,7 +204,7 @@ def mesh_independence_study():
         "N2": 9,
     }
 
-    exponents = np.arange(4, 15)
+    exponents = np.arange(low, high)
 
     # Square mesh
 
@@ -158,7 +255,7 @@ def run_single_scale(scale, config):
     return scale, u1_norm, u2_norm
 
 
-def scale_independence_study():
+def scale_independence_study(low = 0.5, high = 40, step = 0.5):
 
     print("="*80)
     print("SCALE INDEPENDENCE STUDY")
@@ -175,7 +272,7 @@ def scale_independence_study():
         "N2": 9,
     }
 
-    factors = np.arange(1, 40)
+    factors = np.arange(low, high, 0.5)
 
     results = []
 
@@ -272,77 +369,144 @@ def diagnostic_plot(u1, u2):
 # ------------------------------------------------------------------------------------------------ #
 # Spectrum plot
 
-def analytical_spectrum(epsilon, L, k1_arr):
-    c0 = 1.7
+def plot_spectrum_comparison(config: dict, num_realizations: int = 10):
+    """
+    Generate velocity fields and plot their spectra compared to analytical spectrum
 
-    F11_constant = (c0**2 * epsilon**(2/3) * L**(8/3) * scipy.special.gamma(4/3))\
-        / (8 * np.sqrt(np.pi) * scipy.special.gamma(17/6))
+    Parameters
+    ----------
+    config: dict
+        Configuration dictionary seen everywhere in this file
+    num_realizations: int, optional
+        Number of realizations to use in ensemble average for estimated spectrum
+    """
 
-    F11 = F11_constant / (1 + (L * k1_arr)**2)**(4/3)
-
-    F22_constant = (c0**2 * epsilon**(2/3) * L**(14/3) * scipy.special.gamma(7/3))\
-        / (4 * np.sqrt(np.pi) * scipy.special.gamma(17/6))
-
-    F22 = F22_constant * k1_arr**2 / ((1 + (L * k1_arr)**2)**(7/3))
-
-    return F11, F22
-
-
-def plot_spectrum(config: dict, num_realizations: int = 10):
-
-    # Obtain average fluctuation fields
     gen = generator(config)
 
-    u1_avg = np.zeros_like(gen.k1)
-    # u2_avg = np.zeros_like(gen.k1)
+    # Custom wavenumber array. Only used for analytical spectrum.
+    k1_custom = np.logspace(-3, 3, 1000) / config["L"]
+    F11_analytical, F22_analytical = gen.analytical_spectrum(k1_custom)
 
-    # for _ in range(N):
-    #     u1, u2 = gen.generate()
+    k1_pos = None
+    F11_avg = None
+    F22_avg = None
 
-    #     u1_avg += u1
-    #     u2_avg += u2
+    for _ in range(num_realizations):
+        u1, u2 = gen.generate()
+        k1_sim, F11, F22 = gen.compute_spectrum(u1, u2)
 
-    # u1_avg /= N
-    # u2_avg /= N
+        if F11_avg is None:
+            k1_pos = k1_sim
+            F11_avg = F11
+            F22_avg = F22
+        else:
+            F11_avg += F11
+            F22_avg += F22
 
-    u1_avg, u2_avg = gen.generate()
+    F11_avg /= num_realizations
+    F22_avg /= num_realizations
+
+    fig, axs = plt.subplots(1, 2, figsize = (12, 5))
+
+    # Plot F11 estimated and analytical
+    axs[0].loglog(k1_custom * config["L"], k1_custom * F11_analytical, 'k-', label = "Analytical F11")
+    axs[0].loglog(k1_pos * config["L"], k1_pos * F11_avg, 'r--', label = "Simulated F11")
+    axs[0].set_xlabel(r"$k_1 L$ [-]")
+    axs[0].set_ylabel(r"$k_1 F_{11}(k_1)$ [m$^2$s$^{-2}$]")
+    axs[0].set_title("F11 spectrum")
+    axs[0].grid(True, which='both', ls='-', alpha=0.2)
+    axs[0].legend()
+
+    # Plot F22 estimated and analytical
+    axs[1].loglog(k1_custom * config["L"], k1_custom * F22_analytical, 'k-', label = "Analytical F22")
+    axs[1].loglog(k1_pos * config["L"], k1_pos * F22_avg, 'r--', label = "Simulated F22")
+    axs[1].set_xlabel(r"$k_1 L$ [-]")
+    axs[1].set_ylabel(r"$k_1 F_{22}(k_1)$ [m$^2$s$^{-2}$]")
+    axs[1].set_title("F22 spectrum")
+    axs[1].grid(True, which='both', ls='-', alpha=0.2)
+    axs[1].legend()
+
+    plt.tight_layout()
+    plt.show()
+
+    return fig, axs
+
+
+def plot_spectrum(config: dict, num_realizations=10):
+    """
+    Generate and plot spectra with better handling of log scales.
+
+    Parameters:
+    - config: Configuration dictionary
+    - num_realizations: Number of realizations to average
+    """
+    # Create generator
+    gen = generator(config)
+
+    # Initialize arrays for averaging
+    u1_avg_freq = None
+    u2_avg_freq = None
+
+    # Generate and average multiple realizations
+    for _ in range(num_realizations):
+        u1, u2 = gen.generate()
+
+        # Compute FFT
+        u1_freq = np.fft.fft2(u1) * gen.dx * gen.dy
+        u2_freq = np.fft.fft2(u2) * gen.dx * gen.dy
+
+        if u1_avg_freq is None:
+            u1_avg_freq = u1_freq
+            u2_avg_freq = u2_freq
+        else:
+            u1_avg_freq += u1_freq
+            u2_avg_freq += u2_freq
+
+    u1_avg_freq /= num_realizations
+    u2_avg_freq /= num_realizations
 
     # Obtain estimated spectrum
     k1_fft_pos_mask = gen.k1_fft > 0
-
     k1_ = gen.k1_fft[k1_fft_pos_mask]
 
-    u1_freq_pos = u1_avg[k1_fft_pos_mask]
-    u2_freq_pos = u2_avg[k1_fft_pos_mask]
+    # Compute power spectra
+    power_u1 = np.zeros((len(k1_), gen.N2))
+    power_u2 = np.zeros((len(k1_), gen.N2))
 
-    power_u1 = (np.abs(u1_freq_pos) / (gen.N1 * gen.N2))**2
-    power_u2 = (np.abs(u2_freq_pos) / (gen.N1 * gen.N2))**2
+    for i, k1_val in enumerate(k1_):
+        indices = np.where(gen.k1 == k1_val)
+        power_u1[i] = np.abs(u1_avg_freq[indices])**2 / (gen.N1 * gen.N2)**2
+        power_u2[i] = np.abs(u2_avg_freq[indices])**2 / (gen.N1 * gen.N2)**2
 
-    F11_approx = np.mean(power_u1, axis = 1) * gen.dy
-    F22_approx = np.mean(power_u2, axis = 1) * gen.dy
+    # Average along k2 direction
+    F11_approx = np.mean(power_u1, axis=1) * gen.dy
+    F22_approx = np.mean(power_u2, axis=1) * gen.dy
 
-    F11_analytical, F22_analytical = analytical_spectrum(
-        config["epsilon"],
-        config["L"],
-        k1_
-    )
+    # Compute analytical spectrum
+    F11_analytical, F22_analytical = gen.analytical_spectrum(k1_)
 
-    # Plot
-    plt.figure(figsize = (10, 6))
+    # Plot spectra
+    plt.figure(figsize=(10, 6))
 
-    plt.semilogx(k1_ * gen.L, k1_ * F11_approx, label = "Estimated F11")
-    plt.semilogx(k1_ * gen.L, k1_ * F22_approx, label = "Estimated F22")
+    # Plot k1*F11 and k1*F22 for easier comparison with literature
+    plt.loglog(k1_ * gen.L, k1_ * F11_approx, 'r--', label='Estimated F11')
+    plt.loglog(k1_ * gen.L, k1_ * F22_approx, 'b--', label='Estimated F22')
+    plt.loglog(k1_ * gen.L, k1_ * F11_analytical, 'r-', label='Analytical F11')
+    plt.loglog(k1_ * gen.L, k1_ * F22_analytical, 'b-', label='Analytical F22')
 
-    plt.semilogx(k1_ * gen.L, k1_ * F11_analytical, label = "Analytical F11")
-    plt.semilogx(k1_ * gen.L, k1_ * F22_analytical, label = "Analytical F22")
-
+    plt.xlabel('$k_1 L$ [-]')
+    plt.ylabel('$k_1 F(k_1)$ [$m^2s^{-2}$]')
+    plt.title('Von Karman Spectra')
+    plt.grid(True, which='both', ls='-', alpha=0.2)
     plt.legend()
     plt.show()
 
+# ------------------------------------------------------------------------------------------------ #
+# Driver
 
 if __name__ == "__main__":
-    # mesh_independence_study()
-    # scale_independence_study()
+    mesh_independence_study(high=12)
+    scale_independence_study(high=20)
 
     config = {
         "L": 500,
@@ -356,6 +520,11 @@ if __name__ == "__main__":
     }
 
     plot_spectrum(config)
+
+    gen = generator(config)
+    u1, u2 = gen.generate()
+    diagnostic_plot(u1, u2)
+    # plot_spectrum_comparison(config)
 
     # gen = generator(config)
     # u1, u2 = gen.generate()
@@ -378,5 +547,3 @@ if __name__ == "__main__":
     # plt.semilogx(k1_, k1_ * F22_est, label = "Estimated F22")
     # plt.legend()
     # plt.show()
-
-    # diagnostic_plot(u1, u2)
