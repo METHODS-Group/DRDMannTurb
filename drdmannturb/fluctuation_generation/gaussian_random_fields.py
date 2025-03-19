@@ -92,7 +92,8 @@ class GaussianRandomField:
         # TODO: This is a strange block of code
         if np.isscalar(grid_level):
             if not np.isscalar(grid_shape):
-                raise ValueError("grid_level and grid_shape must have the same dimensions.")
+                raise ValueError("grid_level is scalar, so grid_shape should be as well.")
+
             h = 1 / 2**grid_level
             self.grid_shape = np.array([grid_shape] * ndim)
         else:
@@ -101,10 +102,10 @@ class GaussianRandomField:
 
             h = grid_dimensions / (2**grid_level + 1)
             self.grid_shape = np.array(grid_shape[:ndim])
+
         self.L = h * self.grid_shape
 
         ### Extended window (NOTE: extension is done outside)
-        # TODO: This is also a strange block of code. Vestigial?
         N_margin = 0
         self.ext_grid_shape = self.grid_shape
         self.nvoxels = self.ext_grid_shape.prod()
@@ -112,9 +113,6 @@ class GaussianRandomField:
 
         ### Covariance kernel
         self.Covariance = Covariance
-
-        ### Sampling method
-        self.setSamplingMethod(sampling_method)
 
         # Pseudo-random number generator
         self.prng = np.random.RandomState()

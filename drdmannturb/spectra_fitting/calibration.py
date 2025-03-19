@@ -451,9 +451,7 @@ class CalibrationProblem:
         self.loss = self.LossAggregator.eval(y[self.curves], y_data[self.curves], theta_NN, 0)
 
         print("=" * 40)
-
         print(f"Initial loss: {self.loss.item()}")
-
         print("=" * 40)
 
         def closure():

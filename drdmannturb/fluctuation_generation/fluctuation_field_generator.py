@@ -80,7 +80,6 @@ class FluctuationFieldGenerator:
         time_scale: Optional[float] = None,
         energy_spectrum_scale: Optional[float] = None,
         path_to_parameters: Optional[Union[str, PathLike]] = None,
-        lowfreq_params: Optional[dict] = None,
         seed: Optional[int] = None,
         blend_num=10,
     ):
@@ -162,73 +161,69 @@ class FluctuationFieldGenerator:
             L = length_scale
             Gamma = time_scale
 
-        # define margins and buffer
-        time_buffer = 3 * Gamma * L
-        spatial_margin = 1 * L  # TODO: where is this used?
-
-        # TODO: this should not be needed
-        # grid_levels = [level.GetInt() for level in grid_levels]
+        self.grid_dimensions = grid_dimensions
+        self.grid_levels = grid_levels
+        self.blend_num = blend_num
+        print("Grid levels is ", self.grid_levels)
+        print("Grid dimensions is ", self.grid_dimensions)
+        print("Blend number is ", self.blend_num)
 
         # Expand on grid_levels parameter to get grid node counts in each direction
         grid_node_counts = 2**grid_levels + 1
-        Nx, Ny, Nz = grid_node_counts
+        print("Grid node counts is ", grid_node_counts)
 
-        # Use grid_dimensions and grid_node_counts to get grid spacings in each direction
-        grid_spacings = [dim / size for dim, size in zip(grid_dimensions, grid_node_counts)]
-        hx, hy, hz = grid_spacings
+        # Obtain spacing between grid points, split node counts into Nx, Ny, Nz
+        dx, dy, dz = (L_i / N_i for L_i, N_i in zip(self.grid_dimensions, grid_node_counts))
+        Nx, Ny, Nz = grid_node_counts
+        del grid_node_counts
 
         # Calculate buffer and margin sizes
-        n_buffer = ceil(time_buffer / hx)
-        n_margins = [
-            ceil(spatial_margin / hy),  # y margin
-            ceil(spatial_margin / hz),  # z margin
-        ]
+        # NOTE: buffer scale 3 * Gamma * L is arbitrary. Could/should be tunable param?
+        self.n_buffer = ceil((3 * Gamma * L) / dx)
+
+        self.n_margin_y, self.n_margin_z = ceil(L / dy), ceil(L / dz)
+
+        ## Spatial margin is just the length scale L
 
         # Calculate shapes
-        wind_shape = [0, Ny, Nz, 3]
+        buffer_extension = 2 * self.n_buffer + (self.blend_num - 1 if self.blend_num > 0 else 0)
+        margin_extension = [
+            2 * self.n_margin_y,
+            2 * self.n_margin_z,
+        ]
 
-        buffer_extension = 2 * n_buffer + (blend_num - 1 if blend_num > 0 else 0)
-        margin_extension = [2 * margin for margin in n_margins]
+        print("Buffer extension is ", buffer_extension)
+        print("Margin extension is ", margin_extension)
 
-        noise_shape = [
+        self.noise_shape = [
             Nx + buffer_extension,
             Ny + margin_extension[0],
             Nz + margin_extension[1],
             3,
         ]
+        self.new_part_shape = [Nx, Ny + margin_extension[0], Nz + margin_extension[1], 3]
+        self.central_part = [
+            slice(self.n_buffer, -self.n_buffer),
+            slice(self.n_margin_y, -self.n_margin_y),
+            slice(0, -2 * self.n_margin_z),
+            slice(None),
+        ]
+        self.new_part = [
+            slice(2 * self.n_buffer + max(0, self.blend_num - 1), None),
+            slice(None),
+            slice(None),
+            slice(None),
+        ]
 
-        new_part_shape = [Nx] + [size + margin_ext for size, margin_ext in zip([Ny, Nz], margin_extension)] + [3]
-
-        # Calculate slices for different parts
-        def make_slice(start=None, end=None):
-            return slice(start, end)
-
-        central_part = [make_slice()] * 4  # Initially all are full slices
-        central_part[0] = make_slice(n_buffer, -n_buffer)
-        central_part[1] = make_slice(n_margins[0], -n_margins[0])
-        central_part[2] = make_slice(0, -2 * n_margins[1])
-
-        new_part = [make_slice()] * 4
-        if blend_num > 0:
-            new_part[0] = make_slice(2 * n_buffer + (blend_num - 1), None)
-        else:
-            new_part[0] = make_slice(2 * n_buffer, None)
-
-        self.grid_dimensions = grid_dimensions
-        self.grid_levels = grid_levels
-
-        self.new_part = new_part
         self.Nx = Nx
-        self.blend_num = blend_num
-        self.central_part = central_part
-        self.new_part_shape = new_part_shape
-        self.noise_shape = noise_shape
-        self.n_buffer = n_buffer
-        self.n_marginy = n_margins[0]
-        self.n_marginz = n_margins[1]
         self.seed = seed
+        # NOTE: self.noise is a placeholder for now
+        #   - Also, total_fluctuation is the "accumulator" for generated blocks
         self.noise = None
-        self.total_fluctuation = np.zeros(wind_shape)
+        self.total_fluctuation = np.zeros([0, Ny, Nz, 3])
+
+        print("DONE WITH FLUCTUATION FIELD GENERATOR INIT")
+        print("\n\n\n")
 
         CovarianceType = Union[
             type[VonKarmanCovariance],
