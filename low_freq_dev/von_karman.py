@@ -74,13 +74,8 @@ class generator:
             * np.sqrt((self.L / np.sqrt(1 + (k_mag_sq * self.L**2))) ** (17 / 3) / (4 * np.pi))
         )
 
-        # TODO: OLD
-        # C1 = 1j * phi_ * self.k2
-        # C2 = 1j * phi_ * (-1 * self.k1)
-
-        # TODO: NEW
-        C1 = 1j * phi_ * self.k2  # / k_mag_sq_safe
-        C2 = 1j * phi_ * (-1 * self.k1)  # / k_mag_sq_safe
+        C1 = 1j * phi_ * self.k2
+        C2 = 1j * phi_ * (-1 * self.k1)
 
         eta: np.ndarray
         if eta_ones:
@@ -103,45 +98,110 @@ class generator:
 
         return u1, u2
 
+    def generate_numba(self, eta_ones=False):
+        """
+        Generate turbulent velocity fields using the von Karman spectrum
+        """
+
+        eta: np.ndarray
+        # eta_real: np.ndarray
+        # eta_imag: np.ndarray
+        if eta_ones:
+            # eta_real = np.ones_like(self.k1)
+            # eta_imag = np.zeros_like(self.k1)
+            eta = np.ones_like(self.k1, dtype=complex)
+        else:
+            noise = np.random.normal(0, 1, size=(self.N1, self.N2))
+            eta = np.fft.fft2(noise)
+            # eta_real = np.real(eta_complex)
+            # eta_imag = np.real(eta_complex)
+
+        u1_freq_complex, u2_freq_complex = self._generate_numba_helper(
+            self.k1,
+            self.k2,
+            self.c0,
+            self.epsilon,
+            self.L,
+            self.N1,
+            self.N2,
+            self.dx,
+            self.dy,
+            eta,
+            # self.N1, self.N2, self.dx, self.dy, eta_real, eta_imag
+        )
+
+        transform_norm = np.sqrt(self.dx * self.dy)
+        normalization = 1 / (self.dx * self.dy)
+
+        u1 = np.real(np.fft.ifft2(u1_freq_complex) / transform_norm) * normalization
+        u2 = np.real(np.fft.ifft2(u2_freq_complex) / transform_norm) * normalization
+
+        self.u1 = u1
+        self.u2 = u2
+
+        return u1, u2
+
+    @staticmethod
+    @numba.njit(parallel=True)
+    def _generate_numba_helper(k1, k2, c0, epsilon, L, N1, N2, dx, dy, eta):
+        k_mag_sq = k1**2 + k2**2
+
+        # k_mag_sq_safe = np.copy(k_mag_sq)
+        # k_mag_sq_safe[k_mag_sq_safe == 0] = 1e-10
+
+        phi_ = np.empty_like(k_mag_sq)
+
+        for i in numba.prange(N1):
+            for j in numba.prange(N2):
+                if k_mag_sq[i, j] < 1e-10:
+                    k_sq = 1e-10
+                else:
+                    k_sq = k_mag_sq[i, j]
+
+                phi_[i, j] = c0 * np.cbrt(epsilon) * np.sqrt((L / np.sqrt(1 + (k_sq * L**2))) ** (17 / 3) / (4 * np.pi))
+
+        #######################
+        C1 = 1j * phi_ * k2
+        C2 = 1j * phi_ * (-1 * k1)
+
+        # C1_real = np.zeros_like(k1)
+        # C1_imag = phi_ * k2
+        # C2_real = np.zeros_like(k1)
+        # C2_imag = phi_ * (-1 * k1)
+
+        # NOTE: C1_real and C2_real are zero and so don't actually need to be computed
+        #       since it only appears as a factor
+        # C1_imag = np.empty_like(k1)
+        # C2_imag = np.empty_like(k1)
+
+        # for i in numba.prange(N1):
+        #     for j in numba.prange(N2):
+        #         C1_imag[i,j] = phi_[i,j] * k2[i,j]
+        #         C2_imag[i,j] = phi_[i,j] * (-1 * k1[i,j])
+
+        #######################
+        # u1_freq = C1 * eta
+        # u2_freq = C2 * eta
+
+        # # u1_freq_real = C1_real * eta_real - C1_imag * eta_imag
+        # u1_freq_real = -1 * C1_imag * eta_real
+        # # u1_freq_imag = C1_real * eta_imag + C1_imag * eta_real
+        # u1_freq_imag = C1_imag * eta_real
+
+        # # u2_freq_real = C2_real * eta_real - C2_imag * eta_imag
+        # u2_freq_real = -1 * C2_imag * eta_real
+        # # u2_freq_imag = C2_real * eta_imag + C2_imag * eta_real
+        # u2_freq_imag = C2_imag * eta_real
+
+        # u1_freq_complex = u1_freq_real + 1j * u1_freq_imag
+        # u2_freq_complex = u2_freq_real + 1j * u2_freq_imag
+
+        u1_freq_complex = C1 * eta
+        u2_freq_complex = C2 * eta
+
+        return u1_freq_complex, u2_freq_complex
+
     # ------------------------------------------------------------------------------------------------ #
-
-    def compute_spectrum(self, u1=None, u2=None):
-        """
-        Compute the spectrum of generated velocity fields. If no fields are provided, checks
-        class attributes for self.u1 and self.u2
-
-        Parameters
-        ----------
-        u1: np.ndarray, optional
-            x- or longitudinal component of velocity field
-        u2: np.ndarray, optional
-            y- or transversal component of velocity field
-        """
-
-        if u1 is None and u2 is None:
-            u1 = self.u1
-            u2 = self.u2
-
-        # u1_fft = np.fft.fft2(u1) / (self.dx * self.dy)
-        # u2_fft = np.fft.fft2(u2) / (self.dx * self.dy)
-        u1_fft = np.fft.fft2(u1)
-        u2_fft = np.fft.fft2(u2)
-
-        k1_pos_mask = self.k1_fft > 0
-        k1_pos = self.k1_fft[k1_pos_mask]
-
-        power_u1 = (np.abs(u1_fft) / (self.N1 * self.N2)) ** 2
-        power_u2 = (np.abs(u2_fft) / (self.N1 * self.N2)) ** 2
-
-        F11 = np.zeros_like(k1_pos)
-        F22 = np.zeros_like(k1_pos)
-
-        for i, k1_val in enumerate(k1_pos):
-            mask = self.k1 == k1_val
-            F11[i] = np.mean(power_u1[mask]) * self.dy
-            F22[i] = np.mean(power_u2[mask]) * self.dy
-
-        return k1_pos, F11, F22
 
     @staticmethod
     @numba.njit(parallel=True)
@@ -163,7 +223,7 @@ class generator:
 
         return F11, F22
 
-    def compute_spectrum_numba(self, u1=None, u2=None):
+    def compute_spectrum(self, u1=None, u2=None, k1_max=None):
         """
         Numba-accelerated version of compute_spectrum
 
@@ -199,101 +259,6 @@ class generator:
         F11, F22 = self._compute_spectrum_numba_helper(k1_flat, k1_pos, power_u1_flat, power_u2_flat, self.dy)
 
         return k1_pos, F11, F22
-
-    def compute_spectrum_numpy_fast(self, u1=None, u2=None):
-        """
-        Fast NumPy implementation of spectrum computation without Numba
-
-        Parameters
-        ----------
-        u1: np.ndarray, optional
-            x- or longitudinal component of velocity field
-        u2: np.ndarray, optional
-            y- or transversal component of velocity field
-        """
-        if u1 is None and u2 is None:
-            u1 = self.u1
-            u2 = self.u2
-
-        # Compute FFTs
-        u1_fft = np.fft.fft2(u1)
-        u2_fft = np.fft.fft2(u2)
-
-        # Get positive wavenumbers
-        k1_pos_mask = self.k1_fft > 0
-        k1_pos = self.k1_fft[k1_pos_mask]
-
-        # Compute power spectra
-        power_u1 = (np.abs(u1_fft) / (self.N1 * self.N2)) ** 2
-        power_u2 = (np.abs(u2_fft) / (self.N1 * self.N2)) ** 2
-
-        # Create result arrays
-        F11 = np.zeros_like(k1_pos)
-        F22 = np.zeros_like(k1_pos)
-
-        # Use a vectorized approach with unique k1 values
-        unique_k1 = np.unique(self.k1)
-        unique_k1_pos = unique_k1[unique_k1 > 0]
-
-        # Ensure we're using exactly the same k1_pos values as the original method
-        # This fixes the shape mismatch
-        k1_pos_set = set(k1_pos)
-        unique_k1_pos = np.array([k for k in unique_k1_pos if k in k1_pos_set])
-
-        # Create mapping from k1 values to indices in result arrays
-        k1_to_idx = {k: i for i, k in enumerate(k1_pos)}
-
-        for k1_val in unique_k1_pos:
-            if k1_val in k1_to_idx:
-                idx = k1_to_idx[k1_val]
-                mask = self.k1 == k1_val
-                F11[idx] = np.mean(power_u1[mask]) * self.dy
-                F22[idx] = np.mean(power_u2[mask]) * self.dy
-
-        return k1_pos, F11, F22
-
-    def test_spectrum_computation(self, num_tests=3):
-        """
-        Test and compare different spectrum computation methods
-        """
-        # Generate velocity fields if not already present
-        if not hasattr(self, "u1") or not hasattr(self, "u2"):
-            self.generate()
-
-        _ = self.compute_spectrum_numba()
-
-        print("Original method")
-        start_time = time.time()
-        for _ in range(num_tests):
-            k1_pos, F11, F22 = self.compute_spectrum()
-        orig_time = (time.time() - start_time) / num_tests
-
-        print("Numba method")
-        start_time = time.time()
-        for _ in range(num_tests):
-            k1_pos_numba, F11_numba, F22_numba = self.compute_spectrum_numba()
-        numba_time = (time.time() - start_time) / num_tests
-
-        print("Numpy fast method")
-        start_time = time.time()
-        for _ in range(num_tests):
-            k1_pos_np_fast, F11_np_fast, F22_np_fast = self.compute_spectrum_numpy_fast()
-        np_fast_time = (time.time() - start_time) / num_tests
-
-        # Verify results match
-        np.testing.assert_allclose(k1_pos, k1_pos_numba, rtol=1e-7)
-        np.testing.assert_allclose(F11, F11_numba, rtol=1e-7)
-        np.testing.assert_allclose(F22, F22_numba, rtol=1e-7)
-
-        np.testing.assert_allclose(k1_pos, k1_pos_np_fast, rtol=1e-7)
-        np.testing.assert_allclose(F11, F11_np_fast, rtol=1e-7)
-        np.testing.assert_allclose(F22, F22_np_fast, rtol=1e-7)
-
-        print(f"Original method: {orig_time:.4f} seconds")
-        print(f"Numba method: {numba_time:.4f} seconds (speedup: {orig_time/numba_time:.2f}x)")
-        print(f"NumPy fast method: {np_fast_time:.4f} seconds (speedup: {orig_time/np_fast_time:.2f}x)")
-
-        return {"original": orig_time, "numba": numba_time, "numpy_fast": np_fast_time}
 
     # ------------------------------------------------------------------------------------------------ #
 
@@ -527,10 +492,10 @@ def diagnostic_plot(u1, u2):
 # Spectrum plot
 
 
-def _compute_single_realization(config):
+def _compute_single_realization(config: dict, k1_max: float):
     gen = generator(config)
-    u1, u2 = gen.generate()
-    k1_sim, F11, F22 = gen.compute_spectrum(u1, u2)
+    gen.generate()
+    k1_sim, F11, F22 = gen.compute_spectrum(k1_max=k1_max)
     return k1_sim, F11, F22
 
 
@@ -553,10 +518,12 @@ def plot_spectrum_comparison(config: dict, num_realizations: int = 10):
     k1_custom = np.logspace(-3, 3, 1000) / config["L"]
     F11_analytical, F22_analytical = gen.analytical_spectrum(k1_custom)
 
+    k1_max = np.max(k1_custom)
+
     results = []
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        futures = [executor.submit(_compute_single_realization, config) for _ in range(num_realizations)]
+        futures = [executor.submit(_compute_single_realization, config, k1_max) for _ in range(num_realizations)]
 
         for future in concurrent.futures.as_completed(futures):
             try:
@@ -605,65 +572,139 @@ def plot_spectrum_comparison(config: dict, num_realizations: int = 10):
     return fig, axs
 
 
-def plot_spectrum(config: dict, num_realizations=10):
+def compare_generation_methods(config=None, num_runs=5):
     """
-    Generate and plot spectra.
+    Compare the performance and results of the standard and Numba-accelerated generation methods.
 
-    Parameters:
-    - config: Configuration dictionary
-    - num_realizations: Number of realizations to average
+    Parameters
+    ----------
+    config : dict, optional
+        Configuration dictionary for the generator. If None, a default config is used.
+    num_runs : int, optional
+        Number of runs to average timing results over.
+
+    Returns
+    -------
+    dict
+        Dictionary containing timing results and error metrics.
     """
-    # Create generator
+    if config is None:
+        config = {
+            "L": 500,
+            "epsilon": 0.01,
+            "L1_factor": 2,
+            "L2_factor": 2,
+            "N1": 9,
+            "N2": 9,
+        }
+
     gen = generator(config)
 
-    # Initialize arrays for averaging
-    F11_avg = None
-    F22_avg = None
-    k1_pos = None
+    # Warm-up run for Numba (first run includes compilation time)
+    print("Performing Numba warm-up run...")
+    gen.generate_numba()
 
-    # Generate and average multiple realizations
-    for _ in range(num_realizations):
-        u1, u2 = gen.generate()
+    # Timing and comparison
+    standard_times = []
+    numba_times = []
+    rel_errors_u1 = []
+    rel_errors_u2 = []
 
-        k1_sim, F11, F22 = gen.compute_spectrum(u1, u2)
+    print(f"Running {num_runs} comparison tests...")
+    for i in range(num_runs):
+        print(f"Run {i+1}/{num_runs}")
 
-        if F11_avg is None:
-            k1_pos = k1_sim
-            F11_avg = F11
-            F22_avg = F22
-        else:
-            F11_avg += F11
-            F22_avg += F22
+        # Time standard method
+        start_time = time.time()
+        u1_std, u2_std = gen.generate(eta_ones=True)
+        standard_time = time.time() - start_time
+        standard_times.append(standard_time)
 
-    F11_avg /= num_realizations
-    F22_avg /= num_realizations
+        # Time Numba method
+        start_time = time.time()
+        u1_numba, u2_numba = gen.generate_numba(eta_ones=True)
+        numba_time = time.time() - start_time
+        numba_times.append(numba_time)
 
-    # Compute analytical spectrum
-    F11_analytical, F22_analytical = gen.analytical_spectrum(k1_pos)
+        # Calculate relative error
+        # u1_error = np.linalg.norm(u1_std - u1_numba) / np.linalg.norm(u1_std)
+        # u2_error = np.linalg.norm(u2_std - u2_numba) / np.linalg.norm(u2_std)
 
-    # Plot spectra
+        u1_error = np.linalg.norm(u1_std - u1_numba)
+        u2_error = np.linalg.norm(u2_std - u2_numba)
+
+        assert np.allclose(u1_std, u1_numba, atol=1e-10)
+        assert np.allclose(u2_std, u2_numba, atol=1e-10)
+
+        rel_errors_u1.append(u1_error)
+        rel_errors_u2.append(u2_error)
+
+    diagnostic_plot(u1_std, u2_std)
+    diagnostic_plot(u1_numba, u2_numba)
+
+    # Calculate statistics
+    avg_standard_time = np.mean(standard_times)
+    avg_numba_time = np.mean(numba_times)
+    speedup = avg_standard_time / avg_numba_time
+    avg_u1_error = np.mean(rel_errors_u1)
+    avg_u2_error = np.mean(rel_errors_u2)
+
+    # Print results
+    print("\nPerformance Comparison:")
+    print(f"Average standard method time: {avg_standard_time:.4f} seconds")
+    print(f"Average Numba method time: {avg_numba_time:.4f} seconds")
+    print(f"Speedup factor: {speedup:.2f}x")
+
+    print("\nAccuracy Comparison:")
+    print(f"Average relative error in u1: {avg_u1_error:.8e}")
+    print(f"Average relative error in u2: {avg_u2_error:.8e}")
+
+    # Test with different mesh sizes
+    print("\nTesting scaling with mesh size:")
+    mesh_sizes = [7, 8, 9, 10, 11, 12, 13]
+    std_times = []
+    numba_times = []
+
+    for n in mesh_sizes:
+        test_config = config.copy()
+        test_config["N1"] = n
+        test_config["N2"] = n
+        test_gen = generator(test_config)
+
+        # Standard method
+        start_time = time.time()
+        test_gen.generate()
+        std_time = time.time() - start_time
+        std_times.append(std_time)
+
+        # Numba method
+        start_time = time.time()
+        test_gen.generate_numba()
+        nb_time = time.time() - start_time
+        numba_times.append(nb_time)
+
+        print(f"Mesh size 2^{n}: Standard={std_time:.4f}s, Numba={nb_time:.4f}s, Speedup={std_time/nb_time:.2f}x")
+
+    # Plot scaling results
     plt.figure(figsize=(10, 6))
-
-    # Plot k1*F11 and k1*F22 for easier comparison with literature
-    plt.loglog(k1_pos * gen.L, k1_pos * F11_avg, "r--", label="Estimated F11")
-    plt.loglog(k1_pos * gen.L, k1_pos * F22_avg, "b--", label="Estimated F22")
-    plt.loglog(k1_pos * gen.L, k1_pos * F11_analytical, "r-", label="Analytical F11")
-    plt.loglog(k1_pos * gen.L, k1_pos * F22_analytical, "b-", label="Analytical F22")
-
-    plt.xlabel("$k_1 L$ [-]")
-    plt.ylabel("$k_1 F(k_1)$ [$m^2s^{-2}$]")
-    plt.title("Von Karman Spectra")
+    mesh_points = [2**n for n in mesh_sizes]
+    plt.loglog(mesh_points, std_times, "o-", label="Standard Method")
+    plt.loglog(mesh_points, numba_times, "s-", label="Numba Method")
+    plt.xlabel("Mesh Size (N)")
+    plt.ylabel("Execution Time (s)")
+    plt.title("Performance Scaling with Mesh Size")
     plt.grid(True, which="both", ls="-", alpha=0.2)
     plt.legend()
+    plt.tight_layout()
     plt.show()
 
 
 # ------------------------------------------------------------------------------------------------ #
-# Driver
+
 
 if __name__ == "__main__":
-    mesh_independence_study(high=12)
-    scale_independence_study(high=20)
+    # mesh_independence_study(high=12)
+    # scale_independence_study(high=20)
 
     config = {
         "L": 500,
@@ -677,19 +718,19 @@ if __name__ == "__main__":
     FINE_CONFIG = {
         "L": 500,
         "epsilon": 0.01,
-        "L1_factor": 2,
-        "L2_factor": 2,
-        "N1": 10,
-        "N2": 10,
+        "L1_factor": 10,
+        "L2_factor": 10,
+        "N1": 15,
+        "N2": 7,
     }
 
-    gen = generator(FINE_CONFIG)
-    gen.generate()
-    gen.test_spectrum_computation()
-
-    # plot_spectrum(config)
-    # plot_spectrum_comparison(FINE_CONFIG)
+    print("\n" + "=" * 80)
+    print("GENERATION METHOD COMPARISON")
+    print("=" * 80)
+    compare_generation_methods(config)
 
     # gen = generator(config)
-    # u1, u2 = gen.generate()
-    # diagnostic_plot(u1, u2)
+    # gen.generate()
+    # diagnostic_plot(gen.u1, gen.u2)
+
+    # plot_spectrum_comparison(FINE_CONFIG)
