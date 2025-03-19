@@ -33,15 +33,12 @@ class generator:
         y = np.linspace(0, self.L2, self.N2, endpoint=False)
         self.X, self.Y = np.meshgrid(x, y, indexing="ij")
 
-        # Wavenumber generation
         self.k1_fft = 2 * np.pi * np.fft.fftfreq(self.N1, self.dx)
         self.k2_fft = 2 * np.pi * np.fft.fftfreq(self.N2, self.dy)
         self.k1, self.k2 = np.meshgrid(self.k1_fft, self.k2_fft, indexing="ij")
 
-        # Useful for calculations
         self.k_mag = np.sqrt(self.k1**2 + self.k2**2)
 
-        # Useful for plotting
         self.k1L = self.k1 * self.L
         self.k2L = self.k2 * self.L
         self.kL = self.k_mag * self.L
@@ -49,72 +46,14 @@ class generator:
     def generate(self, eta_ones=False):
         """
         Generate turbulent velocity fields using the von Karman spectrum
-
-        Parameters
-        ----------
-        eta_ones: bool, optional
-            If True, replaces the white noise with a unit field (all ones)
-
-        Returns
-        -------
-        u1: np.ndarray
-            x- or longitudinal component of velocity field
-        u2: np.ndarray
-            y- or transversal component of velocity field
-        """
-        k_mag_sq = self.k1**2 + self.k2**2
-
-        k_mag_sq_safe = np.copy(k_mag_sq)
-        k_mag_sq_safe[k_mag_sq_safe == 0] = 1e-10
-
-        # Sqrt of all leading factors, does NOT include sqrt P(k)
-        phi_ = (
-            self.c0
-            * np.cbrt(self.epsilon)
-            * np.sqrt((self.L / np.sqrt(1 + (k_mag_sq * self.L**2))) ** (17 / 3) / (4 * np.pi))
-        )
-
-        C1 = 1j * phi_ * self.k2
-        C2 = 1j * phi_ * (-1 * self.k1)
-
-        eta: np.ndarray
-        if eta_ones:
-            eta = np.ones_like(self.k1)
-        else:
-            noise = np.random.normal(0, 1, size=(self.N1, self.N2))
-            eta = np.fft.fft2(noise)
-
-        u1_freq = C1 * eta
-        u2_freq = C2 * eta
-
-        transform_norm = np.sqrt(self.dx * self.dy)
-        normalization = 1 / (self.dx * self.dy)
-
-        u1 = np.real(np.fft.ifft2(u1_freq) / transform_norm) * normalization
-        u2 = np.real(np.fft.ifft2(u2_freq) / transform_norm) * normalization
-
-        self.u1 = u1
-        self.u2 = u2
-
-        return u1, u2
-
-    def generate_numba(self, eta_ones=False):
-        """
-        Generate turbulent velocity fields using the von Karman spectrum
         """
 
         eta: np.ndarray
-        # eta_real: np.ndarray
-        # eta_imag: np.ndarray
         if eta_ones:
-            # eta_real = np.ones_like(self.k1)
-            # eta_imag = np.zeros_like(self.k1)
             eta = np.ones_like(self.k1, dtype=complex)
         else:
             noise = np.random.normal(0, 1, size=(self.N1, self.N2))
             eta = np.fft.fft2(noise)
-            # eta_real = np.real(eta_complex)
-            # eta_imag = np.real(eta_complex)
 
         u1_freq_complex, u2_freq_complex = self._generate_numba_helper(
             self.k1,
@@ -127,7 +66,6 @@ class generator:
             self.dx,
             self.dy,
             eta,
-            # self.N1, self.N2, self.dx, self.dy, eta_real, eta_imag
         )
 
         transform_norm = np.sqrt(self.dx * self.dy)
@@ -146,9 +84,8 @@ class generator:
     def _generate_numba_helper(k1, k2, c0, epsilon, L, N1, N2, dx, dy, eta):
         k_mag_sq = k1**2 + k2**2
 
-        # k_mag_sq_safe = np.copy(k_mag_sq)
-        # k_mag_sq_safe[k_mag_sq_safe == 0] = 1e-10
-
+        #########################################################
+        # Compute sqrt(Phi) leading factors
         phi_ = np.empty_like(k_mag_sq)
 
         for i in numba.prange(N1):
@@ -160,42 +97,12 @@ class generator:
 
                 phi_[i, j] = c0 * np.cbrt(epsilon) * np.sqrt((L / np.sqrt(1 + (k_sq * L**2))) ** (17 / 3) / (4 * np.pi))
 
-        #######################
+        #########################################################
+        # Compute frequency components
         C1 = 1j * phi_ * k2
         C2 = 1j * phi_ * (-1 * k1)
 
-        # C1_real = np.zeros_like(k1)
-        # C1_imag = phi_ * k2
-        # C2_real = np.zeros_like(k1)
-        # C2_imag = phi_ * (-1 * k1)
-
-        # NOTE: C1_real and C2_real are zero and so don't actually need to be computed
-        #       since it only appears as a factor
-        # C1_imag = np.empty_like(k1)
-        # C2_imag = np.empty_like(k1)
-
-        # for i in numba.prange(N1):
-        #     for j in numba.prange(N2):
-        #         C1_imag[i,j] = phi_[i,j] * k2[i,j]
-        #         C2_imag[i,j] = phi_[i,j] * (-1 * k1[i,j])
-
-        #######################
-        # u1_freq = C1 * eta
-        # u2_freq = C2 * eta
-
-        # # u1_freq_real = C1_real * eta_real - C1_imag * eta_imag
-        # u1_freq_real = -1 * C1_imag * eta_real
-        # # u1_freq_imag = C1_real * eta_imag + C1_imag * eta_real
-        # u1_freq_imag = C1_imag * eta_real
-
-        # # u2_freq_real = C2_real * eta_real - C2_imag * eta_imag
-        # u2_freq_real = -1 * C2_imag * eta_real
-        # # u2_freq_imag = C2_real * eta_imag + C2_imag * eta_real
-        # u2_freq_imag = C2_imag * eta_real
-
-        # u1_freq_complex = u1_freq_real + 1j * u1_freq_imag
-        # u2_freq_complex = u2_freq_real + 1j * u2_freq_imag
-
+        # Convolve
         u1_freq_complex = C1 * eta
         u2_freq_complex = C2 * eta
 
@@ -296,7 +203,7 @@ class generator:
 # ------------------------------------------------------------------------------------------------ #
 
 
-def run_single_mesh(exponent, config):
+def _run_single_mesh(exponent, config):
     local_config = config.copy()
     local_config["N1"] = exponent
     local_config["N2"] = exponent
@@ -312,6 +219,17 @@ def run_single_mesh(exponent, config):
 
 
 def mesh_independence_study(low=4, high=15):
+    """
+    Mesh independence study. Runs a number of simulations with different square mesh
+    sizes.
+
+    Parameters
+    ----------
+    low: int, optional
+        Lowest exponent to consider
+    high: int, optional
+        Highest exponent to consider
+    """
     print("=" * 80)
     print("MESH INDEPENDENCE STUDY")
     print("=" * 80)
@@ -325,15 +243,11 @@ def mesh_independence_study(low=4, high=15):
         "N2": 9,
     }
 
-    exponents = np.arange(low, high)
-
-    # Square mesh
+    exponents = np.arange(low, high + 1)
 
     results = []
-
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        # Pass config as an additional argument
-        futures = [executor.submit(run_single_mesh, exp, config) for exp in exponents]
+        futures = [executor.submit(_run_single_mesh, exp, config) for exp in exponents]
 
         for future in concurrent.futures.as_completed(futures):
             try:
@@ -363,7 +277,7 @@ def mesh_independence_study(low=4, high=15):
 # ------------------------------------------------------------------------------------------------ #
 
 
-def run_single_scale(scale, config):
+def _run_single_scale(scale, config):
     local_config = config.copy()
     local_config["L1_factor"] = scale
     local_config["L2_factor"] = scale
@@ -379,6 +293,19 @@ def run_single_scale(scale, config):
 
 
 def scale_independence_study(low=0.5, high=40, step=0.5):
+    """
+    Scale independence study. Run a number of simulations with different scales
+    relative to the length scale parameter L.
+
+    Parameters
+    ----------
+    low: float, optional
+        Lowest scale to consider
+    high: float, optional
+        Highest scale to consider
+    step: float, optional
+        Step size between scales
+    """
     print("=" * 80)
     print("SCALE INDEPENDENCE STUDY")
     print("=" * 80)
@@ -391,13 +318,12 @@ def scale_independence_study(low=0.5, high=40, step=0.5):
         "N1": 9,
         "N2": 9,
     }
-
-    factors = np.arange(low, high, 0.5)
+    factors = np.arange(low, high, step)
 
     results = []
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        futures = [executor.submit(run_single_scale, factor, config) for factor in factors]
+        futures = [executor.submit(_run_single_scale, factor, config) for factor in factors]
 
         for future in concurrent.futures.as_completed(futures):
             try:
@@ -480,11 +406,13 @@ def plot_velocity_fields(u1, u2, x_coords, y_coords, title="Velocity Fields"):
     return fig, axs
 
 
-def diagnostic_plot(u1, u2):
-    x_coords = np.linspace(0, 60, u1.shape[1])
-    y_coords = np.linspace(0, 15, u1.shape[0])
+def diagnostic_plot(gen: generator):
+    assert np.any(gen.u1) and np.any(gen.u2), "Generator has not been run"
 
-    plot_velocity_fields(u1, u2, x_coords, y_coords, title="Von Karman Velocity field")
+    x_coords = np.linspace(0, gen.L1, gen.N1)
+    y_coords = np.linspace(0, gen.L2, gen.N2)
+
+    plot_velocity_fields(gen.u1, gen.u2, x_coords, y_coords, title="Von Karman Velocity field")
     plt.show()
 
 
