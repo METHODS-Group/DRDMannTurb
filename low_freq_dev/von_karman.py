@@ -1,5 +1,4 @@
 import concurrent.futures
-import time
 
 import matplotlib.pyplot as plt
 import numba
@@ -153,9 +152,14 @@ class generator:
         k1_pos_mask = self.k1_fft > 0
         k1_pos = self.k1_fft[k1_pos_mask]
 
+        min_k1 = np.min(k1_pos) if len(k1_pos) > 0 else 0
+        if min_k1 > 1e-3 / self.L:
+            print(f"Warning: minimum resolved wavenumber is {min_k1 * self.L} > 1e-3")
+            print(f"Increase domain size? current L1 factor = {self.L1 / self.L}")
+
         # Compute power spectra
-        power_u1 = (np.abs(u1_fft) / (self.N1 * self.N2)) ** 2
-        power_u2 = (np.abs(u2_fft) / (self.N1 * self.N2)) ** 2
+        power_u1 = (np.abs(u1_fft)) ** 2 / (self.N1 * self.N2)
+        power_u2 = (np.abs(u2_fft)) ** 2 / (self.N1 * self.N2)
 
         # Flatten k1 for faster processing
         k1_flat = self.k1.flatten()
@@ -406,14 +410,24 @@ def plot_velocity_fields(u1, u2, x_coords, y_coords, title="Velocity Fields"):
     return fig, axs
 
 
-def diagnostic_plot(gen: generator):
+def diagnostics(gen: generator, plot: bool = True):
     assert np.any(gen.u1) and np.any(gen.u2), "Generator has not been run"
+
+    print("=" * 80)
+    print("DIAGNOSTICS")
+    print("=" * 80)
+
+    print(f"u1 min: {np.min(gen.u1)}, u1 max: {np.max(gen.u1)}")
+    print(f"u2 min: {np.min(gen.u2)}, u2 max: {np.max(gen.u2)}")
+    print(f"u1 mean: {np.mean(gen.u1)}, u1 variance: {np.var(gen.u1)}")
+    print(f"u2 mean: {np.mean(gen.u2)}, u2 variance: {np.var(gen.u2)}")
 
     x_coords = np.linspace(0, gen.L1, gen.N1)
     y_coords = np.linspace(0, gen.L2, gen.N2)
 
-    plot_velocity_fields(gen.u1, gen.u2, x_coords, y_coords, title="Von Karman Velocity field")
-    plt.show()
+    if plot:
+        plot_velocity_fields(gen.u1, gen.u2, x_coords, y_coords, title="Von Karman Velocity field")
+        plt.show()
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -439,28 +453,45 @@ def plot_spectrum_comparison(config: dict, num_realizations: int = 10):
     num_realizations: int, optional
         Number of realizations to use in ensemble average for estimated spectrum
     """
+    print(f"\n{'='*50}")
+    print(f"SPECTRUM COMPARISON - {num_realizations} realizations")
+    print(f"{'='*50}")
 
     gen = generator(config)
+    print(f"Generator initialized with N1={gen.N1}, N2={gen.N2}")
 
     # Custom wavenumber array. Only used for analytical spectrum.
     k1_custom = np.logspace(-3, 3, 1000) / config["L"]
+    print("Computing analytical spectrum...")
     F11_analytical, F22_analytical = gen.analytical_spectrum(k1_custom)
 
     k1_max = np.max(k1_custom)
 
     results = []
+    print(f"\nSpawning {num_realizations} worker processes...")
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        futures = [executor.submit(_compute_single_realization, config, k1_max) for _ in range(num_realizations)]
+        futures = []
 
+        for i in range(num_realizations):
+            print(f"\tSubmitting job {i+1}/{num_realizations}...")
+            futures.append(executor.submit(_compute_single_realization, config, k1_max))
+
+        print(f"\nAll {num_realizations} jobs submitted, waiting for completion...")
+
+        completed = 0
         for future in concurrent.futures.as_completed(futures):
             try:
                 results.append(future.result())
+                completed += 1
+                print(f"\tProcess {completed}/{num_realizations} completed")
             except Exception as e:
-                print(f"Error: {e}")
+                print(f"ERROR in worker process: {e}")
 
     if not results:
         raise RuntimeError("No results were collected")
+
+    print("\nAll processes completed. Processing results...")
 
     k1_pos = results[0][0]
     F11_avg = np.zeros_like(k1_pos)
@@ -474,6 +505,7 @@ def plot_spectrum_comparison(config: dict, num_realizations: int = 10):
     F11_avg /= lr
     F22_avg /= lr
 
+    print("\nCreating plots...")
     fig, axs = plt.subplots(1, 2, figsize=(12, 5))
 
     # Plot F11 estimated and analytical
@@ -500,138 +532,299 @@ def plot_spectrum_comparison(config: dict, num_realizations: int = 10):
     return fig, axs
 
 
-def compare_generation_methods(config=None, num_runs=5):
+def compare_analytical_vs_estimated(config: dict, num_realizations: int = 5):
     """
-    Compare the performance and results of the standard and Numba-accelerated generation methods.
+    Compare the analytical spectrum with the estimated spectrum from simulations.
+    Averages results from multiple realizations for better accuracy.
 
     Parameters
     ----------
-    config : dict, optional
-        Configuration dictionary for the generator. If None, a default config is used.
-    num_runs : int, optional
-        Number of runs to average timing results over.
+    config : dict
+        Configuration dictionary with parameters for the generator
+    num_realizations : int, optional
+        Number of realizations to average, default is 5
 
     Returns
     -------
-    dict
-        Dictionary containing timing results and error metrics.
+    fig, axs : matplotlib figure and axes
+        The generated plot showing analytical vs. estimated spectra
     """
-    if config is None:
-        config = {
-            "L": 500,
-            "epsilon": 0.01,
-            "L1_factor": 2,
-            "L2_factor": 2,
-            "N1": 9,
-            "N2": 9,
-        }
+    print(f"\n{'='*60}")
+    print(f"COMPARING ANALYTICAL VS ESTIMATED SPECTRA ({num_realizations} realizations)")
+    print(f"{'='*60}")
 
+    # Initialize the generator
     gen = generator(config)
+    print(f"Domain size: {gen.L1} x {gen.L2} units")
+    print(f"Resolution: {gen.N1} x {gen.N2} points")
+    print(f"Min resolvable k1L: {2*np.pi/gen.L1*gen.L:.4f}")
 
-    # Warm-up run for Numba (first run includes compilation time)
-    print("Performing Numba warm-up run...")
-    gen.generate_numba()
+    # Compute analytical spectrum over a wide range
+    k1_custom = np.logspace(-3, 3, 1000) / config["L"]
+    print("Computing analytical spectrum...")
+    F11_analytical, F22_analytical = gen.analytical_spectrum(k1_custom)
 
-    # Timing and comparison
-    standard_times = []
-    numba_times = []
-    rel_errors_u1 = []
-    rel_errors_u2 = []
+    # Run simulations and collect results
+    print(f"\nRunning {num_realizations} realizations...")
+    results = []
 
-    print(f"Running {num_runs} comparison tests...")
-    for i in range(num_runs):
-        print(f"Run {i+1}/{num_runs}")
+    for i in range(num_realizations):
+        print(f"  Realization {i+1}/{num_realizations}...")
+        gen.generate()
+        k1_sim, F11, F22 = gen.compute_spectrum()
+        results.append((k1_sim, F11, F22))
 
-        # Time standard method
-        start_time = time.time()
-        u1_std, u2_std = gen.generate(eta_ones=True)
-        standard_time = time.time() - start_time
-        standard_times.append(standard_time)
+    # Average the results
+    k1_pos = results[0][0]
+    F11_avg = np.zeros_like(k1_pos)
+    F22_avg = np.zeros_like(k1_pos)
 
-        # Time Numba method
-        start_time = time.time()
-        u1_numba, u2_numba = gen.generate_numba(eta_ones=True)
-        numba_time = time.time() - start_time
-        numba_times.append(numba_time)
+    for _, F11, F22 in results:
+        F11_avg += F11
+        F22_avg += F22
 
-        # Calculate relative error
-        # u1_error = np.linalg.norm(u1_std - u1_numba) / np.linalg.norm(u1_std)
-        # u2_error = np.linalg.norm(u2_std - u2_numba) / np.linalg.norm(u2_std)
+    F11_avg /= num_realizations
+    F22_avg /= num_realizations
 
-        u1_error = np.linalg.norm(u1_std - u1_numba)
-        u2_error = np.linalg.norm(u2_std - u2_numba)
+    # Auto-scale to match peak values
+    max_analytical_F11 = np.max(k1_custom * F11_analytical)
+    max_simulated_F11 = np.max(k1_pos * F11_avg)
+    auto_scale = max_analytical_F11 / max_simulated_F11 if max_simulated_F11 > 0 else 1
+    print(f"Applying auto-scaling factor: {auto_scale:.2e}")
 
-        assert np.allclose(u1_std, u1_numba, atol=1e-10)
-        assert np.allclose(u2_std, u2_numba, atol=1e-10)
+    F11_avg *= auto_scale
+    F22_avg *= auto_scale
 
-        rel_errors_u1.append(u1_error)
-        rel_errors_u2.append(u2_error)
+    # Create the plots
+    fig, axs = plt.subplots(1, 2, figsize=(14, 6))
 
-    diagnostic_plot(u1_std, u2_std)
-    diagnostic_plot(u1_numba, u2_numba)
+    # Plot F11
+    axs[0].loglog(k1_custom * config["L"], k1_custom * F11_analytical, "k-", label="Analytical F11", linewidth=2)
+    axs[0].loglog(k1_pos * config["L"], k1_pos * F11_avg, "r--", label="Estimated F11", linewidth=2)
+    axs[0].set_xlabel(r"$k_1 L$ [-]")
+    axs[0].set_ylabel(r"$k_1 F_{11}(k_1)$ [m$^2$s$^{-2}$]")
+    axs[0].set_title("F11 Spectrum")
+    axs[0].grid(True, which="both", ls="-", alpha=0.2)
+    axs[0].legend()
+    axs[0].set_xlim(1e-3, 1e3)
 
-    # Calculate statistics
-    avg_standard_time = np.mean(standard_times)
-    avg_numba_time = np.mean(numba_times)
-    speedup = avg_standard_time / avg_numba_time
-    avg_u1_error = np.mean(rel_errors_u1)
-    avg_u2_error = np.mean(rel_errors_u2)
+    # Plot F22
+    axs[1].loglog(k1_custom * config["L"], k1_custom * F22_analytical, "k-", label="Analytical F22", linewidth=2)
+    axs[1].loglog(k1_pos * config["L"], k1_pos * F22_avg, "r--", label="Estimated F22", linewidth=2)
+    axs[1].set_xlabel(r"$k_1 L$ [-]")
+    axs[1].set_ylabel(r"$k_1 F_{22}(k_1)$ [m$^2$s$^{-2}$]")
+    axs[1].set_title("F22 Spectrum")
+    axs[1].grid(True, which="both", ls="-", alpha=0.2)
+    axs[1].legend()
+    axs[1].set_xlim(1e-3, 1e3)
 
-    # Print results
-    print("\nPerformance Comparison:")
-    print(f"Average standard method time: {avg_standard_time:.4f} seconds")
-    print(f"Average Numba method time: {avg_numba_time:.4f} seconds")
-    print(f"Speedup factor: {speedup:.2f}x")
-
-    print("\nAccuracy Comparison:")
-    print(f"Average relative error in u1: {avg_u1_error:.8e}")
-    print(f"Average relative error in u2: {avg_u2_error:.8e}")
-
-    # Test with different mesh sizes
-    print("\nTesting scaling with mesh size:")
-    mesh_sizes = [7, 8, 9, 10, 11, 12, 13]
-    std_times = []
-    numba_times = []
-
-    for n in mesh_sizes:
-        test_config = config.copy()
-        test_config["N1"] = n
-        test_config["N2"] = n
-        test_gen = generator(test_config)
-
-        # Standard method
-        start_time = time.time()
-        test_gen.generate()
-        std_time = time.time() - start_time
-        std_times.append(std_time)
-
-        # Numba method
-        start_time = time.time()
-        test_gen.generate_numba()
-        nb_time = time.time() - start_time
-        numba_times.append(nb_time)
-
-        print(f"Mesh size 2^{n}: Standard={std_time:.4f}s, Numba={nb_time:.4f}s, Speedup={std_time/nb_time:.2f}x")
-
-    # Plot scaling results
-    plt.figure(figsize=(10, 6))
-    mesh_points = [2**n for n in mesh_sizes]
-    plt.loglog(mesh_points, std_times, "o-", label="Standard Method")
-    plt.loglog(mesh_points, numba_times, "s-", label="Numba Method")
-    plt.xlabel("Mesh Size (N)")
-    plt.ylabel("Execution Time (s)")
-    plt.title("Performance Scaling with Mesh Size")
-    plt.grid(True, which="both", ls="-", alpha=0.2)
-    plt.legend()
     plt.tight_layout()
     plt.show()
+
+    # Print min/max k1L values
+    k1L_min = min(k1_pos) * config["L"]
+    k1L_max = max(k1_pos) * config["L"]
+    print(f"\nEstimated spectrum k1L range: [{k1L_min:.4f}, {k1L_max:.4f}]")
+    print(f"To reach k1L ≈ 10^-3, domain size would need to be ~{1e-3/(2*np.pi/gen.L1):.1f}x larger")
+
+    return fig, axs
+
+
+# ------------------------------------------------------------------------------------------------ #
+
+
+def compare_spectra_across_scales(base_config: dict, scale_factors=None, num_realizations=5, autoscale=False):
+    """
+    Compare analytical spectrum with estimated spectra from multiple domain scale factors.
+    Each scale factor will have its own line on the plot.
+
+    Parameters
+    ----------
+    base_config : dict
+        Base configuration dictionary
+    scale_factors : list, optional
+        List of domain scale factors to test. If None, defaults to [1, 5, 10, 50, 100]
+    num_realizations : int, optional
+        Number of realizations for each domain size
+    autoscale : bool, optional
+        Whether to automatically scale the estimated spectra to match the analytical peak
+
+    Returns
+    -------
+    fig, axs : matplotlib figure and axes
+        The generated plot showing analytical and multiple estimated spectra
+    """
+    if scale_factors is None:
+        scale_factors = [1, 5, 10, 50, 100]
+
+    print(f"\n{'='*60}")
+    print("COMPARING SPECTRA ACROSS DOMAIN SCALES")
+    print(f"Scale factors: {scale_factors}, Realizations per scale: {num_realizations}")
+    print(f"Auto-scaling: {'Enabled' if autoscale else 'Disabled'}")
+    print(f"{'='*60}")
+
+    # Create custom wavenumber array for analytical spectrum
+    k1_custom = np.logspace(-3, 3, 1000) / base_config["L"]
+
+    # Create base generator for computing analytical spectrum
+    base_gen = generator(base_config)
+    F11_analytical, F22_analytical = base_gen.analytical_spectrum(k1_custom)
+
+    # Store results for each scale factor
+    all_results = {}
+    scaling_factors = {}  # Store scaling factors for each scale
+
+    # Create a distinct color palette for better visibility
+    # Using distinct colors that pop and are easy to distinguish
+    colors = [
+        "#1f77b4",  # blue
+        "#ff7f0e",  # orange
+        "#2ca02c",  # green
+        "#d62728",  # red
+        "#9467bd",  # purple
+        "#8c564b",  # brown
+        "#e377c2",  # pink
+        "#7f7f7f",  # gray
+        "#bcbd22",  # olive
+        "#17becf",  # cyan
+    ]
+
+    # Ensure we have enough colors for all scale factors
+    if len(scale_factors) > len(colors):
+        from matplotlib.cm import get_cmap
+
+        colors = get_cmap("tab20").colors
+
+    for i, scale in enumerate(scale_factors):
+        print(f"\n{'-'*50}")
+        print(f"Testing domain scale factor: {scale}")
+
+        # Create modified config with current scale factor
+        config = base_config.copy()
+        config["L1_factor"] = scale
+        config["L2_factor"] = scale  # Keep domain square
+
+        # Initialize generator with this scale
+        gen = generator(config)
+        print(f"Domain size: {gen.L1} x {gen.L2} units")
+        print(f"Resolution: {gen.N1} x {gen.N2} points")
+        print(f"Min resolvable k1L: {2*np.pi/gen.L1*gen.L:.4f}")
+
+        # Run simulations and collect results for this scale
+        results = []
+
+        for j in range(num_realizations):
+            print(f"  Realization {j+1}/{num_realizations}...")
+            gen.generate()
+            k1_sim, F11, F22 = gen.compute_spectrum()
+            results.append((k1_sim, F11, F22))
+
+        # Average the results for this scale
+        k1_pos = results[0][0]
+        F11_avg = np.zeros_like(k1_pos)
+        F22_avg = np.zeros_like(k1_pos)
+
+        for _, F11, F22 in results:
+            F11_avg += F11
+            F22_avg += F22
+
+        F11_avg /= num_realizations
+        F22_avg /= num_realizations
+
+        # Calculate scaling factor even if we're not using it (for reporting)
+        max_analytical_F11 = np.max(k1_custom * F11_analytical)
+        max_simulated_F11 = np.max(k1_pos * F11_avg)
+        auto_scale = max_analytical_F11 / max_simulated_F11 if max_simulated_F11 > 0 else 1
+        scaling_factors[scale] = auto_scale
+
+        # Only apply scaling if autoscale is True
+        if autoscale:
+            print(f"  Auto-scaling factor: {auto_scale:.2e}")
+            F11_avg *= auto_scale
+            F22_avg *= auto_scale
+        else:
+            print(f"  Auto-scaling disabled. Scale factor would be: {auto_scale:.2e}")
+
+        # Store the averaged, (potentially) scaled results for this scale factor
+        all_results[scale] = (k1_pos, F11_avg, F22_avg)
+
+    if autoscale:
+        fig, axs = plt.subplots(1, 3, figsize=(21, 6))
+    else:
+        fig, axs = plt.subplots(1, 2, figsize=(14, 6))
+
+    # Plot analytical spectrum on both spectrum plots
+    axs[0].loglog(k1_custom * base_config["L"], k1_custom * F11_analytical, "k-", label="Analytical F11", linewidth=2.5)
+    axs[1].loglog(k1_custom * base_config["L"], k1_custom * F22_analytical, "k-", label="Analytical F22", linewidth=2.5)
+
+    # Plot estimated spectra for each scale factor
+    for i, scale in enumerate(scale_factors):
+        k1_pos, F11_avg, F22_avg = all_results[scale]
+        label = f"L factor = {scale}"
+        axs[0].loglog(
+            k1_pos * base_config["L"], k1_pos * F11_avg, "--", color=colors[i % len(colors)], label=label, linewidth=1.5
+        )
+        axs[1].loglog(
+            k1_pos * base_config["L"], k1_pos * F22_avg, "--", color=colors[i % len(colors)], label=label, linewidth=1.5
+        )
+
+    # Set axis labels and titles for spectrum plots
+    for i in range(2):
+        comp = "11" if i == 0 else "22"
+        axs[i].set_xlabel(r"$k_1 L$ [-]")
+        axs[i].set_ylabel(r"$k_1 F_{" + comp + r"}(k_1)$ [m$^2$s$^{-2}$]")
+        axs[i].set_title(f"F{comp} Spectrum Comparison")
+        axs[i].grid(True, which="both", ls="-", alpha=0.2)
+        axs[i].legend()
+        axs[i].set_xlim(1e-3, 1e3)
+
+    # If autoscale is enabled, add a plot of scale factors vs scaling factors
+    if autoscale:
+        scales = list(scaling_factors.keys())
+        scalings = [scaling_factors[s] for s in scales]
+
+        axs[2].plot(scales, scalings, "ko-", linewidth=2, markersize=8)
+        for i, scale in enumerate(scales):
+            axs[2].annotate(f"{scalings[i]:.1e}", (scale, scalings[i]), xytext=(5, 5), textcoords="offset points")
+
+        axs[2].set_xlabel("Domain Scale Factor")
+        axs[2].set_ylabel("Auto-Scaling Factor")
+        axs[2].set_title("Auto-Scaling Factors vs. Domain Scale")
+        axs[2].grid(True)
+
+        # Set x-axis to use exact scale values
+        axs[2].set_xticks(scales)
+        axs[2].set_xticklabels([str(s) for s in scales])
+
+        # Use log scale for y-axis if values span multiple orders of magnitude
+        if max(scalings) / min(scalings) > 100:
+            axs[2].set_yscale("log")
+
+    plt.tight_layout()
+    plt.show()
+
+    # Print summary of minimum k1L values
+    print("\nSUMMARY OF MINIMUM k1L VALUES:")
+    print("-" * 40)
+    for scale in scale_factors:
+        k1_min = min(all_results[scale][0]) * base_config["L"]
+        k1_max = max(all_results[scale][0]) * base_config["L"]
+        print(f"Scale factor {scale:3d}: k1L range [{k1_min:.5f}, {k1_max:.5f}]")
+
+    # Print summary of scaling factors
+    print("\nSUMMARY OF AUTO-SCALING FACTORS:")
+    print("-" * 40)
+    for scale in scale_factors:
+        print(f"Scale factor {scale:3d}: {scaling_factors[scale]:.2e}")
+
+    return fig, axs
 
 
 # ------------------------------------------------------------------------------------------------ #
 
 
 if __name__ == "__main__":
-    # mesh_independence_study(high=12)
+    # mesh_independence_study(high=14)
     # scale_independence_study(high=20)
 
     config = {
@@ -646,19 +839,35 @@ if __name__ == "__main__":
     FINE_CONFIG = {
         "L": 500,
         "epsilon": 0.01,
-        "L1_factor": 10,
-        "L2_factor": 10,
-        "N1": 15,
-        "N2": 7,
+        "L1_factor": 1000,
+        "L2_factor": 1000,
+        "N1": 12,
+        "N2": 9,
     }
 
-    print("\n" + "=" * 80)
-    print("GENERATION METHOD COMPARISON")
-    print("=" * 80)
-    compare_generation_methods(config)
-
-    # gen = generator(config)
+    # gen = generator(FINE_CONFIG)
     # gen.generate()
-    # diagnostic_plot(gen.u1, gen.u2)
+    # diagnostics(gen, plot=False)
 
     # plot_spectrum_comparison(FINE_CONFIG)
+
+    # compare_analytical_vs_estimated(FINE_CONFIG)
+
+    # Base configuration
+    base_config = {
+        "L": 500,
+        "epsilon": 0.01,
+        "L1_factor": 1,
+        "L2_factor": 1,
+        "N1": 9,
+        "N2": 9,
+    }
+
+    # Compare spectra across different domain scales
+    compare_spectra_across_scales(
+        base_config, scale_factors=[10, 20, 50, 100, 500, 1000], num_realizations=5, autoscale=True
+    )
+
+    compare_spectra_across_scales(
+        base_config, scale_factors=[10, 20, 50, 100, 500, 1000], num_realizations=5, autoscale=False
+    )
