@@ -1,4 +1,5 @@
 import concurrent.futures
+import time
 
 import matplotlib.pyplot as plt
 import numba
@@ -8,7 +9,7 @@ import scipy
 """
 - [X] Mesh independence study
 - [X] Scale independence study
-- [ ] Plot velocity fields
+- [-] Plot velocity fields
 - [ ] Match spectrum
 """
 
@@ -54,7 +55,7 @@ class generator:
             noise = np.random.normal(0, 1, size=(self.N1, self.N2))
             eta = np.fft.fft2(noise)
 
-        u1_freq_complex, u2_freq_complex = self._generate_numba_helper(
+        u1_freq, u2_freq = self._generate_numba_helper(
             self.k1,
             self.k2,
             self.c0,
@@ -67,11 +68,14 @@ class generator:
             eta,
         )
 
-        transform_norm = np.sqrt(self.dx * self.dy)
-        normalization = 1 / (self.dx * self.dy)
+        ###########
 
-        u1 = np.real(np.fft.ifft2(u1_freq_complex) / transform_norm) * normalization
-        u2 = np.real(np.fft.ifft2(u2_freq_complex) / transform_norm) * normalization
+        # NOTE: transform_norm was important for spatial white noise for correcting variance
+        transform = 1 if eta_ones else np.sqrt((self.N1 * self.N2) / (self.L1 * self.L2))
+        # transform = 1
+
+        u1 = np.real(np.fft.ifft2(u1_freq) * transform ) * self.N1 * self.N2
+        u2 = np.real(np.fft.ifft2(u2_freq) * transform ) * self.N1 * self.N2
 
         self.u1 = u1
         self.u2 = u2
@@ -158,8 +162,8 @@ class generator:
             print(f"Increase domain size? current L1 factor = {self.L1 / self.L}")
 
         # Compute power spectra
-        power_u1 = (np.abs(u1_fft)) ** 2 / (self.N1 * self.N2)
-        power_u2 = (np.abs(u2_fft)) ** 2 / (self.N1 * self.N2)
+        power_u1 = (np.abs(u1_fft)) ** 2
+        power_u2 = (np.abs(u2_fft)) ** 2
 
         # Flatten k1 for faster processing
         k1_flat = self.k1.flatten()
@@ -289,6 +293,14 @@ def _run_single_scale(scale, config):
     gen = generator(local_config)
     u1, u2 = gen.generate(eta_ones=True)
 
+    # L = length scale param
+    # L1 = length in x direction
+    # L2 = length in y direction
+
+    # L1 = L * L1_factor 
+
+    # dx = L1 / N1
+    # dy = L2 / N2
     u1_norm = np.linalg.norm(u1) * gen.dx * gen.dy
     u2_norm = np.linalg.norm(u2) * gen.dx * gen.dy
 
@@ -823,6 +835,192 @@ def compare_spectra_across_scales(base_config: dict, scale_factors=None, num_rea
 # ------------------------------------------------------------------------------------------------ #
 
 
+def study_grid_and_domain_effects(base_config, 
+                                 grid_exponents=None, 
+                                 domain_factors=None,
+                                 num_realizations=3):
+    """
+    Study the combined effects of grid resolution and domain size on spectrum accuracy.
+    Creates heatmaps to visualize various metrics across the parameter space.
+    
+    Parameters
+    ----------
+    base_config : dict
+        Base configuration dictionary
+    grid_exponents : list, optional
+        List of exponents for grid size where N1=N2=2^exponent
+    domain_factors : list, optional
+        List of domain size factors where L1_factor=L2_factor
+    num_realizations : int, optional
+        Number of realizations for each parameter combination
+        
+    Returns
+    -------
+    figs : list
+        List of matplotlib figures with different metric visualizations
+    """
+    if grid_exponents is None:
+        grid_exponents = [7, 8, 9, 10]  # 128, 256, 512, 1024 grid points
+    
+    if domain_factors is None:
+        domain_factors = [1, 5, 10, 50, 100, 500]
+    
+    print(f"\n{'='*70}")
+    print(f"GRID AND DOMAIN SIZE EFFECT STUDY")
+    print(f"Grid exponents: {grid_exponents} (grid sizes: {[2**n for n in grid_exponents]})")
+    print(f"Domain factors: {domain_factors}")
+    print(f"Realizations per combination: {num_realizations}")
+    print(f"{'='*70}")
+    
+    # Initialize data storage
+    n_exp = len(grid_exponents)
+    n_factors = len(domain_factors)
+    
+    # Keep only two metrics: auto-scale factors and u1 norms
+    auto_scale_factors = np.zeros((n_exp, n_factors))
+    u1_norms = np.zeros((n_exp, n_factors))
+    
+    # Create reference analytical spectrum
+    k1_ref = np.logspace(-3, 3, 1000) / base_config["L"]
+    # Using base generator just for analytical spectrum
+    base_gen = generator(base_config)
+    F11_analytical, F22_analytical = base_gen.analytical_spectrum(k1_ref)
+    
+    # Iterate through all combinations
+    total_combinations = n_exp * n_factors
+    current_combo = 0
+    
+    for i, exp in enumerate(grid_exponents):
+        for j, factor in enumerate(domain_factors):
+            current_combo += 1
+            grid_size = 2**exp
+            
+            print(f"\n{'-'*60}")
+            print(f"Combination {current_combo}/{total_combinations}: " +
+                  f"Grid={grid_size}x{grid_size}, Domain factor={factor}")
+            
+            # Configure this specific test case
+            config = base_config.copy()
+            config["N1"] = exp
+            config["N2"] = exp
+            config["L1_factor"] = factor
+            config["L2_factor"] = factor
+            
+            # Initialize generator
+            gen = generator(config)
+            
+            # Run simulations for this combination
+            all_F11 = []
+
+            u1, u2 = gen.generate(eta_ones=True)
+
+            u1_norms[i,j] = np.linalg.norm(u1) * np.sqrt(gen.dx * gen.dy)
+            
+            for r in range(num_realizations):
+                print(f"  Running realization {r+1}/{num_realizations}...")
+                # Generate velocity fields
+                gen.generate(eta_ones=True)
+                
+                # Get spectrum
+                k1_sim, F11, F22 = gen.compute_spectrum()
+                
+                if r == 0:
+                    all_F11 = np.zeros((num_realizations, len(F11)))
+                
+                all_F11[r, :] = F11
+            
+            # Average the spectra and norms
+            F11_avg = np.mean(all_F11, axis=0)
+            
+            # Auto-scaling factor
+            max_analytical_F11 = np.max(k1_ref * F11_analytical)
+            max_simulated_F11 = np.max(k1_sim * F11_avg)
+            auto_scale_factors[i, j] = max_analytical_F11 / max_simulated_F11 if max_simulated_F11 > 0 else np.nan
+            
+            print(f"  Average u1 norm: {u1_norms[i, j]:.6e}")
+            print(f"  Auto-scaling factor: {auto_scale_factors[i, j]:.2e}")
+    
+    # Create visualizations (heatmaps)
+    figs = []
+    
+    # Common function for creating heatmaps
+    def create_heatmap(data, title, cmap='viridis', logscale=False):
+        fig, ax = plt.subplots(figsize=(10, 8))
+        
+        x_labels = [str(f) for f in domain_factors]
+        y_labels = [f"2^{e} ({2**e})" for e in grid_exponents]
+        
+        # Log transform for certain metrics if needed
+        plot_data = np.log10(data) if logscale else data
+        
+        # Create heatmap
+        im = ax.imshow(plot_data, cmap=cmap, aspect='auto')
+        
+        # Add colorbar
+        cbar = ax.figure.colorbar(im, ax=ax)
+        if logscale:
+            cbar.set_label(f"{title} (log10 scale)")
+        else:
+            cbar.set_label(title)
+            
+        # Configure axes
+        ax.set_xticks(np.arange(len(domain_factors)))
+        ax.set_yticks(np.arange(len(grid_exponents)))
+        ax.set_xticklabels(x_labels)
+        ax.set_yticklabels(y_labels)
+        
+        # Label axes
+        ax.set_xlabel("Domain Scale Factor (L1_factor = L2_factor)")
+        ax.set_ylabel("Grid Size Exponent (N1 = N2 = 2^exponent)")
+        ax.set_title(title)
+        
+        # Add text annotations with values
+        for i in range(len(grid_exponents)):
+            for j in range(len(domain_factors)):
+                if logscale:
+                    text = f"{data[i, j]:.2e}"
+                elif data[i, j] < 0.01:
+                    text = f"{data[i, j]:.2e}"
+                else:
+                    text = f"{data[i, j]:.4f}"
+                
+                # More readable text color logic
+                if cmap in ['RdBu', 'RdBu_r', 'coolwarm']:
+                    # For diverging colormaps, use threshold at middle of scale
+                    text_color = "white" if abs(plot_data[i, j] - np.mean(plot_data)) > (np.max(plot_data) - np.min(plot_data))/4 else "black"
+                else:
+                    text_color = "white" if plot_data[i, j] > np.mean(plot_data) else "black"
+                
+                ax.text(j, i, text, ha="center", va="center", color=text_color)
+        
+        plt.tight_layout()
+        return fig
+    
+    # 1. Auto-scale factors heatmap with red-blue colormap
+    fig1 = create_heatmap(auto_scale_factors, "Auto-Scaling Factor", cmap='RdBu_r', logscale=True)
+    figs.append(fig1)
+    
+    # 2. Velocity field norm (||u1||) heatmap
+    fig2 = create_heatmap(u1_norms, "Velocity Field Norm (||u1||)", cmap='viridis', logscale=True)
+    figs.append(fig2)
+    
+    # Display all plots
+    for fig in figs:
+        plt.figure(fig.number)
+        plt.show()
+    
+    # Save data to a file for later reference
+    results_dict = {
+        'grid_exponents': grid_exponents,
+        'domain_factors': domain_factors,
+        'auto_scale_factors': auto_scale_factors,
+        'u1_norms': u1_norms
+    }
+    
+    return figs, results_dict
+
+# ------------------------------------------------------------------------------------------------ #
+
 if __name__ == "__main__":
     # mesh_independence_study(high=14)
     # scale_independence_study(high=20)
@@ -863,11 +1061,18 @@ if __name__ == "__main__":
         "N2": 9,
     }
 
-    # Compare spectra across different domain scales
-    compare_spectra_across_scales(
-        base_config, scale_factors=[10, 20, 50, 100, 500, 1000], num_realizations=5, autoscale=True
-    )
+    # # Compare spectra across different domain scales
+    # compare_spectra_across_scales(
+    #     base_config, scale_factors=[10, 20, 50, 100, 500, 1000], num_realizations=5, autoscale=True
+    # )
 
     compare_spectra_across_scales(
         base_config, scale_factors=[10, 20, 50, 100, 500, 1000], num_realizations=5, autoscale=False
     )
+
+    # study_grid_and_domain_effects(
+    #     base_config,
+    #     grid_exponents=[6, 7, 8, 9, 10, 11],    
+    #     domain_factors=[10, 20, 40, 80, 100],
+    #     num_realizations=2
+    # )
