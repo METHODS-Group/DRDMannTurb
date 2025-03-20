@@ -71,11 +71,10 @@ class generator:
         ###########
 
         # NOTE: transform_norm was important for spatial white noise for correcting variance
-        transform = 1 if eta_ones else np.sqrt((self.N1 * self.N2) / (self.L1 * self.L2))
-        # transform = 1
+        transform = 1 if eta_ones else np.sqrt((self.L1 * self.L2) / (self.N1 * self.N2))
 
-        u1 = np.real(np.fft.ifft2(u1_freq) * transform ) * self.N1 * self.N2
-        u2 = np.real(np.fft.ifft2(u2_freq) * transform ) * self.N1 * self.N2
+        u1 = np.real(np.fft.ifft2(u1_freq) / transform )
+        u2 = np.real(np.fft.ifft2(u2_freq) / transform )
 
         self.u1 = u1
         self.u2 = u2
@@ -1035,7 +1034,7 @@ if __name__ == "__main__":
     }
 
     FINE_CONFIG = {
-        "L": 500,
+        "L": 500, # [m]
         "epsilon": 0.01,
         "L1_factor": 1000,
         "L2_factor": 1000,
@@ -1043,9 +1042,9 @@ if __name__ == "__main__":
         "N2": 9,
     }
 
-    # gen = generator(FINE_CONFIG)
-    # gen.generate()
-    # diagnostics(gen, plot=False)
+    gen = generator(FINE_CONFIG)
+    gen.generate()
+    diagnostics(gen, plot=False)
 
     # plot_spectrum_comparison(FINE_CONFIG)
 
