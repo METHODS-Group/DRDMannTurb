@@ -1,5 +1,4 @@
 import concurrent.futures
-import time
 
 import matplotlib.pyplot as plt
 import numba
@@ -11,6 +10,11 @@ import scipy
 - [X] Scale independence study
 - [-] Plot velocity fields
 - [ ] Match spectrum
+
+
+1. Why is L_factor = 1000  for F11 not lining up
+2. Why does F11 drop off at end of "stitch"
+3. Why is it not so noisy
 """
 
 
@@ -48,12 +52,12 @@ class generator:
         Generate turbulent velocity fields using the von Karman spectrum
         """
 
-        eta: np.ndarray
+        noise_hat: np.ndarray
         if eta_ones:
-            eta = np.ones_like(self.k1, dtype=complex)
+            noise_hat = np.ones_like(self.k1, dtype=complex)
         else:
             noise = np.random.normal(0, 1, size=(self.N1, self.N2))
-            eta = np.fft.fft2(noise)
+            noise_hat = np.fft.fft2(noise)
 
         u1_freq, u2_freq = self._generate_numba_helper(
             self.k1,
@@ -65,14 +69,14 @@ class generator:
             self.N2,
             self.dx,
             self.dy,
-            eta,
+            noise_hat,
         )
 
         ###########
 
         # NOTE: transform_norm was important for spatial white noise for correcting variance
         # transform = 1 if eta_ones else np.sqrt(self.dx * self.dy)
-        transform = 1 if eta_ones else np.sqrt(self.dx * self.dy)
+        transform = 1 if eta_ones else np.sqrt(self.N1 * self.N2)
 
         u1 = np.real(np.fft.ifft2(u1_freq) / transform)
         u2 = np.real(np.fft.ifft2(u2_freq) / transform)
@@ -98,10 +102,8 @@ class generator:
                 else:
                     k_sq = k_mag_sq[i, j]
 
-                phi_[i,j] = (
-                    c0 * L**(17/6) * np.cbrt(epsilon)
-                ) / (
-                    2 * np.sqrt(np.pi) * (k_sq * L**2 + 1)**(17/12)
+                phi_[i, j] = (c0 * L ** (17 / 6) * np.cbrt(epsilon)) / (
+                    2 * np.sqrt(np.pi) * (k_sq * L**2 + 1) ** (17 / 12)
                 )
 
         #########################################################
@@ -126,18 +128,19 @@ class generator:
         F11 = np.zeros_like(k1_pos)
         F22 = np.zeros_like(k1_pos)
 
+        dk2 = 2 * np.pi / L2
+
         for i in numba.prange(len(k1_pos)):
             k1_val = k1_pos[i]
             indices = np.where(k1_flat == k1_val)[0]
-
-            len_indices = len(indices)
 
             if len(indices) > 0:
                 # F11[i] = np.mean(power_u1_flat[indices]) * dy
                 # F22[i] = np.mean(power_u2_flat[indices]) * dy
 
-                F11[i] = np.mean(power_u1_flat[indices]) * dy
-                F22[i] = np.mean(power_u2_flat[indices]) * dy
+                F11[i] = np.sum(power_u1_flat[indices]) * dk2
+                F22[i] = np.sum(power_u2_flat[indices]) * dk2
+
         return F11, F22
 
     def compute_spectrum(self, u1=None, u2=None, k1_max=None):
@@ -165,7 +168,7 @@ class generator:
 
         # Compute power spectra
         # OLD:
-        # power_u1 = (np.abs(u1_fft)) ** 2 
+        # power_u1 = (np.abs(u1_fft)) ** 2
         # power_u2 = (np.abs(u2_fft)) ** 2
 
         power_u1 = (np.abs(u1_fft)) ** 2
@@ -301,7 +304,7 @@ def _run_single_scale(scale, config):
     # L1 = length in x direction
     # L2 = length in y direction
 
-    # L1 = L * L1_factor 
+    # L1 = L * L1_factor
 
     # dx = L1 / N1
     # dy = L2 / N2
@@ -548,104 +551,6 @@ def plot_spectrum_comparison(config: dict, num_realizations: int = 10):
     return fig, axs
 
 
-def compare_analytical_vs_estimated(config: dict, num_realizations: int = 5):
-    """
-    Compare the analytical spectrum with the estimated spectrum from simulations.
-    Averages results from multiple realizations for better accuracy.
-
-    Parameters
-    ----------
-    config : dict
-        Configuration dictionary with parameters for the generator
-    num_realizations : int, optional
-        Number of realizations to average, default is 5
-
-    Returns
-    -------
-    fig, axs : matplotlib figure and axes
-        The generated plot showing analytical vs. estimated spectra
-    """
-    print(f"\n{'='*60}")
-    print(f"COMPARING ANALYTICAL VS ESTIMATED SPECTRA ({num_realizations} realizations)")
-    print(f"{'='*60}")
-
-    # Initialize the generator
-    gen = generator(config)
-    print(f"Domain size: {gen.L1} x {gen.L2} units")
-    print(f"Resolution: {gen.N1} x {gen.N2} points")
-    print(f"Min resolvable k1L: {2*np.pi/gen.L1*gen.L:.4f}")
-
-    # Compute analytical spectrum over a wide range
-    k1_custom = np.logspace(-3, 3, 1000) / config["L"]
-    print("Computing analytical spectrum...")
-    F11_analytical, F22_analytical = gen.analytical_spectrum(k1_custom)
-
-    # Run simulations and collect results
-    print(f"\nRunning {num_realizations} realizations...")
-    results = []
-
-    for i in range(num_realizations):
-        print(f"  Realization {i+1}/{num_realizations}...")
-        gen.generate()
-        k1_sim, F11, F22 = gen.compute_spectrum()
-        results.append((k1_sim, F11, F22))
-
-    # Average the results
-    k1_pos = results[0][0]
-    F11_avg = np.zeros_like(k1_pos)
-    F22_avg = np.zeros_like(k1_pos)
-
-    for _, F11, F22 in results:
-        F11_avg += F11
-        F22_avg += F22
-
-    F11_avg /= num_realizations
-    F22_avg /= num_realizations
-
-    # Auto-scale to match peak values
-    max_analytical_F11 = np.max(k1_custom * F11_analytical)
-    max_simulated_F11 = np.max(k1_pos * F11_avg)
-    auto_scale = max_analytical_F11 / max_simulated_F11 if max_simulated_F11 > 0 else 1
-    print(f"Applying auto-scaling factor: {auto_scale:.2e}")
-
-    F11_avg *= auto_scale
-    F22_avg *= auto_scale
-
-    # Create the plots
-    fig, axs = plt.subplots(1, 2, figsize=(14, 6))
-
-    # Plot F11
-    axs[0].loglog(k1_custom * config["L"], k1_custom * F11_analytical, "k-", label="Analytical F11", linewidth=2)
-    axs[0].loglog(k1_pos * config["L"], k1_pos * F11_avg, "r--", label="Estimated F11", linewidth=2)
-    axs[0].set_xlabel(r"$k_1 L$ [-]")
-    axs[0].set_ylabel(r"$k_1 F_{11}(k_1)$ [m$^2$s$^{-2}$]")
-    axs[0].set_title("F11 Spectrum")
-    axs[0].grid(True, which="both", ls="-", alpha=0.2)
-    axs[0].legend()
-    axs[0].set_xlim(1e-3, 1e3)
-
-    # Plot F22
-    axs[1].loglog(k1_custom * config["L"], k1_custom * F22_analytical, "k-", label="Analytical F22", linewidth=2)
-    axs[1].loglog(k1_pos * config["L"], k1_pos * F22_avg, "r--", label="Estimated F22", linewidth=2)
-    axs[1].set_xlabel(r"$k_1 L$ [-]")
-    axs[1].set_ylabel(r"$k_1 F_{22}(k_1)$ [m$^2$s$^{-2}$]")
-    axs[1].set_title("F22 Spectrum")
-    axs[1].grid(True, which="both", ls="-", alpha=0.2)
-    axs[1].legend()
-    axs[1].set_xlim(1e-3, 1e3)
-
-    plt.tight_layout()
-    plt.show()
-
-    # Print min/max k1L values
-    k1L_min = min(k1_pos) * config["L"]
-    k1L_max = max(k1_pos) * config["L"]
-    print(f"\nEstimated spectrum k1L range: [{k1L_min:.4f}, {k1L_max:.4f}]")
-    print(f"To reach k1L ≈ 10^-3, domain size would need to be ~{1e-3/(2*np.pi/gen.L1):.1f}x larger")
-
-    return fig, axs
-
-
 # ------------------------------------------------------------------------------------------------ #
 
 
@@ -839,14 +744,11 @@ def compare_spectra_across_scales(base_config: dict, scale_factors=None, num_rea
 # ------------------------------------------------------------------------------------------------ #
 
 
-def study_grid_and_domain_effects(base_config, 
-                                 grid_exponents=None, 
-                                 domain_factors=None,
-                                 num_realizations=3):
+def study_grid_and_domain_effects(base_config, grid_exponents=None, domain_factors=None, num_realizations=3):
     """
     Study the combined effects of grid resolution and domain size on spectrum accuracy.
     Creates heatmaps to visualize various metrics across the parameter space.
-    
+
     Parameters
     ----------
     base_config : dict
@@ -857,7 +759,7 @@ def study_grid_and_domain_effects(base_config,
         List of domain size factors where L1_factor=L2_factor
     num_realizations : int, optional
         Number of realizations for each parameter combination
-        
+
     Returns
     -------
     figs : list
@@ -865,119 +767,121 @@ def study_grid_and_domain_effects(base_config,
     """
     if grid_exponents is None:
         grid_exponents = [7, 8, 9, 10]  # 128, 256, 512, 1024 grid points
-    
+
     if domain_factors is None:
         domain_factors = [1, 5, 10, 50, 100, 500]
-    
+
     print(f"\n{'='*70}")
-    print(f"GRID AND DOMAIN SIZE EFFECT STUDY")
+    print("GRID AND DOMAIN SIZE EFFECT STUDY")
     print(f"Grid exponents: {grid_exponents} (grid sizes: {[2**n for n in grid_exponents]})")
     print(f"Domain factors: {domain_factors}")
     print(f"Realizations per combination: {num_realizations}")
     print(f"{'='*70}")
-    
+
     # Initialize data storage
     n_exp = len(grid_exponents)
     n_factors = len(domain_factors)
-    
+
     # Keep only two metrics: auto-scale factors and u1 norms
     auto_scale_factors = np.zeros((n_exp, n_factors))
     u1_norms = np.zeros((n_exp, n_factors))
-    
+
     # Create reference analytical spectrum
     k1_ref = np.logspace(-3, 3, 1000) / base_config["L"]
     # Using base generator just for analytical spectrum
     base_gen = generator(base_config)
     F11_analytical, F22_analytical = base_gen.analytical_spectrum(k1_ref)
-    
+
     # Iterate through all combinations
     total_combinations = n_exp * n_factors
     current_combo = 0
-    
+
     for i, exp in enumerate(grid_exponents):
         for j, factor in enumerate(domain_factors):
             current_combo += 1
             grid_size = 2**exp
-            
+
             print(f"\n{'-'*60}")
-            print(f"Combination {current_combo}/{total_combinations}: " +
-                  f"Grid={grid_size}x{grid_size}, Domain factor={factor}")
-            
+            print(
+                f"Combination {current_combo}/{total_combinations}: "
+                + f"Grid={grid_size}x{grid_size}, Domain factor={factor}"
+            )
+
             # Configure this specific test case
             config = base_config.copy()
             config["N1"] = exp
             config["N2"] = exp
             config["L1_factor"] = factor
             config["L2_factor"] = factor
-            
+
             # Initialize generator
             gen = generator(config)
-            
+
             # Run simulations for this combination
             all_F11 = []
 
             u1, u2 = gen.generate(eta_ones=True)
 
-            u1_norms[i,j] = np.linalg.norm(u1) * np.sqrt(gen.dx * gen.dy)
-            
+            u1_norms[i, j] = np.linalg.norm(u1) * np.sqrt(gen.dx * gen.dy)
+
             for r in range(num_realizations):
                 print(f"  Running realization {r+1}/{num_realizations}...")
                 # Generate velocity fields
                 gen.generate(eta_ones=True)
-                
+
                 # Get spectrum
                 k1_sim, F11, F22 = gen.compute_spectrum()
-                
+
                 if r == 0:
                     all_F11 = np.zeros((num_realizations, len(F11)))
-                
+
                 all_F11[r, :] = F11
-            
+
             # Average the spectra and norms
             F11_avg = np.mean(all_F11, axis=0)
-            
+
             # Auto-scaling factor
             max_analytical_F11 = np.max(k1_ref * F11_analytical)
             max_simulated_F11 = np.max(k1_sim * F11_avg)
             auto_scale_factors[i, j] = max_analytical_F11 / max_simulated_F11 if max_simulated_F11 > 0 else np.nan
-            
+
             print(f"  Average u1 norm: {u1_norms[i, j]:.6e}")
             print(f"  Auto-scaling factor: {auto_scale_factors[i, j]:.2e}")
-    
+
     # Create visualizations (heatmaps)
     figs = []
-    
+
     # Common function for creating heatmaps
-    def create_heatmap(data, title, cmap='viridis', logscale=False):
+    def create_heatmap(data, title, cmap="viridis", logscale=False):
         fig, ax = plt.subplots(figsize=(10, 8))
-        
+
         x_labels = [str(f) for f in domain_factors]
         y_labels = [f"2^{e} ({2**e})" for e in grid_exponents]
-        
+
         # Log transform for certain metrics if needed
         plot_data = np.log10(data) if logscale else data
-        
+
         # Create heatmap
-        im = ax.imshow(plot_data, cmap=cmap, aspect='auto')
-        
+        im = ax.imshow(plot_data, cmap=cmap, aspect="auto")
+
         # Add colorbar
         cbar = ax.figure.colorbar(im, ax=ax)
         if logscale:
             cbar.set_label(f"{title} (log10 scale)")
         else:
             cbar.set_label(title)
-            
+
         # Configure axes
         ax.set_xticks(np.arange(len(domain_factors)))
         ax.set_yticks(np.arange(len(grid_exponents)))
         ax.set_xticklabels(x_labels)
         ax.set_yticklabels(y_labels)
-        
+
         # Label axes
         ax.set_xlabel("Domain Scale Factor (L1_factor = L2_factor)")
         ax.set_ylabel("Grid Size Exponent (N1 = N2 = 2^exponent)")
         ax.set_title(title)
-        
+
         # Add text annotations with values
         for i in range(len(grid_exponents)):
             for j in range(len(domain_factors)):
@@ -987,55 +891,61 @@ def study_grid_and_domain_effects(base_config,
                     text = f"{data[i, j]:.2e}"
                 else:
                     text = f"{data[i, j]:.4f}"
-                
+
                 # More readable text color logic
-                if cmap in ['RdBu', 'RdBu_r', 'coolwarm']:
+                if cmap in ["RdBu", "RdBu_r", "coolwarm"]:
                     # For diverging colormaps, use threshold at middle of scale
-                    text_color = "white" if abs(plot_data[i, j] - np.mean(plot_data)) > (np.max(plot_data) - np.min(plot_data))/4 else "black"
+                    text_color = (
+                        "white"
+                        if abs(plot_data[i, j] - np.mean(plot_data)) > (np.max(plot_data) - np.min(plot_data)) / 4
+                        else "black"
+                    )
                 else:
                     text_color = "white" if plot_data[i, j] > np.mean(plot_data) else "black"
-                
+
                 ax.text(j, i, text, ha="center", va="center", color=text_color)
-        
+
         plt.tight_layout()
         return fig
-    
+
     # 1. Auto-scale factors heatmap with red-blue colormap
-    fig1 = create_heatmap(auto_scale_factors, "Auto-Scaling Factor", cmap='RdBu_r', logscale=True)
+    fig1 = create_heatmap(auto_scale_factors, "Auto-Scaling Factor", cmap="RdBu_r", logscale=True)
     figs.append(fig1)
-    
+
     # 2. Velocity field norm (||u1||) heatmap
-    fig2 = create_heatmap(u1_norms, "Velocity Field Norm (||u1||)", cmap='viridis', logscale=True)
+    fig2 = create_heatmap(u1_norms, "Velocity Field Norm (||u1||)", cmap="viridis", logscale=True)
     figs.append(fig2)
-    
+
     # Display all plots
     for fig in figs:
         plt.figure(fig.number)
         plt.show()
-    
+
     # Save data to a file for later reference
     results_dict = {
-        'grid_exponents': grid_exponents,
-        'domain_factors': domain_factors,
-        'auto_scale_factors': auto_scale_factors,
-        'u1_norms': u1_norms
+        "grid_exponents": grid_exponents,
+        "domain_factors": domain_factors,
+        "auto_scale_factors": auto_scale_factors,
+        "u1_norms": u1_norms,
     }
-    
+
     return figs, results_dict
 
+
 # ------------------------------------------------------------------------------------------------ #
+
 
 def study_length_scale_effect(L_values=None, num_realizations=3):
     """
     Study how the length scale L affects the scaling factors and field statistics.
-    
+
     Parameters
     ----------
     L_values : list, optional
         List of length scale values to test. Default is [125, 250, 500, 1000, 2000]
     num_realizations : int, optional
         Number of realizations for each length scale value
-        
+
     Returns
     -------
     fig : matplotlib figure
@@ -1045,23 +955,23 @@ def study_length_scale_effect(L_values=None, num_realizations=3):
     """
     if L_values is None:
         L_values = [125, 250, 500, 1000, 2000]
-    
+
     print(f"\n{'='*60}")
     print("LENGTH SCALE (L) EFFECT STUDY")
     print(f"Testing L values: {L_values}")
     print(f"Realizations per value: {num_realizations}")
     print(f"{'='*60}")
-    
+
     # Fixed parameters
     L1_factor = 10
     L2_factor = 10
     grid_exponent = 9  # 2^9 = 512 grid points
     epsilon = 0.01
-    
+
     # Store results
     scaling_factors = []
     stats_dict = {}
-    
+
     # Reference analytical spectrum (using first L value as reference)
     base_config = {
         "L": L_values[0],
@@ -1071,17 +981,17 @@ def study_length_scale_effect(L_values=None, num_realizations=3):
         "N1": grid_exponent,
         "N2": grid_exponent,
     }
-    
+
     ref_gen = generator(base_config)
     # Custom wavenumber array for analytical spectrum
     k1_custom = np.logspace(-3, 3, 1000) / L_values[0]
     F11_analytical, F22_analytical = ref_gen.analytical_spectrum(k1_custom)
-    
+
     # Test each L value
     for L in L_values:
         print(f"\n{'-'*50}")
         print(f"Testing length scale L = {L}")
-        
+
         config = {
             "L": L,
             "epsilon": epsilon,
@@ -1090,73 +1000,77 @@ def study_length_scale_effect(L_values=None, num_realizations=3):
             "N1": grid_exponent,
             "N2": grid_exponent,
         }
-        
+
         gen = generator(config)
         domain_size = f"{gen.L1} x {gen.L2}"
         grid_size = f"{gen.N1} x {gen.N2}"
         print(f"Domain: {domain_size} units, Grid: {grid_size}, Min k1L: {2*np.pi/gen.L1*gen.L:.4f}")
-        
+
         # Initialize accumulators for statistics
         u1_mins, u1_maxs, u1_means, u1_vars = [], [], [], []
         u2_mins, u2_maxs, u2_means, u2_vars = [], [], [], []
         F11_avgs = []
-        
+
         for i in range(num_realizations):
             print(f"  Realization {i+1}/{num_realizations}...")
             u1, u2 = gen.generate()
-            
+
             # Collect statistics
             u1_mins.append(np.min(u1))
             u1_maxs.append(np.max(u1))
             u1_means.append(np.mean(u1))
             u1_vars.append(np.var(u1))
-            
+
             u2_mins.append(np.min(u2))
             u2_maxs.append(np.max(u2))
             u2_means.append(np.mean(u2))
             u2_vars.append(np.var(u2))
-            
+
             # Compute spectrum
             k1_sim, F11, F22 = gen.compute_spectrum()
             F11_avgs.append(F11)
-        
+
         # Average the F11 spectra across realizations
         F11_avg = np.mean(np.array(F11_avgs), axis=0)
-        
+
         # Calculate auto-scaling factor
         k1_this_analytical = np.logspace(-3, 3, 1000) / L
         F11_this_analytical, _ = gen.analytical_spectrum(k1_this_analytical)
-        
+
         max_analytical = np.max(k1_this_analytical * F11_this_analytical)
         max_simulated = np.max(k1_sim * F11_avg)
         auto_scale = max_analytical / max_simulated if max_simulated > 0 else np.nan
-        
+
         scaling_factors.append(auto_scale)
-        
+
         # Collect statistics for this L value
         stats_dict[L] = {
-            'u1_min': np.mean(u1_mins),
-            'u1_max': np.mean(u1_maxs),
-            'u1_mean': np.mean(u1_means),
-            'u1_var': np.mean(u1_vars),
-            'u2_min': np.mean(u2_mins),
-            'u2_max': np.mean(u2_maxs),
-            'u2_mean': np.mean(u2_means),
-            'u2_var': np.mean(u2_vars),
-            'auto_scale': auto_scale,
-            'dx': gen.dx,
-            'dy': gen.dy,
-            'min_k1L': 2*np.pi/gen.L1*gen.L
+            "u1_min": np.mean(u1_mins),
+            "u1_max": np.mean(u1_maxs),
+            "u1_mean": np.mean(u1_means),
+            "u1_var": np.mean(u1_vars),
+            "u2_min": np.mean(u2_mins),
+            "u2_max": np.mean(u2_maxs),
+            "u2_mean": np.mean(u2_means),
+            "u2_var": np.mean(u2_vars),
+            "auto_scale": auto_scale,
+            "dx": gen.dx,
+            "dy": gen.dy,
+            "min_k1L": 2 * np.pi / gen.L1 * gen.L,
         }
-        
+
         # Print summary for this L value
         print(f"\nResults for L = {L}:")
         print(f"  Auto-scaling factor: {auto_scale:.2e}")
-        print(f"  u1: min={stats_dict[L]['u1_min']:.6f}, max={stats_dict[L]['u1_max']:.6f}, "
-              f"mean={stats_dict[L]['u1_mean']:.6f}, var={stats_dict[L]['u1_var']:.6f}")
-        print(f"  u2: min={stats_dict[L]['u2_min']:.6f}, max={stats_dict[L]['u2_max']:.6f}, "
-              f"mean={stats_dict[L]['u2_mean']:.6f}, var={stats_dict[L]['u2_var']:.6f}")
-    
+        print(
+            f"  u1: min={stats_dict[L]['u1_min']:.6f}, max={stats_dict[L]['u1_max']:.6f}, "
+            f"mean={stats_dict[L]['u1_mean']:.6f}, var={stats_dict[L]['u1_var']:.6f}"
+        )
+        print(
+            f"  u2: min={stats_dict[L]['u2_min']:.6f}, max={stats_dict[L]['u2_max']:.6f}, "
+            f"mean={stats_dict[L]['u2_mean']:.6f}, var={stats_dict[L]['u2_var']:.6f}"
+        )
+
     # Print summary table
     print("\nSUMMARY OF RESULTS ACROSS LENGTH SCALES:")
     print("-" * 70)
@@ -1164,54 +1078,51 @@ def study_length_scale_effect(L_values=None, num_realizations=3):
     print("-" * 70)
     for L in L_values:
         s = stats_dict[L]
-        print(f"{L:>8} | {s['dx']:>10.4f} | {s['dy']:>10.4f} | {s['min_k1L']:>10.4f} | "
-              f"{s['auto_scale']:>15.4e} | {s['u1_var']:>15.4e}")
-    
+        print(
+            f"{L:>8} | {s['dx']:>10.4f} | {s['dy']:>10.4f} | {s['min_k1L']:>10.4f} | "
+            f"{s['auto_scale']:>15.4e} | {s['u1_var']:>15.4e}"
+        )
+
     # Create visualization
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
-    
+
     # Plot scaling factors vs L
-    ax1.plot(L_values, scaling_factors, 'bo-', linewidth=2, markersize=8)
+    ax1.plot(L_values, scaling_factors, "bo-", linewidth=2, markersize=8)
     for i, L in enumerate(L_values):
-        ax1.annotate(f"{scaling_factors[i]:.1e}", (L, scaling_factors[i]), 
-                    xytext=(5, 5), textcoords="offset points")
-    
+        ax1.annotate(f"{scaling_factors[i]:.1e}", (L, scaling_factors[i]), xytext=(5, 5), textcoords="offset points")
+
     ax1.set_xlabel("Length Scale L")
     ax1.set_ylabel("Auto-Scaling Factor")
     ax1.set_title("Auto-Scaling Factors vs. Length Scale L")
     ax1.grid(True)
-    
+
     # Check if we need log scale
     if max(scaling_factors) / min(scaling_factors) > 100:
-        ax1.set_yscale('log')
-    
+        ax1.set_yscale("log")
+
     # Second plot: Variance vs L
-    u1_vars = [stats_dict[L]['u1_var'] for L in L_values]
-    ax2.plot(L_values, u1_vars, 'ro-', linewidth=2, markersize=8)
+    u1_vars = [stats_dict[L]["u1_var"] for L in L_values]
+    ax2.plot(L_values, u1_vars, "ro-", linewidth=2, markersize=8)
     for i, L in enumerate(L_values):
-        ax2.annotate(f"{u1_vars[i]:.1e}", (L, u1_vars[i]), 
-                     xytext=(5, 5), textcoords="offset points")
-    
+        ax2.annotate(f"{u1_vars[i]:.1e}", (L, u1_vars[i]), xytext=(5, 5), textcoords="offset points")
+
     ax2.set_xlabel("Length Scale L")
     ax2.set_ylabel("u1 Variance")
     ax2.set_title("Velocity Field Variance vs. Length Scale L")
     ax2.grid(True)
-    
+
     # Check if we need log scale
     if max(u1_vars) / min(u1_vars) > 100:
-        ax2.set_yscale('log')
-    
+        ax2.set_yscale("log")
+
     plt.tight_layout()
     plt.show()
-    
+
     # Return results
-    results = {
-        'L_values': L_values,
-        'scaling_factors': scaling_factors,
-        'stats': stats_dict
-    }
-    
+    results = {"L_values": L_values, "scaling_factors": scaling_factors, "stats": stats_dict}
+
     return fig, results
+
 
 # ------------------------------------------------------------------------------------------------ #
 
@@ -1229,7 +1140,7 @@ if __name__ == "__main__":
     }
 
     FINE_CONFIG = {
-        "L": 500, # [m]
+        "L": 500,  # [m]
         "epsilon": 0.01,
         "L1_factor": 1000,
         "L2_factor": 1000,
@@ -1266,10 +1177,10 @@ if __name__ == "__main__":
 
     # study_grid_and_domain_effects(
     #     base_config,
-    #     grid_exponents=[6, 7, 8, 9, 10, 11],    
+    #     grid_exponents=[6, 7, 8, 9, 10, 11],
     #     domain_factors=[10, 20, 40, 80, 100],
     #     num_realizations=2
     # )
 
     # Add this line to run the length scale study
-    study_length_scale_effect()
+    # study_length_scale_effect()
