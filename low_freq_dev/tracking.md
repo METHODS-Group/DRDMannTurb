@@ -32,33 +32,3 @@ uniformly spaced. Reverse idea for k1L > 1.
 ## 1. How do we get the estimated spectrum to "extend left"?
 
 Play with length scale multiple `L1_factor` and `L2_factor` parameters.
-
-
-
-NOTE: Min resolvable wavenumber is a function JUST of L_factors
-
-
-
-
-
-
-
-
-
-
-
-
-##############
-
-
-
-
-Ok, so the auto-scaling factor is a function of L_factors
-and grid exponents
-
-It's a mess.
-
-It's decreasing in the grid exponent.
-
-Increasing in L_factor
-

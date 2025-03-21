@@ -71,10 +71,11 @@ class generator:
         ###########
 
         # NOTE: transform_norm was important for spatial white noise for correcting variance
-        transform = 1 if eta_ones else np.sqrt((self.L1 * self.L2) / (self.N1 * self.N2))
+        # transform = 1 if eta_ones else np.sqrt(self.dx * self.dy)
+        transform = 1 if eta_ones else np.sqrt(self.dx * self.dy)
 
-        u1 = np.real(np.fft.ifft2(u1_freq) / transform )
-        u2 = np.real(np.fft.ifft2(u2_freq) / transform )
+        u1 = np.real(np.fft.ifft2(u1_freq) / transform)
+        u2 = np.real(np.fft.ifft2(u2_freq) / transform)
 
         self.u1 = u1
         self.u2 = u2
@@ -97,7 +98,11 @@ class generator:
                 else:
                     k_sq = k_mag_sq[i, j]
 
-                phi_[i, j] = c0 * np.cbrt(epsilon) * np.sqrt((L / np.sqrt(1 + (k_sq * L**2))) ** (17 / 3) / (4 * np.pi))
+                phi_[i,j] = (
+                    c0 * L**(17/6) * np.cbrt(epsilon)
+                ) / (
+                    2 * np.sqrt(np.pi) * (k_sq * L**2 + 1)**(17/12)
+                )
 
         #########################################################
         # Compute frequency components
@@ -114,7 +119,7 @@ class generator:
 
     @staticmethod
     @numba.njit(parallel=True)
-    def _compute_spectrum_numba_helper(k1_flat, k1_pos, power_u1_flat, power_u2_flat, dy):
+    def _compute_spectrum_numba_helper(k1_flat, k1_pos, power_u1_flat, power_u2_flat, dy, L2):
         """
         Numba-accelerated helper function for spectrum computation
         """
@@ -125,11 +130,14 @@ class generator:
             k1_val = k1_pos[i]
             indices = np.where(k1_flat == k1_val)[0]
 
+            len_indices = len(indices)
+
             if len(indices) > 0:
-                # Calculate mean of power values at these indices
+                # F11[i] = np.mean(power_u1_flat[indices]) * dy
+                # F22[i] = np.mean(power_u2_flat[indices]) * dy
+
                 F11[i] = np.mean(power_u1_flat[indices]) * dy
                 F22[i] = np.mean(power_u2_flat[indices]) * dy
-
         return F11, F22
 
     def compute_spectrum(self, u1=None, u2=None, k1_max=None):
@@ -155,12 +163,11 @@ class generator:
         k1_pos_mask = self.k1_fft > 0
         k1_pos = self.k1_fft[k1_pos_mask]
 
-        min_k1 = np.min(k1_pos) if len(k1_pos) > 0 else 0
-        if min_k1 > 1e-3 / self.L:
-            print(f"Warning: minimum resolved wavenumber is {min_k1 * self.L} > 1e-3")
-            print(f"Increase domain size? current L1 factor = {self.L1 / self.L}")
-
         # Compute power spectra
+        # OLD:
+        # power_u1 = (np.abs(u1_fft)) ** 2 
+        # power_u2 = (np.abs(u2_fft)) ** 2
+
         power_u1 = (np.abs(u1_fft)) ** 2
         power_u2 = (np.abs(u2_fft)) ** 2
 
@@ -170,7 +177,7 @@ class generator:
         power_u2_flat = power_u2.flatten()
 
         # Call the Numba-accelerated helper function
-        F11, F22 = self._compute_spectrum_numba_helper(k1_flat, k1_pos, power_u1_flat, power_u2_flat, self.dy)
+        F11, F22 = self._compute_spectrum_numba_helper(k1_flat, k1_pos, power_u1_flat, power_u2_flat, self.dy, self.L2)
 
         return k1_pos, F11, F22
 
@@ -195,13 +202,11 @@ class generator:
         F11_constant = (self.c0**2 * self.epsilon ** (2 / 3) * self.L ** (8 / 3) * scipy.special.gamma(4 / 3)) / (
             8 * np.sqrt(np.pi) * scipy.special.gamma(17 / 6)
         )
-
         F11 = F11_constant / (1 + (self.L * k1_arr) ** 2) ** (4 / 3)
 
         F22_constant = (self.c0**2 * self.epsilon ** (2 / 3) * self.L ** (14 / 3) * scipy.special.gamma(7 / 3)) / (
             4 * np.sqrt(np.pi) * scipy.special.gamma(17 / 6)
         )
-
         F22 = F22_constant * k1_arr**2 / ((1 + (self.L * k1_arr) ** 2) ** (7 / 3))
 
         return F11, F22
@@ -1020,6 +1025,196 @@ def study_grid_and_domain_effects(base_config,
 
 # ------------------------------------------------------------------------------------------------ #
 
+def study_length_scale_effect(L_values=None, num_realizations=3):
+    """
+    Study how the length scale L affects the scaling factors and field statistics.
+    
+    Parameters
+    ----------
+    L_values : list, optional
+        List of length scale values to test. Default is [125, 250, 500, 1000, 2000]
+    num_realizations : int, optional
+        Number of realizations for each length scale value
+        
+    Returns
+    -------
+    fig : matplotlib figure
+        Figure showing the results
+    results : dict
+        Dictionary containing detailed results
+    """
+    if L_values is None:
+        L_values = [125, 250, 500, 1000, 2000]
+    
+    print(f"\n{'='*60}")
+    print("LENGTH SCALE (L) EFFECT STUDY")
+    print(f"Testing L values: {L_values}")
+    print(f"Realizations per value: {num_realizations}")
+    print(f"{'='*60}")
+    
+    # Fixed parameters
+    L1_factor = 10
+    L2_factor = 10
+    grid_exponent = 9  # 2^9 = 512 grid points
+    epsilon = 0.01
+    
+    # Store results
+    scaling_factors = []
+    stats_dict = {}
+    
+    # Reference analytical spectrum (using first L value as reference)
+    base_config = {
+        "L": L_values[0],
+        "epsilon": epsilon,
+        "L1_factor": L1_factor,
+        "L2_factor": L2_factor,
+        "N1": grid_exponent,
+        "N2": grid_exponent,
+    }
+    
+    ref_gen = generator(base_config)
+    # Custom wavenumber array for analytical spectrum
+    k1_custom = np.logspace(-3, 3, 1000) / L_values[0]
+    F11_analytical, F22_analytical = ref_gen.analytical_spectrum(k1_custom)
+    
+    # Test each L value
+    for L in L_values:
+        print(f"\n{'-'*50}")
+        print(f"Testing length scale L = {L}")
+        
+        config = {
+            "L": L,
+            "epsilon": epsilon,
+            "L1_factor": L1_factor,
+            "L2_factor": L2_factor,
+            "N1": grid_exponent,
+            "N2": grid_exponent,
+        }
+        
+        gen = generator(config)
+        domain_size = f"{gen.L1} x {gen.L2}"
+        grid_size = f"{gen.N1} x {gen.N2}"
+        print(f"Domain: {domain_size} units, Grid: {grid_size}, Min k1L: {2*np.pi/gen.L1*gen.L:.4f}")
+        
+        # Initialize accumulators for statistics
+        u1_mins, u1_maxs, u1_means, u1_vars = [], [], [], []
+        u2_mins, u2_maxs, u2_means, u2_vars = [], [], [], []
+        F11_avgs = []
+        
+        for i in range(num_realizations):
+            print(f"  Realization {i+1}/{num_realizations}...")
+            u1, u2 = gen.generate()
+            
+            # Collect statistics
+            u1_mins.append(np.min(u1))
+            u1_maxs.append(np.max(u1))
+            u1_means.append(np.mean(u1))
+            u1_vars.append(np.var(u1))
+            
+            u2_mins.append(np.min(u2))
+            u2_maxs.append(np.max(u2))
+            u2_means.append(np.mean(u2))
+            u2_vars.append(np.var(u2))
+            
+            # Compute spectrum
+            k1_sim, F11, F22 = gen.compute_spectrum()
+            F11_avgs.append(F11)
+        
+        # Average the F11 spectra across realizations
+        F11_avg = np.mean(np.array(F11_avgs), axis=0)
+        
+        # Calculate auto-scaling factor
+        k1_this_analytical = np.logspace(-3, 3, 1000) / L
+        F11_this_analytical, _ = gen.analytical_spectrum(k1_this_analytical)
+        
+        max_analytical = np.max(k1_this_analytical * F11_this_analytical)
+        max_simulated = np.max(k1_sim * F11_avg)
+        auto_scale = max_analytical / max_simulated if max_simulated > 0 else np.nan
+        
+        scaling_factors.append(auto_scale)
+        
+        # Collect statistics for this L value
+        stats_dict[L] = {
+            'u1_min': np.mean(u1_mins),
+            'u1_max': np.mean(u1_maxs),
+            'u1_mean': np.mean(u1_means),
+            'u1_var': np.mean(u1_vars),
+            'u2_min': np.mean(u2_mins),
+            'u2_max': np.mean(u2_maxs),
+            'u2_mean': np.mean(u2_means),
+            'u2_var': np.mean(u2_vars),
+            'auto_scale': auto_scale,
+            'dx': gen.dx,
+            'dy': gen.dy,
+            'min_k1L': 2*np.pi/gen.L1*gen.L
+        }
+        
+        # Print summary for this L value
+        print(f"\nResults for L = {L}:")
+        print(f"  Auto-scaling factor: {auto_scale:.2e}")
+        print(f"  u1: min={stats_dict[L]['u1_min']:.6f}, max={stats_dict[L]['u1_max']:.6f}, "
+              f"mean={stats_dict[L]['u1_mean']:.6f}, var={stats_dict[L]['u1_var']:.6f}")
+        print(f"  u2: min={stats_dict[L]['u2_min']:.6f}, max={stats_dict[L]['u2_max']:.6f}, "
+              f"mean={stats_dict[L]['u2_mean']:.6f}, var={stats_dict[L]['u2_var']:.6f}")
+    
+    # Print summary table
+    print("\nSUMMARY OF RESULTS ACROSS LENGTH SCALES:")
+    print("-" * 70)
+    print(f"{'L':>8} | {'dx':>10} | {'dy':>10} | {'min_k1L':>10} | {'Auto-scale':>15} | {'u1_var':>15}")
+    print("-" * 70)
+    for L in L_values:
+        s = stats_dict[L]
+        print(f"{L:>8} | {s['dx']:>10.4f} | {s['dy']:>10.4f} | {s['min_k1L']:>10.4f} | "
+              f"{s['auto_scale']:>15.4e} | {s['u1_var']:>15.4e}")
+    
+    # Create visualization
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    
+    # Plot scaling factors vs L
+    ax1.plot(L_values, scaling_factors, 'bo-', linewidth=2, markersize=8)
+    for i, L in enumerate(L_values):
+        ax1.annotate(f"{scaling_factors[i]:.1e}", (L, scaling_factors[i]), 
+                    xytext=(5, 5), textcoords="offset points")
+    
+    ax1.set_xlabel("Length Scale L")
+    ax1.set_ylabel("Auto-Scaling Factor")
+    ax1.set_title("Auto-Scaling Factors vs. Length Scale L")
+    ax1.grid(True)
+    
+    # Check if we need log scale
+    if max(scaling_factors) / min(scaling_factors) > 100:
+        ax1.set_yscale('log')
+    
+    # Second plot: Variance vs L
+    u1_vars = [stats_dict[L]['u1_var'] for L in L_values]
+    ax2.plot(L_values, u1_vars, 'ro-', linewidth=2, markersize=8)
+    for i, L in enumerate(L_values):
+        ax2.annotate(f"{u1_vars[i]:.1e}", (L, u1_vars[i]), 
+                     xytext=(5, 5), textcoords="offset points")
+    
+    ax2.set_xlabel("Length Scale L")
+    ax2.set_ylabel("u1 Variance")
+    ax2.set_title("Velocity Field Variance vs. Length Scale L")
+    ax2.grid(True)
+    
+    # Check if we need log scale
+    if max(u1_vars) / min(u1_vars) > 100:
+        ax2.set_yscale('log')
+    
+    plt.tight_layout()
+    plt.show()
+    
+    # Return results
+    results = {
+        'L_values': L_values,
+        'scaling_factors': scaling_factors,
+        'stats': stats_dict
+    }
+    
+    return fig, results
+
+# ------------------------------------------------------------------------------------------------ #
+
 if __name__ == "__main__":
     # mesh_independence_study(high=14)
     # scale_independence_study(high=20)
@@ -1075,3 +1270,6 @@ if __name__ == "__main__":
     #     domain_factors=[10, 20, 40, 80, 100],
     #     num_realizations=2
     # )
+
+    # Add this line to run the length scale study
+    study_length_scale_effect()
