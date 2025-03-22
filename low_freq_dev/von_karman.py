@@ -8,13 +8,14 @@ import scipy
 """
 - [X] Mesh independence study
 - [X] Scale independence study
-- [-] Plot velocity fields
-- [ ] Match spectrum
+- [X] Plot velocity fields
+- [X] Match spectrum
 
 
-1. Why is L_factor = 1000  for F11 not lining up
+1. Why is L_factor = 1000 for F11 not lining up
 2. Why does F11 drop off at end of "stitch"
-3. Why is it not so noisy
+3. Why is it not so noisy at higher frequencies kL?
+
 """
 
 
@@ -135,9 +136,6 @@ class generator:
             indices = np.where(k1_flat == k1_val)[0]
 
             if len(indices) > 0:
-                # F11[i] = np.mean(power_u1_flat[indices]) * dy
-                # F22[i] = np.mean(power_u2_flat[indices]) * dy
-
                 F11[i] = np.sum(power_u1_flat[indices]) * dk2
                 F22[i] = np.sum(power_u2_flat[indices]) * dk2
 
@@ -163,23 +161,20 @@ class generator:
         u2_fft = np.fft.fft2(u2)
 
         # Get positive wavenumbers
-        k1_pos_mask = self.k1_fft > 0
-        k1_pos = self.k1_fft[k1_pos_mask]
-
-        # Compute power spectra
-        # OLD:
-        # power_u1 = (np.abs(u1_fft)) ** 2
-        # power_u2 = (np.abs(u2_fft)) ** 2
+        k1_pos = np.abs(self.k1_fft)
+        k1_pos = k1_pos[np.argsort(k1_pos)]
+        k1_pos = k1_pos[1:-1]
 
         power_u1 = (np.abs(u1_fft)) ** 2
         power_u2 = (np.abs(u2_fft)) ** 2
 
-        # Flatten k1 for faster processing
+        if np.isnan(power_u1).any() or np.isnan(power_u2).any():
+            print("WARNING: NaN detected in power spectra!")
+
         k1_flat = self.k1.flatten()
         power_u1_flat = power_u1.flatten()
         power_u2_flat = power_u2.flatten()
 
-        # Call the Numba-accelerated helper function
         F11, F22 = self._compute_spectrum_numba_helper(k1_flat, k1_pos, power_u1_flat, power_u2_flat, self.dy, self.L2)
 
         return k1_pos, F11, F22
@@ -1162,8 +1157,8 @@ if __name__ == "__main__":
         "epsilon": 0.01,
         "L1_factor": 1,
         "L2_factor": 1,
-        "N1": 9,
-        "N2": 9,
+        "N1": 10,
+        "N2": 10,
     }
 
     # # Compare spectra across different domain scales
@@ -1172,7 +1167,7 @@ if __name__ == "__main__":
     # )
 
     compare_spectra_across_scales(
-        base_config, scale_factors=[10, 20, 50, 100, 500, 1000], num_realizations=5, autoscale=False
+        base_config, scale_factors=[10, 20, 50, 100, 500, 1000], num_realizations=10, autoscale=False
     )
 
     # study_grid_and_domain_effects(
