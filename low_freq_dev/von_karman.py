@@ -122,7 +122,7 @@ class generator:
 
     @staticmethod
     @numba.njit(parallel=True)
-    def _compute_spectrum_numba_helper(k1_flat, k1_pos, power_u1_flat, power_u2_flat, dy, L2):
+    def _compute_spectrum_numba_helper(k1_flat, k1_pos, power_u1_flat, power_u2_flat, L2):
         """
         Numba-accelerated helper function for spectrum computation
         """
@@ -141,7 +141,7 @@ class generator:
 
         return F11, F22
 
-    def compute_spectrum(self, u1=None, u2=None, k1_max=None):
+    def compute_spectrum(self, u1=None, u2=None):
         """
         Numba-accelerated version of compute_spectrum
 
@@ -160,7 +160,6 @@ class generator:
         u1_fft = np.fft.fft2(u1)
         u2_fft = np.fft.fft2(u2)
 
-        # Get positive wavenumbers
         k1_pos = np.abs(self.k1_fft)
         k1_pos = k1_pos[np.argsort(k1_pos)]
         k1_pos = k1_pos[1:-1]
@@ -175,7 +174,7 @@ class generator:
         power_u1_flat = power_u1.flatten()
         power_u2_flat = power_u2.flatten()
 
-        F11, F22 = self._compute_spectrum_numba_helper(k1_flat, k1_pos, power_u1_flat, power_u2_flat, self.dy, self.L2)
+        F11, F22 = self._compute_spectrum_numba_helper(k1_flat, k1_pos, power_u1_flat, power_u2_flat, self.L2)
 
         return k1_pos, F11, F22
 
@@ -661,6 +660,19 @@ def compare_spectra_across_scales(base_config: dict, scale_factors=None, num_rea
         else:
             print(f"  Auto-scaling disabled. Scale factor would be: {auto_scale:.2e}")
 
+        F11_analytical_interp = np.interp(k1_pos, k1_custom, F11_analytical)
+        F22_analytical_interp = np.interp(k1_pos, k1_custom, F22_analytical)
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            rel_error_F11 = np.abs(F11_avg - F11_analytical_interp) / F11_analytical_interp
+            rel_error_F22 = np.abs(F22_avg - F22_analytical_interp) / F22_analytical_interp
+            valid_indices = ~np.isnan(rel_error_F11) & ~np.isinf(rel_error_F11)
+            if np.any(valid_indices):
+                print(f"  Mean relative error F11: {np.mean(rel_error_F11[valid_indices]):.4e}")
+            valid_indices = ~np.isnan(rel_error_F22) & ~np.isinf(rel_error_F22)
+            if np.any(valid_indices):
+                print(f"  Mean relative error F22: {np.mean(rel_error_F22[valid_indices]):.4e}")
+
         # Store the averaged, (potentially) scaled results for this scale factor
         all_results[scale] = (k1_pos, F11_avg, F22_avg)
 
@@ -1137,15 +1149,15 @@ if __name__ == "__main__":
     FINE_CONFIG = {
         "L": 500,  # [m]
         "epsilon": 0.01,
-        "L1_factor": 1000,
-        "L2_factor": 1000,
-        "N1": 12,
+        "L1_factor": 10,
+        "L2_factor": 10,
+        "N1": 9,
         "N2": 9,
     }
 
     gen = generator(FINE_CONFIG)
     gen.generate()
-    diagnostics(gen, plot=False)
+    diagnostics(gen, plot=True)
 
     # plot_spectrum_comparison(FINE_CONFIG)
 
@@ -1166,9 +1178,9 @@ if __name__ == "__main__":
     #     base_config, scale_factors=[10, 20, 50, 100, 500, 1000], num_realizations=5, autoscale=True
     # )
 
-    compare_spectra_across_scales(
-        base_config, scale_factors=[10, 20, 50, 100, 500, 1000], num_realizations=10, autoscale=False
-    )
+    # compare_spectra_across_scales(
+    #     base_config, scale_factors=[10, 20, 50, 100, 500, 1000], num_realizations=10, autoscale=False
+    # )
 
     # study_grid_and_domain_effects(
     #     base_config,
