@@ -104,19 +104,25 @@ def spectral_tensor_22(k1: float, k2: float, psi: float, L2D: float, z_i: float,
 # "Public" integrator methods
 
 
-def eq6_numerical_F11_2D(k1: float, psi: float, L2D: float, z_i: float, c: float) -> tuple[float, float]:
+def eq6_numerical_F11_2D(k1: float, psi: float, L2D: float, z_i: float, c: float, warn: bool = False) -> tuple[float, float]:
     """
     By numerical integration, provides an "analytical" solution for F_11 2-dimensional spectrum
     """
     res, err = integrate.quad(lambda k2: spectral_tensor_11(k1, k2, psi, L2D, z_i, c), -np.inf, np.inf)
 
-    return res, err
+    if warn:
+        print(f"Warning: Numerical integration error for F11: {err}")
+
+    return res
 
 
-def eq6_numerical_F22_2D(k1: float, psi: float, L2D: float, z_i: float, c: float) -> tuple[float, float]:
+def eq6_numerical_F22_2D(k1: float, psi: float, L2D: float, z_i: float, c: float, warn: bool = False) -> tuple[float, float]:
     """
     By numerical integration, provides an "analytical" solution for F_22 2-dimensional spectrum
     """
     res, err = integrate.quad(lambda k2: spectral_tensor_22(k1, k2, psi, L2D, z_i, c), -np.inf, np.inf)
 
-    return res, err
+    if warn:
+        print(f"Warning: Numerical integration error for F22: {err}")
+
+    return res

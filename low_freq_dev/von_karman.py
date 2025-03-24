@@ -174,7 +174,13 @@ class generator:
         power_u1_flat = power_u1.flatten()
         power_u2_flat = power_u2.flatten()
 
-        F11, F22 = self._compute_spectrum_numba_helper(k1_flat, k1_pos, power_u1_flat, power_u2_flat, self.L2)
+        F11, F22 = self._compute_spectrum_numba_helper(
+            k1_flat,
+            k1_pos,
+            power_u1_flat,
+            power_u2_flat,
+            self.L2,
+        )
 
         return k1_pos, F11, F22
 
