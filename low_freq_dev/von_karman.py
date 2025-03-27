@@ -1161,9 +1161,9 @@ if __name__ == "__main__":
         "N2": 9,
     }
 
-    gen = generator(FINE_CONFIG)
-    gen.generate()
-    diagnostics(gen, plot=True)
+    # gen = generator(FINE_CONFIG)
+    # gen.generate()
+    # diagnostics(gen, plot=True)
 
     # plot_spectrum_comparison(FINE_CONFIG)
 
@@ -1188,12 +1188,9 @@ if __name__ == "__main__":
     #     base_config, scale_factors=[10, 20, 50, 100, 500, 1000], num_realizations=10, autoscale=False
     # )
 
-    # study_grid_and_domain_effects(
-    #     base_config,
-    #     grid_exponents=[6, 7, 8, 9, 10, 11],
-    #     domain_factors=[10, 20, 40, 80, 100],
-    #     num_realizations=2
-    # )
+    study_grid_and_domain_effects(
+        base_config, grid_exponents=[6, 7, 8, 9, 10, 11], domain_factors=[10, 20, 40, 80, 100], num_realizations=2
+    )
 
     # Add this line to run the length scale study
     # study_length_scale_effect()
