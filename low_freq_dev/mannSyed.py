@@ -105,8 +105,11 @@ class generator:
 
         # Proper normalization that preserves variance across grid sizes
 
-        u1 = np.real(np.fft.ifft2(u1_freq)) * np.sqrt(self.N1 * self.N2)
-        u2 = np.real(np.fft.ifft2(u2_freq)) * np.sqrt(self.N1 * self.N2)
+        # u1 = np.real(np.fft.ifft2(u1_freq)) * np.sqrt(self.N1 * self.N2)
+        # u2 = np.real(np.fft.ifft2(u2_freq)) * np.sqrt(self.N1 * self.N2)
+
+        u1 = np.real(np.fft.ifft2(u1_freq)) / np.sqrt(self.dx * self.dy)
+        u2 = np.real(np.fft.ifft2(u2_freq)) / np.sqrt(self.dx * self.dy)
 
         self.u1 = u1
         self.u2 = u2
@@ -347,11 +350,108 @@ def mesh_independence_study(low=4, high=12):
 
 # ------------------------------------------------------------------------------------------------ #
 
+
+def _run_single_domain_size(domain_factor, config):
+    """
+    Complete a single run with a config and domain size factor, return
+    the factor itself (to be used for sorting), the u1 norm, the u2 norm,
+    and variances
+    """
+    local_config = config.copy()
+    local_config["L1_factor"] = domain_factor
+    local_config["L2_factor"] = domain_factor
+
+    gen = generator(local_config)
+    u1 = np.zeros_like(gen.k1)
+    u2 = np.zeros_like(gen.k2)
+
+    for _ in range(NUM_REALIZATIONS):
+        curr_u1, curr_u2 = gen.generate()
+        u1 += curr_u1
+        u2 += curr_u2
+
+    u1 /= NUM_REALIZATIONS
+    u2 /= NUM_REALIZATIONS
+
+    # Calculate physical domain size
+    domain_size = local_config["L_2d"] * domain_factor
+
+    u1_norm = np.linalg.norm(u1 * gen.dx * gen.dy) ** 2
+    u2_norm = np.linalg.norm(u2 * gen.dx * gen.dy) ** 2
+
+    u1_var = np.var(u1)
+    u2_var = np.var(u2)
+
+    print(f"Completed domain size {domain_size/1000:.1f} km (factor {domain_factor})")
+    print(f"\tu1_var: {u1_var}, u2_var: {u2_var}")
+    print(f"\tu1 mean: {np.mean(u1)}, u2 mean: {np.mean(u2)}")
+    return domain_factor, u1_norm, u2_norm, u1_var, u2_var, domain_size
+
+
+def domain_size_study(factors=None):
+    """
+    Compute norm and variance of field over several domain sizes.
+    """
+    if factors is None:
+        factors = np.arange(1, 17)
+
+    cfg_base = {
+        "sigma2": 2.0,
+        "L_2d": 15_000.0,
+        "psi": np.deg2rad(45.0),
+        "z_i": 500.0,
+        "L1_factor": 4,  # Will be overridden
+        "L2_factor": 4,  # Will be overridden
+        "N1": 9,
+        "N2": 9,
+    }
+
+    results = []
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = [executor.submit(_run_single_domain_size, factor, cfg_base) for factor in factors]
+
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                results.append(future.result())
+            except Exception as e:
+                print(f"Error: {e}")
+
+    if results:
+        results.sort(key=lambda x: x[0])
+        domain_sizes = np.array([r[5] / 1000 for r in results])  # Convert to km
+        u1_norms = np.array([r[1] for r in results])
+        u2_norms = np.array([r[2] for r in results])
+        u1_vars = np.array([r[3] for r in results])
+        u2_vars = np.array([r[4] for r in results])
+
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
+
+        # Plot norms
+        ax1.plot(domain_sizes, u1_norms, "o-", label="u1")
+        ax1.plot(domain_sizes, u2_norms, "o-", label="u2")
+        ax1.set_xlabel("Domain size (km)")
+        ax1.set_title("Norm squared times volume element")
+        ax1.legend()
+
+        # Plot variances
+        ax2.plot(domain_sizes, u1_vars, "o-", label="u1")
+        ax2.plot(domain_sizes, u2_vars, "o-", label="u2")
+        ax2.set_xlabel("Domain size (km)")
+        ax2.set_title("Variance of u1 and u2")
+        ax2.axhline(y=cfg_base["sigma2"], color="r", linestyle="--", label="Target σ²")
+        ax2.legend()
+
+        plt.tight_layout()
+        plt.show()
+
+
+# ------------------------------------------------------------------------------------------------ #
+
 if __name__ == "__main__":
     ###############################################
     # Mesh independence study
 
-    mesh_independence_study()
+    # mesh_independence_study()
 
     ###############################################
     # Length scale study
@@ -377,3 +477,8 @@ if __name__ == "__main__":
     # Recreate Figure 2
 
     # plot_spectra_comparison()
+
+    ###############################################
+    # Domain size study
+
+    domain_size_study()
