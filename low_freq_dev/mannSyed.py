@@ -284,8 +284,9 @@ def _run_single_mesh(exponent, config):
     u1 /= NUM_REALIZATIONS
     u2 /= NUM_REALIZATIONS
 
-    u1_norm = np.linalg.norm(u1 * gen.dx * gen.dy) ** 2
-    u2_norm = np.linalg.norm(u2 * gen.dx * gen.dy) ** 2
+    # Calculate the discrete approximation of the integral of u^2 dA
+    u1_norm = np.sum(u1**2) * gen.dx * gen.dy
+    u2_norm = np.sum(u2**2) * gen.dx * gen.dy
 
     u1_var = np.var(u1)
     u2_var = np.var(u2)
@@ -445,16 +446,151 @@ def domain_size_study(factors=None):
         plt.show()
 
 
+def plot_num_spectra(config=None, num_realizations=10):
+    config = {
+        "sigma2": 2.0,
+        "L_2d": 15_000.0,
+        "psi": np.deg2rad(45.0),
+        "z_i": 500.0,
+        "L1_factor": 40,
+        "L2_factor": 5,
+        "N1": 9,
+        "N2": 9,
+    }
+
+    gen = generator(config)
+
+    results = []
+
+    for _ in range(num_realizations):
+        gen.generate()
+        k1_pos, F11_numerical, F22_numerical = gen.compute_spectrum()
+
+        results.append((k1_pos, F11_numerical, F22_numerical))
+
+    k1_pos = results[0][0]
+    F11_numerical = np.array([r[1] for r in results])
+    F22_numerical = np.array([r[2] for r in results])
+
+    F11_numerical_avg = np.mean(F11_numerical, axis=0)
+    F22_numerical_avg = np.mean(F22_numerical, axis=0)
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
+
+    ax1.loglog(k1_pos * config["L_2d"], k1_pos * F11_numerical_avg, label="Numerical F11")
+    ax2.loglog(k1_pos * config["L_2d"], k1_pos * F22_numerical_avg, label="Numerical F22")
+
+    ax1.legend()
+    ax2.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+
+# ------------------------------------------------------------------------------------------------ #
+
+
+def analyze_spectrum_vs_theory(config=None):
+    """
+    Generate a turbulence field, compute its spectrum, and compare with analytical spectrum.
+    Also compute total energy to check variance.
+    """
+    if config is None:
+        config = {
+            "sigma2": 2.0,
+            "L_2d": 15_000.0,
+            "psi": np.deg2rad(45.0),
+            "z_i": 500.0,
+            "L1_factor": 4,
+            "L2_factor": 4,
+            "N1": 9,
+            "N2": 9,
+        }
+
+    # Create generator, generate field
+    gen = generator(config)
+    u1, u2 = gen.generate()
+
+    # Print statistics
+    print(f"u1 variance: {np.var(u1)}, target: {config['sigma2']}")
+    print(f"u2 variance: {np.var(u2)}, target: {config['sigma2']}")
+    print(f"Ratio to target: u1 = {np.var(u1)/config['sigma2']}, u2 = {np.var(u2)/config['sigma2']}")
+
+    # Compute numerical spectrum
+    k1_pos, F11_numerical, F22_numerical = gen.compute_spectrum()
+
+    # Compute analytical spectrum
+    F11_analytical, F22_analytical = gen.analytical_spectrum(k1_pos)
+
+    # Compute total energy from spectrum (should equal variance)
+    # Sum up energy across all wavenumbers
+    dk1 = k1_pos[1] - k1_pos[0] if len(k1_pos) > 1 else 0
+    energy_u1 = np.sum(F11_numerical) * dk1 if dk1 > 0 else 0
+    energy_u2 = np.sum(F22_numerical) * dk1 if dk1 > 0 else 0
+
+    print(f"Energy from spectrum u1: {energy_u1}")
+    print(f"Energy from spectrum u2: {energy_u2}")
+
+    # Plot comparison
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
+
+    # F11 spectrum
+    ax1.loglog(k1_pos, F11_numerical, "b-", label="Numerical F11")
+    ax1.loglog(k1_pos, F11_analytical, "b--", label="Analytical F11")
+    ax1.set_xlabel("k1 [rad/m]")
+    ax1.set_ylabel("F11 [m³/s²]")
+    ax1.grid(True)
+    ax1.legend()
+
+    # F22 spectrum
+    ax2.loglog(k1_pos, F22_numerical, "r-", label="Numerical F22")
+    ax2.loglog(k1_pos, F22_analytical, "r--", label="Analytical F22")
+    ax2.set_xlabel("k1 [rad/m]")
+    ax2.set_ylabel("F22 [m³/s²]")
+    ax2.grid(True)
+    ax2.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+    # Calculate and print the ratios of numerical to analytical at different scales
+    ratio_points = [0, len(k1_pos) // 4, len(k1_pos) // 2, 3 * len(k1_pos) // 4, -1]
+
+    print("\nRatio of numerical to analytical at different scales:")
+    print(f"{'k1 [rad/m]':>12} {'F11 ratio':>12} {'F22 ratio':>12}")
+    print("-" * 40)
+
+    for i in ratio_points:
+        if i < len(k1_pos):
+            k = k1_pos[i]
+            r1 = F11_numerical[i] / F11_analytical[i] if F11_analytical[i] > 0 else float("nan")
+            r2 = F22_numerical[i] / F22_analytical[i] if F22_analytical[i] > 0 else float("nan")
+            print(f"{k:12.6e} {r1:12.6f} {r2:12.6f}")
+
+    # Calculate and return global scaling factors
+    if np.all(F11_analytical > 0) and np.all(F22_analytical > 0):
+        global_ratio_F11 = np.mean(F11_analytical / F11_numerical)
+        global_ratio_F22 = np.mean(F22_analytical / F22_numerical)
+        print("\nGlobal scaling factors:")
+        print(f"F11: {global_ratio_F11:.6e}")
+        print(f"F22: {global_ratio_F22:.6e}")
+        return global_ratio_F11, global_ratio_F22
+    else:
+        return None, None
+
+
 # ------------------------------------------------------------------------------------------------ #
 
 if __name__ == "__main__":
     ###############################################
     # Mesh independence study
 
-    # mesh_independence_study()
+    mesh_independence_study()
 
     ###############################################
-    # Length scale study
+    # Domain size study
+
+    # domain_size_study()
 
     ###############################################
     # Recreate figure 3
@@ -473,12 +609,10 @@ if __name__ == "__main__":
     # gen.generate()
     # gen.plot_velocity_fields()
 
+    # plot_num_spectra()
+
     ###############################################
     # Recreate Figure 2
-
     # plot_spectra_comparison()
 
-    ###############################################
-    # Domain size study
-
-    domain_size_study()
+    # ratio_F11, ratio_F22 = analyze_spectrum_vs_theory()
