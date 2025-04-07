@@ -68,8 +68,6 @@ class generator:
             self.L,
             self.N1,
             self.N2,
-            self.dx,
-            self.dy,
             noise_hat,
         )
 
@@ -89,7 +87,7 @@ class generator:
 
     @staticmethod
     @numba.njit(parallel=True)
-    def _generate_numba_helper(k1, k2, c0, epsilon, L, N1, N2, dx, dy, eta):
+    def _generate_numba_helper(k1, k2, c0, epsilon, L, N1, N2, eta):
         k_mag_sq = k1**2 + k2**2
 
         #########################################################

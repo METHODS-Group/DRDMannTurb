@@ -56,8 +56,6 @@ class generator:
         L_2d: float,
         psi: float,
         z_i: float,
-        dx: float,
-        dy: float,
         N1: int,
         N2: int,
         noise_hat: np.ndarray,
@@ -93,29 +91,42 @@ class generator:
 
         return Q1 * noise_hat, Q2 * noise_hat
 
-    def generate(self):
+    def generate(self, eta_ones = False):
         # Obtain random noise
-        noise = np.random.normal(0, 1, size=(self.N1, self.N2))
-        # noise_hat = np.fft.fft2(noise)
-        noise_hat = np.fft.fft2(noise)
 
-        u1_freq, u2_freq = self._generate_numba_helper(
+        noise_hat: np.ndarray
+        if eta_ones:
+            print("WARNING: eta_ones = True, so scaling is probably wrong")
+            noise_hat = np.ones_like(self.k1, dtype=complex)
+        else:
+            noise = np.random.normal(0, 1, size=(self.N1, self.N2))
+            noise_hat = np.fft.fft2(noise)
+
+        u1_freq_unscaled, u2_freq_unscaled = self._generate_numba_helper(
             self.k1, self.k2, self.c, self.L_2d, self.psi, self.z_i,
             self.dx, self.dy, self.N1, self.N2, noise_hat
         )
 
-        # NOTE: transform below is to control spatial white noise variance
-        # transform = 1 if eta_ones else np.sqrt(self.N1 * self.N2)
-        # u1 = np.real(np.fft.ifft2(u1_freq) / transform)
-        # u2 = np.real(np.fft.ifft2(u2_freq) / transform)
+        n_total = self.N1 * self.N2
+        var_u1_unscaled = np.sum(np.abs(u1_freq_unscaled)**2) / (n_total**2)
+        var_u2_unscaled = np.sum(np.abs(u2_freq_unscaled)**2) / (n_total**2)
 
-        # Proper normalization that preserves variance across grid sizes
+        curr_tot_var = var_u1_unscaled + var_u2_unscaled
+        target_tot_var = self.sigma2
 
-        u1 = np.real(np.fft.ifft2(u1_freq)) * np.sqrt(self.N1 * self.N2)
-        u2 = np.real(np.fft.ifft2(u2_freq)) * np.sqrt(self.N1 * self.N2)
+        scaling_factor: float = 1.0
+        if curr_tot_var < 1e-20:
+            scaling_factor = 0.0
+            print(f"WARNING: curr_tot_var ({curr_tot_var:.2e}) is too small, setting scaling factor to 0")
+        else:
+            scaling_factor = np.sqrt(target_tot_var / curr_tot_var)
+            print(f"\t Scaling factor: {scaling_factor:.2e}")
 
-        # u1 = np.real(np.fft.ifft2(u1_freq)) / np.sqrt(self.dx * self.dy)
-        # u2 = np.real(np.fft.ifft2(u2_freq)) / np.sqrt(self.dx * self.dy)
+        u1_freq = u1_freq_unscaled * scaling_factor
+        u2_freq = u2_freq_unscaled * scaling_factor
+
+        u1 = np.real(np.fft.ifft2(u1_freq))
+        u2 = np.real(np.fft.ifft2(u2_freq))
 
         self.u1 = u1
         self.u2 = u2
@@ -389,8 +400,8 @@ def _run_single_domain_size(domain_factor, config, num_realizations=5):
     # Calculate physical domain size
     domain_size = local_config["L_2d"] * domain_factor
 
-    u1_norm = np.linalg.norm(u1 * gen.dx * gen.dy) ** 2
-    u2_norm = np.linalg.norm(u2 * gen.dx * gen.dy) ** 2
+    u1_norm = np.sum(u1**2) * gen.dx * gen.dy
+    u2_norm = np.sum(u2**2) * gen.dx * gen.dy
 
     u1_var = np.var(u1)
     u2_var = np.var(u2)
@@ -636,7 +647,7 @@ def recreate_fig2(gen_a, gen_b, num_realizations = 10, do_plot = True):
     if len(k1F22_a_numerical) > 0:
         print(f"    Numerical: {k1F22_a_numerical[peak_idx_numerical_f22]:.4f} at k1L={k1_L_2d_a_numerical[peak_idx_numerical_f22]:.3f}")
     else:
-         print("    Numerical: No numerical data.")
+        print("    Numerical: No numerical data.")
 
     print("\n--- CASE (b) ---")
     comparison_k1L_b = [10.0, 100.0, 1000.0]
@@ -729,22 +740,160 @@ def recreate_fig2(gen_a, gen_b, num_realizations = 10, do_plot = True):
         plt.show()
 
 
+
+def length_AND_grid_size_study(base_config, do_plot = False, eta_ones = False):
+    # want to check variance of the fields as a function of the physical size and grid fidelity
+
+    config = base_config.copy()
+
+    grid_exponents = [7, 8, 9, 10]
+    domain_factors = [0.5, 1, 2, 4, 6, 8, 10]
+
+    print(f"Grid exponents: {grid_exponents}")
+    print(f"Domain factors: {domain_factors}")
+
+    n_exp = len(grid_exponents)
+    n_factors = len(domain_factors)
+
+    total_combinations = n_exp * n_factors
+
+    u1_vars = np.zeros((n_exp, n_factors))
+    u2_vars = np.zeros((n_exp, n_factors))
+
+    norm_u1 = np.zeros((n_exp, n_factors))
+    norm_u2 = np.zeros((n_exp, n_factors))
+
+    current_combo = 0
+
+    for i, exp in enumerate(grid_exponents):
+        for j, factor in enumerate(domain_factors):
+            current_combo += 1
+            grid_size = 2**exp
+
+            print(f"\n{'-'*60}")
+            print(
+                f"Combination {current_combo}/{total_combinations}: "
+                + f"Grid={grid_size}x{grid_size}, Domain factor={factor}"
+            )
+
+            config["N1"] = exp
+            config["N2"] = exp
+            config["L1_factor"] = factor
+            config["L2_factor"] = factor
+
+            gen = generator(config)
+            gen.generate(eta_ones = eta_ones)
+
+            avg_u1 = np.zeros((gen.N1, gen.N2))
+            avg_u2 = np.zeros((gen.N1, gen.N2))
+
+            # take 10 realizations and average
+            for _ in range(10):
+                gen.generate(eta_ones = eta_ones)
+                avg_u1 += gen.u1
+                avg_u2 += gen.u2
+
+            avg_u1 /= 10
+            avg_u2 /= 10
+
+            norm_u1[i, j] = np.sum(avg_u1**2) * gen.dx * gen.dy
+            norm_u2[i, j] = np.sum(avg_u2**2) * gen.dx * gen.dy
+
+            u1_vars[i, j] = np.var(avg_u1)
+            u2_vars[i, j] = np.var(avg_u2)
+
+            print(f"\t u1 variance: {u1_vars[i,j]}")
+            print(f"\t u2 variance: {u2_vars[i,j]}")
+            print(f"\t u1 norm: {norm_u1[i,j]}")
+            print(f"\t u2 norm: {norm_u2[i,j]}")
+
+
+
+    figs = []
+
+    def create_heatmap(data, title, cmap="viridis", logscale=False):
+
+        fig, ax = plt.subplots(figsize=(10, 8))
+
+        x_labels = [str(f) for f in domain_factors]
+        y_labels = [f"2^{e} ({2**e})" for e in grid_exponents]
+
+        plot_data = np.log10(data) if logscale else data
+
+        im = ax.imshow(plot_data, cmap=cmap, aspect="auto")
+
+        cbar = ax.figure.colorbar(im, ax=ax)
+
+        if logscale:
+            cbar.set_label(f"{title} (log10 scale)")
+        else:
+            cbar.set_label(title)
+
+        ax.set_xticks(np.arange(len(domain_factors)))
+        ax.set_yticks(np.arange(len(grid_exponents)))
+        ax.set_xticklabels(x_labels)
+        ax.set_yticklabels(y_labels)
+
+        # Add text annotations with values
+        for i in range(len(grid_exponents)):
+            for j in range(len(domain_factors)):
+                if logscale:
+                    text = f"{data[i, j]:.2e}"
+                elif data[i, j] < 0.01:
+                    text = f"{data[i, j]:.2e}"
+                else:
+                    text = f"{data[i, j]:.4f}"
+
+                # More readable text color logic
+                if cmap in ["RdBu", "RdBu_r", "coolwarm"]:
+                    # For diverging colormaps, use threshold at middle of scale
+                    text_color = (
+                        "white"
+                        if abs(plot_data[i, j] - np.mean(plot_data)) > (np.max(plot_data) - np.min(plot_data)) / 4
+                        else "black"
+                    )
+                else:
+                    text_color = "white" if plot_data[i, j] > np.mean(plot_data) else "black"
+
+                ax.text(j, i, text, ha="center", va="center", color=text_color)
+
+        plt.tight_layout()
+        return fig
+
+    # Create a heatmap of the variances
+
+    if do_plot:
+        fig1 = create_heatmap(u1_vars, "u1 variance", cmap="RdBu_r", logscale=True)
+        figs.append(fig1)
+        fig2 = create_heatmap(u2_vars, "u2 variance", cmap="RdBu_r", logscale=True)
+        figs.append(fig2)
+
+        fig3 = create_heatmap(norm_u1, "u1 norm, scaled by dx*dy", cmap="RdBu_r", logscale=True)
+        figs.append(fig3)
+        fig4 = create_heatmap(norm_u2, "u2 norm, scaled by dx*dy", cmap="RdBu_r", logscale=True)
+        figs.append(fig4)
+
+        for fig in figs:
+            plt.figure(fig.number)
+            plt.show()
+
+    return
+
 # ------------------------------------------------------------------------------------------------ #
 
 if __name__ == "__main__":
     ###############################################
-    # Mesh independence study
+    # NOTE: Check norm against several grid resolutions. Always square
 
     # mesh_independence_study()
 
     ###############################################
-    # Domain size study
+    # NOTE: Check norm against domain sizes. Also always square
 
     # domain_size_study()
 
     ###############################################
     # Recreate figure 3
-
     cfg_fig3 = {
         "sigma2": 0.6,
         "L_2d": 15_000.0,
@@ -759,44 +908,49 @@ if __name__ == "__main__":
     gen.generate()
     gen.plot_velocity_fields()
 
-    # # Call the new function to plot spectra
-    # plot_spectra_comparison(gen)
-
-    ###############################################
-    # Recreate Figure 2
-    # plot_spectra_comparison()
-
-    # ratio_F11, ratio_F22 = analyze_spectrum_vs_theory()
-
-    # # Example usage in your main:
+    # ##############################################
+    # NOTE: This is the one that generates the little heatmap. X = domain size, Y = grid size.
+    # The color is the variance of the fields.
     # cfg_a = {
-    #     "sigma2": 0.6,  # Adjust as needed
+    #     "sigma2": 2.0,
     #     "L_2d": 15_000.0,
-    #     "psi": np.deg2rad(43.0),
+    #     "psi": np.deg2rad(45.0),
     #     "z_i": 500.0,
-    #     "L1_factor": 40,  # For case (a): 40L_2D × 5L_2D
+    #     "L1_factor": 40,
     #     "L2_factor": 5,
     #     "N1": 13,
     #     "N2": 10,
     # }
+    # length_AND_grid_size_study(cfg_a, do_plot = True, eta_ones = False)
 
-    # cfg_b = {
-    #     "sigma2": 0.6,  # Adjust as needed
-    #     "L_2d": 15_000.0,
-    #     "psi": np.deg2rad(43.0),
-    #     "z_i": 500.0,
-    #     "L1_factor": 1,  # For case (b): L_2D × 0.125L_2D
-    #     "L2_factor": 0.125,
-    #     "N1": 13,
-    #     "N2": 10,
-    # }
+    cfg_a = {
+        "sigma2": 2.0,
+        "L_2d": 15_000.0,
+        "psi": np.deg2rad(43.0),
+        "z_i": 500.0,
+        "L1_factor": 40,  # For case (a): 40L_2D × 5L_2D
+        "L2_factor": 5,
+        "N1": 13,
+        "N2": 10,
+    }
 
-    # gen_a = generator(cfg_a)
-    # gen_b = generator(cfg_b)
+    cfg_b = {
+        "sigma2": 2.0,
+        "L_2d": 15_000.0,
+        "psi": np.deg2rad(43.0),
+        "z_i": 500.0,
+        "L1_factor": 1,  # For case (b): L_2D × 0.125L_2D
+        "L2_factor": 0.125,
+        "N1": 13,
+        "N2": 10,
+    }
 
-    # # You may need to generate the fields first
-    # gen_a.generate()
-    # gen_b.generate()
+    gen_a = generator(cfg_a)
+    gen_b = generator(cfg_b)
 
-    # # Call the function to create the plot
-    # recreate_fig2(gen_a, gen_b)
+    # generate the fields first
+    gen_a.generate()
+    gen_b.generate()
+
+    # NOTE: This one attempts to recreate figure 2 as closely as possible.
+    recreate_fig2(gen_a, gen_b)
