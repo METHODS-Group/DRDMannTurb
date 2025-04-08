@@ -56,6 +56,8 @@ class generator:
         L_2d: float,
         psi: float,
         z_i: float,
+        dx: float,
+        dy: float,
         N1: int,
         N2: int,
         noise_hat: np.ndarray,
@@ -64,6 +66,8 @@ class generator:
         kappa = np.sqrt(2 * ((k1 * np.cos(psi)) ** 2 + (k2 * np.sin(psi)) ** 2))
 
         phi_ = np.empty_like(k_mag)
+
+        grid_scale = (2 * np.pi) / np.sqrt(max(dx * dy, 1e-16))
 
         for i in numba.prange(N1):
             for j in numba.prange(N2):
@@ -81,7 +85,7 @@ class generator:
 
                     # NOTE: k**-3 is due to formula with pi * k in denominator; then, k**-2
                     #       comes out of the factorization of Q below.
-                    phi_[i,j] = np.sqrt(energy / (np.pi * _k**3))
+                    phi_[i,j] = np.sqrt(energy / (np.pi * _k**3)) * grid_scale
 
         Q1 = 1j * phi_ * k2
         Q2 = 1j * phi_ * (-1 * k1)
@@ -102,28 +106,28 @@ class generator:
             noise = np.random.normal(0, 1, size=(self.N1, self.N2))
             noise_hat = np.fft.fft2(noise)
 
-        u1_freq_unscaled, u2_freq_unscaled = self._generate_numba_helper(
+        u1_freq, u2_freq = self._generate_numba_helper(
             self.k1, self.k2, self.c, self.L_2d, self.psi, self.z_i,
             self.dx, self.dy, self.N1, self.N2, noise_hat
         )
 
-        n_total = self.N1 * self.N2
-        var_u1_unscaled = np.sum(np.abs(u1_freq_unscaled)**2) / (n_total**2)
-        var_u2_unscaled = np.sum(np.abs(u2_freq_unscaled)**2) / (n_total**2)
+        # n_total = self.N1 * self.N2
+        # var_u1_unscaled = np.sum(np.abs(u1_freq_unscaled)**2) / (n_total**2)
+        # var_u2_unscaled = np.sum(np.abs(u2_freq_unscaled)**2) / (n_total**2)
 
-        curr_tot_var = var_u1_unscaled + var_u2_unscaled
-        target_tot_var = self.sigma2
+        # curr_tot_var = var_u1_unscaled + var_u2_unscaled
+        # target_tot_var = self.sigma2
 
-        scaling_factor: float = 1.0
-        if curr_tot_var < 1e-20:
-            scaling_factor = 0.0
-            print(f"WARNING: curr_tot_var ({curr_tot_var:.2e}) is too small, setting scaling factor to 0")
-        else:
-            scaling_factor = np.sqrt(target_tot_var / curr_tot_var)
-            print(f"\t Scaling factor: {scaling_factor:.2e}")
+        # scaling_factor: float = 1.0
+        # if curr_tot_var < 1e-20:
+        #     scaling_factor = 0.0
+        #     print(f"WARNING: curr_tot_var ({curr_tot_var:.2e}) is too small, setting scaling factor to 0")
+        # else:
+        #     scaling_factor = np.sqrt(target_tot_var / curr_tot_var)
+        #     print(f"\t Scaling factor: {scaling_factor:.2e}")
 
-        u1_freq = u1_freq_unscaled * scaling_factor
-        u2_freq = u2_freq_unscaled * scaling_factor
+        # u1_freq = u1_freq_unscaled * scaling_factor
+        # u2_freq = u2_freq_unscaled * scaling_factor
 
         u1 = np.real(np.fft.ifft2(u1_freq))
         u2 = np.real(np.fft.ifft2(u2_freq))
@@ -926,7 +930,7 @@ if __name__ == "__main__":
     cfg_a = {
         "sigma2": 2.0,
         "L_2d": 15_000.0,
-        "psi": np.deg2rad(43.0),
+        "psi": np.deg2rad(45.0),
         "z_i": 500.0,
         "L1_factor": 40,  # For case (a): 40L_2D × 5L_2D
         "L2_factor": 5,
@@ -937,7 +941,7 @@ if __name__ == "__main__":
     cfg_b = {
         "sigma2": 2.0,
         "L_2d": 15_000.0,
-        "psi": np.deg2rad(43.0),
+        "psi": np.deg2rad(45.0),
         "z_i": 500.0,
         "L1_factor": 1,  # For case (b): L_2D × 0.125L_2D
         "L2_factor": 0.125,
@@ -954,3 +958,23 @@ if __name__ == "__main__":
 
     # NOTE: This one attempts to recreate figure 2 as closely as possible.
     recreate_fig2(gen_a, gen_b)
+
+    ##############################################
+    # NOTE: Isotropic grid/domain study (psi=45)
+    # Use current generator (grid_scale = 2pi/sqrt(dx*dy), no auto-scale)
+    cfg_iso_study = {
+        "sigma2": 2.0,         # Or 0.6, match expectations
+        "L_2d": 15_000.0,
+        "psi": np.deg2rad(45.0), # Isotropic physics
+        "z_i": 500.0,
+        "L1_factor": 4,        # Isotropic domain aspect ratio
+        "L2_factor": 4,
+        "N1": 10,              # Will be overridden by study function (e.g., 7-10)
+        "N2": 10,              # Will be overridden by study function (e.g., 7-10)
+    }
+    print("\n" + "="*80)
+    print("RUNNING ISOTROPIC STUDY (psi=45, L1=L2)")
+    print("Using grid_scale = 2pi/sqrt(dx*dy), no auto-scaling in generate")
+    print("Target sigma2 =", cfg_iso_study["sigma2"])
+    print("="*80 + "\n")
+    length_AND_grid_size_study(cfg_iso_study, do_plot = True, eta_ones = False)
