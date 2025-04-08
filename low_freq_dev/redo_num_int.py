@@ -13,83 +13,99 @@ class analytical_Fij:
         self.z_i = config["z_i"]
 
         self.c = (8 * self.sigma2) / (9 * (self.L_2d**(2/3)))
-        print("c: ", self.c)
+        print(f"Using approximate c:  {self.c:.6e}")
 
-    def _phi_leading(self, k1: float, k2: float) -> float:
+    def _E_kappa(self, k1: float, k2: float) -> float:
+        """ Calculate E(kappa) """
+        kappa_squared = 2 * ((k1 * np.cos(self.psi))**2 + (k2 * np.sin(self.psi))**2)
+        kappa_squared = max(kappa_squared, 1e-24)
+        _kappa = np.sqrt(kappa_squared)
+
+        denom_term_1 = (self.L_2d**-2 + kappa_squared)**(7/3)
+        denom_term_2 = (1 + kappa_squared * self.z_i**2)
+
+        if denom_term_1 * denom_term_2 < 1e-30:
+            return 0.0
+        Ekappa = self.c * (_kappa**3) / (denom_term_1 * denom_term_2)
+        if not np.isfinite(Ekappa):
+            return 0.0
+        return Ekappa
+
+    def _integrand11(self, k2: float, k1: float, eps: float = 1e-20) -> float:
         """
-        Common leading factor E(kappa) / pi * k
+        Integrand matching the SHAPE of the original code, but maybe numerically stabler.
+        Uses (E(kappa) / (pi * k)) * (k2^2 / k^2) form.
         """
-
-        kappa = np.sqrt(
-            2 * ((k1 * np.cos(self.psi))**2 + (k2 * np.sin(self.psi))**2)
-        )
-        k_mag = np.sqrt(k1**2 + k2**2)
-
-        # Ekappa calculation
-        denom_term_1 = (self.L_2d**-2 + kappa**2)**(7/3)
-        denom_term_2 = (1 + (kappa * self.z_i)**2)
-
-        Ekappa = self.c * (kappa**3) / (denom_term_1 * denom_term_2)
-
-        return Ekappa / (np.pi * k_mag)
-
-    def phi11(self, k1: float, k2: float, eps: float = 1e-20) -> float:
-        """
-        Returns Phi_11(k1, k2)
-        """
-        _common = self._phi_leading(k1, k2)
-
         k_mag_sq = k1**2 + k2**2
-        # Use original formulation matching the generation code's implication
-        _P_11 = 1.0 - (k1**2 / max(k_mag_sq, eps))
+        k_mag = np.sqrt(k_mag_sq)
 
-        return _common * _P_11
+        Ekappa = self._E_kappa(k1, k2)
 
-    def phi22(self, k1: float, k2: float, eps: float = 1e-20) -> float:
+        integrand = (Ekappa / (np.pi * k_mag)) * (1 - (k2**2 / k_mag_sq))
+        return integrand
+
+    def _integrand22(self, k2: float, k1: float, eps: float = 1e-20) -> float:
         """
-        Returns Phi_22(k1, k2)
+        Integrand matching the SHAPE of the original code.
+        Uses (E(kappa) / (pi * k)) * (k1^2 / k^2) form.
         """
-        _common = self._phi_leading(k1, k2)
-
         k_mag_sq = k1**2 + k2**2
-        # Use original formulation matching the generation code's implication
-        _P_22 = 1.0 - (k2**2 / max(k_mag_sq, eps))
+        k_mag = np.sqrt(k_mag_sq)
 
-        return _common * _P_22
+        Ekappa = self._E_kappa(k1, k2)
+
+        integrand = (Ekappa / (np.pi * k_mag)) * (1 - (k1**2 / k_mag_sq))
+        return integrand
 
 
     def generate(self, k1_arr):
         """
-        Generate F11 over given k1_arr
+        Generate F11, F22 over given k1_arr using the ORIGINAL integrand SHAPE
+        but with potentially more stable integration settings.
         """
-
         F11_res_arr = np.zeros_like(k1_arr)
         F11_err_arr = np.zeros_like(k1_arr)
-
         F22_res_arr = np.zeros_like(k1_arr)
         F22_err_arr = np.zeros_like(k1_arr)
 
-        limit_factor = 1000.0 # Adjust this factor as needed
-        k2_limit = limit_factor / self.L_2d
+        # Use large, but finite, limits for better numerical stability
+        # Choose a limit based on where E(kappa) becomes negligible
+        # Example: Limit based on many L_2d or related to z_i if high-k decay is strong
+        k2_limit_factor = 100 # Increase this if needed
+        k2_limit = k2_limit_factor / min(self.L_2d, self.z_i) if self.z_i > 0 else k2_limit_factor / self.L_2d
+        print(f"Using integration limits for k2: [-{k2_limit:.2e}, {k2_limit:.2e}]")
 
-        for i, k1 in enumerate(k1_arr):
-            F11_res_arr[i], F11_err_arr[i] = integrate.quad(
-                lambda _k2: self.phi11(
-                    k1, _k2
-                ),
-                -k2_limit, k2_limit # Use finite limits
-                # Optional: Increase points or change tolerance if warning persists
-                # limit=100, epsabs=1.49e-09, epsrel=1.49e-09
-            )
 
-            F22_res_arr[i], F22_err_arr[i] = integrate.quad(
-                lambda _k2: self.phi22(
-                    k1, _k2
-                ),
-                -k2_limit, k2_limit # Use finite limits
-                # Optional: Increase points or change tolerance if warning persists
-                # limit=100, epsabs=1.49e-09, epsrel=1.49e-09
-            )
+        for i, k1_val in enumerate(k1_arr):
+            try:
+                 F11_res_arr[i], F11_err_arr[i] = integrate.quad(
+                     self._integrand11, # Use integrand with original 1/k factor
+                     -k2_limit, k2_limit,          # Finite limits
+                     args=(k1_val,),
+                     limit=100, epsabs=1.49e-08, epsrel=1.49e-08 # Standard tolerance
+                 )
+                 # Check for large error estimate
+                 if F11_err_arr[i] > 0.1 * abs(F11_res_arr[i]):
+                      print(f"Warning: High relative error ({F11_err_arr[i]/F11_res_arr[i]:.1%}) for F11 at k1={k1_val:.4e}")
+
+            except Exception as e:
+                 print(f"Warning: Integration failed for F11 at k1={k1_val:.4e}: {e}")
+                 F11_res_arr[i], F11_err_arr[i] = np.nan, np.nan
+
+            try:
+                 F22_res_arr[i], F22_err_arr[i] = integrate.quad(
+                     self._integrand22, # Use integrand with original 1/k factor
+                     -k2_limit, k2_limit,          # Finite limits
+                     args=(k1_val,),
+                     limit=100, epsabs=1.49e-08, epsrel=1.49e-08 # Standard tolerance
+                 )
+                 # Check for large error estimate
+                 if F22_err_arr[i] > 0.1 * abs(F22_res_arr[i]):
+                      print(f"Warning: High relative error ({F22_err_arr[i]/F22_res_arr[i]:.1%}) for F22 at k1={k1_val:.4e}")
+
+            except Exception as e:
+                 print(f"Warning: Integration failed for F22 at k1={k1_val:.4e}: {e}")
+                 F22_res_arr[i], F22_err_arr[i] = np.nan, np.nan
 
         return F11_res_arr, F11_err_arr, F22_res_arr, F22_err_arr
 
@@ -122,6 +138,12 @@ if __name__ == "__main__":
 
     print("EXPECTED MAX k1 * F11 A: approx 0.325")
     print("ACTUAL: ", np.max(k1_arr_a * F11_a))
+
+    print("EXPECTED F22 A @ k1L = 10^-1: approx 0.07")
+    print("ACTUAL: ", (k1_arr_a[0] * F22_a[0]), " \n")
+
+    print("EXPECTED MAX k1 * F22 A: approx 0.410")
+    print("ACTUAL: ", np.max(k1_arr_a * F22_a))
 
 
 
