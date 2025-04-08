@@ -41,7 +41,7 @@ class analytical_Fij:
 
         Ekappa = self._E_kappa(k1, k2)
 
-        integrand = (Ekappa / (np.pi * k_mag)) * (1 - (k2**2 / k_mag_sq))
+        integrand = (Ekappa / (np.pi * k_mag)) * (k2**2 / k_mag_sq)
         return integrand
 
     def _integrand22(self, k2: float, k1: float, eps: float = 1e-20) -> float:
@@ -54,7 +54,7 @@ class analytical_Fij:
 
         Ekappa = self._E_kappa(k1, k2)
 
-        integrand = (Ekappa / (np.pi * k_mag)) * (1 - (k1**2 / k_mag_sq))
+        integrand = (Ekappa / (np.pi * k_mag)) * (k1**2 / k_mag_sq)
         return integrand
 
 
