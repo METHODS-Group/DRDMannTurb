@@ -12,8 +12,17 @@ class analytical_Fij:
         self.sigma2 = config["sigma2"]
         self.z_i = config["z_i"]
 
-        self.c = (8 * self.sigma2) / (9 * (self.L_2d**(2/3)))
-        print(f"Using approximate c:  {self.c:.6e}")
+        # Obtain scaling constant c from integration
+        def integrand_c(k):
+            denominator1 = (self.L_2d**-2 + k**2)**(7/3)
+            denominator2 = (1 + k**2 * self.z_i**2)
+            return (k**3) / (denominator1 * denominator2)
+
+        c_int = integrate.quad(integrand_c, 0, np.infty)
+
+        self.c = self.sigma2 / c_int[0]
+
+        print(f"Using c (from integration):        {self.c:.6e}")
 
     def _E_kappa(self, k1: float, k2: float) -> float:
         """ Calculate E(kappa) """

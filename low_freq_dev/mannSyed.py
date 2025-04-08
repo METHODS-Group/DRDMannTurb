@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numba
 import numpy as np
 import redo_num_int as Fij
+from scipy import integrate
 
 """
 - Mesh independence study
@@ -21,7 +22,7 @@ class generator:
         self.psi = config["psi"]
         self.z_i = config["z_i"]
 
-        self.c = (8.0 * self.sigma2) / (9.0 * (self.L_2d ** (2 / 3)))
+        self.c = self._compute_c()
 
         self.L1 = config["L1_factor"] * self.L_2d
         self.L2 = config["L2_factor"] * self.L_2d
@@ -44,6 +45,17 @@ class generator:
         self.k1, self.k2 = np.meshgrid(self.k1_fft, self.k2_fft, indexing="ij")
 
         self.config = config
+
+    def _compute_c(self):
+        # Obtain scaling constant c from integration
+        def integrand_c(k):
+            denominator1 = (self.L_2d**-2 + k**2)**(7/3)
+            denominator2 = (1 + k**2 * self.z_i**2)
+            return (k**3) / (denominator1 * denominator2)
+
+        c_int = integrate.quad(integrand_c, 0, np.infty)
+
+        return self.sigma2 / c_int[0]
 
     # ------------------------------------------------------------------------------------------------ #
 
