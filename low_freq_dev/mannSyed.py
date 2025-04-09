@@ -253,7 +253,7 @@ class generator:
             import warnings
             warnings.warn("NaN detected in power spectra!")
 
-        scaling_factor = self.L1 / ((self.N1 * self.N2)**2 * 2 * np.pi)
+        scaling_factor = self.L1 / ((self.N1 * self.N2)**2 * np.pi)
 
         F11, F22 = self._compute_spectrum_numba_helper(
             power_u1,
@@ -1142,19 +1142,19 @@ if __name__ == "__main__":
         "N2": 12,
     }
 
-    cfg_fig3_sq = {
-        "sigma2": 0.6,
-        "L_2d": 15_000.0,
-        "psi": np.deg2rad(45.0),
-        "z_i": 500.0,
-        "L1_factor": 5,
-        "L2_factor": 5,
-        "N1": 10,
-        "N2": 10,
-    }
-    gen = generator(cfg_fig3)
-    gen.generate()
-    gen.plot_velocity_fields()
+    # cfg_fig3_sq = {
+    #     "sigma2": 0.6,
+    #     "L_2d": 15_000.0,
+    #     "psi": np.deg2rad(45.0),
+    #     "z_i": 500.0,
+    #     "L1_factor": 5,
+    #     "L2_factor": 5,
+    #     "N1": 10,
+    #     "N2": 10,
+    # }
+    # gen = generator(cfg_fig3)
+    # gen.generate()
+    # gen.plot_velocity_fields()
 
     cfg_a = {
         "sigma2": 2.0,
