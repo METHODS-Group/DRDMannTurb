@@ -121,7 +121,6 @@ class analytical_Fij:
 
 
 if __name__ == "__main__":
-
     do_plot = True
 
     phys_config = {
@@ -140,21 +139,18 @@ if __name__ == "__main__":
     F11_b, F11_err_b, F22_b, F22_err_b = analytical_gen.generate(k1_arr_b)
 
     # Print "grid" values
-
     print("\n\n---------------------------------------------------")
-    print("EXPECTED F11 A @ k1L = 10^-1: approx 0.07")
+    print("EXPECTED F11 A @ k1L = 10^-1: approx 0.05?")
     print("ACTUAL: ", (k1_arr_a[0] * F11_a[0]), " \n")
 
     print("EXPECTED MAX k1 * F11 A: approx 0.325")
     print("ACTUAL: ", np.max(k1_arr_a * F11_a))
 
-    print("EXPECTED F22 A @ k1L = 10^-1: approx 0.07")
+    print("EXPECTED F22 A @ k1L = 10^-1: approx 0.00")
     print("ACTUAL: ", (k1_arr_a[0] * F22_a[0]), " \n")
 
     print("EXPECTED MAX k1 * F22 A: approx 0.410")
     print("ACTUAL: ", np.max(k1_arr_a * F22_a))
-
-
 
     if do_plot:
         plt.semilogx(k1_arr_a * phys_config["L_2d"], k1_arr_a * F11_a)
@@ -162,4 +158,11 @@ if __name__ == "__main__":
         plt.title("F11 top row")
         plt.xlabel(r"$k_1 L_{2d}$")
         plt.ylabel(r"$k_1 F_{11}(k_1)$")
+        plt.show()
+
+        plt.semilogx(k1_arr_a * phys_config["L_2d"], k1_arr_a * F22_a)
+        plt.grid(which="both", alpha=0.2)
+        plt.title("F22 top row")
+        plt.xlabel(r"$k_1 L_{2d}$")
+        plt.ylabel(r"$k_1 F_{22}(k_1)$")
         plt.show()

@@ -6,13 +6,6 @@ import numpy as np
 import redo_num_int as Fij
 from scipy import integrate
 
-"""
-- Mesh independence study
-- Scale independence study
-- Plot
-- Match spectrum
-"""
-
 
 class generator:
     def __init__(self, config):
@@ -107,39 +100,15 @@ class generator:
 
         return Q1 * noise_hat, Q2 * noise_hat
 
-    def generate(self, eta_ones = False):
+    def generate(self):
         # Obtain random noise
-
-        noise_hat: np.ndarray
-        if eta_ones:
-            print("WARNING: eta_ones = True, so scaling is probably wrong")
-            noise_hat = np.ones_like(self.k1, dtype=complex)
-        else:
-            noise = np.random.normal(0, 1, size=(self.N1, self.N2))
-            noise_hat = np.fft.fft2(noise)
+        noise = np.random.normal(0, 1, size=(self.N1, self.N2))
+        noise_hat = np.fft.fft2(noise)
 
         u1_freq, u2_freq = self._generate_numba_helper(
             self.k1, self.k2, self.c, self.L_2d, self.psi, self.z_i,
             self.dx, self.dy, self.N1, self.N2, noise_hat
         )
-
-        # n_total = self.N1 * self.N2
-        # var_u1_unscaled = np.sum(np.abs(u1_freq_unscaled)**2) / (n_total**2)
-        # var_u2_unscaled = np.sum(np.abs(u2_freq_unscaled)**2) / (n_total**2)
-
-        # curr_tot_var = var_u1_unscaled + var_u2_unscaled
-        # target_tot_var = self.sigma2
-
-        # scaling_factor: float = 1.0
-        # if curr_tot_var < 1e-20:
-        #     scaling_factor = 0.0
-        #     print(f"WARNING: curr_tot_var ({curr_tot_var:.2e}) is too small, setting scaling factor to 0")
-        # else:
-        #     scaling_factor = np.sqrt(target_tot_var / curr_tot_var)
-        #     print(f"\t Scaling factor: {scaling_factor:.2e}")
-
-        # u1_freq = u1_freq_unscaled * scaling_factor
-        # u2_freq = u2_freq_unscaled * scaling_factor
 
         u1 = np.real(np.fft.ifft2(u1_freq))
         u2 = np.real(np.fft.ifft2(u2_freq))
@@ -178,7 +147,7 @@ class generator:
 
             for r in range(N1):
                 for c in range(N2):
-                    if np.abs(k1_grid[r, c] - k1_val) < k_tol:
+                    if np.abs(k1_grid[r, c] - k1_val) < abs(k1_val) * k_tol + 1e-15:
                         summed_power_u1 += power_u1[r, c]
                         summed_power_u2 += power_u2[r, c]
 
@@ -757,7 +726,7 @@ def recreate_fig2(gen_a, gen_b, num_realizations = 10, do_plot = True):
 
 
 
-def length_AND_grid_size_study(base_config, do_plot = False, eta_ones = False):
+def length_AND_grid_size_study(base_config, do_plot = False):
     # want to check variance of the fields as a function of the physical size and grid fidelity
 
     config = base_config.copy()
@@ -798,14 +767,14 @@ def length_AND_grid_size_study(base_config, do_plot = False, eta_ones = False):
             config["L2_factor"] = factor
 
             gen = generator(config)
-            gen.generate(eta_ones = eta_ones)
+            gen.generate()
 
             avg_u1 = np.zeros((gen.N1, gen.N2))
             avg_u2 = np.zeros((gen.N1, gen.N2))
 
             # take 10 realizations and average
             for _ in range(10):
-                gen.generate(eta_ones = eta_ones)
+                gen.generate()
                 avg_u1 += gen.u1
                 avg_u2 += gen.u2
 
@@ -913,7 +882,7 @@ if __name__ == "__main__":
     cfg_fig3 = {
         "sigma2": 0.6,
         "L_2d": 15_000.0,
-        "psi": np.deg2rad(43.0),
+        "psi": np.deg2rad(45.0),
         "z_i": 500.0,
         "L1_factor": 4,
         "L2_factor": 1,
@@ -937,7 +906,7 @@ if __name__ == "__main__":
     #     "N1": 13,
     #     "N2": 10,
     # }
-    # length_AND_grid_size_study(cfg_a, do_plot = True, eta_ones = False)
+    # length_AND_grid_size_study(cfg_a, do_plot = True)
 
     cfg_a = {
         "sigma2": 2.0,
@@ -989,4 +958,4 @@ if __name__ == "__main__":
     print("Using grid_scale = 2pi/sqrt(dx*dy), no auto-scaling in generate")
     print("Target sigma2 =", cfg_iso_study["sigma2"])
     print("="*80 + "\n")
-    length_AND_grid_size_study(cfg_iso_study, do_plot = True, eta_ones = False)
+    length_AND_grid_size_study(cfg_iso_study, do_plot = True)
