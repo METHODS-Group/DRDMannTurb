@@ -3,10 +3,10 @@ import concurrent.futures
 import matplotlib.pyplot as plt
 import numba
 import numpy as np
+import pandas as pd  # Useful for displaying results
 import redo_num_int as Fij
 from scipy import integrate
 from scipy.integrate import dblquad
-import pandas as pd # Useful for displaying results
 
 
 class generator:
