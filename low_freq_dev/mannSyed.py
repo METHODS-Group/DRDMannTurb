@@ -147,7 +147,7 @@ class generator:
 
             for r in range(N1):
                 for c in range(N2):
-                    if np.abs(k1_grid[r, c] - k1_val) < abs(k1_val) * k_tol + 1e-15:
+                    if np.abs(k1_grid[r, c] - k1_val) < k_tol:
                         summed_power_u1 += power_u1[r, c]
                         summed_power_u2 += power_u2[r, c]
 
@@ -173,7 +173,7 @@ class generator:
             import warnings
             warnings.warn("NaN detected in power spectra!")
 
-        scaling_factor = self.L1 / ((self.N1 * self.N2)**2 * np.pi)
+        scaling_factor = self.L1 / ((self.N1 * self.N2)**2 * 2 * np.pi)
 
         F11, F22 = self._compute_spectrum_numba_helper(
             power_u1,
@@ -204,7 +204,6 @@ class generator:
         F22: np.ndarray
             Analytical spectrum of u2
         """
-
         Fij_gen = Fij.analytical_Fij(self.config)
 
         F11, F11_err, F22, F22_err = Fij_gen.generate(k1_arr)
@@ -879,19 +878,19 @@ if __name__ == "__main__":
 
     ###############################################
     # Recreate figure 3
-    cfg_fig3 = {
-        "sigma2": 0.6,
-        "L_2d": 15_000.0,
-        "psi": np.deg2rad(45.0),
-        "z_i": 500.0,
-        "L1_factor": 4,
-        "L2_factor": 1,
-        "N1": 14,
-        "N2": 12,
-    }
-    gen = generator(cfg_fig3)
-    gen.generate()
-    gen.plot_velocity_fields()
+    # cfg_fig3 = {
+    #     "sigma2": 0.6,
+    #     "L_2d": 15_000.0,
+    #     "psi": np.deg2rad(45.0),
+    #     "z_i": 500.0,
+    #     "L1_factor": 4,
+    #     "L2_factor": 1,
+    #     "N1": 14,
+    #     "N2": 12,
+    # }
+    # gen = generator(cfg_fig3)
+    # gen.generate()
+    # gen.plot_velocity_fields()
 
     # ##############################################
     # NOTE: This is the one that generates the little heatmap. X = domain size, Y = grid size.
@@ -908,37 +907,37 @@ if __name__ == "__main__":
     # }
     # length_AND_grid_size_study(cfg_a, do_plot = True)
 
-    cfg_a = {
-        "sigma2": 2.0,
-        "L_2d": 15_000.0,
-        "psi": np.deg2rad(45.0),
-        "z_i": 500.0,
-        "L1_factor": 40,  # For case (a): 40L_2D × 5L_2D
-        "L2_factor": 5,
-        "N1": 13,
-        "N2": 10,
-    }
+    # cfg_a = {
+    #     "sigma2": 2.0,
+    #     "L_2d": 15_000.0,
+    #     "psi": np.deg2rad(45.0),
+    #     "z_i": 500.0,
+    #     "L1_factor": 40,  # For case (a): 40L_2D × 5L_2D
+    #     "L2_factor": 5,
+    #     "N1": 13,
+    #     "N2": 10,
+    # }
 
-    cfg_b = {
-        "sigma2": 2.0,
-        "L_2d": 15_000.0,
-        "psi": np.deg2rad(45.0),
-        "z_i": 500.0,
-        "L1_factor": 1,  # For case (b): L_2D × 0.125L_2D
-        "L2_factor": 0.125,
-        "N1": 13,
-        "N2": 10,
-    }
+    # cfg_b = {
+    #     "sigma2": 2.0,
+    #     "L_2d": 15_000.0,
+    #     "psi": np.deg2rad(45.0),
+    #     "z_i": 500.0,
+    #     "L1_factor": 1,  # For case (b): L_2D × 0.125L_2D
+    #     "L2_factor": 0.125,
+    #     "N1": 13,
+    #     "N2": 10,
+    # }
 
-    gen_a = generator(cfg_a)
-    gen_b = generator(cfg_b)
+    # gen_a = generator(cfg_a)
+    # gen_b = generator(cfg_b)
 
-    # generate the fields first
-    gen_a.generate()
-    gen_b.generate()
+    # # generate the fields first
+    # gen_a.generate()
+    # gen_b.generate()
 
-    # NOTE: This one attempts to recreate figure 2 as closely as possible.
-    recreate_fig2(gen_a, gen_b)
+    # # NOTE: This one attempts to recreate figure 2 as closely as possible.
+    # recreate_fig2(gen_a, gen_b)
 
     ##############################################
     # NOTE: Isotropic grid/domain study (psi=45)
@@ -958,4 +957,4 @@ if __name__ == "__main__":
     print("Using grid_scale = 2pi/sqrt(dx*dy), no auto-scaling in generate")
     print("Target sigma2 =", cfg_iso_study["sigma2"])
     print("="*80 + "\n")
-    length_AND_grid_size_study(cfg_iso_study, do_plot = True)
+    length_AND_grid_size_study(cfg_iso_study, do_plot = False)

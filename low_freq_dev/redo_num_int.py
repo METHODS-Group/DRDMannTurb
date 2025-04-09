@@ -80,8 +80,7 @@ class analytical_Fij:
         # Use large, but finite, limits for better numerical stability
         # Choose a limit based on where E(kappa) becomes negligible
         # Example: Limit based on many L_2d or related to z_i if high-k decay is strong
-        k2_limit_factor = 100 # Increase this if needed
-        k2_limit = k2_limit_factor / min(self.L_2d, self.z_i) if self.z_i > 0 else k2_limit_factor / self.L_2d
+        k2_limit = 10 # Increase this if needed
         print(f"Using integration limits for k2: [-{k2_limit:.2e}, {k2_limit:.2e}]")
 
 
