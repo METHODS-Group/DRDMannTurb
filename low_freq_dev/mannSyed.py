@@ -6,6 +6,7 @@ import numpy as np
 import redo_num_int as Fij
 from scipy import integrate
 from scipy.integrate import dblquad
+import pandas as pd # Useful for displaying results
 
 
 class generator:
@@ -79,7 +80,7 @@ class generator:
             denom1_base = L_2d**-2 + kappa_sq
             if denom1_base <= 1e-100:
                  # This should be extremely unlikely if L_2d > 0 and k > 0
-                 print(f"Warning: polar denom1_base near zero for k={k:.2e}, theta={theta:.2f}")
+                 # print(f"Warning: polar denom1_base near zero for k={k:.2e}, theta={theta:.2f}")
                  return 0.0 # Treat as zero contribution
 
             denom1 = denom1_base**(7/3)
@@ -102,7 +103,9 @@ class generator:
 
         # Set integration limits for k
         # Determine a practical upper limit for k where the integrand decays
-        limit_factor = 1000 # Adjust as needed, start smaller than before
+        # --- UPDATED LIMIT FACTOR based on convergence test ---
+        limit_factor = 5000
+        # --- END UPDATE ---
         char_len = L_2d if z_i <= 0 else min(L_2d, z_i)
         if char_len <= 0:
             raise ValueError("Characteristic length scale must be positive.")
@@ -811,7 +814,7 @@ def recreate_fig2(gen_a, gen_b, num_realizations = 10, do_plot = True):
 
 
 
-def length_AND_grid_size_study(base_config, do_plot = False):
+def length_AND_grid_size_study(base_config, do_plot = False, num_realizations=10):
     # want to check variance of the fields as a function of the physical size and grid fidelity
 
     config = base_config.copy()
@@ -821,17 +824,15 @@ def length_AND_grid_size_study(base_config, do_plot = False):
 
     print(f"Grid exponents: {grid_exponents}")
     print(f"Domain factors: {domain_factors}")
+    print(f"Num Realizations per Combo: {num_realizations}")
 
     n_exp = len(grid_exponents)
     n_factors = len(domain_factors)
 
     total_combinations = n_exp * n_factors
 
-    u1_vars = np.zeros((n_exp, n_factors))
-    u2_vars = np.zeros((n_exp, n_factors))
-
-    norm_u1 = np.zeros((n_exp, n_factors))
-    norm_u2 = np.zeros((n_exp, n_factors))
+    u1_vars_avg = np.zeros((n_exp, n_factors)) # Store average variance
+    u2_vars_avg = np.zeros((n_exp, n_factors)) # Store average variance
 
     current_combo = 0
 
@@ -851,42 +852,36 @@ def length_AND_grid_size_study(base_config, do_plot = False):
             config["L1_factor"] = factor
             config["L2_factor"] = factor
 
-            gen = generator(config)
-            gen.generate()
+            gen = generator(config) # Create generator instance
 
-            avg_u1 = np.zeros((gen.N1, gen.N2))
-            avg_u2 = np.zeros((gen.N1, gen.N2))
+            # Calculate variance for each realization and average the variance values
+            realization_u1_vars = []
+            realization_u2_vars = []
+            for r_idx in range(num_realizations):
+                u1_real, u2_real = gen.generate()
+                realization_u1_vars.append(np.var(u1_real))
+                realization_u2_vars.append(np.var(u2_real))
 
-            # take 10 realizations and average
-            for _ in range(10):
-                gen.generate()
-                avg_u1 += gen.u1
-                avg_u2 += gen.u2
+            # Average the variances
+            u1_vars_avg[i, j] = np.mean(realization_u1_vars)
+            u2_vars_avg[i, j] = np.mean(realization_u2_vars)
 
-            avg_u1 /= 10
-            avg_u2 /= 10
-
-            norm_u1[i, j] = np.sum(avg_u1**2) * gen.dx * gen.dy
-            norm_u2[i, j] = np.sum(avg_u2**2) * gen.dx * gen.dy
-
-            u1_vars[i, j] = np.var(avg_u1)
-            u2_vars[i, j] = np.var(avg_u2)
-
-            print(f"\t u1 variance: {u1_vars[i,j]}")
-            print(f"\t u2 variance: {u2_vars[i,j]}")
-            print(f"\t u1 norm: {norm_u1[i,j]}")
-            print(f"\t u2 norm: {norm_u2[i,j]}")
-
+            print(f"\t Avg u1 variance: {u1_vars_avg[i,j]:.6f}")
+            print(f"\t Avg u2 variance: {u2_vars_avg[i,j]:.6f}")
+            print(f"\t Avg Total variance: {u1_vars_avg[i,j] + u2_vars_avg[i,j]:.6f}")
 
 
     figs = []
-
     def create_heatmap(data, title, cmap="viridis", logscale=False):
-
         fig, ax = plt.subplots(figsize=(10, 8))
 
         x_labels = [str(f) for f in domain_factors]
         y_labels = [f"2^{e} ({2**e})" for e in grid_exponents]
+
+        finite_data = np.isfinite(data)
+        if logscale and np.any(data[finite_data] <= 0):
+            print(f"Warning: Non-positive values encountered in '{title}'. Cannot use log scale.")
+            logscale = False
 
         plot_data = np.log10(data) if logscale else data
 
@@ -903,49 +898,58 @@ def length_AND_grid_size_study(base_config, do_plot = False):
         ax.set_yticks(np.arange(len(grid_exponents)))
         ax.set_xticklabels(x_labels)
         ax.set_yticklabels(y_labels)
+        ax.set_xlabel("Domain Factor (L/L_2d)")
+        ax.set_ylabel("Grid Size (N)")
 
-        # Add text annotations with values
-        for i in range(len(grid_exponents)):
-            for j in range(len(domain_factors)):
-                if logscale:
-                    text = f"{data[i, j]:.2e}"
-                elif data[i, j] < 0.01:
-                    text = f"{data[i, j]:.2e}"
-                else:
-                    text = f"{data[i, j]:.4f}"
+        cmap_obj = plt.get_cmap(cmap)
+        valid_plot_data = plot_data[np.isfinite(plot_data)]
+        norm_obj = plt.Normalize(vmin=np.min(valid_plot_data) if len(valid_plot_data)>0 else 0,
+                                 vmax=np.max(valid_plot_data) if len(valid_plot_data)>0 else 1)
 
-                # More readable text color logic
-                if cmap in ["RdBu", "RdBu_r", "coolwarm"]:
-                    # For diverging colormaps, use threshold at middle of scale
-                    text_color = (
-                        "white"
-                        if abs(plot_data[i, j] - np.mean(plot_data)) > (np.max(plot_data) - np.min(plot_data)) / 4
-                        else "black"
-                    )
-                else:
-                    text_color = "white" if plot_data[i, j] > np.mean(plot_data) else "black"
 
-                ax.text(j, i, text, ha="center", va="center", color=text_color)
+        for r in range(len(grid_exponents)):
+            for c_idx in range(len(domain_factors)):
+                val = data[r, c_idx]
+                plot_val = plot_data[r, c_idx]
+                if not np.isfinite(val) or not np.isfinite(plot_val): continue
 
+                if logscale: text = f"{val:.2e}"
+                elif abs(val) < 0.001 and val != 0: text = f"{val:.2e}"
+                else: text = f"{val:.3f}"
+
+                bg_color = cmap_obj(norm_obj(plot_val))
+                luminance = 0.299*bg_color[0] + 0.587*bg_color[1] + 0.114*bg_color[2]
+                text_color = "white" if luminance < 0.5 else "black"
+
+                ax.text(c_idx, r, text, ha="center", va="center", color=text_color, fontsize=8)
+
+        ax.set_title(title)
         plt.tight_layout()
-        return fig
+        return fig, im
 
     # Create a heatmap of the variances
-
     if do_plot:
-        fig1 = create_heatmap(u1_vars, "u1 variance", cmap="RdBu_r", logscale=True)
-        figs.append(fig1)
-        fig2 = create_heatmap(u2_vars, "u2 variance", cmap="RdBu_r", logscale=True)
-        figs.append(fig2)
+        total_vars_avg = u1_vars_avg + u2_vars_avg
+        target_sigma2 = base_config.get("sigma2", 1.0)
+        vmin_var = 0
+        vmax_var = target_sigma2 * 1.5 # Keep color range, adjust if needed
+        cmap_var = "RdBu_r"
 
-        fig3 = create_heatmap(norm_u1, "u1 norm, scaled by dx*dy", cmap="RdBu_r", logscale=True)
-        figs.append(fig3)
-        fig4 = create_heatmap(norm_u2, "u2 norm, scaled by dx*dy", cmap="RdBu_r", logscale=True)
-        figs.append(fig4)
+        fig1, im1 = create_heatmap(u1_vars_avg, "Average u1 variance", cmap=cmap_var, logscale=False)
+        if im1: im1.set_clim(vmin_var, vmax_var)
+
+        fig2, im2 = create_heatmap(u2_vars_avg, "Average u2 variance", cmap=cmap_var, logscale=False)
+        if im2: im2.set_clim(vmin_var, vmax_var)
+
+        fig_total, im_total = create_heatmap(total_vars_avg, f"Average Total variance (Target={target_sigma2:.2f})", cmap=cmap_var, logscale=False)
+        if im_total: im_total.set_clim(vmin_var, vmax_var)
+
+        figs.extend([fig1, fig2, fig_total])
 
         for fig in figs:
-            plt.figure(fig.number)
-            plt.show()
+            if fig:
+                plt.figure(fig.number)
+                plt.show()
 
     return
 
@@ -1061,6 +1065,128 @@ def anisotropy_study(base_config, psi_degrees, num_realizations=10, do_plot=True
 
 # ------------------------------------------------------------------------------------------------ #
 
+def test_c_convergence(config, limit_factors):
+    """
+    Tests the convergence of the 2D polar integral used to calculate 'c'
+    by varying the upper integration limit for k.
+
+    Parameters
+    ----------
+    config : dict
+        Configuration dictionary containing sigma2, L_2d, psi, z_i.
+    limit_factors : list or np.ndarray
+        A list of factors to multiply by (1/char_len) to get k_upper_limit values.
+    """
+    print("=" * 80)
+    print("TESTING CONVERGENCE OF 2D INTEGRAL FOR 'c'")
+    print(f"Psi = {np.rad2deg(config['psi']):.1f} degrees")
+    print(f"L_2d = {config['L_2d']:.1f}, z_i = {config['z_i']:.1f}, sigma2 = {config['sigma2']:.2f}")
+    print("=" * 80)
+
+    L_2d = config['L_2d']
+    psi = config['psi']
+    z_i = config['z_i']
+    sigma2 = config['sigma2']
+
+    # Define the integrand again (could potentially be moved out or passed in)
+    def polar_integrand(k, theta):
+        if k < 1e-15: return 0.0
+        cos_theta = np.cos(theta)
+        sin_theta = np.sin(theta)
+        cos_psi = np.cos(psi)
+        sin_psi = np.sin(psi)
+        kappa_sq = 2 * (k**2) * ((cos_psi * cos_theta)**2 + (sin_psi * sin_theta)**2)
+        if kappa_sq < 1e-30: return 0.0
+        kappa = np.sqrt(kappa_sq)
+        denom1_base = L_2d**-2 + kappa_sq
+        if denom1_base <= 1e-100: return 0.0
+        denom1 = denom1_base**(7/3)
+        denom2 = 1.0 + kappa_sq * z_i**2
+        denominator = denom1 * denom2
+        if denominator < 1e-200: return 0.0
+        shape_kappa = (kappa**3) / denominator
+        integrand_val = shape_kappa / np.pi
+        if not np.isfinite(integrand_val): return 0.0
+        return integrand_val
+
+    char_len = L_2d if z_i <= 0 else min(L_2d, z_i)
+    if char_len <= 0:
+        raise ValueError("Characteristic length scale must be positive.")
+
+    results = []
+
+    for factor in limit_factors:
+        k_upper_limit = factor / char_len
+        k_lower_limit = 0.0
+        print(f"\nTesting Limit Factor: {factor}, k_upper: {k_upper_limit:.3e}")
+
+        try:
+            integral_2d, abserr = dblquad(
+                polar_integrand,
+                0, 2 * np.pi,
+                lambda theta: k_lower_limit,
+                lambda theta: k_upper_limit,
+                epsabs=1.49e-10, epsrel=1.49e-10 # Slightly tighter tolerance for testing
+            )
+            rel_err = abserr / integral_2d if integral_2d != 0 else 0
+            c_val = sigma2 / integral_2d if integral_2d > 1e-15 else np.nan
+
+            print(f"  Integral={integral_2d:.7e}, AbsErr={abserr:.3e}, RelErr={rel_err:.3%}, c={c_val:.7e}")
+            results.append({
+                "limit_factor": factor,
+                "k_upper_limit": k_upper_limit,
+                "integral": integral_2d,
+                "abs_error": abserr,
+                "rel_error": rel_err,
+                "c_value": c_val
+            })
+
+        except Exception as e:
+            print(f"  ERROR during dblquad: {e}")
+            results.append({
+                "limit_factor": factor,
+                "k_upper_limit": k_upper_limit,
+                "integral": np.nan, "abs_error": np.nan, "rel_error": np.nan, "c_value": np.nan
+            })
+
+    # Display results in a table
+    df = pd.DataFrame(results)
+    print("\n--- Convergence Summary ---")
+    # Format columns for better readability
+    pd.set_option('display.float_format', '{:.6e}'.format)
+    print(df.to_string(index=False))
+    pd.reset_option('display.float_format') # Reset formatting
+
+    # Optional Plotting
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    color = 'tab:blue'
+    ax1.set_xlabel('k_upper_limit')
+    ax1.set_ylabel('Integral Value', color=color)
+    ax1.semilogx(df['k_upper_limit'], df['integral'], 'o-', color=color, label='Integral')
+    ax1.tick_params(axis='y', labelcolor=color)
+    ax1.grid(True, which='both', axis='x', linestyle=':', alpha=0.6)
+    ax1.grid(True, which='major', axis='y', linestyle='--', alpha=0.6)
+
+    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+    color = 'tab:red'
+    ax2.set_ylabel('Relative Error', color=color)
+    ax2.loglog(df['k_upper_limit'], df['rel_error'], 's--', color=color, label='Rel. Error') # Use log scale for error
+    ax2.tick_params(axis='y', labelcolor=color)
+
+    fig.suptitle(f'Convergence of 2D Polar Integral for c (Psi={np.rad2deg(psi):.1f} deg)')
+    fig.tight_layout(rect=[0, 0.03, 1, 0.95]) # Adjust layout for title
+    # Combine legends
+    lines, labels = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax2.legend(lines + lines2, labels + labels2, loc='center right')
+    plt.show()
+
+    return df
+
+
+# ------------------------------------------------------------------------------------------------ #
+
 if __name__ == "__main__":
     ###############################################
     # NOTE: Check norm against several grid resolutions. Always square
@@ -1087,21 +1213,6 @@ if __name__ == "__main__":
     gen = generator(cfg_fig3)
     gen.generate()
     gen.plot_velocity_fields()
-
-    # ##############################################
-    # NOTE: This is the one that generates the little heatmap. X = domain size, Y = grid size.
-    # The color is the variance of the fields.
-    # cfg_a = {
-    #     "sigma2": 2.0,
-    #     "L_2d": 15_000.0,
-    #     "psi": np.deg2rad(45.0),
-    #     "z_i": 500.0,
-    #     "L1_factor": 40,
-    #     "L2_factor": 5,
-    #     "N1": 13,
-    #     "N2": 10,
-    # }
-    # length_AND_grid_size_study(cfg_a, do_plot = True)
 
     # cfg_a = {
     #     "sigma2": 2.0,
@@ -1136,41 +1247,20 @@ if __name__ == "__main__":
     # recreate_fig2(gen_a, gen_b)
 
     ##############################################
-    # NOTE: Isotropic grid/domain study (psi=45)
-    # Use current generator (grid_scale = 2pi/sqrt(dx*dy), no auto-scale)
-    # cfg_iso_study = {
-    #     "sigma2": 2.0,         # Or 0.6, match expectations
-    #     "L_2d": 15_000.0,
-    #     "psi": np.deg2rad(45.0), # Isotropic physics
-    #     "z_i": 500.0,
-    #     "L1_factor": 4,        # Isotropic domain aspect ratio
-    #     "L2_factor": 4,
-    #     "N1": 10,              # Will be overridden by study function (e.g., 7-10)
-    #     "N2": 10,              # Will be overridden by study function (e.g., 7-10)
-    # }
-    # print("\n" + "="*80)
-    # print("RUNNING ISOTROPIC STUDY (psi=45, L1=L2)")
-    # print("Using grid_scale = 2pi/sqrt(dx*dy), no auto-scaling in generate")
-    # print("Target sigma2 =", cfg_iso_study["sigma2"])
-    # print("="*80 + "\n")
-    # length_AND_grid_size_study(cfg_iso_study, do_plot = False)
-
-    # ##############################################
-    # # ANISOTROPY STUDY (Plotting Fields + Variance Calc)
-    cfg_psi_study = {
-        "sigma2": 1.0, # Target total variance
-        "L_2d": 5_000.0,
-        "psi": np.deg2rad(45.0), # Will be overridden
+    # NOTE: Isotropic grid/domain study (psi=45) with updated 'c' calc
+    cfg_iso_study = {
+        "sigma2": 1.0,         # Match target sigma2
+        "L_2d": 5_000.0,       # Match params from anisotropy study
+        "psi": np.deg2rad(45.0), # Isotropic physics for this test
         "z_i": 500.0,
-        "L1_factor": 3,      # Domain size factor
-        "L2_factor": 3,      # Domain size factor
-        "N1": 10,             # Grid resolution exponent (1024x1024)
-        "N2": 10,
+        "L1_factor": 4,        # Will be overridden
+        "L2_factor": 4,        # Will be overridden
+        "N1": 10,              # Will be overridden
+        "N2": 10,              # Will be overridden
     }
-    psi_angles_to_test = [20, 45, 70]
-    # Use num_realizations=1 if only interested in the plotted field's variance
-    anisotropy_results = anisotropy_study(cfg_psi_study, psi_angles_to_test, num_realizations=10, do_plot=True)
-
-    # Optional: Further analysis of anisotropy_results dictionary
-    # for angle, data in anisotropy_results.items():
-    #    print(f"Psi={angle}: Total Variance = {data['avg_total_var']:.4f}")
+    print("\n" + "="*80)
+    print("RUNNING ISOTROPIC DOMAIN/GRID STUDY (psi=45) w/ Polar 'c'")
+    print("Target sigma2 =", cfg_iso_study["sigma2"])
+    print("Averaging Variance over Realizations") # Clarify method
+    print("="*80 + "\n")
+    length_AND_grid_size_study(cfg_iso_study, do_plot = True, num_realizations=10) # Pass num_realizations
