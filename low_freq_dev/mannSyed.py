@@ -5,6 +5,7 @@ import numba
 import numpy as np
 import redo_num_int as Fij
 from scipy import integrate
+from scipy.integrate import dblquad
 
 
 class generator:
@@ -15,7 +16,7 @@ class generator:
         self.psi = config["psi"]
         self.z_i = config["z_i"]
 
-        self.c = self._compute_c()
+        self.c = self._compute_c_2d()
 
         self.L1 = config["L1_factor"] * self.L_2d
         self.L2 = config["L2_factor"] * self.L_2d
@@ -39,16 +40,101 @@ class generator:
 
         self.config = config
 
-    def _compute_c(self):
+    def _compute_c_1d(self):
         # Obtain scaling constant c from integration
         def integrand_c(k):
             denominator1 = (self.L_2d**-2 + k**2)**(7/3)
             denominator2 = (1 + k**2 * self.z_i**2)
             return (k**3) / (denominator1 * denominator2)
 
-        c_int = integrate.quad(integrand_c, 0, np.infty)
+        c_int_1d = integrate.quad(integrand_c, 0, np.infty)
+        c_1d = self.sigma2 / c_int_1d[0]
+        print(f"Using c (from 1D integration): {c_1d:.6e}") # Note this is printed for info
+        return c_1d
 
-        return self.sigma2 / c_int[0]
+    def _compute_c_2d(self):
+        """ Computes normalization constant c using 2D integration in polar coordinates """
+        print("Calculating 'c' using 2D integral (polar coordinates)...")
+
+        L_2d = self.L_2d
+        psi = self.psi
+        z_i = self.z_i
+
+        # Define the new integrand: Shape(kappa) / pi
+        # Inner integral is over k (0 to inf), outer is over theta (0 to 2pi)
+        def polar_integrand(k, theta):
+            if k < 1e-15: return 0.0 # k=0 -> kappa=0 -> Shape=0
+
+            # Calculate kappa^2 based on k, theta, psi
+            cos_theta = np.cos(theta)
+            sin_theta = np.sin(theta)
+            cos_psi = np.cos(psi)
+            sin_psi = np.sin(psi)
+            kappa_sq = 2 * (k**2) * ((cos_psi * cos_theta)**2 + (sin_psi * sin_theta)**2)
+
+            if kappa_sq < 1e-30: return 0.0 # kappa=0 -> Shape=0
+            kappa = np.sqrt(kappa_sq)
+
+            # Calculate Shape(kappa)
+            denom1_base = L_2d**-2 + kappa_sq
+            if denom1_base <= 1e-100:
+                 # This should be extremely unlikely if L_2d > 0 and k > 0
+                 print(f"Warning: polar denom1_base near zero for k={k:.2e}, theta={theta:.2f}")
+                 return 0.0 # Treat as zero contribution
+
+            denom1 = denom1_base**(7/3)
+            denom2 = 1.0 + kappa_sq * z_i**2 # Simplified from check z_i==0
+
+            denominator = denom1 * denom2
+            if denominator < 1e-200:
+                 # print(f"Warning: polar denominator near zero for k={k:.2e}, theta={theta:.2f}")
+                 return 0.0 # Treat as zero contribution
+
+            shape_kappa = (kappa**3) / denominator
+
+            integrand_val = shape_kappa / np.pi
+
+            # Check for Inf/NaN (should be less likely now)
+            if not np.isfinite(integrand_val):
+                 # print(f"Warning: Non-finite polar integrand k={k:.2e}, theta={theta:.2f}")
+                 return 0.0
+            return integrand_val
+
+        # Set integration limits for k
+        # Determine a practical upper limit for k where the integrand decays
+        limit_factor = 1000 # Adjust as needed, start smaller than before
+        char_len = L_2d if z_i <= 0 else min(L_2d, z_i)
+        if char_len <= 0:
+            raise ValueError("Characteristic length scale must be positive.")
+        k_upper_limit = limit_factor / char_len
+        k_lower_limit = 0.0
+
+        print(f"  Using dblquad limits: k in [{k_lower_limit:.1e}, {k_upper_limit:.1e}], theta in [0, 2*pi]")
+
+        try:
+            # Integrate k inner (0 to k_upper_limit), theta outer (0 to 2*pi)
+            integral_2d, abserr = dblquad(
+                polar_integrand,
+                0, 2 * np.pi,          # Outer integral limits (theta)
+                lambda theta: k_lower_limit, # Inner integral lower limit (k)
+                lambda theta: k_upper_limit, # Inner integral upper limit (k)
+                epsabs=1.49e-9, epsrel=1.49e-9 # Maybe slightly tighter tolerance
+            )
+        except Exception as e:
+             print(f"ERROR during polar dblquad: {e}")
+             raise
+
+        print(f"  2D Integral (polar) result: {integral_2d:.6e}, Est. Error: {abserr:.2e}")
+
+        if integral_2d <= 1e-15: # Check if integral is essentially zero or negative
+            raise ValueError(f"2D Polar Integration for 'c' failed or invalid result: {integral_2d}")
+        # Increase error tolerance slightly, as 2D integration can be tricky
+        if abserr > 0.1 * abs(integral_2d): # Check 10% relative error
+             print(f"Warning: High relative error in 2D polar integration for 'c': {abserr/integral_2d:.1%}")
+
+        c_2d = self.sigma2 / integral_2d
+        print(f"Using c (from 2D polar integration): {c_2d:.6e}")
+        return c_2d
 
     # ------------------------------------------------------------------------------------------------ #
 
@@ -863,6 +949,116 @@ def length_AND_grid_size_study(base_config, do_plot = False):
 
     return
 
+
+def anisotropy_study(base_config, psi_degrees, num_realizations=10, do_plot=True):
+    """
+    Computes statistics (variances) and plots a representative generated
+    velocity field (u1, u2) for different anisotropy angles (psi).
+    """
+    print("=" * 80)
+    print("RUNNING ANISOTROPY STUDY (Plotting Fields)")
+    print(f"Psi angles: {psi_degrees} degrees")
+    print(f"Num Realizations for Variance: {num_realizations}")
+    print("=" * 80)
+
+    n_angles = len(psi_degrees)
+    results = {}
+    generated_fields = {} # To store one field per angle for plotting
+
+    # --- Generate fields once per angle for plotting and calculate overall range ---
+    print("Generating representative fields for plotting and range calculation...")
+    all_u1 = []
+    all_u2 = []
+    for i, psi_deg in enumerate(psi_degrees):
+        local_config = base_config.copy()
+        local_config["psi"] = np.deg2rad(psi_deg)
+        gen = generator(local_config)
+        print(f"  Generating field for psi={psi_deg}...")
+        u1_plot, u2_plot = gen.generate() # Generate one field for plotting
+        generated_fields[psi_deg] = (gen.X, gen.Y, u1_plot, u2_plot) # Store X,Y too
+        all_u1.append(u1_plot)
+        all_u2.append(u2_plot)
+
+    # Determine common color limits across all fields
+    global_min = min(np.min(np.array(all_u1)), np.min(np.array(all_u2)))
+    global_max = max(np.max(np.array(all_u1)), np.max(np.array(all_u2)))
+    vlim = max(abs(global_min), abs(global_max))
+    vmin, vmax = -vlim, vlim
+    print(f"Global velocity range for color scale: [{vmin:.2f}, {vmax:.2f}] m/s")
+
+    # --- Setup Figure ---
+    fig, axs = None, None
+    if do_plot:
+        fig, axs = plt.subplots(n_angles, 2, figsize=(9, 3.5 * n_angles), sharex=True, sharey=True) # Slightly adjusted size
+        fig.suptitle("Generated Velocity Fields for different $\psi$ angles", fontsize=14)
+    elif not do_plot:
+        print("Plotting disabled.")
+
+
+    # --- Loop through angles again for variance calculation and plotting ---
+    for i, psi_deg in enumerate(psi_degrees):
+        print(f"\n--- Processing Psi = {psi_deg} degrees (Variance Calculation) ---")
+        local_config = base_config.copy()
+        local_config["psi"] = np.deg2rad(psi_deg)
+        gen = generator(local_config)
+
+        # --- Calculate Average Variances ---
+        u1_vars = []
+        u2_vars = []
+        print(f"  Running {num_realizations} realizations for variance...")
+        for r in range(num_realizations):
+            u1_realization, u2_realization = gen.generate()
+            u1_vars.append(np.var(u1_realization))
+            u2_vars.append(np.var(u2_realization))
+        print("  ...Realizations complete.")
+
+        avg_u1_var = np.mean(u1_vars)
+        avg_u2_var = np.mean(u2_vars)
+        avg_total_var = avg_u1_var + avg_u2_var
+
+        print(f"  Average var(u1)    : {avg_u1_var:.4f}")
+        print(f"  Average var(u2)    : {avg_u2_var:.4f}")
+        print(f"  Average var(Total) : {avg_total_var:.4f} (Target sigma2={gen.sigma2})")
+
+        results[psi_deg] = {
+            "avg_u1_var": avg_u1_var,
+            "avg_u2_var": avg_u2_var,
+            "avg_total_var": avg_total_var
+        }
+
+        # --- Plotting (if enabled) ---
+        if do_plot and axs is not None:
+            X, Y, u1_plot, u2_plot = generated_fields[psi_deg]
+            x_km = X / 1000
+            y_km = Y / 1000
+            extent = [x_km[0, 0], x_km[-1, -1], y_km[0, 0], y_km[-1, -1]]
+            row_axs = axs[i]
+
+            # Plot u1 (left column)
+            im1 = row_axs[0].imshow(u1_plot.T, extent=extent, origin="lower", cmap="coolwarm", vmin=vmin, vmax=vmax, aspect="auto")
+            row_axs[0].set_ylabel(f'$\\psi={psi_deg}^\\circ$\ny [km]')
+            if i == 0: row_axs[0].set_title("u1 field")
+            if i == n_angles - 1: row_axs[0].set_xlabel("x [km]")
+
+            # Plot u2 (right column)
+            im2 = row_axs[1].imshow(u2_plot.T, extent=extent, origin="lower", cmap="coolwarm", vmin=vmin, vmax=vmax, aspect="auto")
+            # row_axs[1].set_ylabel("y [km]") # ylabel already shared
+            if i == 0: row_axs[1].set_title("u2 field")
+            if i == n_angles - 1: row_axs[1].set_xlabel("x [km]")
+
+            # Add a single colorbar for the whole figure
+            if i == n_angles - 1: # Add after the last row is plotted
+                 fig.colorbar(im2, ax=axs[:, 1], shrink=0.8, label="Velocity [m/s]")
+
+
+    print("\n...Processing complete.")
+
+    if do_plot and fig is not None:
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+        plt.show()
+
+    return results
+
 # ------------------------------------------------------------------------------------------------ #
 
 if __name__ == "__main__":
@@ -878,19 +1074,19 @@ if __name__ == "__main__":
 
     ###############################################
     # Recreate figure 3
-    # cfg_fig3 = {
-    #     "sigma2": 0.6,
-    #     "L_2d": 15_000.0,
-    #     "psi": np.deg2rad(45.0),
-    #     "z_i": 500.0,
-    #     "L1_factor": 4,
-    #     "L2_factor": 1,
-    #     "N1": 14,
-    #     "N2": 12,
-    # }
-    # gen = generator(cfg_fig3)
-    # gen.generate()
-    # gen.plot_velocity_fields()
+    cfg_fig3 = {
+        "sigma2": 0.6,
+        "L_2d": 15_000.0,
+        "psi": np.deg2rad(45.0),
+        "z_i": 500.0,
+        "L1_factor": 4,
+        "L2_factor": 1,
+        "N1": 14,
+        "N2": 12,
+    }
+    gen = generator(cfg_fig3)
+    gen.generate()
+    gen.plot_velocity_fields()
 
     # ##############################################
     # NOTE: This is the one that generates the little heatmap. X = domain size, Y = grid size.
@@ -942,19 +1138,39 @@ if __name__ == "__main__":
     ##############################################
     # NOTE: Isotropic grid/domain study (psi=45)
     # Use current generator (grid_scale = 2pi/sqrt(dx*dy), no auto-scale)
-    cfg_iso_study = {
-        "sigma2": 2.0,         # Or 0.6, match expectations
-        "L_2d": 15_000.0,
-        "psi": np.deg2rad(45.0), # Isotropic physics
+    # cfg_iso_study = {
+    #     "sigma2": 2.0,         # Or 0.6, match expectations
+    #     "L_2d": 15_000.0,
+    #     "psi": np.deg2rad(45.0), # Isotropic physics
+    #     "z_i": 500.0,
+    #     "L1_factor": 4,        # Isotropic domain aspect ratio
+    #     "L2_factor": 4,
+    #     "N1": 10,              # Will be overridden by study function (e.g., 7-10)
+    #     "N2": 10,              # Will be overridden by study function (e.g., 7-10)
+    # }
+    # print("\n" + "="*80)
+    # print("RUNNING ISOTROPIC STUDY (psi=45, L1=L2)")
+    # print("Using grid_scale = 2pi/sqrt(dx*dy), no auto-scaling in generate")
+    # print("Target sigma2 =", cfg_iso_study["sigma2"])
+    # print("="*80 + "\n")
+    # length_AND_grid_size_study(cfg_iso_study, do_plot = False)
+
+    # ##############################################
+    # # ANISOTROPY STUDY (Plotting Fields + Variance Calc)
+    cfg_psi_study = {
+        "sigma2": 1.0, # Target total variance
+        "L_2d": 5_000.0,
+        "psi": np.deg2rad(45.0), # Will be overridden
         "z_i": 500.0,
-        "L1_factor": 4,        # Isotropic domain aspect ratio
-        "L2_factor": 4,
-        "N1": 10,              # Will be overridden by study function (e.g., 7-10)
-        "N2": 10,              # Will be overridden by study function (e.g., 7-10)
+        "L1_factor": 3,      # Domain size factor
+        "L2_factor": 3,      # Domain size factor
+        "N1": 10,             # Grid resolution exponent (1024x1024)
+        "N2": 10,
     }
-    print("\n" + "="*80)
-    print("RUNNING ISOTROPIC STUDY (psi=45, L1=L2)")
-    print("Using grid_scale = 2pi/sqrt(dx*dy), no auto-scaling in generate")
-    print("Target sigma2 =", cfg_iso_study["sigma2"])
-    print("="*80 + "\n")
-    length_AND_grid_size_study(cfg_iso_study, do_plot = False)
+    psi_angles_to_test = [20, 45, 70]
+    # Use num_realizations=1 if only interested in the plotted field's variance
+    anisotropy_results = anisotropy_study(cfg_psi_study, psi_angles_to_test, num_realizations=10, do_plot=True)
+
+    # Optional: Further analysis of anisotropy_results dictionary
+    # for angle, data in anisotropy_results.items():
+    #    print(f"Psi={angle}: Total Variance = {data['avg_total_var']:.4f}")
