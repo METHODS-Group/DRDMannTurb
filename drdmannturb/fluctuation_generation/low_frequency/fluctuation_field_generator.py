@@ -14,127 +14,16 @@ Notes:
 """
 
 
-class analytical_Fij:
+class LowFreqGenerator:
+    r"""
+    TODO: FILL OUT DOCSTRING
+
+    This class implements a 2d low-frequency fluctuational field model based on the following references:
+    #. [1]
+
+    """
+
     def __init__(self, config: dict):
-        self.L_2d = config["L_2d"]
-        self.psi = config["psi"]
-        self.sigma2 = config["sigma2"]
-        self.z_i = config["z_i"]
-
-        # Obtain scaling constant c from integration
-        def integrand_c(k):
-            denominator1 = (self.L_2d**-2 + k**2) ** (7 / 3)
-            denominator2 = 1 + k**2 * self.z_i**2
-            return (k**3) / (denominator1 * denominator2)
-
-        c_int = integrate.quad(integrand_c, 0, np.infty)
-
-        self.c = self.sigma2 / c_int[0]
-
-        print(f"Using c (from integration):        {self.c:.6e}")
-
-    def _E_kappa(self, k1: float, k2: float) -> float:
-        """Calculate E(kappa)"""
-        kappa_squared = 2 * ((k1 * np.cos(self.psi)) ** 2 + (k2 * np.sin(self.psi)) ** 2)
-        kappa_squared = max(kappa_squared, 1e-24)
-        _kappa = np.sqrt(kappa_squared)
-
-        denom_term_1 = (self.L_2d**-2 + kappa_squared) ** (7 / 3)
-        denom_term_2 = 1 + kappa_squared * self.z_i**2
-
-        if denom_term_1 * denom_term_2 < 1e-30:
-            return 0.0
-        Ekappa = self.c * (_kappa**3) / (denom_term_1 * denom_term_2)
-        if not np.isfinite(Ekappa):
-            return 0.0
-        return Ekappa
-
-    def _integrand11(self, k2: float, k1: float, eps: float = 1e-20) -> float:
-        """
-        Integrand matching the SHAPE of the original code, but maybe numerically stabler.
-        Uses (E(kappa) / (pi * k)) * (k2^2 / k^2) form.
-        """
-        k_mag_sq = k1**2 + k2**2
-        k_mag = np.sqrt(k_mag_sq)
-
-        Ekappa = self._E_kappa(k1, k2)
-
-        integrand = (Ekappa / (np.pi * k_mag)) * (k2**2 / k_mag_sq)
-        return integrand
-
-    def _integrand22(self, k2: float, k1: float, eps: float = 1e-20) -> float:
-        """
-        Integrand matching the SHAPE of the original code.
-        Uses (E(kappa) / (pi * k)) * (k1^2 / k^2) form.
-        """
-        k_mag_sq = k1**2 + k2**2
-        k_mag = np.sqrt(k_mag_sq)
-
-        Ekappa = self._E_kappa(k1, k2)
-
-        integrand = (Ekappa / (np.pi * k_mag)) * (k1**2 / k_mag_sq)
-        return integrand
-
-    def generate(self, k1_arr):
-        """
-        Generate F11, F22 over given k1_arr using the ORIGINAL integrand SHAPE
-        but with potentially more stable integration settings.
-        """
-        F11_res_arr = np.zeros_like(k1_arr)
-        F11_err_arr = np.zeros_like(k1_arr)
-        F22_res_arr = np.zeros_like(k1_arr)
-        F22_err_arr = np.zeros_like(k1_arr)
-
-        # Use large, but finite, limits for better numerical stability
-        # Choose a limit based on where E(kappa) becomes negligible
-        # Example: Limit based on many L_2d or related to z_i if high-k decay is strong
-        k2_limit = 5  # Increase this if needed
-        print(f"Using integration limits for k2: [-{k2_limit:.2e}, {k2_limit:.2e}]")
-
-        for i, k1_val in enumerate(k1_arr):
-            try:
-                F11_res_arr[i], F11_err_arr[i] = integrate.quad(
-                    self._integrand11,  # Use integrand with original 1/k factor
-                    -k2_limit,
-                    k2_limit,  # Finite limits
-                    args=(k1_val,),
-                    limit=100,
-                    epsabs=1.49e-08,
-                    epsrel=1.49e-08,  # Standard tolerance
-                )
-                # Check for large error estimate
-                if F11_err_arr[i] > 0.1 * abs(F11_res_arr[i]):
-                    rel_err = F11_err_arr[i] / F11_res_arr[i]
-                    print(f"Warning: High relative error ({rel_err:.1%}) for F11 at k1={k1_val:.4e}")
-
-            except Exception as e:
-                print(f"Warning: Integration failed for F11 at k1={k1_val:.4e}: {e}")
-                F11_res_arr[i], F11_err_arr[i] = np.nan, np.nan
-
-            try:
-                F22_res_arr[i], F22_err_arr[i] = integrate.quad(
-                    self._integrand22,  # Use integrand with original 1/k factor
-                    -k2_limit,
-                    k2_limit,  # Finite limits
-                    args=(k1_val,),
-                    limit=100,
-                    epsabs=1.49e-08,
-                    epsrel=1.49e-08,  # Standard tolerance
-                )
-                # Check for large error estimate
-                if F22_err_arr[i] > 0.1 * abs(F22_res_arr[i]):
-                    rel_err = F22_err_arr[i] / F22_res_arr[i]
-                    print(f"Warning: High relative error ({rel_err:.1%}) for F22 at k1={k1_val:.4e}")
-
-            except Exception as e:
-                print(f"Warning: Integration failed for F22 at k1={k1_val:.4e}: {e}")
-                F22_res_arr[i], F22_err_arr[i] = np.nan, np.nan
-
-        return F11_res_arr, F11_err_arr, F22_res_arr, F22_err_arr
-
-
-class generator:
-    def __init__(self, config):
         # Physical parameters
         self.sigma2 = config["sigma2"]
         self.L_2d = config["L_2d"]
@@ -164,18 +53,6 @@ class generator:
         self.k1, self.k2 = np.meshgrid(self.k1_fft, self.k2_fft, indexing="ij")
 
         self.config = config
-
-    def _compute_c_1d(self):
-        # Obtain scaling constant c from integration
-        def integrand_c(k):
-            denominator1 = (self.L_2d**-2 + k**2) ** (7 / 3)
-            denominator2 = 1 + k**2 * self.z_i**2
-            return (k**3) / (denominator1 * denominator2)
-
-        c_int_1d = integrate.quad(integrand_c, 0, np.infty)
-        c_1d = self.sigma2 / c_int_1d[0]
-        print(f"Using c (from 1D integration): {c_1d:.6e}")  # Note this is printed for info
-        return c_1d
 
     def _compute_c_2d(self):
         """Computes normalization constant c using 2D integration in polar coordinates"""
@@ -370,7 +247,7 @@ class generator:
 
             warnings.warn("NaN detected in power spectra!")
 
-        scaling_factor = self.L1 / ((self.N1 * self.N2) ** 2 * np.pi)
+        scaling_factor = self.L1 / ((self.N1 * self.N2) ** 2 * (2 * np.pi))
 
         F11, F22 = self._compute_spectrum_numba_helper(power_u1, power_u2, self.k1, k1_pos, scaling_factor, k_tol)
 
@@ -394,15 +271,110 @@ class generator:
         F22: np.ndarray
             Analytical spectrum of u2
         """
-        Fij_gen = analytical_Fij(self.config)
+        # Fij_gen = analytical_Fij(self.config)
 
-        F11, F11_err, F22, F22_err = Fij_gen.generate(k1_arr)
+        F11_res_arr = np.zeros_like(k1_arr)
+        F11_err_arr = np.zeros_like(k1_arr)
+        F22_res_arr = np.zeros_like(k1_arr)
+        F22_err_arr = np.zeros_like(k1_arr)
+
+        _psi = self.psi
+
+        _L_2d = self.L_2d
+        _z_i = self.z_i
+        _c = self.c
+
+        def _E_kappa(k1: float, k2: float) -> float:
+            """Calculate E(kappa)"""
+            kappa_squared = 2 * ((k1 * np.cos(_psi)) ** 2 + (k2 * np.sin(_psi)) ** 2)
+            kappa_squared = max(kappa_squared, 1e-24)
+            _kappa = np.sqrt(kappa_squared)
+
+            denom_term_1 = (_L_2d**-2 + kappa_squared) ** (7 / 3)
+            denom_term_2 = 1 + kappa_squared * _z_i**2
+
+            if denom_term_1 * denom_term_2 < 1e-30:
+                return 0.0
+            Ekappa = _c * (_kappa**3) / (denom_term_1 * denom_term_2)
+            if not np.isfinite(Ekappa):
+                return 0.0
+            return Ekappa
+
+        def _integrand11(k2: float, k1: float, eps: float = 1e-20) -> float:
+            """
+            Integrand matching the SHAPE of the original code, but maybe numerically stabler.
+            Uses (E(kappa) / (pi * k)) * (k2^2 / k^2) form.
+            """
+            k_mag_sq = k1**2 + k2**2
+            k_mag = np.sqrt(k_mag_sq)
+
+            Ekappa = _E_kappa(k1, k2)
+
+            integrand = (Ekappa / (np.pi * k_mag)) * (k2**2 / k_mag_sq)
+            return integrand
+
+        def _integrand22(k2: float, k1: float, eps: float = 1e-20) -> float:
+            """
+            Integrand matching the SHAPE of the original code.
+            Uses (E(kappa) / (pi * k)) * (k1^2 / k^2) form.
+            """
+            k_mag_sq = k1**2 + k2**2
+            k_mag = np.sqrt(k_mag_sq)
+
+            Ekappa = _E_kappa(k1, k2)
+
+            integrand = (Ekappa / (np.pi * k_mag)) * (k1**2 / k_mag_sq)
+            return integrand
+
+        k2_limit = 5  # TODO: This should taken in as a parameter probably
+        print(f"Using integration limits for k2: [-{k2_limit:.2e}, {k2_limit:.2e}]")
+
+        for i, k1_val in enumerate(k1_arr):
+            try:
+                F11_res_arr[i], F11_err_arr[i] = integrate.quad(
+                    _integrand11,
+                    -k2_limit,
+                    k2_limit,
+                    args=(k1_val,),
+                    limit=100,
+                    epsabs=1.49e-08,
+                    epsrel=1.49e-08,
+                )
+                # Check for large error estimate
+                if F11_err_arr[i] > 0.1 * abs(F11_res_arr[i]):
+                    rel_err = F11_err_arr[i] / F11_res_arr[i]
+                    print(f"Warning: High relative error ({rel_err:.1%}) for F11 at k1={k1_val:.4e}")
+
+            except Exception as e:
+                print(f"Warning: Integration failed for F11 at k1={k1_val:.4e}: {e}")
+                F11_res_arr[i], F11_err_arr[i] = np.nan, np.nan
+
+            try:
+                F22_res_arr[i], F22_err_arr[i] = integrate.quad(
+                    _integrand22,
+                    -k2_limit,
+                    k2_limit,
+                    args=(k1_val,),
+                    limit=100,
+                    epsabs=1.49e-08,
+                    epsrel=1.49e-08,
+                )
+                # Check for large error estimate
+                if F22_err_arr[i] > 0.1 * abs(F22_res_arr[i]):
+                    rel_err = F22_err_arr[i] / F22_res_arr[i]
+                    print(f"Warning: High relative error ({rel_err:.1%}) for F22 at k1={k1_val:.4e}")
+
+            except Exception as e:
+                print(f"Warning: Integration failed for F22 at k1={k1_val:.4e}: {e}")
+                F22_res_arr[i], F22_err_arr[i] = np.nan, np.nan
+
+        # F11, F11_err, F22, F22_err = Fij_gen.generate(k1_arr)
 
         if warn:
-            print("Max error on F11: ", np.max(F11_err))
-            print("Max error on F22: ", np.max(F22_err))
+            print("Max error on F11: ", np.max(F11_err_arr))
+            print("Max error on F22: ", np.max(F22_err_arr))
 
-        return F11, F22
+        return F11_res_arr, F22_res_arr
 
     # ------------------------------------------------------------------------------------------------ #
 
@@ -469,7 +441,7 @@ def _run_single_mesh(exponent, config, num_realizations=5):
     local_config["N1"] = exponent
     local_config["N2"] = exponent
 
-    gen = generator(local_config)
+    gen = LowFreqGenerator(local_config)
     u1 = np.zeros_like(gen.k1)
     u2 = np.zeros_like(gen.k2)
 
@@ -559,7 +531,7 @@ def _run_single_domain_size(domain_factor, config, num_realizations=5):
     local_config["L1_factor"] = domain_factor
     local_config["L2_factor"] = domain_factor
 
-    gen = generator(local_config)
+    gen = LowFreqGenerator(local_config)
     u1 = np.zeros_like(gen.k1)
     u2 = np.zeros_like(gen.k2)
 
@@ -646,7 +618,7 @@ def domain_size_study(factors=None):
 # ------------------------------------------------------------------------------------------------ #
 
 
-def plot_spectra_comparison(gen: generator):
+def plot_spectra_comparison(gen: LowFreqGenerator):
     """
     Computes and plots numerical vs analytical spectra F11 and F22.
     Plots k1*F vs k1*L_2d on log-log axes.
@@ -975,7 +947,7 @@ def length_AND_grid_size_study(base_config, do_plot=False, num_realizations=10):
             config["L1_factor"] = factor
             config["L2_factor"] = factor
 
-            gen = generator(config)  # Create generator instance
+            gen = LowFreqGenerator(config)  # Create generator instance
 
             # Calculate variance for each realization and average the variance values
             realization_u1_vars = []
@@ -1133,7 +1105,7 @@ def rectangular_domain_study(base_config, num_realizations=10, do_plot=True):
         local_config["N1"] = N1_N2_pair[0]
         local_config["N2"] = N1_N2_pair[1]
 
-        gen = generator(local_config)
+        gen = LowFreqGenerator(local_config)
         avg_u1_var = []
         avg_u2_var = []
         avg_total_var = []
@@ -1175,7 +1147,7 @@ def anisotropy_study(base_config, psi_degrees, num_realizations=10, do_plot=True
     for i, psi_deg in enumerate(psi_degrees):
         local_config = base_config.copy()
         local_config["psi"] = np.deg2rad(psi_deg)
-        gen = generator(local_config)
+        gen = LowFreqGenerator(local_config)
         print(f"  Generating field for psi={psi_deg}...")
         u1_plot, u2_plot = gen.generate()  # Generate one field for plotting
         generated_fields[psi_deg] = (gen.X, gen.Y, u1_plot, u2_plot)  # Store X,Y too
@@ -1202,7 +1174,7 @@ def anisotropy_study(base_config, psi_degrees, num_realizations=10, do_plot=True
         print(f"\n--- Processing Psi = {psi_deg} degrees (Variance Calculation) ---")
         local_config = base_config.copy()
         local_config["psi"] = np.deg2rad(psi_deg)
-        gen = generator(local_config)
+        gen = LowFreqGenerator(local_config)
 
         # --- Calculate Average Variances ---
         u1_vars = []
@@ -1324,8 +1296,8 @@ if __name__ == "__main__":
         "N2": 10,
     }
 
-    gen_a = generator(cfg_a)
-    gen_b = generator(cfg_b)
+    gen_a = LowFreqGenerator(cfg_a)
+    gen_b = LowFreqGenerator(cfg_b)
 
     # generate the fields first
     gen_a.generate()
