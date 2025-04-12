@@ -318,8 +318,12 @@ class LowFreqGenerator:
 
     def generate(self):
         """
-        Generates the velocity field on the computational grid and returns the
-        portion matching the user's requested dimensions.
+        Generates the velocity field on the computational grid, stores the full and
+        extracted fields, and returns the portion matching the user's requested dimensions.
+
+        Stores:
+            self.u1_full, self.u2_full : Fields on the full computational grid.
+            self.u1, self.u2 : Fields extracted to user's requested dimensions.
 
         Returns
         -------
@@ -348,6 +352,10 @@ class LowFreqGenerator:
         # Convert full field to physical space
         u1_full = np.real(np.fft.ifft2(u1_freq))
         u2_full = np.real(np.fft.ifft2(u2_freq))
+
+        # Store the full fields
+        self.u1_full = u1_full
+        self.u2_full = u2_full
 
         # Extract the portion matching user's N1, N2
         u1 = self._extract_field_portion(u1_full)
@@ -618,3 +626,9 @@ class LowFreqGenerator:
         # Adjust layout
         plt.tight_layout()
         plt.show()
+
+
+if __name__ == "__main__":
+    print()
+
+    # Test that variances are correct over anisotropic grids

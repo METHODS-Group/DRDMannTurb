@@ -164,13 +164,9 @@ class FluctuationFieldGenerator:
         self.grid_dimensions = grid_dimensions
         self.grid_levels = grid_levels
         self.blend_num = blend_num
-        print("Grid levels is ", self.grid_levels)
-        print("Grid dimensions is ", self.grid_dimensions)
-        print("Blend number is ", self.blend_num)
 
         # Expand on grid_levels parameter to get grid node counts in each direction
         grid_node_counts = 2**grid_levels + 1
-        print("Grid node counts is ", grid_node_counts)
 
         # Obtain spacing between grid points, split node counts into Nx, Ny, Nz
         dx, dy, dz = (L_i / N_i for L_i, N_i in zip(self.grid_dimensions, grid_node_counts))
@@ -191,9 +187,6 @@ class FluctuationFieldGenerator:
             2 * self.n_margin_y,
             2 * self.n_margin_z,
         ]
-
-        print("Buffer extension is ", buffer_extension)
-        print("Margin extension is ", margin_extension)
 
         self.noise_shape = [
             Nx + buffer_extension,
@@ -221,9 +214,6 @@ class FluctuationFieldGenerator:
         #   - Also, total_fluctuation is the "accumulator" for generated blocks
         self.noise = None
         self.total_fluctuation = np.zeros([0, Ny, Nz, 3])
-
-        print("DONE WITH FLUCTUATION FIELD GENERATOR INIT")
-        print("\n\n\n")
 
         CovarianceType = Union[
             type[VonKarmanCovariance],
