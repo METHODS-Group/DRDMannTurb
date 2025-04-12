@@ -24,6 +24,14 @@ class LowFreqGenerator:
     """
 
     def __init__(self, config: dict):
+        # TODO: We want to take in user L1 x L2 and N1 x N2, then solve on the smallest isotropic grid
+        #       which is sufficiently large to correctly resolve the field. Then,
+        #       index back into solution and spit out the field on the user-specified grid
+
+        # TODO: Then, in the DRDMann simulator, we want to feed out
+
+        """ """
+
         # Physical parameters
         self.sigma2 = config["sigma2"]
         self.L_2d = config["L_2d"]
@@ -32,17 +40,20 @@ class LowFreqGenerator:
 
         self.c = self._compute_c_2d()
 
+        # User-specified domain
         self.L1 = config["L1_factor"] * self.L_2d
         self.L2 = config["L2_factor"] * self.L_2d
 
         self.N1 = 2 ** config["N1"]
         self.N2 = 2 ** config["N2"]
 
-        if not np.isclose(self.N1 / self.N2, self.L1 / self.L2):
-            print("WARNING: It is suggested that dx is approximately equal to dy.")
-
         self.dx = self.L1 / self.N1
         self.dy = self.L2 / self.N2
+
+        # Internal domain sizes
+        self._L1, self._L2, self._N1, self._N2 = self._calculate_buffer_sizes()
+
+        assert self._L1 / self._N1 == self._L2 / self._N2, "Grid is not isotropic!"
 
         x = np.linspace(0, self.L1, self.N1, endpoint=False)
         y = np.linspace(0, self.L2, self.N2, endpoint=False)
@@ -54,6 +65,53 @@ class LowFreqGenerator:
 
         self.config = config
 
+    def _calculate_buffer_sizes(self):
+        """
+        Calculates the buffered grid sizes. To ensure convergence and correctness, we need to ensure
+        that the domain size is sufficiently large in each direction and that the grid is isotropic.
+
+        We need:
+        1. Find smallest square grid that encompasses user's domain
+        2. Domain size to be at least 5 * L_2d in each direction
+        3. Grid to be isotropic (same spacing in both directions)
+
+        Returns:
+            tuple: (_L1, _L2, _N1, _N2) - The adjusted lengths and grid levels
+        """
+        # Calculate original grid spacings
+        dx = self.L1 / self.N1
+        dy = self.L2 / self.N2
+
+        # Use the smaller spacing to ensure we don't lose resolution
+        d_iso = min(dx, dy)
+
+        # Find the largest required length in either direction
+        # This will be the size of our square domain
+        L_min = 5 * self.L_2d  # Minimum required size
+        L_square = max(max(self.L1, self.L2), L_min)
+
+        # Calculate number of points needed for the square domain
+        n_points = int(np.ceil(L_square / d_iso))
+
+        # Round up to next power of 2
+        n_pow2 = int(2 ** np.ceil(np.log2(n_points)))
+
+        # Convert to exponent
+        _N = int(np.log2(n_pow2))
+
+        # Use same N and L for both directions (square grid)
+        _N1 = _N
+        _N2 = _N
+        _L1 = L_square
+        _L2 = L_square
+
+        print(f"Original domain sizes: L1 = {self.L1}, L2 = {self.L2}, N1 = {self.N1}, N2 = {self.N2}")
+        print(f"Original grid spacings: dx = {dx}, dy = {dy}")
+        print(f"Adjusted domain sizes: _L1 = {_L1}, _L2 = {_L2}, _N1 = {_N1}, _N2 = {_N2}")
+        print(f"Adjusted grid spacings: _dx = {_L1/(2**_N1)}, _dy = {_L2/(2**_N2)}")
+
+        return _L1, _L2, _N1, _N2
+
     def _compute_c_2d(self):
         """Computes normalization constant c using 2D integration in polar coordinates"""
         print("Calculating 'c' using 2D integral (polar coordinates)...")
@@ -62,7 +120,6 @@ class LowFreqGenerator:
         psi = self.psi
         z_i = self.z_i
 
-        # Define the new integrand: Shape(kappa) / pi
         # Inner integral is over k (0 to inf), outer is over theta (0 to 2pi)
         def polar_integrand(k, theta):
             cos_theta = np.cos(theta)
@@ -102,11 +159,11 @@ class LowFreqGenerator:
             integral_2d, abserr = dblquad(
                 polar_integrand,
                 0,
-                2 * np.pi,  # Outer integral limits (theta)
-                lambda theta: k_lower_limit,  # Inner integral lower limit (k)
-                lambda theta: k_upper_limit,  # Inner integral upper limit (k)
+                2 * np.pi,  # theta lims
+                lambda _: k_lower_limit,  # k lims
+                lambda _: k_upper_limit,  # k lims
                 epsabs=1.49e-9,
-                epsrel=1.49e-9,  # Maybe slightly tighter tolerance
+                epsrel=1.49e-9,
             )
         except Exception as e:
             print(f"ERROR during polar dblquad: {e}")
