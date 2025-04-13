@@ -3,6 +3,7 @@ import pytest
 
 from drdmannturb.fluctuation_generation.low_frequency.fluctuation_field_generator import LowFreqGenerator
 
+#########################################################################################
 # --- Test Configuration ---
 L_2D_TEST = 10000.0  # meters
 SIGMA2_TEST = 1.0  # m^2/s^2
@@ -25,6 +26,7 @@ def create_base_config(l1_factor=6, l2_factor=6, exp1=8, exp2=8):
     }
 
 
+#########################################################################################
 # --- Helper for Manual Calculation (mirroring _calculate_buffer_sizes) ---
 def expected_buffer_sizes(user_l1, user_l2, user_n1, user_n2, l_2d):
     """Manually calculates the expected computational grid dimensions."""
@@ -52,9 +54,8 @@ def expected_buffer_sizes(user_l1, user_l2, user_n1, user_n2, l_2d):
     return comp_l1, comp_l2, comp_n1, comp_n2
 
 
+#########################################################################################
 # --- Test Cases ---
-
-
 @pytest.mark.parametrize(
     "l1_factor, l2_factor, exp1, exp2",
     [
@@ -173,7 +174,3 @@ def test_generate_output_shape_and_variance(l1_factor, l2_factor, exp1, exp2, re
     assert np.isclose(
         average_variance_full, target_variance, rtol=rtol
     ), f"Average variance (full) mismatch: Got {average_variance_full:.4f}, Target {target_variance:.4f} (rtol={rtol})"
-
-
-# You might want to add specific tests for edge cases if needed,
-# e.g., very small N values, L1_factor = 5 exactly, etc.

@@ -13,21 +13,39 @@ Notes:
 
 
 class LowFreqGenerator:
-    r"""
-    TODO: FILL OUT DOCSTRING
+    r"""This class implements a 2d low-frequency fluctuational field model based on the following references:
+    #. [1] `A.H. Syed, J. Mann "A Model for Low-Frequency, Anisotropic Wind Fluctuations and Coherences
+        in the Marine Atmosphere", Boundary-Layer Meteorology 190:1, 2024 <https://doi.org/10.1007/s10546-023-00850-w>`_.
+    #. [2] `A.H. Syed, J. Mann "Simulating low-frequency wind fluctuations", Wind Energy Science, 9, 1381-1391, 2024
+        <https://doi.org/10.5194/wes-9-1381-2024>`_.
 
-    This class implements a 2d low-frequency fluctuational field model based on the following references:
-    #. [1]
+    In summary, the model has 4 parameters:
+    - :math:`\sigma^2` - variance exhibited by the low-frequency fluctuation field (:math:`m^2/s^2`),
+    - :math:`L_{2d}` - length scale corresponding to the peak of mesoscale turbulence (:math:`m`,
+        typically several kilometers),
+    - :math:`\psi` - anisotropy parameter (:math:`rad`), :math:`0 < \psi < \pi/2`,
+    - and :math:`z_i` - height of the inertial sublayer (:math:`m`, assume to be the boundary layer height).
 
+    The model is inspired by the Von Karman spectrum and is tuned to marine atmospheres, with energy spectrum
+
+    .. math::
+        E(\kappa) = \frac{c \kappa^3}{(L_{2d}^{-2} + \kappa^2) ^ {7/3}} \frac{1}{1 + \kappa^2 z_i^2}
+
+    where
+
+    .. math::
+        \kappa = \sqrt{2 (\cos(\psi) k_1)^2 + (\sin(\psi) k_2)^2}
+
+    and :math:`c` is a scaling parameter that normalizes the field to have the correct variance :math:`\sigma^2`.
+
+    The outputs of this generator form :math:`xy`-planes parallel to the mean wind direction.
+
+    We assume that these fluctuations
+    are vertically homogeneous and statistically independent of the small-scale fluctuations
+    that this model is to be coupled with to construct the complete :math:`2\rm{d}+3\rm{d}` model.
     """
 
     def __init__(self, config: dict):
-        # TODO: We want to take in user L1 x L2 and N1 x N2, then solve on the smallest isotropic grid
-        #       which is sufficiently large to correctly resolve the field. Then,
-        #       index back into solution and spit out the field on the user-specified grid
-
-        # TODO: Then, in the DRDMann simulator, we want to feed out
-
         """ """
 
         # Physical parameters
@@ -152,8 +170,13 @@ class LowFreqGenerator:
         return comp_L1, comp_L2, comp_N1, comp_N2
 
     def _compute_c_2d(self):
-        """Computes normalization constant c using 2D integration in polar coordinates"""
-        print("Calculating 'c' using 2D integral (polar coordinates)...")
+        """Computes normalization constant c using 2D integration in polar coordinates
+
+        TODO: Need to switch back to the 0 to infty kappa integration. This is incorrect.
+        NOTE: Probably a factor of 2? 2pi? 4? 4pi? here due to the domain vs. 0 to infty |k| integration
+            of the "regular" one.
+        """
+        # print("Calculating 'c' using 2D integral (polar coordinates)...")
 
         L_2d = self.L_2d
         psi = self.psi
@@ -191,7 +214,7 @@ class LowFreqGenerator:
         k_upper_limit = limit_factor / char_len
         k_lower_limit = 0.0
 
-        print(f"  Using dblquad limits: k in [{k_lower_limit:.1e}, {k_upper_limit:.1e}], theta in [0, 2*pi]")
+        # print(f"  Using dblquad limits: k in [{k_lower_limit:.1e}, {k_upper_limit:.1e}], theta in [0, 2*pi]")
 
         try:
             # Integrate k inner (0 to k_upper_limit), theta outer (0 to 2*pi)
@@ -208,7 +231,7 @@ class LowFreqGenerator:
             print(f"ERROR during polar dblquad: {e}")
             raise
 
-        print(f"  2D Integral (polar) result: {integral_2d:.6e}, Est. Error: {abserr:.2e}")
+        # print(f"  2D Integral (polar) result: {integral_2d:.6e}, Est. Error: {abserr:.2e}")
 
         if integral_2d <= 1e-15:  # Check if integral is essentially zero or negative
             raise ValueError(f"2D Polar Integration for 'c' failed or invalid result: {integral_2d}")
@@ -217,13 +240,13 @@ class LowFreqGenerator:
             print(f"Warning: High relative error in 2D polar integration for 'c': {abserr/integral_2d:.1%}")
 
         c_2d = self.sigma2 / integral_2d
-        print(f"Using c (from 2D polar integration): {c_2d:.6e}")
+        # print(f"Using c (from 2D polar integration): {c_2d:.6e}")
         return c_2d
 
     # ------------------------------------------------------------------------------------------------ #
 
     @staticmethod
-    @numba.njit(parallel=True)
+    @numba.njit(parallel=True, fastmath=True)
     def _generate_numba_helper(
         k1: np.ndarray,
         k2: np.ndarray,
@@ -237,6 +260,21 @@ class LowFreqGenerator:
         N2: int,
         noise_hat: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Numba-accelerated helper function for the generation of the low-frequency fluctuation
+        fields on the computational grid.
+
+        Parameters
+        ----------
+        TODO:
+
+
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray]
+            The u1 and u2 components of the velocity field on the internal, computational grid.
+        """
+
         k_mag = np.sqrt(k1**2 + k2**2)
         kappa = np.sqrt(2 * ((k1 * np.cos(psi)) ** 2 + (k2 * np.sin(psi)) ** 2))
 
@@ -321,6 +359,7 @@ class LowFreqGenerator:
         Generates the velocity field on the computational grid, stores the full and
         extracted fields, and returns the portion matching the user's requested dimensions.
 
+        TODO: How to correctly "denote" this in the docstring?
         Stores:
             self.u1_full, self.u2_full : Fields on the full computational grid.
             self.u1, self.u2 : Fields extracted to user's requested dimensions.
@@ -409,11 +448,6 @@ class LowFreqGenerator:
         """Estimates the 1d spectra F11 and F22 of the velocity fields u1 and u2
         computed on the **computational** grid before extraction."""
 
-        # Generate the full field first if not already done (or re-generate if needed)
-        # Note: This assumes generate() was called or we need to call it internally.
-        # For simplicity, let's re-calculate the FFT of the *extracted* field for now,
-        # though ideally, we'd compute the spectrum from the full field's FFT.
-        # Recomputing FFT on extracted field:
         if not hasattr(self, "u1") or not hasattr(self, "u2"):
             raise RuntimeError("Call generate() before compute_spectrum()")
 
@@ -437,13 +471,12 @@ class LowFreqGenerator:
 
             warnings.warn("NaN detected in power spectra!")
 
-        # Scaling factor should use the dimensions of the grid the FFT was performed on
         scaling_factor = self.user_L1 / ((self.user_N1 * self.user_N2) ** 2 * (2 * np.pi))
 
         F11, F22 = self._compute_spectrum_numba_helper(
             power_u1,
             power_u2,
-            k1_user,  # Use user k grid corresponding to the FFT
+            k1_user,
             k1_pos,
             scaling_factor,
             k_tol,
@@ -500,8 +533,8 @@ class LowFreqGenerator:
 
         def _integrand11(k2: float, k1: float, eps: float = 1e-20) -> float:
             """
-            Integrand matching the SHAPE of the original code, but maybe numerically stabler.
-            Uses (E(kappa) / (pi * k)) * (k2^2 / k^2) form.
+            Integrand for F11
+            Uses (E(kappa) / (pi * k)) * (k2^2 / k^2) simplification.
             """
             k_mag_sq = k1**2 + k2**2
             k_mag = np.sqrt(k_mag_sq)
@@ -513,8 +546,8 @@ class LowFreqGenerator:
 
         def _integrand22(k2: float, k1: float, eps: float = 1e-20) -> float:
             """
-            Integrand matching the SHAPE of the original code.
-            Uses (E(kappa) / (pi * k)) * (k1^2 / k^2) form.
+            Integrand for F22
+            Uses (E(kappa) / (pi * k)) * (k1^2 / k^2) simplification.
             """
             k_mag_sq = k1**2 + k2**2
             k_mag = np.sqrt(k_mag_sq)
@@ -577,9 +610,14 @@ class LowFreqGenerator:
     # ------------------------------------------------------------------------------------------------ #
 
     def plot_velocity_fields(self):
+        """
+        Plots the generated fields u1 and u2 on the user's grid.
+        """
         print("=" * 80)
         print("VELOCITY FIELD PLOT")
         print("=" * 80)
+
+        # TODO: Check that the fields have been generated
 
         # Print statistics for debugging
         print("u1 stats")
@@ -630,5 +668,3 @@ class LowFreqGenerator:
 
 if __name__ == "__main__":
     print()
-
-    # Test that variances are correct over anisotropic grids
