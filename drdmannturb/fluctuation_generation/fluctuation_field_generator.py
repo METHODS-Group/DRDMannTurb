@@ -15,6 +15,7 @@ from ..common import CPU_Unpickler
 from ..spectra_fitting import CalibrationProblem
 from .covariance_kernels import MannCovariance, VonKarmanCovariance
 from .gaussian_random_fields import VectorGaussianRandomField
+from .low_frequency.fluctuation_field_generator import LowFreqGenerator
 from .nn_covariance import NNCovariance
 
 
@@ -82,6 +83,8 @@ class FluctuationFieldGenerator:
         path_to_parameters: Optional[Union[str, PathLike]] = None,
         seed: Optional[int] = None,
         blend_num=10,
+        # 2D Model Parameters
+        config_2d_model: Optional[dict] = None,
     ):
         r"""
         Parameters
@@ -171,6 +174,7 @@ class FluctuationFieldGenerator:
         # Obtain spacing between grid points, split node counts into Nx, Ny, Nz
         dx, dy, dz = (L_i / N_i for L_i, N_i in zip(self.grid_dimensions, grid_node_counts))
         Nx, Ny, Nz = grid_node_counts
+        self.Nx, self.Ny, self.Nz = Nx, Ny, Nz
         del grid_node_counts
 
         # Calculate buffer and margin sizes
@@ -246,6 +250,13 @@ class FluctuationFieldGenerator:
         )
 
         self.RF.reseed(self.seed)
+
+        if config_2d_model is not None:
+            self.low_freq_gen = LowFreqGenerator(config_2d_model)
+
+            print("Generating...")
+
+            self.low_freq_gen.generate()
 
     def _generate_block(self) -> np.ndarray:
         """Generates a single block of the fluctuation field.
@@ -416,7 +427,8 @@ class FluctuationFieldGenerator:
                 If this is undesirable behavior, instantiate a new object."
             )
 
-        for _ in range(num_blocks):
+        for i in range(num_blocks):
+            # --- Generate and normalize block ---
             t_block = self._generate_block()
 
             normed_block = self._normalize_block(
@@ -428,6 +440,65 @@ class FluctuationFieldGenerator:
                 plexp=plexp,
             )
 
+            # --- Interpolate and add low-frequency component ---
+            if self.low_freq_gen is not None:
+                # Ensure low-freq field exists
+                if self.low_freq_gen.u1 is None or self.low_freq_gen.u2 is None:
+                    raise RuntimeError("LowFreqGenerator.generate() must be called before combining fields.")
+
+                # Define the target coordinates for this block
+
+                # --- X-Coordinates (Sequential Block Position) ---
+                current_block_nx = normed_block.shape[0]
+                block_length_x = self.grid_dimensions[0] * (current_block_nx / self.Nx)
+                x_start = i * self.grid_dimensions[0]  # TODO: Revisit if blending affects block start/end precisely
+                x_end = x_start + block_length_x
+                x_coords_block_target = np.linspace(x_start, x_end, current_block_nx, endpoint=False)
+
+                # --- Y-Coordinates (Centered within 2D Domain) ---
+                L_3d_y = self.grid_dimensions[1]  # Physical width of the 3D domain
+                L_2d_y = self.low_freq_gen.user_L2  # Physical width of the 2D domain
+
+                if L_3d_y > L_2d_y:
+                    import warnings
+
+                    warnings.warn(
+                        f"3D domain width ({L_3d_y}m) is larger than 2D domain width ({L_2d_y}m). "
+                        "Interpolation will use edge values (fill_value) of the 2D field."
+                    )
+                    # Center as best as possible, but coordinates will extend beyond 2D bounds
+
+                y_center_2d = L_2d_y / 2.0
+                y_half_width_3d = L_3d_y / 2.0
+                y_start_target = y_center_2d - y_half_width_3d
+                y_end_target = y_center_2d + y_half_width_3d
+
+                # Generate Ny points within the calculated centered range [y_start_target, y_end_target)
+                y_coords_centered_target = np.linspace(y_start_target, y_end_target, self.Ny, endpoint=False)
+
+                # Interpolate the 2D field (u1, u2) onto this block's centered XY coordinates
+                print(f"Interpolating 2D field onto centered 3D block {i+1}/{num_blocks}...")
+                u1_interp, u2_interp = self.low_freq_gen.interp_slice(
+                    x_coords_block_target,  # Target X coords for this sequential block
+                    y_coords_centered_target,  # Target Y coords centered in 2D domain
+                )
+                print("Interpolation done.")
+
+                # Verify shape
+                expected_shape = (current_block_nx, self.Ny)
+                if u1_interp.shape != expected_shape or u2_interp.shape != expected_shape:
+                    raise ValueError(
+                        f"Interpolated slice shape mismatch. Got {u1_interp.shape}, expected {expected_shape}"
+                    )
+
+                # Add the interpolated 2D components (u1, u2) to the 3D block's components
+                # Use broadcasting across the Z dimension (axis 2)
+                print("Adding interpolated fields...")
+                normed_block[..., 0] += u1_interp[..., np.newaxis]  # Add u1_interp to u component
+                normed_block[..., 1] += u2_interp[..., np.newaxis]  # Add u2_interp to v component
+                print("Addition done.")
+
+            # --- Concatenate block ---
             self.total_fluctuation = np.concatenate((self.total_fluctuation, normed_block), axis=0)
 
         return self.total_fluctuation

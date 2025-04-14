@@ -3,6 +3,7 @@ import numba
 import numpy as np
 from scipy import integrate
 from scipy.integrate import dblquad
+from scipy.interpolate import RegularGridInterpolator
 
 """
 Notes:
@@ -26,7 +27,8 @@ class LowFreqGenerator:
     - :math:`\psi` - anisotropy parameter (:math:`rad`), :math:`0 < \psi < \pi/2`,
     - and :math:`z_i` - height of the inertial sublayer (:math:`m`, assume to be the boundary layer height).
 
-    The model is inspired by the Von Karman spectrum and is tuned to marine atmospheres, with energy spectrum
+    The shape of the energy spectrum is inspired by the Von Karman spectrum and is tuned to marine
+    atmospheres:
 
     .. math::
         E(\kappa) = \frac{c \kappa^3}{(L_{2d}^{-2} + \kappa^2) ^ {7/3}} \frac{1}{1 + \kappa^2 z_i^2}
@@ -36,7 +38,9 @@ class LowFreqGenerator:
     .. math::
         \kappa = \sqrt{2 (\cos(\psi) k_1)^2 + (\sin(\psi) k_2)^2}
 
-    and :math:`c` is a scaling parameter that normalizes the field to have the correct variance :math:`\sigma^2`.
+    and :math:`c` is a scaling parameter that normalizes the field to have the correct variance :math:`\sigma^2`. The
+    second factor in the denominator is there to attenuate the energy at high wavenumbers, specifically
+    :math:`k > 1/z_i`.
 
     The outputs of this generator form :math:`xy`-planes parallel to the mean wind direction.
 
@@ -64,6 +68,12 @@ class LowFreqGenerator:
         self.user_dx = self.user_L1 / self.user_N1
         self.user_dy = self.user_L2 / self.user_N2
 
+        # Store 1D user coordinates explicitly
+        self.user_x_coords = np.linspace(0, self.user_L1, self.user_N1, endpoint=False)
+        self.user_y_coords = np.linspace(0, self.user_L2, self.user_N2, endpoint=False)
+        # Create user meshgrid for plotting/output if needed elsewhere
+        self.X, self.Y = np.meshgrid(self.user_x_coords, self.user_y_coords, indexing="ij")
+
         # Calculate computational domain sizes (isotropic, >= 5*L_2d, encompasses user grid)
         self.comp_L1, self.comp_L2, self.comp_N1, self.comp_N2 = self._calculate_buffer_sizes()
         self.comp_dx = self.comp_L1 / self.comp_N1
@@ -73,17 +83,18 @@ class LowFreqGenerator:
         if not np.isclose(self.comp_dx, self.comp_dy):
             raise ValueError(f"Computational grid is not isotropic! dx={self.comp_dx}, dy={self.comp_dy}")
 
-        # Create user grid coordinates for plotting/output
-        x = np.linspace(0, self.user_L1, self.user_N1, endpoint=False)
-        y = np.linspace(0, self.user_L2, self.user_N2, endpoint=False)
-        self.X, self.Y = np.meshgrid(x, y, indexing="ij")
-
         # Create wavenumber arrays for the *computational* grid
         self.k1_fft = 2 * np.pi * np.fft.fftfreq(self.comp_N1, self.comp_dx)
         self.k2_fft = 2 * np.pi * np.fft.fftfreq(self.comp_N2, self.comp_dy)
         self.k1, self.k2 = np.meshgrid(self.k1_fft, self.k2_fft, indexing="ij")
 
         self.config = config
+
+        # Initialize fields to None until generate() is called
+        self.u1 = None
+        self.u2 = None
+        self.u1_full = None
+        self.u2_full = None
 
     @staticmethod
     def _check_isotropic_grid(Lx: float, Ly: float, Nx: int, Ny: int) -> bool:
@@ -244,6 +255,7 @@ class LowFreqGenerator:
         return c_2d
 
     # ------------------------------------------------------------------------------------------------ #
+    # Below are member functions for generating the low-frequency fluctuation fields.
 
     @staticmethod
     @numba.njit(parallel=True, fastmath=True)
@@ -407,6 +419,68 @@ class LowFreqGenerator:
         return u1, u2
 
     # ------------------------------------------------------------------------------------------------ #
+    # Below are member functions for interpolating the low-frequency fields to the 3d grid
+
+    def interp_slice(self, x_coords_target: np.ndarray, y_coords_target: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Given the 1D x and y coordinates defining a target grid slice, interpolates the
+        generated low-frequency fields (self.u1, self.u2) onto this target grid.
+
+        Assumes self.u1 and self.u2 (the extracted fields) and self.user_x_coords,
+        self.user_y_coords (defining the source grid) exist.
+
+        Parameters
+        ----------
+        x_coords_target : np.ndarray
+            1D array of target x-coordinates for the slice.
+        y_coords_target : np.ndarray
+            1D array of target y-coordinates for the slice.
+
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray]
+            Interpolated u1 and u2 fields on the target grid slice (shape matching meshgrid of targets).
+        """
+        if self.u1 is None or self.u2 is None:
+            raise RuntimeError("LowFreqGenerator.generate() must be called before interp_slice()")
+        if not hasattr(self, "user_x_coords") or not hasattr(self, "user_y_coords"):
+            raise RuntimeError("LowFreqGenerator needs user_x_coords and user_y_coords attributes.")
+
+        # Create interpolators (Could be pre-computed after generate() if called repeatedly)
+        interpolator_2d_u1 = RegularGridInterpolator(
+            (self.user_x_coords, self.user_y_coords),  # Source grid axes
+            self.u1,  # Source data
+            method="linear",
+            bounds_error=False,  # Allow points outside source grid
+            fill_value=0.0,  # Use 0 for points outside
+        )
+
+        interpolator_2d_u2 = RegularGridInterpolator(
+            (self.user_x_coords, self.user_y_coords),
+            self.u2,
+            method="linear",
+            bounds_error=False,
+            fill_value=0.0,
+        )
+
+        # Create mesh of target points
+        X_target, Y_target = np.meshgrid(x_coords_target, y_coords_target, indexing="ij")
+
+        # Stack target points into the required shape (n_points, 2)
+        target_points_xy = np.stack([X_target.ravel(), Y_target.ravel()], axis=-1)
+
+        # Perform interpolation
+        u1_3d_flat = interpolator_2d_u1(target_points_xy)
+        u2_3d_flat = interpolator_2d_u2(target_points_xy)
+
+        # Reshape back to the target grid shape
+        u1_3d = u1_3d_flat.reshape(X_target.shape)
+        u2_3d = u2_3d_flat.reshape(X_target.shape)
+
+        return u1_3d, u2_3d
+
+    # ------------------------------------------------------------------------------------------------ #
+    # Below are member functions for estimating the 1d spectra of the generated fields, F11 and F22.
 
     @staticmethod
     @numba.njit(parallel=True, fastmath=True)
