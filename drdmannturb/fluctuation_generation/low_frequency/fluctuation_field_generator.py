@@ -1,15 +1,15 @@
+"""
+This module implements a 2d low-frequency model, which demonstrates much larger scale coherent structures
+on the scale of kilometers, rather than meters as is the case for the small-scale turbulence controlled elsewhere.
+
+TODO: Get rid of print statements
+"""
+
 import matplotlib.pyplot as plt
 import numba
 import numpy as np
 from scipy import integrate
 from scipy.interpolate import RegularGridInterpolator
-
-"""
-Notes:
-- I think we can use either the 1d or 2d integration for c.
-- We want isotropic grids as usual.
-- We basically want to make sure that the domain size is at least 4 x L_2d in each direction.
-"""
 
 
 class LowFreqGenerator:
@@ -46,10 +46,38 @@ class LowFreqGenerator:
     We assume that these fluctuations
     are vertically homogeneous and statistically independent of the small-scale fluctuations
     that this model is to be coupled with to construct the complete :math:`2\rm{d}+3\rm{d}` model.
+
+    TODO: WARN USER THAT THEY NEED TO BE CAREFUL WITH PHYSICAL GRID SIZE
     """
 
     def __init__(self, config: dict):
-        """ """
+        """
+        Constructor for the LowFreqGenerator class.
+
+        TODO: We're going to clean this interface up...
+        Parameters:
+            config: dict
+                A dictionary containing the configuration for the low-frequency generator.
+                The dictionary must contain the following keys:
+                - "sigma2": float
+                    The variance of the low-frequency fluctuation field.
+                - "L_2d": float
+                    The length scale corresponding to the peak of mesoscale turbulence.
+                - "psi": float
+                    The anisotropy parameter.
+                - "z_i": float
+                    The height of the inertial sublayer.
+                - "L1_factor": float
+                    The factor by which the computational domain is larger than the user-specified domain
+                    in the x-direction.
+                - "L2_factor": float
+                    The factor by which the computational domain is larger than the user-specified domain
+                    in the y-direction.
+                - "exp1": int
+                    The exponent for the number of points in the x-direction.
+                - "exp2": int
+                    The exponent for the number of points in the y-direction.
+        """
 
         # Physical parameters
         self.sigma2 = config["sigma2"]
@@ -111,7 +139,8 @@ class LowFreqGenerator:
         4. Computational grid resolution (comp_d) must be <= min(user_dx, user_dy).
         5. Number of computational grid points (comp_N1, comp_N2) must be EVEN.
 
-        Returns:
+        Returns
+        -------
             tuple: (comp_L1, comp_L2, comp_N1, comp_N2) - Computed lengths and grid points.
         """
         print("Calculating computational grid size...")
@@ -379,13 +408,12 @@ class LowFreqGenerator:
         if not hasattr(self, "user_x_coords") or not hasattr(self, "user_y_coords"):
             raise RuntimeError("LowFreqGenerator needs user_x_coords and user_y_coords attributes.")
 
-        # Create interpolators (Could be pre-computed after generate() if called repeatedly)
         interpolator_2d_u1 = RegularGridInterpolator(
-            (self.user_x_coords, self.user_y_coords),  # Source grid axes
-            self.u1,  # Source data
+            (self.user_x_coords, self.user_y_coords),
+            self.u1,
             method="linear",
-            bounds_error=False,  # Allow points outside source grid
-            fill_value=0.0,  # Use 0 for points outside
+            bounds_error=False,
+            fill_value=0.0,
         )
 
         interpolator_2d_u2 = RegularGridInterpolator(
@@ -396,17 +424,13 @@ class LowFreqGenerator:
             fill_value=0.0,
         )
 
-        # Create mesh of target points
         X_target, Y_target = np.meshgrid(x_coords_target, y_coords_target, indexing="ij")
 
-        # Stack target points into the required shape (n_points, 2)
         target_points_xy = np.stack([X_target.ravel(), Y_target.ravel()], axis=-1)
 
-        # Perform interpolation
         u1_3d_flat = interpolator_2d_u1(target_points_xy)
         u2_3d_flat = interpolator_2d_u2(target_points_xy)
 
-        # Reshape back to the target grid shape
         u1_3d = u1_3d_flat.reshape(X_target.shape)
         u2_3d = u2_3d_flat.reshape(X_target.shape)
 
@@ -458,10 +482,11 @@ class LowFreqGenerator:
         if not hasattr(self, "u1") or not hasattr(self, "u2"):
             raise RuntimeError("Call generate() before compute_spectrum()")
 
-        u1_fft_extracted = np.fft.fft2(self.u1)  # FFT of user-sized field
-        u2_fft_extracted = np.fft.fft2(self.u2)  # FFT of user-sized field
+        # TODO: Why the fuck is this SO slow all of a sudden? It's more than 2x slower than it was before,
+        # .    so it's not only the up-scaled grid/domain for the L x 0.125L case
+        u1_fft_extracted = np.fft.fft2(self.u1)
+        u2_fft_extracted = np.fft.fft2(self.u2)
 
-        # Use wavenumbers corresponding to the *user's* grid for consistency
         k1_fft_user = 2 * np.pi * np.fft.fftfreq(self.user_N1, self.user_dx)
         k2_fft_user = 2 * np.pi * np.fft.fftfreq(self.user_N2, self.user_dy)
         k1_user, k2_user = np.meshgrid(k1_fft_user, k2_fft_user, indexing="ij")
@@ -509,8 +534,6 @@ class LowFreqGenerator:
         F22: np.ndarray
             Analytical spectrum of u2
         """
-        # Fij_gen = analytical_Fij(self.config)
-
         F11_res_arr = np.zeros_like(k1_arr)
         F11_err_arr = np.zeros_like(k1_arr)
         F22_res_arr = np.zeros_like(k1_arr)
@@ -564,7 +587,7 @@ class LowFreqGenerator:
             integrand = (Ekappa / (np.pi * k_mag)) * (k1**2 / k_mag_sq)
             return integrand
 
-        k2_limit = 5  # TODO: This should taken in as a parameter probably
+        k2_limit = 5
         print(f"Using integration limits for k2: [-{k2_limit:.2e}, {k2_limit:.2e}]")
 
         for i, k1_val in enumerate(k1_arr):
@@ -606,8 +629,6 @@ class LowFreqGenerator:
                 print(f"Warning: Integration failed for F22 at k1={k1_val:.4e}: {e}")
                 F22_res_arr[i], F22_err_arr[i] = np.nan, np.nan
 
-        # F11, F11_err, F22, F22_err = Fij_gen.generate(k1_arr)
-
         if warn:
             print("Max error on F11: ", np.max(F11_err_arr))
             print("Max error on F22: ", np.max(F22_err_arr))
@@ -624,9 +645,9 @@ class LowFreqGenerator:
         print("VELOCITY FIELD PLOT")
         print("=" * 80)
 
-        # TODO: Check that the fields have been generated
+        if self.u1 is None or self.u2 is None:
+            raise RuntimeError("LowFreqGenerator.generate() must be called before plot_velocity_fields()")
 
-        # Print statistics for debugging
         print("u1 stats")
         print(f"min: {np.min(self.u1)}", f"max: {np.max(self.u1)}")
         print(f"mean: {np.mean(self.u1)}", f"variance: {np.var(self.u1)}")
@@ -637,30 +658,24 @@ class LowFreqGenerator:
         print(f"mean: {np.mean(self.u2)}", f"variance: {np.var(self.u2)}")
         print(f"Any nan: {np.isnan(self.u2).any()}")
 
-        # Convert coordinates to kilometers
         x_km = self.X / 1000
         y_km = self.Y / 1000
 
-        # Create figure with two subplots stacked vertically
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
-        # Calculate common vmin/vmax for both plots to share the same scale
         vmin = min(np.min(self.u1), np.min(self.u2))
         vmax = max(np.max(self.u1), np.max(self.u2))
-        # Make symmetric around zero
         vlim = max(abs(vmin), abs(vmax))
         vmin, vmax = -vlim, vlim
 
         extent = [x_km[0, 0], x_km[-1, -1], y_km[0, 0], y_km[-1, -1]]
 
-        # Plot u1 (longitudinal component)
         im1 = ax1.imshow(self.u1.T, extent=extent, origin="lower", cmap="coolwarm", vmin=vmin, vmax=vmax, aspect="auto")
         cbar1 = plt.colorbar(im1, ax=ax1)
         cbar1.set_label("[m s$^{-1}$]")
         ax1.set_ylabel("y [km]")
         ax1.set_title("(a) u")
 
-        # Plot u2 (transverse component)
         im2 = ax2.imshow(self.u2.T, extent=extent, origin="lower", cmap="coolwarm", vmin=vmin, vmax=vmax, aspect="auto")
         cbar2 = plt.colorbar(im2, ax=ax2)
         cbar2.set_label("[m s$^{-1}$]")
@@ -668,7 +683,6 @@ class LowFreqGenerator:
         ax2.set_ylabel("y [km]")
         ax2.set_title("(b) v")
 
-        # Adjust layout
         plt.tight_layout()
         plt.show()
 
