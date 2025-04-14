@@ -27,10 +27,7 @@ import numpy as np
 import torch
 
 from drdmannturb.fluctuation_generation import (
-    plot_velocity_components,  # utility function for plotting each velocity component in the field, not used in this example
-)
-from drdmannturb.fluctuation_generation import (
-    GenerateFluctuationField,
+    FluctuationFieldGenerator,
     plot_velocity_magnitude,
 )
 
@@ -75,14 +72,20 @@ seed = None
 # Fluctuation Field Generation from Pre-Trained DRD Model
 # -------------------------------------------------------
 # We now generate a similar fluctuation field in the same physical setting and domain but using a pre-trained DRD model.
-# This model is the result of fitting to the Kaimal spectrum, showcased in `Example 2 <https://methods-group.github.io/DRDMannTurb/auto_examples/02_eddy-lifetime_fit.html>`_, so we anticipate the resulting
-# fluctuation fields to be similar. Note that since DRD models learn the scales, these are taken from the
+# This model is the result of fitting to the Kaimal spectrum, showcased in
+# `Example 2 <https://methods-group.github.io/DRDMannTurb/auto_examples/02_eddy-lifetime_fit.html>`_, so we anticipate
+# the resulting fluctuation fields to be similar. Note that since DRD models learn the scales, these are taken from the
 # saved object, which has these values as parameters.
-# The field generation process can be summarized by the following diagram of a 2D domain (a transversal cross-section of a 3D turbulence block).
+# The field generation process can be summarized by the following diagram of a 2D domain (a transversal cross-section
+# of a 3D turbulence block).
 #
 # .. image:: https://github.com/METHODS-Group/DRDMannTurb/blob/main/paper/fluct_gen_box_by_box.png?raw=true
 #
-# A continuous wind field is generated block-by-block where noise is being copied from the end of one block to the start of the next block. Turbulent fluctuations are recomputed block-by-block using the partially shared noise. Common Gaussian noise is used in the overlapping domains. This diagram is from `Keith, Khristenko, Wohlmuth (2021) <https://arxiv.org/pdf/2107.11046.pdf>`_, please see the discussion therein for further details.
+# A continuous wind field is generated block-by-block where noise is being copied from the end of one block to the start
+# of the next block. Turbulent fluctuations are recomputed block-by-block using the partially shared noise. Common
+# Gaussian noise is used in the overlapping domains. This diagram is from
+# `Keith, Khristenko, Wohlmuth (2021) <https://arxiv.org/pdf/2107.11046.pdf>`_, please see the discussion therein
+# for further details.
 path_to_parameters = (
     path / "../docs/source/results/EddyLifetimeType.CUSTOMMLP_DataType.KAIMAL.pkl"
     if path.name == "examples"
@@ -92,7 +95,7 @@ path_to_parameters = (
 Type_Model = "DRD"  ### 'Mann', 'VK', 'DRD'
 nBlocks = 2
 
-gen_drd = GenerateFluctuationField(
+gen_drd = FluctuationFieldGenerator(
     ustar,
     zref,
     grid_dimensions,
@@ -110,9 +113,11 @@ gen_drd = GenerateFluctuationField(
 # ------------------------------------
 # The mean velocity profile follows the power law profile
 #
-# .. math:: \left\langle U_1(z)\right\rangle= U_{\text{ref}} \frac{\ln \left( \frac{z}{z_0} + 1 \right)}{\ln \left( \frac{z_{\text{ref}}}{z_0} \right)}
+# .. math:: \left\langle U_1(z)\right\rangle= U_{\text{ref}} \frac{\ln \left( \frac{z}{z_0} + 1 \right)}
+#                {\ln \left( \frac{z_{\text{ref}}}{z_0} \right)}
 #
-# where :math:`U_{\text{ref}}` is the reference velocity, :math:`z_0` is the roughness height, and :math:`z_{\text{ref}}` is the reference height.
+# where :math:`U_{\text{ref}}` is the reference velocity, :math:`z_0` is the roughness height, and
+# :math:`z_{\text{ref}}` is the reference height.
 #
 
 fluctuation_field_drd = gen_drd.generate(nBlocks, zref, uref, z0, windprofiletype)
@@ -131,9 +136,7 @@ gen_drd.evaluate_divergence(spacing, fluctuation_field_drd).max()
 
 #######################################################################################
 # We now visualize the output wind field.
-fig_magnitude_drd = plot_velocity_magnitude(
-    spacing, fluctuation_field_drd, transparent=True
-)
+fig_magnitude_drd = plot_velocity_magnitude(spacing, fluctuation_field_drd, transparent=True)
 
 # this is a Plotly figure, which can be visualized with the ``.show()`` method in different contexts.
 fig_magnitude_drd  # .show("browser"), or for specific browser, use .show("firefox")
@@ -144,9 +147,7 @@ fig_magnitude_drd  # .show("browser"), or for specific browser, use .show("firef
 # For higher resolution wind fields, we suggest using Paraview. To transfer the generated data
 # from our package, we provide the ``.save_to_vtk()`` method.
 filename = str(
-    path / "../docs/source/results/fluctuation_drd"
-    if path.name == "examples"
-    else path / "../results/fluctuation_drd"
+    path / "../docs/source/results/fluctuation_drd" if path.name == "examples" else path / "../results/fluctuation_drd"
 )
 
 gen_drd.save_to_vtk(filename)
