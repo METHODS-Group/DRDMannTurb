@@ -377,6 +377,7 @@ class FluctuationFieldGenerator:
         z0: float,
         windprofiletype: str,
         plexp: Optional[float] = None,
+        suppress_warning: bool = False,
     ) -> np.ndarray:
         r"""Generates the full fluctuation field in blocks. The resulting field is stored as the ``total_fluctuation``
         field of this object, allowing for all metadata of the object to be stored safely with the fluctuation field,
@@ -413,7 +414,8 @@ class FluctuationFieldGenerator:
 
         plexp : Optional[float], optional
             Power law exponent :math:`\alpha`, by default None.
-
+        suppress_warning : bool, optional
+            Suppress warning about existing fluctuation field, by default False.
         Returns
         -------
         np.ndarray
@@ -446,16 +448,14 @@ class FluctuationFieldGenerator:
                 if self.low_freq_gen.u1 is None or self.low_freq_gen.u2 is None:
                     raise RuntimeError("LowFreqGenerator.generate() must be called before combining fields.")
 
-                # Define the target coordinates for this block
-
-                # --- X-Coordinates (Sequential Block Position) ---
+                # --- X-Coordinates (blocks progress in x-direction
                 current_block_nx = normed_block.shape[0]
                 block_length_x = self.grid_dimensions[0] * (current_block_nx / self.Nx)
                 x_start = i * self.grid_dimensions[0]  # TODO: Revisit if blending affects block start/end precisely
                 x_end = x_start + block_length_x
                 x_coords_block_target = np.linspace(x_start, x_end, current_block_nx, endpoint=False)
 
-                # --- Y-Coordinates (Centered within 2D Domain) ---
+                # --- Y-Coordinates (where we want to center; same with each block)
                 L_3d_y = self.grid_dimensions[1]  # Physical width of the 3D domain
                 L_2d_y = self.low_freq_gen.user_L2  # Physical width of the 2D domain
 
@@ -465,6 +465,7 @@ class FluctuationFieldGenerator:
                     warnings.warn(
                         f"3D domain width ({L_3d_y}m) is larger than 2D domain width ({L_2d_y}m). "
                         "Interpolation will use edge values (fill_value) of the 2D field."
+                        "Additionally, this is likely to produce non-physical results."
                     )
                     # Center as best as possible, but coordinates will extend beyond 2D bounds
 

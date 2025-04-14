@@ -117,16 +117,15 @@ class LowFreqGenerator:
         """
         print("Calculating computational grid size...")
 
-        # 1. Determine Target Isotropic Resolution (finest spacing required)
+        # TODO: Maybe we just increase the number of points to whatever even number approx gets us dx = dy
+
         comp_d = min(self.user_dx, self.user_dy)
         print(f"  Target isotropic spacing (comp_d): {comp_d:.4f} m")
 
-        # 2. Determine Target Physical Size (must meet minimum and encompass user request)
         L1_target = max(self.user_L1, 5 * self.L_2d)
         L2_target = max(self.user_L2, 5 * self.L_2d)
         print(f"  Target physical lengths (L1_target, L2_target): ({L1_target:.1f}, {L2_target:.1f}) m")
 
-        # Optional: Warn if user's input was smaller than requirement
         if self.user_L1 < 5 * self.L_2d or self.user_L2 < 5 * self.L_2d:
             import warnings
 
@@ -137,29 +136,24 @@ class LowFreqGenerator:
                 UserWarning,
             )
 
-        # 3. Calculate Minimum Points needed for target size AT the target resolution
-        #    (Using ceil ensures we cover the entire length)
         n1_min_ideal = int(np.ceil(L1_target / comp_d))
         n2_min_ideal = int(np.ceil(L2_target / comp_d))
         print(f"  Minimum points needed (n1_min_ideal, n2_min_ideal): ({n1_min_ideal}, {n2_min_ideal})")
 
-        # 4. Find Next EVEN Number of Points (Smallest even number >= minimum points)
-        #    If n_min is odd, add 1; otherwise, keep it.
         comp_N1 = n1_min_ideal + (n1_min_ideal % 2)
         comp_N2 = n2_min_ideal + (n2_min_ideal % 2)
-        # Handle case where min points might be 0 or 1, ensure at least 2 points if needed
+
+        # NOTE: Should never happen, but jic
         if comp_N1 == 0 and n1_min_ideal > 0:
             comp_N1 = 2
         if comp_N2 == 0 and n2_min_ideal > 0:
             comp_N2 = 2
         print(f"  Even computational points (comp_N1, comp_N2): ({comp_N1}, {comp_N2})")
 
-        # 5. Calculate Final Computational Lengths using the chosen N and target spacing d
         comp_L1 = comp_N1 * comp_d
         comp_L2 = comp_N2 * comp_d
         print(f"  Final computational lengths (comp_L1, comp_L2): ({comp_L1:.1f}, {comp_L2:.1f}) m")
 
-        # --- Print Summary ---
         print("-" * 30)
         print("Grid Summary:")
         print(
@@ -169,8 +163,6 @@ class LowFreqGenerator:
         print(f"  Computed:       L1={comp_L1:.1f}, L2={comp_L2:.1f}, N1={comp_N1}, N2={comp_N2}, d={comp_d:.4f}")
         print("-" * 30)
 
-        # Final check for safety (should always pass with this logic)
-        # Add a small tolerance for floating point comparisons
         tolerance = 1e-9
         if not (comp_L1 >= L1_target - tolerance and comp_L2 >= L2_target - tolerance):
             raise RuntimeError(
