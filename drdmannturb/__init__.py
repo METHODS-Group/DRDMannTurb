@@ -1,3 +1,10 @@
+"""
+DRDMannTurb (short for Deep Rapid Distortion theory Mann Turbulence model) is a data-driven
+framework for syntetic turbulence generation in Python. The code is based on the original work
+of Jacob Mann in 1994 and 1998 as well as in the deep-learning enhancement developed by Keith
+et al. in 2021.
+"""
+
 from .common import (
     CPU_Unpickler,
     Mann_linear_exponential_approx,
@@ -8,8 +15,8 @@ from .common import (
 from .enums import DataType, EddyLifetimeType, PowerSpectraType
 from .fluctuation_generation import (
     Covariance,
+    FluctuationFieldGenerator,
     GaussianRandomField,
-    GenerateFluctuationField,
     MannCovariance,
     NNCovariance,
     Sampling_DCT,
@@ -41,3 +48,56 @@ from .spectra_fitting import (
     OnePointSpectraDataGenerator,
     PowerSpectraRDT,
 )
+
+__all__ = [
+    # Common
+    "CPU_Unpickler",
+    "Mann_linear_exponential_approx",
+    "MannEddyLifetime",
+    "VKEnergySpectrum",
+    "plot_loss_logs",
+    # Enums
+    "DataType",
+    "EddyLifetimeType",
+    "PowerSpectraType",
+    # Fluctuation Generation
+    "Covariance",
+    "FluctuationFieldGenerator",
+    "GaussianRandomField",
+    "MannCovariance",
+    "NNCovariance",
+    "Sampling_DCT",
+    "Sampling_DST",
+    "Sampling_FFT",
+    "Sampling_FFTW",
+    "Sampling_method_base",
+    "Sampling_method_freq",
+    "Sampling_VF_FFTW",
+    "VectorGaussianRandomField",
+    "VonKarmanCovariance",
+    "create_grid",
+    "format_wind_field",
+    "plot_velocity_components",
+    "plot_velocity_magnitude",
+    # Interpolation
+    "extract_x_spectra",
+    "interp_spectra",
+    "interpolate",
+    # NN Modules
+    "CustomMLP",
+    "CustomNet",
+    "Rational",
+    "SimpleNN",
+    "TauNet",
+    # Parameters
+    "LossParameters",
+    "NNParameters",
+    "PhysicalParameters",
+    "ProblemParameters",
+    # Spectra Fitting
+    "CalibrationProblem",
+    "LossAggregator",
+    "OnePointSpectra",
+    "OnePointSpectraDataGenerator",
+    "PowerSpectraRDT",
+]

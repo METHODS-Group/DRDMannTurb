@@ -3,16 +3,16 @@
 UML Diagram for Fluctuation Field Generation
 ============================================
 
-Here is an UML diagram representing the interoperability between several internal classes of the package that comprise the fluctuation generator :py:class:`GenerateFluctuationField`. Please refer to specific class documentations for details. The following diagram is interactive -- try zooming and panning to resize for your convenience. 
+Here is an UML diagram representing the interoperability between several internal classes of the package that comprise the fluctuation generator :py:class:`FluctuationFieldGenerator`. Please refer to specific class documentations for details. The following diagram is interactive -- try zooming and panning to resize for your convenience.
 
 These interactive UML diagrams have an issue with rendering the correct arrow types in dark mode, please consider switching to light mode.
 
-.. mermaid:: 
+.. mermaid::
     :zoom:
 
     classDiagram
     direction LR
-    GenerateFluctuationField ..> VectorGaussianRandomField
+    FluctuationFieldGenerator ..> VectorGaussianRandomField
     GaussianRandomField ..> Covariance
 
     VectorGaussianRandomField --|> GaussianRandomField
@@ -24,16 +24,16 @@ These interactive UML diagrams have an issue with rendering the correct arrow ty
     NNCovariance --|> Covariance
     end
 
-    GenerateFluctuationField : +np.ndarray total_fluctuation
-    GenerateFluctuationField : +Callable log_law
-    GenerateFluctuationField : +int seed
-    GenerateFluctuationField : +Covariance Covariance
-    GenerateFluctuationField : +VectorGaussianRandomField RF
+    FluctuationFieldGenerator : +np.ndarray total_fluctuation
+    FluctuationFieldGenerator : +Callable log_law
+    FluctuationFieldGenerator : +int seed
+    FluctuationFieldGenerator : +Covariance Covariance
+    FluctuationFieldGenerator : +VectorGaussianRandomField RF
 
-    GenerateFluctuationField: -_generate_block()
-    GenerateFluctuationField: +generate()
-    GenerateFluctuationField: +normalize()
-    GenerateFluctuationField: +save_to_vtk()
+    FluctuationFieldGenerator: -_generate_block()
+    FluctuationFieldGenerator: +generate()
+    FluctuationFieldGenerator: +normalize()
+    FluctuationFieldGenerator: +save_to_vtk()
     class VectorGaussianRandomField{
       +int vdim
       +tuple DomainSlice
@@ -53,18 +53,18 @@ These interactive UML diagrams have an issue with rendering the correct arrow ty
     +reseed()
     }
     class VonKarmanCovariance{
-    +float length_scale 
+    +float length_scale
     +float E0
     +precompute_Spectrum()
     }
     class MannCovariance{
-    +float length_scale 
+    +float length_scale
     +float E0
     +float Gamma
     +precompute_Spectrum()
     }
     class NNCovariance{
-    +float length_scale 
+    +float length_scale
     +float E0
     +float Gamma
     +float h_ref

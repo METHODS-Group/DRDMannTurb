@@ -1,4 +1,5 @@
 """Utilities for interpolating spectra provided in .csv format."""
+
 import csv
 from pathlib import Path
 
@@ -6,9 +7,7 @@ import numpy as np
 from scipy.interpolate import CubicSpline
 
 
-def extract_x_spectra(
-    filepath: Path, abs: bool = False
-) -> tuple[np.ndarray, np.ndarray]:
+def extract_x_spectra(filepath: Path, abs: bool = False) -> tuple[np.ndarray, np.ndarray]:
     """
     Given a filepath to a csv with data in two cols; the first should
     be the x coordinates and the second should be the spectra value
@@ -37,9 +36,7 @@ def extract_x_spectra(
     return np.log10(np.array(x)), np.array(spectra)
 
 
-def interp_spectra(
-    x_interp: np.ndarray, x_true: np.ndarray, spectra: np.ndarray
-) -> np.ndarray:
+def interp_spectra(x_interp: np.ndarray, x_true: np.ndarray, spectra: np.ndarray) -> np.ndarray:
     """
     Cubic spline interpolation of spectra over x_interp, given original
     x-coords x_true
@@ -63,9 +60,7 @@ def interp_spectra(
     return cs(x_interp)
 
 
-def interpolate(
-    datapath: Path, num_k1_points: int, plot: bool = False
-) -> tuple[np.ndarray, ...]:
+def interpolate(datapath: Path, num_k1_points: int, plot: bool = False) -> tuple[np.ndarray, ...]:
     """Calculates and returns the interpolations over a common set of x-coordinates.
 
     Parameters
@@ -80,14 +75,13 @@ def interpolate(
     Returns
     -------
     tuple[np.ndarray, ...]
-        Tuple of x_interp, interp_u, interp_v, interp_w, interp_uw. x_interp is given in normal space, under the assumption that the x data of the input spectra is in log-space.
+        Tuple of x_interp, interp_u, interp_v, interp_w, interp_uw. x_interp is given in normal space, under the
+        assumption that the x data of the input spectra is in log-space.
     """
     x_coords_u, u_spectra = extract_x_spectra(datapath / "u_spectra.csv")
     x_coords_v, v_spectra = extract_x_spectra(datapath / "v_spectra.csv")
     x_coords_w, w_spectra = extract_x_spectra(datapath / "w_spectra.csv")
-    x_coords_uw, uw_cospectra = extract_x_spectra(
-        datapath / "uw_cospectra.csv", abs=True
-    )
+    x_coords_uw, uw_cospectra = extract_x_spectra(datapath / "uw_cospectra.csv", abs=True)
 
     x_interp = np.linspace(min(x_coords_w), max(x_coords_w), num_k1_points)
 

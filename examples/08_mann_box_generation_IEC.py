@@ -28,10 +28,7 @@ import numpy as np
 import torch
 
 from drdmannturb.fluctuation_generation import (
-    plot_velocity_components,  # utility function for plotting each velocity component in the field, not used in this example
-)
-from drdmannturb.fluctuation_generation import (
-    GenerateFluctuationField,
+    FluctuationFieldGenerator,
     plot_velocity_magnitude,
 )
 
@@ -85,7 +82,7 @@ Type_Model = "Mann"  ### 'Mann', 'VK', 'DRD'
 # The Mann model requires three parameters, length scale, time scale, and spectrum amplitude scale,
 # which are defined above
 #
-gen_mann = GenerateFluctuationField(
+gen_mann = FluctuationFieldGenerator(
     ustar,
     zref,
     grid_dimensions,
@@ -97,9 +94,7 @@ gen_mann = GenerateFluctuationField(
     seed=seed,
 )
 
-fluctuation_field_mann = gen_mann.generate(
-    nBlocks, zref, uref, z0, windprofiletype, plexp
-)
+fluctuation_field_mann = gen_mann.generate(nBlocks, zref, uref, z0, windprofiletype, plexp)
 
 #######################################################################################
 # Adding the mean velocity profile
@@ -113,13 +108,11 @@ fluctuation_field_mann = gen_mann.generate(
 
 spacing = tuple(grid_dimensions / (2.0**grid_levels + 1))
 
-fig_magnitude_mann = plot_velocity_magnitude(
-    spacing, fluctuation_field_mann, transparent=True
-)
+fig_magnitude_mann = plot_velocity_magnitude(spacing, fluctuation_field_mann, transparent=True)
 
-# this is a Plotly figure, which can be visualized with the ``.show()`` method in different contexts. While these utilities
-# may be useful for quick visualization, we recommend using Paraview to visualize higher resolution output. We will cover
-# saving to a portable VTK format further in this example.
+# this is a Plotly figure, which can be visualized with the ``.show()`` method in different contexts. While these
+# utilities may be useful for quick visualization, we recommend using Paraview to visualize higher resolution output.
+# We will cover saving to a portable VTK format further in this example.
 
 fig_magnitude_mann  # .show("browser"), or for specific browser, use .show("firefox")
 
@@ -141,10 +134,6 @@ gen_mann.evaluate_divergence(spacing, fluctuation_field_mann).max()
 # -----------------------------------------
 # For higher resolution fluctuation fields, we suggest using Paraview. To transfer the generated data
 # from our package, we provide the ``.save_to_vtk()`` method.
-filename = str(
-    path / "./outputs/IEC_simple"
-    if path.name == "examples"
-    else path / "./outputs/IEC_simple"
-)
+filename = str(path / "./outputs/IEC_simple" if path.name == "examples" else path / "./outputs/IEC_simple")
 
 gen_mann.save_to_vtk(filename)

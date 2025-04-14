@@ -1,0 +1,38 @@
+name: drdmannturb_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9.16
+  - pytorch
+  - isort
+  - black
+  - scipy
+  - numpy = 1.26.4
+  - matplotlib
+  - plotly
+  - sphinx
+  - pyfftw
+  - ipykernel
+  - tensorboard
+  - pytest
+  - ruff[version='>=0.4.8']
+  - pyevtk
+  - pytest-cov
+  - netcdf4
+  - pandas
+  - tqdm=4.66.4
+  - scikit-learn
+  - sphinx-gallery
+  - nbsphinx
+  - myst-parser
+  - enum_tools
+  - sphinx-toolbox
+  - sphinxcontrib-mermaid
+  - sphinxcontrib-jsmath
+  - pydata-sphinx-theme
+  - sphinx-panels
+  - sphinx-notfound-page
+  - sphinx-copybutton
+  - pydocstyle
+  - pip
