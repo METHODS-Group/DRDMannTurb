@@ -17,7 +17,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install mypy data-science-types types-PyYAML types-plotly
+          pip install mypy data-science-types types-PyYAML
 
       - uses: astral-sh/ruff-action@v3
         with:
