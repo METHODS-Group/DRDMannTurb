@@ -1,4 +1,5 @@
-"""Includes covariance kernels used in generating wind, specifically in evaluating the square roots of spectral tensors used in various models."""
+"""Includes covariance kernels used in generating wind, specifically in evaluating
+the square roots of spectral tensors used in various models."""
 
 import numpy as np
 from scipy.special import hyp2f1
@@ -6,21 +7,25 @@ from scipy.special import hyp2f1
 
 class Covariance:
     r"""
-    Generic Covariance kernel metaclass. In particular, every subclass involves the computation of :math:`G(\boldsymbol{k})` where
+    Generic Covariance kernel metaclass. In particular, every subclass involves the computation of
+     :math:`G(\boldsymbol{k})` where
 
-    .. math::
-        G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k}, \tau(\boldsymbol{k}))
+     .. math::
+         G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k}, \tau(\boldsymbol{k}))
 
-    for different choices of the spectral tensor :math:`\Phi(\boldsymbol{k})`.
+     for different choices of the spectral tensor :math:`\Phi(\boldsymbol{k})`.
 
-    Subclasses only require one field ``ndim``, which specifies the number of dimensions in which the generated kernels operate, respectively. For now, all fields and kernels operate in 3D, though functionality for 2D may be added readily. Finally, if a generic evaluation function is desired for a subclass, it may be set with ``eval_func`` in the constructor, as well as any associated arguments.
+     Subclasses only require one field ``ndim``, which specifies the number of dimensions in which
+     the generated kernels operate, respectively. For now, all fields and kernels operate in 3D,
+     though functionality for 2D may be added readily. Finally, if a generic evaluation function is
+     desired for a subclass, it may be set with ``eval_func`` in the constructor, as well as any
+     associated arguments.
+
     """
 
     def __init__(self, ndim=2, **kwargs):
         self.ndim = ndim  # dimension 2D or 3D
-
-        if "func" in kwargs:
-            self.eval_func = kwargs["func"]
+        self.eval_func = kwargs.get("func")
 
     def eval(self, *argv, **kwargs):
         self.eval_func(*argv, **kwargs)
@@ -28,17 +33,21 @@ class Covariance:
 
 class VonKarmanCovariance(Covariance):
     r"""
-    Von Karman covariance kernel. Evaluates the :math:`G(\boldsymbol{k})` which satisfies :math:`G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k})` where
+    Von Karman covariance kernel. Evaluates the :math:`G(\boldsymbol{k})` which satisfies
+    :math:`G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k})` where
 
     .. math::
-            \Phi_{i j}^{\mathrm{VK}}(\boldsymbol{k})=\frac{E(k)}{4 \pi k^2}\left(\delta_{i j}-\frac{k_i k_j}{k^2}\right)
+            \Phi_{i j}^{\mathrm{VK}}(\boldsymbol{k})=\frac{E(k)}{4 \pi k^2}
+            \left(\delta_{i j}-\frac{k_i k_j}{k^2}\right)
 
     which utilizes the energy spectrum function
 
     .. math::
-        E(k)=c_0^2 \varepsilon^{2 / 3} k^{-5 / 3}\left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3},
+        E(k)=c_0^2 \varepsilon^{2 / 3} k^{-5 / 3}
+        \left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3},
 
-    where :math:`\varepsilon` is the viscous dissipation of the turbulent kinetic energy, :math:`L` is the length scale parameter and :math:`c_0^2 \approx 1.7` is an empirical constant.
+    where :math:`\varepsilon` is the viscous dissipation of the turbulent kinetic energy,
+    :math:`L` is the length scale parameter and :math:`c_0^2 \approx 1.7` is an empirical constant.
     """
 
     def __init__(self, ndim: int, length_scale: float, E0: float, **kwargs):
@@ -68,7 +77,8 @@ class VonKarmanCovariance(Covariance):
         self.E0 = E0
 
     def precompute_Spectrum(self, Frequencies: np.ndarray) -> np.ndarray:
-        """Evaluation method which pre-computes the square-root of the associated spectral tensor in the frequency domain.
+        """Evaluation method which pre-computes the square-root of the associated spectral tensor
+        in the frequency domain.
 
         Parameters
         ----------
@@ -78,7 +88,8 @@ class VonKarmanCovariance(Covariance):
         Returns
         -------
         np.ndarray
-            Square-root of the spectral tensor evaluated in the frequency domain; note that these are complex values.
+            Square-root of the spectral tensor evaluated in the frequency domain; note
+            that these are complex values.
         """
         Nd = [Frequencies[j].size for j in range(self.ndim)]
         SqrtSpectralTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
@@ -101,23 +112,19 @@ class VonKarmanCovariance(Covariance):
 
 class MannCovariance(Covariance):
     r"""
-    Mann covariance kernel implementation. Evaluates the :math:`G(\boldsymbol{k})` which satisfies :math:`G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k}, \tau(\boldsymbol{k}))` where
+    Mann covariance kernel implementation. Evaluates the :math:`G(\boldsymbol{k})` which satisfies
+    :math:`G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k}, \tau(\boldsymbol{k}))` where
 
     .. math::
-            \tau^{\mathrm{IEC}}(k)=\frac{T B^{-1}(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}
+            \tau^{\mathrm{IEC}}(k)=\frac{T B^{-1}(k L)^{-\frac{2}{3}}}
+            {\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}
 
     and the full spectral tensor can be found in the following reference:
-        J. Mann, “The spatial structure of neutral atmospheric surface layer turbulence,” Journal of fluid mechanics 273, 141-168 (1994)
+        J. Mann, "The spatial structure of neutral atmospheric surface layer turbulence,"
+        Journal of fluid mechanics 273, 141-168 (1994)
     """
 
-    def __init__(
-        self,
-        ndim: int = 3,
-        length_scale: float = 1.0,
-        E0: float = 1.0,
-        Gamma: float = 1.0,
-        **kwargs
-    ):
+    def __init__(self, ndim: int = 3, length_scale: float = 1.0, E0: float = 1.0, Gamma: float = 1.0, **kwargs):
         """
         Parameters
         ----------
@@ -147,7 +154,8 @@ class MannCovariance(Covariance):
         self.Gamma = Gamma
 
     def precompute_Spectrum(self, Frequencies: np.ndarray) -> np.ndarray:
-        """Evaluation method which pre-computes the square-root of the associated spectral tensor in the frequency domain.
+        """Evaluation method which pre-computes the square-root of the associated spectral tensor
+        in the frequency domain.
 
         Parameters
         ----------
@@ -157,8 +165,10 @@ class MannCovariance(Covariance):
         Returns
         -------
         np.ndarray
-            Square-root of the spectral tensor evaluated in the frequency domain; note that these are complex values.
+            Square-root of the spectral tensor evaluated in the frequency domain;
+            note that these are complex values.
         """
+
         Nd = [Frequencies[j].size for j in range(self.ndim)]
         SqrtSpectralTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
         tmpTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
@@ -168,9 +178,7 @@ class MannCovariance(Covariance):
 
         with np.errstate(divide="ignore", invalid="ignore"):
             beta = (
-                self.Gamma
-                * (kk * self.L**2) ** (-1 / 3)
-                / np.sqrt(hyp2f1(1 / 3, 17 / 6, 4 / 3, -1 / (kk * self.L**2)))
+                self.Gamma * (kk * self.L**2) ** (-1 / 3) / np.sqrt(hyp2f1(1 / 3, 17 / 6, 4 / 3, -1 / (kk * self.L**2)))
             )
             beta[np.where(kk == 0)] = 0
 
@@ -213,24 +221,12 @@ class MannCovariance(Covariance):
             zeta2 = np.nan_to_num(zeta2)
             zeta3 = np.nan_to_num(zeta3)
 
-            SqrtSpectralTens[0, 0, ...] = (
-                tmpTens[0, 0, ...] + zeta1 * tmpTens[2, 0, ...]
-            )
-            SqrtSpectralTens[0, 1, ...] = (
-                tmpTens[0, 1, ...] + zeta1 * tmpTens[2, 1, ...]
-            )
-            SqrtSpectralTens[0, 2, ...] = (
-                tmpTens[0, 2, ...] + zeta1 * tmpTens[2, 2, ...]
-            )
-            SqrtSpectralTens[1, 0, ...] = (
-                tmpTens[1, 0, ...] + zeta2 * tmpTens[2, 0, ...]
-            )
-            SqrtSpectralTens[1, 1, ...] = (
-                tmpTens[1, 1, ...] + zeta2 * tmpTens[2, 1, ...]
-            )
-            SqrtSpectralTens[1, 2, ...] = (
-                tmpTens[1, 2, ...] + zeta2 * tmpTens[2, 2, ...]
-            )
+            SqrtSpectralTens[0, 0, ...] = tmpTens[0, 0, ...] + zeta1 * tmpTens[2, 0, ...]
+            SqrtSpectralTens[0, 1, ...] = tmpTens[0, 1, ...] + zeta1 * tmpTens[2, 1, ...]
+            SqrtSpectralTens[0, 2, ...] = tmpTens[0, 2, ...] + zeta1 * tmpTens[2, 2, ...]
+            SqrtSpectralTens[1, 0, ...] = tmpTens[1, 0, ...] + zeta2 * tmpTens[2, 0, ...]
+            SqrtSpectralTens[1, 1, ...] = tmpTens[1, 1, ...] + zeta2 * tmpTens[2, 1, ...]
+            SqrtSpectralTens[1, 2, ...] = tmpTens[1, 2, ...] + zeta2 * tmpTens[2, 2, ...]
             SqrtSpectralTens[2, 0, ...] = zeta3 * tmpTens[2, 0, ...]
             SqrtSpectralTens[2, 1, ...] = zeta3 * tmpTens[2, 1, ...]
             SqrtSpectralTens[2, 2, ...] = zeta3 * tmpTens[2, 2, ...]

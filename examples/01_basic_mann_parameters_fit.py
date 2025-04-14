@@ -3,17 +3,20 @@ r"""
 Example 1: Basic Mann Model Fit
 ===============================
 
-This example demonstrates fitting the Mann model eddy lifetime function to the Kaimal one-point spectra and cross-spectra.
+This example demonstrates fitting the Mann model eddy lifetime function to the Kaimal one-point spectra
+and cross-spectra.
 
 For reference, the Mann eddy lifetime function is given by
 
 .. math::
 
-    \tau^{\mathrm{Mann}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}\,.
+    \tau^{\mathrm{Mann}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2
+    F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}\,.
 
 This set of models it widely used for flat, homogeneous terrains.
 
-``drdmannturb`` can also be used directly to generate the corresponding 3D turbulence field, as demonstrated in Examples 8 and 9.
+``drdmannturb`` can also be used directly to generate the corresponding 3D turbulence field, as demonstrated in
+Examples 8 and 9.
 
 """
 
@@ -67,9 +70,7 @@ pb = CalibrationProblem(
     nn_params=NNParameters(),
     prob_params=ProblemParameters(eddy_lifetime=EddyLifetimeType.MANN, nepochs=2),
     loss_params=LossParameters(),
-    phys_params=PhysicalParameters(
-        L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1
-    ),
+    phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1),
     device=device,
 )
 
@@ -85,7 +86,7 @@ Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
 ##############################################################################
 # The model is now fit to the provided spectra given in ``Data``.
 #
-# Notee that the Mann eddy lifetime function relies on evaluating a hypergeometric function,
+# Note that the Mann eddy lifetime function relies on evaluating a hypergeometric function,
 # which only has a CPU implementation through ``Scipy``; cf. Example 7.
 #
 # Having the necessary components, the model is "calibrated" (fit) to the provided spectra.

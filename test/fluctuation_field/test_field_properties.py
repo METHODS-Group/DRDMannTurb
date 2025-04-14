@@ -7,13 +7,14 @@ import numpy as np
 import pytest
 import torch
 
+from drdmannturb import FluctuationFieldGenerator
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # v2: torch.set_default_device('cuda:0')
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
-from drdmannturb import GenerateFluctuationField
 
 L = 0.59
 
@@ -23,6 +24,7 @@ sigma = 3.4
 domain = torch.logspace(-1, 2, 20)
 
 path_to_trained = Path(__file__).parent.parent.parent / "docs/source/results"
+
 
 # TODO: this requires the GPU for testing, but passes as of release 0.1.0
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="No CUDA device available")
@@ -35,7 +37,10 @@ path_to_trained = Path(__file__).parent.parent.parent / "docs/source/results"
     ],
 )
 def test_field_divergence(model_save_filename: str):
-    """Evaluates divergence of generated fluctuation field from pre-trained DRD model. These are expected to be nearly 0. Both the maximum point-wise divergence and the average are compared against the tolerances of 1e-2 and 1e-5,respectively, within one order of magnitude difference (these are random quantities since network output may differ).
+    """Evaluates divergence of generated fluctuation field from pre-trained DRD model. These are expected to be
+    nearly 0. Both the maximum point-wise divergence and the average are compared against the tolerances of 1e-2
+    and 1e-5,respectively, within one order of magnitude difference (these are random quantities since network
+    output may differ).
 
     Parameters
     ----------
@@ -70,7 +75,7 @@ def test_field_divergence(model_save_filename: str):
     Type_Model = "DRD"
     nBlocks = 3
 
-    gen_drd = GenerateFluctuationField(
+    gen_drd = FluctuationFieldGenerator(
         ustar,
         zref,
         grid_dimensions,

@@ -1,9 +1,9 @@
 """
-This module defines several dataclasses that comprise the set-up for a calibration problem of a DRD-Mann model. 
+This module defines several dataclasses that comprise the set-up for a calibration problem of a DRD-Mann model.
 """
 
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -25,17 +25,22 @@ class ProblemParameters:
     learning_rate : float
         Initial earning rate for optimizer.
     tol : float
-        Tolerance for solution error (training terminates if this is reached before the maximum number of epochs allowed)
+        Tolerance for solution error (training terminates if this is reached before the maximum number of
+        epochs allowed)
     nepochs : int
         Number of epochs to train for
     init_with_noise : bool
-        Whether or not to initialize learnable parameters with random noise; by default, neural network parameters are initialized with the Kaiming initialization while physical parameters are initialized with 0.
+        Whether or not to initialize learnable parameters with random noise; by default, neural network
+        parameters are initialized with the Kaiming initialization while physical parameters are initialized
+        with 0.
     noise_magnitude : float
         Magnitude of aforementioned noise contribution
     data_type : DataType
-        Type of spectra data used. These can be generated from the Kaimal spectra, provided raw as CUSTOM data, interpolated, filtered with AUTO, or use the Von Karman model.
+        Type of spectra data used. These can be generated from the Kaimal spectra, provided raw as CUSTOM data,
+        interpolated, filtered with AUTO, or use the Von Karman model.
     eddy_lifetime : EddyLifetimeType
-        Type of model to use for eddy lifetime function. This determines whether a neural network is to be used to learn to approximate the function, or if a known model, such as the Mann eddy lifetime is to be used.
+        Type of model to use for eddy lifetime function. This determines whether a neural network is to be used
+        to learn to approximate the function, or if a known model, such as the Mann eddy lifetime is to be used.
     power_spectra : PowerSpectraType
         Type of model to use for power spectra
     wolfe_iter_count : int
@@ -62,7 +67,6 @@ class ProblemParameters:
 
 @dataclass
 class PhysicalParameters:
-
     r"""
     This class provides a convenient method of storing and passing around
     the physical parameters required to define a problem; this also offers
@@ -100,10 +104,12 @@ class PhysicalParameters:
 class LossParameters:
     r"""
     This class provides a convenient method of storing and passing around
-    the loss function term coefficients; this also offers default values, which result in the loss function consisting purely of an MSE loss.
+    the loss function term coefficients; this also offers default values, which result in the loss function
+    consisting purely of an MSE loss.
 
     .. note::
-        Using the regularization term :math:`\beta` requires a neural network-based approximation to the eddy lifetime function.
+        Using the regularization term :math:`\beta` requires a neural network-based approximation to the eddy
+        lifetime function.
 
     Args
     ----
@@ -139,7 +145,8 @@ class NNParameters:
     hidden_layer_sizes : List[int]
         Determines widths of network layers (input-output pairs must match); used for CustomNet
     activations : List[torch.Module]
-        List of activation functions. The list should have the same length as the number of layers, otherwise the activation functions begin to repeat from the beginning of the list.
+        List of activation functions. The list should have the same length as the number of layers, otherwise
+        the activation functions begin to repeat from the beginning of the list.
     output_size: int
         Dimensionality of the output vector (typically 3 for spectra-fitting tasks).
     """
@@ -152,3 +159,76 @@ class NNParameters:
     activations: List[nn.Module] = field(default_factory=list)
 
     output_size: int = 3
+
+
+#######################################################################################################
+# 	Fluctuation field generation parameters
+#######################################################################################################
+
+
+@dataclass
+class DomainParameters:
+    r"""
+    This class provides a convenient method of storing and passing around
+    the domain parameters required for the fluctuation field generation.
+
+    Args
+    ----
+    grid_dimensions : Tuple[float, float, float]
+        The dimensions of the grid in the x, y, and z directions.
+    grid_levels : Tuple[int, int, int]
+        The number of grid points in the x, y, and z directions.
+        These are calculated as :math:`2^{\text{grid\_levels}} + 1`.
+    """
+
+    d_dimensions: Union[Tuple[float, float, float], "np.ndarray", List[float]]
+    d_levels: Union[Tuple[int, int, int], "np.ndarray", List[int]]
+
+    def __post_init__(self):
+        # Check grid dimensions
+        if isinstance(self.d_dimensions, (list, np.ndarray)) and len(self.d_dimensions) != 3:
+            raise ValueError("Grid dimensions must be length 3.")
+
+        if isinstance(self.d_dimensions, np.ndarray):
+            self._grid_dimensions = self.d_dimensions
+        else:
+            self._grid_dimensions = np.array(self.d_dimensions)
+
+        # Check grid levels
+        if isinstance(self.grid_levels, (list, np.ndarray)) and len(self.grid_levels) != 3:
+            raise ValueError("Grid levels must be a tuple of length 3.")
+
+        if isinstance(self.d_levels, np.ndarray):
+            self._grid_levels = self.d_levels
+        else:
+            self._grid_levels = np.array(self.d_levels)
+
+        del self.d_dimensions
+        del self.d_levels
+
+    @property
+    def grid_dimensions(self):
+        """Getter for grid dimensions"""
+        return self._grid_dimensions
+
+    @property
+    def grid_levels(self):
+        """Getter for grid levels"""
+        return self._grid_levels
+
+
+@dataclass
+class LowFreqParameters:
+    r"""
+    This class provides a convenient method of storing and passing around
+    the physical parameters required for the low-frequency model extension.
+
+    The default values are taken from the Syed-Mann (2024) paper.
+    """
+
+    L_2D: float = 15_000.0
+    sigma2: float = 0.6
+    z_i: float = 500.0
+    psi_degs: float = 43.0
+
+    c: Optional[float] = None
