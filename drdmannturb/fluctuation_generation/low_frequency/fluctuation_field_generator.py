@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numba
 import numpy as np
 from scipy import integrate
-from scipy.integrate import dblquad
 from scipy.interpolate import RegularGridInterpolator
 
 """
@@ -58,7 +57,7 @@ class LowFreqGenerator:
         self.psi = config["psi"]
         self.z_i = config["z_i"]
 
-        self.c = self._compute_c_2d()
+        self.c = self._compute_c()
 
         # User-specified domain (store these)
         self.user_L1 = config["L1_factor"] * self.L_2d
@@ -120,11 +119,11 @@ class LowFreqGenerator:
         # TODO: Maybe we just increase the number of points to whatever even number approx gets us dx = dy
 
         comp_d = min(self.user_dx, self.user_dy)
-        print(f"  Target isotropic spacing (comp_d): {comp_d:.4f} m")
+        # print(f"  Target isotropic spacing (comp_d): {comp_d:.4f} m")
 
         L1_target = max(self.user_L1, 5 * self.L_2d)
         L2_target = max(self.user_L2, 5 * self.L_2d)
-        print(f"  Target physical lengths (L1_target, L2_target): ({L1_target:.1f}, {L2_target:.1f}) m")
+        # print(f"  Target physical lengths (L1_target, L2_target): ({L1_target:.1f}, {L2_target:.1f}) m")
 
         if self.user_L1 < 5 * self.L_2d or self.user_L2 < 5 * self.L_2d:
             import warnings
@@ -138,7 +137,7 @@ class LowFreqGenerator:
 
         n1_min_ideal = int(np.ceil(L1_target / comp_d))
         n2_min_ideal = int(np.ceil(L2_target / comp_d))
-        print(f"  Minimum points needed (n1_min_ideal, n2_min_ideal): ({n1_min_ideal}, {n2_min_ideal})")
+        # print(f"  Minimum points needed (n1_min_ideal, n2_min_ideal): ({n1_min_ideal}, {n2_min_ideal})")
 
         comp_N1 = n1_min_ideal + (n1_min_ideal % 2)
         comp_N2 = n2_min_ideal + (n2_min_ideal % 2)
@@ -148,20 +147,20 @@ class LowFreqGenerator:
             comp_N1 = 2
         if comp_N2 == 0 and n2_min_ideal > 0:
             comp_N2 = 2
-        print(f"  Even computational points (comp_N1, comp_N2): ({comp_N1}, {comp_N2})")
+        # print(f"  Even computational points (comp_N1, comp_N2): ({comp_N1}, {comp_N2})")
 
         comp_L1 = comp_N1 * comp_d
         comp_L2 = comp_N2 * comp_d
-        print(f"  Final computational lengths (comp_L1, comp_L2): ({comp_L1:.1f}, {comp_L2:.1f}) m")
+        # print(f"  Final computational lengths (comp_L1, comp_L2): ({comp_L1:.1f}, {comp_L2:.1f}) m")
 
-        print("-" * 30)
-        print("Grid Summary:")
-        print(
-            f"  User Requested: L1={self.user_L1:.1f}, L2={self.user_L2:.1f}, "
-            f"N1={self.user_N1}, N2={self.user_N2}, dx={self.user_dx:.4f}, dy={self.user_dy:.4f}"
-        )
-        print(f"  Computed:       L1={comp_L1:.1f}, L2={comp_L2:.1f}, N1={comp_N1}, N2={comp_N2}, d={comp_d:.4f}")
-        print("-" * 30)
+        # print("-" * 30)
+        # print("Grid Summary:")
+        # print(
+        #     f"  User Requested: L1={self.user_L1:.1f}, L2={self.user_L2:.1f}, "
+        #     f"N1={self.user_N1}, N2={self.user_N2}, dx={self.user_dx:.4f}, dy={self.user_dy:.4f}"
+        # )
+        # print(f"  Computed:       L1={comp_L1:.1f}, L2={comp_L2:.1f}, N1={comp_N1}, N2={comp_N2}, d={comp_d:.4f}")
+        # print("-" * 30)
 
         tolerance = 1e-9
         if not (comp_L1 >= L1_target - tolerance and comp_L2 >= L2_target - tolerance):
@@ -172,82 +171,23 @@ class LowFreqGenerator:
 
         return comp_L1, comp_L2, comp_N1, comp_N2
 
-    def _compute_c_2d(self):
-        """Computes normalization constant c using 2D integration in polar coordinates
-
-        TODO: Need to switch back to the 0 to infty kappa integration. This is incorrect.
-        NOTE: Probably a factor of 2? 2pi? 4? 4pi? here due to the domain vs. 0 to infty |k| integration
-            of the "regular" one.
+    def _compute_c(self):
         """
-        # print("Calculating 'c' using 2D integral (polar coordinates)...")
-
+        TODO:
+        """
         L_2d = self.L_2d
-        psi = self.psi
         z_i = self.z_i
 
-        # Inner integral is over k (0 to inf), outer is over theta (0 to 2pi)
-        def polar_integrand(k, theta):
-            cos_theta = np.cos(theta)
-            sin_theta = np.sin(theta)
-            cos_psi = np.cos(psi)
-            sin_psi = np.sin(psi)
-            kappa_sq = 2 * (k**2) * ((cos_psi * cos_theta) ** 2 + (sin_psi * sin_theta) ** 2)
-
-            if kappa_sq < 1e-15:
-                return 0.0
-            kappa = np.sqrt(kappa_sq)
-
-            denom1_base = L_2d**-2 + kappa_sq
-
-            denom1 = denom1_base ** (7 / 3)
-            denom2 = 1.0 + kappa_sq * z_i**2
-
+        def integrand(kappa):
+            denom1 = (L_2d**-2 + kappa**2) ** (7 / 3)
+            denom2 = 1.0 + (kappa * z_i) ** 2
             denominator = denom1 * denom2
 
             shape_kappa = (kappa**3) / denominator
 
-            integrand_val = shape_kappa / np.pi
+            return shape_kappa
 
-            return integrand_val
-
-        limit_factor = 5000
-        char_len = L_2d if z_i <= 0 else min(L_2d, z_i)
-        if char_len <= 0:
-            raise ValueError("Characteristic length scale must be positive.")
-        k_upper_limit = limit_factor / char_len
-        k_lower_limit = 0.0
-
-        # print(f"  Using dblquad limits: k in [{k_lower_limit:.1e}, {k_upper_limit:.1e}], theta in [0, 2*pi]")
-
-        try:
-            # Integrate k inner (0 to k_upper_limit), theta outer (0 to 2*pi)
-            integral_2d, abserr = dblquad(
-                polar_integrand,
-                0,
-                2 * np.pi,  # theta lims
-                lambda _: k_lower_limit,  # k lims
-                lambda _: k_upper_limit,  # k lims
-                epsabs=1.49e-9,
-                epsrel=1.49e-9,
-            )
-        except Exception as e:
-            print(f"ERROR during polar dblquad: {e}")
-            raise
-
-        # print(f"  2D Integral (polar) result: {integral_2d:.6e}, Est. Error: {abserr:.2e}")
-
-        if integral_2d <= 1e-15:  # Check if integral is essentially zero or negative
-            raise ValueError(f"2D Polar Integration for 'c' failed or invalid result: {integral_2d}")
-        # Increase error tolerance slightly, as 2D integration can be tricky
-        if abserr > 0.1 * abs(integral_2d):  # Check 10% relative error
-            print(f"Warning: High relative error in 2D polar integration for 'c': {abserr/integral_2d:.1%}")
-
-        c_2d = self.sigma2 / integral_2d
-        # print(f"Using c (from 2D polar integration): {c_2d:.6e}")
-        return c_2d
-
-    # ------------------------------------------------------------------------------------------------ #
-    # Below are member functions for generating the low-frequency fluctuation fields.
+        return self.sigma2 / (2 * integrate.quad(integrand, 0, np.inf)[0])
 
     @staticmethod
     @numba.njit(parallel=True, fastmath=True)
@@ -285,6 +225,7 @@ class LowFreqGenerator:
         phi_ = np.empty_like(k_mag)
 
         grid_scale = (2 * np.pi) / np.sqrt(max(dx * dy, 1e-16))
+        # grid_scale = np.pi / np.sqrt(max(dx * dy, 1e-16))
 
         for i in numba.prange(N1):
             for j in numba.prange(N2):
@@ -733,4 +674,45 @@ class LowFreqGenerator:
 
 
 if __name__ == "__main__":
-    print()
+    cfg_fig3 = {
+        "sigma2": 0.6,
+        "L_2d": 15_000.0,
+        "psi": np.deg2rad(43.0),
+        "z_i": 500.0,
+        "L1_factor": 16,
+        "L2_factor": 4,
+        "exp1": 12,
+        "exp2": 10,
+    }
+
+    cfg_a = {
+        "sigma2": 2.0,
+        "L_2d": 15_000.0,
+        "psi": np.deg2rad(45.0),
+        "z_i": 500.0,
+        "L1_factor": 40,  # For case (a): 40L_2D × 5L_2D
+        "L2_factor": 5,
+        "exp1": 12,
+        "exp2": 9,
+    }
+
+    cfg_b = {
+        "sigma2": 2.0,
+        "L_2d": 15_000.0,
+        "psi": np.deg2rad(45.0),
+        "z_i": 500.0,
+        "L1_factor": 1,  # For case (b): L_2D × 0.125L_2D
+        "L2_factor": 0.125,
+        "exp1": 12,
+        "exp2": 9,
+    }
+
+    # lp.domain_size_study()
+    # lp.length_AND_grid_size_study(cfg_a, do_plot = True)
+
+    gen_a = LowFreqGenerator(cfg_a)
+    gen_b = LowFreqGenerator(cfg_b)
+
+    # lp.recreate_fig2(gen_a, gen_b)
+
+    # lp.rectangular_domain_study(cfg_a)

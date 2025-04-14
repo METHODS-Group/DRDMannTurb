@@ -1,3 +1,8 @@
+"""
+This module will be moved into /test at some point. It implements graphical and numerical tests for the implementation
+of the low-frequency generator.
+"""
+
 import concurrent.futures
 
 import matplotlib.pyplot as plt
@@ -30,8 +35,8 @@ def _run_single_mesh(exponent, config, num_realizations=5):
     u2 /= num_realizations
 
     # Calculate the discrete approximation of the integral of u^2 dA
-    u1_norm = np.sum(u1**2) * gen.dx * gen.dy
-    u2_norm = np.sum(u2**2) * gen.dx * gen.dy
+    u1_norm = np.sum(u1**2) * gen.user_dx * gen.user_dy
+    u2_norm = np.sum(u2**2) * gen.user_dx * gen.user_dy
 
     u1_var = np.var(u1)
     u2_var = np.var(u2)
@@ -122,8 +127,8 @@ def _run_single_domain_size(domain_factor, config, num_realizations=5):
     # Calculate physical domain size
     domain_size = local_config["L_2d"] * domain_factor
 
-    u1_norm = np.sum(u1**2) * gen.dx * gen.dy
-    u2_norm = np.sum(u2**2) * gen.dx * gen.dy
+    u1_norm = np.sum(u1**2) * gen.user_dx * gen.user_dy
+    u2_norm = np.sum(u2**2) * gen.user_dx * gen.user_dy
 
     u1_var = np.var(u1)
     u2_var = np.var(u2)
@@ -288,9 +293,14 @@ def recreate_fig2(gen_a, gen_b, num_realizations=10, do_plot=True):
         gen_a.generate()
         gen_b.generate()
 
+        print("\t Successfully generated fields")
+        print("\t Computing spectrum...")
+
         # Compute spectrum for this realization
         _k1_a_pos, _F11_a, _F22_a = gen_a.compute_spectrum()
         _k1_b_pos, _F11_b, _F22_b = gen_b.compute_spectrum()
+
+        print("\t Successfully computed spectrum")
 
         # Store results
         f11_a_list.append(_F11_a)
@@ -637,7 +647,7 @@ def length_AND_grid_size_study(base_config, do_plot=False, num_realizations=10):
     return
 
 
-def rectangular_domain_study(base_config, num_realizations=10, do_plot=True):
+def rectangular_domain_study(base_config, num_realizations=30, do_plot=True):
     """
     Same thing as above but we want to try large rectangles wrt. L_2d
     """
@@ -686,8 +696,17 @@ def rectangular_domain_study(base_config, num_realizations=10, do_plot=True):
         avg_u2_var = []
         avg_total_var = []
 
-        for r in range(num_realizations):
+        avg_full_u1_var = []
+        avg_full_u2_var = []
+        avg_full_total_var = []
+
+        for _ in range(num_realizations):
             u1, u2 = gen.generate()
+
+            avg_full_u1_var.append(np.var(gen.u1_full))
+            avg_full_u2_var.append(np.var(gen.u2_full))
+            avg_full_total_var.append(np.var(gen.u1_full) + np.var(gen.u2_full))
+
             avg_u1_var.append(np.var(u1))
             avg_u2_var.append(np.var(u2))
             avg_total_var.append(np.var(u1) + np.var(u2))
@@ -695,6 +714,9 @@ def rectangular_domain_study(base_config, num_realizations=10, do_plot=True):
         print(f"\tAvg var u1: {np.mean(avg_u1_var)}")
         print(f"\tAvg var u2: {np.mean(avg_u2_var)}")
         print(f"\tAvg Total var: {np.mean(avg_total_var)}")
+        print(f"\tAvg Full u1 var: {np.mean(avg_full_u1_var)}")
+        print(f"\tAvg Full u2 var: {np.mean(avg_full_u2_var)}")
+        print(f"\tAvg Full Total var: {np.mean(avg_full_total_var)}")
         print(f"\tTarget sigma2: {gen.sigma2}")
         print(f"{'='*60}\n")
 

@@ -251,10 +251,11 @@ class FluctuationFieldGenerator:
 
         self.RF.reseed(self.seed)
 
+        self.low_freq_gen: Optional[LowFreqGenerator] = None
         if config_2d_model is not None:
             self.low_freq_gen = LowFreqGenerator(config_2d_model)
 
-            print("Generating...")
+            print("Generating low-frequency field...")
 
             self.low_freq_gen.generate()
 
