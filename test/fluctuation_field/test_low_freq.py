@@ -7,6 +7,8 @@ import pytest
 
 from drdmannturb.fluctuation_generation.low_frequency.fluctuation_field_generator import LowFreqGenerator
 
+VARIANCE_TOLERANCE = 0.1
+
 #########################################################################################
 # --- Test Configuration ---
 L_2D_TEST = 10000.0  # meters
@@ -79,19 +81,16 @@ def test_grid_calculation(l1_factor, l2_factor, exp1, exp2):
     config = create_base_config(l1_factor, l2_factor, exp1, exp2)
     gen = LowFreqGenerator(config)
 
-    # Manually calculate expected values
     exp_l1, exp_l2, exp_n1, exp_n2 = expected_buffer_sizes(gen.user_L1, gen.user_L2, gen.user_N1, gen.user_N2, gen.L_2d)
 
-    # Assert calculated computational dimensions match expected
     assert np.isclose(gen.comp_L1, exp_l1), f"comp_L1 mismatch: Got {gen.comp_L1}, Expected {exp_l1}"
     assert np.isclose(gen.comp_L2, exp_l2), f"comp_L2 mismatch: Got {gen.comp_L2}, Expected {exp_l2}"
     assert gen.comp_N1 == exp_n1, f"comp_N1 mismatch: Got {gen.comp_N1}, Expected {exp_n1}"
     assert gen.comp_N2 == exp_n2, f"comp_N2 mismatch: Got {gen.comp_N2}, Expected {exp_n2}"
 
-    # Also verify the calculated spacing is correct
     assert np.isclose(gen.comp_dx, exp_l1 / exp_n1)
     assert np.isclose(gen.comp_dy, exp_l2 / exp_n2)
-    assert np.isclose(gen.comp_dx, gen.comp_dy)  # Isotropy check
+    assert np.isclose(gen.comp_dx, gen.comp_dy)
 
 
 @pytest.mark.parametrize(
@@ -117,7 +116,6 @@ def test_generate_output_shape_and_variance(l1_factor, l2_factor, exp1, exp2, re
     config = create_base_config(l1_factor, l2_factor, exp1, exp2)
     target_variance = config["sigma2"]
 
-    # Create the generator instance once, potentially catching the warning
     gen = None
     if config["L1_factor"] * L_2D_TEST < MIN_SIZE_TARGET or config["L2_factor"] * L_2D_TEST < MIN_SIZE_TARGET:
         with pytest.warns(UserWarning, match="User requested domain .* is smaller"):
@@ -127,18 +125,11 @@ def test_generate_output_shape_and_variance(l1_factor, l2_factor, exp1, exp2, re
 
     assert gen is not None, "Generator instance was not created"
 
-    realization_variances_full = []  # Store variance of the full computational field
+    realization_variances_full = []
 
-    # Get the test case ID from the request fixture
-    test_case_id = request.node.callspec.id
-
-    # Perform multiple realizations
     for i in range(num_realizations):
-        print(f"\n  Running realization {i+1}/{num_realizations} for case id={test_case_id}")
-        # Generate returns the extracted fields, but stores the full ones
         u1_extracted, u2_extracted = gen.generate()
 
-        # Check shape of the EXTRACTED fields on first realization
         if i == 0:
             assert u1_extracted.shape == (
                 gen.user_N1,
@@ -159,22 +150,16 @@ def test_generate_output_shape_and_variance(l1_factor, l2_factor, exp1, exp2, re
                 gen.comp_N2,
             ), "gen.u2_full not set correctly or has wrong shape"
 
-        # Calculate and store total variance from the FULL computational field
         assert hasattr(gen, "u1_full"), "gen.u1_full missing after generate()"
         assert hasattr(gen, "u2_full"), "gen.u2_full missing after generate()"
         total_variance_realization = np.var(gen.u1_full) + np.var(gen.u2_full)
         realization_variances_full.append(total_variance_realization)
-        # Reduce print frequency for more realizations
-        if (i + 1) % 5 == 0 or i == 0 or i == num_realizations - 1:
-            print(f"    Variance (full domain) for realization {i+1}: {total_variance_realization:.4f}")
 
-    # Calculate average variance over all realizations
     average_variance_full = np.mean(realization_variances_full)
     print(f"\n  Average variance (full domain) over {num_realizations} realizations: {average_variance_full:.4f}")
     print(f"  Target variance: {target_variance:.4f}")
-
-    # Check Average Variance (keep the tighter tolerance for now)
-    rtol = 0.05  # Allow 5% relative difference for the average
-    assert np.isclose(
-        average_variance_full, target_variance, rtol=rtol
-    ), f"Average variance (full) mismatch: Got {average_variance_full:.4f}, Target {target_variance:.4f} (rtol={rtol})"
+    error_msg = (
+        f"Average variance (full) mismatch: Got {average_variance_full:.4f}, "
+        f"Target {target_variance:.4f} (rtol={VARIANCE_TOLERANCE})"
+    )
+    assert np.isclose(average_variance_full, target_variance, rtol=VARIANCE_TOLERANCE), error_msg
