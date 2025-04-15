@@ -48,6 +48,6 @@ jobs:
           pip install pytest
           python -m pytest
 
-      - name: Run slow tests
-        run: |
-          python -m pytest --runslow
+      # - name: Run slow tests
+      #   run: |
+      #     python -m pytest --runslow

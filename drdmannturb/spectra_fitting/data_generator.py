@@ -1,7 +1,7 @@
 import warnings
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -246,14 +246,14 @@ class OnePointSpectraDataGenerator:
             DataValues[:, 2, 2] = self.CustomData[:, 3]
             DataValues[:, 0, 2] = -self.CustomData[:, 4]
         else:
-            for i, (k1, _) in enumerate(DataPoints):
-                DataValues[i] = self.eval(k1)
+            for i, Point in enumerate(DataPoints):
+                DataValues[i] = self.eval(Point)
 
         DataPoints = list(zip(DataPoints, [self.zref] * len(DataPoints)))
         self.Data = (DataPoints, DataValues)
         return self.Data
 
-    def eval_VK(self, k1: float) -> torch.Tensor:
+    def eval_VK(self, k1: tuple[Any, float]) -> torch.Tensor:
         r"""
         Evaluation of von Karman spectral tensor given in the form
 
@@ -290,7 +290,7 @@ class OnePointSpectraDataGenerator:
         F[2, 2] = 3 / 110 * C * (3 * L ** (-2) + 8 * k1**2) / (L ** (-2) + k1**2) ** (11 / 6)
         return k1 * F
 
-    def eval_Kaimal(self, k1: float) -> torch.Tensor:
+    def eval_Kaimal(self, k1: tuple[Any, float]) -> torch.Tensor:
         r"""
         Evaluates the one-point spectra as proposed by `Kaimal et al <https://apps.dtic.mil/sti/tr/pdf/AD0748543.pdf>`__
         in 1972. Clasically motivated by measurements taken over a flat homogeneous terrain in Kansas, the one-point
