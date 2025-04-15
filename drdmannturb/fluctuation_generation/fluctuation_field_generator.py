@@ -82,8 +82,7 @@ class FluctuationFieldGenerator:
         energy_spectrum_scale: Optional[float] = None,
         path_to_parameters: Optional[Union[str, PathLike]] = None,
         seed: Optional[int] = None,
-        blend_num=10,
-        # 2D Model Parameters
+        blend_num: int = 10,
         config_2d_model: Optional[dict] = None,
     ):
         r"""
@@ -122,7 +121,6 @@ class FluctuationFieldGenerator:
         ValueError
             If ``model`` doesn't match one of the 3 available models: DRD, VK and Mann.
         """
-
         # Validate model type and required parameters
         if model not in ["DRD", "VK", "Mann"]:
             raise ValueError("Model must be one of: DRD, VK, Mann")
@@ -417,6 +415,7 @@ class FluctuationFieldGenerator:
             Power law exponent :math:`\alpha`, by default None.
         suppress_warning : bool, optional
             Suppress warning about existing fluctuation field, by default False.
+
         Returns
         -------
         np.ndarray

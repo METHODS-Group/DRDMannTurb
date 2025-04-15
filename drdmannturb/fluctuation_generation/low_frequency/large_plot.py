@@ -651,7 +651,6 @@ def rectangular_domain_study(base_config, num_realizations=30, do_plot=True):
     """
     Same thing as above but we want to try large rectangles wrt. L_2d
     """
-
     L1_L2_factor_pairs = [
         (16, 8),
         (16, 4),

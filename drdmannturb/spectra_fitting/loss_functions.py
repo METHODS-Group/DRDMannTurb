@@ -98,7 +98,6 @@ class LossAggregator:
         torch.Tensor
             Evaluated MSE loss term.
         """
-
         mse_loss = torch.mean(torch.log(torch.abs(model / target)).square())
         self.writer.add_scalar("MSE Loss", mse_loss, epoch)
 
@@ -157,7 +156,6 @@ class LossAggregator:
         torch.Tensor
             1st order penalty loss.
         """
-
         logy = torch.log(torch.abs(y))
         d1logy = torch.diff(logy, dim=-1) / self.h1
 

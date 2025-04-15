@@ -55,7 +55,9 @@ class LowFreqGenerator:
         Constructor for the LowFreqGenerator class.
 
         TODO: We're going to clean this interface up...
-        Parameters:
+
+        Parameters
+        ----------
             config: dict
                 A dictionary containing the configuration for the low-frequency generator.
                 The dictionary must contain the following keys:
@@ -78,7 +80,6 @@ class LowFreqGenerator:
                 - "exp2": int
                     The exponent for the number of points in the y-direction.
         """
-
         # Physical parameters
         self.sigma2 = config["sigma2"]
         self.L_2d = config["L_2d"]
@@ -143,7 +144,7 @@ class LowFreqGenerator:
         -------
             tuple: (comp_L1, comp_L2, comp_N1, comp_N2) - Computed lengths and grid points.
         """
-        print("Calculating computational grid size...")
+        # print("Calculating computational grid size...")
 
         # TODO: Maybe we just increase the number of points to whatever even number approx gets us dx = dy
 
@@ -247,7 +248,6 @@ class LowFreqGenerator:
         tuple[np.ndarray, np.ndarray]
             The u1 and u2 components of the velocity field on the internal, computational grid.
         """
-
         k_mag = np.sqrt(k1**2 + k2**2)
         kappa = np.sqrt(2 * ((k1 * np.cos(psi)) ** 2 + (k2 * np.sin(psi)) ** 2))
 
@@ -450,10 +450,28 @@ class LowFreqGenerator:
         k_tol: float,
     ) -> tuple[np.ndarray, np.ndarray]:
         """
-        Numba-accelerated helper function for the estimation
-        of the 1d spectra F_11 and F_22.
-        """
+        Numba-accelerated helper function for the estimation of the 1d spectra F_11 and F_22.
 
+        Parameters
+        ----------
+        power_u1 : np.ndarray
+            The power spectrum of u1.
+        power_u2 : np.ndarray
+            The power spectrum of u2.
+        k1_grid : np.ndarray
+            The grid of k1 values.
+        k1_pos : np.ndarray
+            Positive k1 values.
+        scaling_factor : float
+            The scaling factor for the spectra.
+        k_tol : float
+            The tolerance for the k1 values.
+
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray]
+            The 1d spectra F11 and F22.
+        """
         F11 = np.empty_like(k1_pos)
         F22 = np.empty_like(k1_pos)
         N1, N2 = k1_grid.shape
@@ -475,10 +493,10 @@ class LowFreqGenerator:
 
         return F11, F22
 
-    def compute_spectrum(self, k_tol=1e-9) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def compute_spectrum(self, k_tol: float = 1e-9) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Estimates the 1d spectra F11 and F22 of the velocity fields u1 and u2
-        computed on the **computational** grid before extraction."""
-
+        computed on the **computational** grid before extraction.
+        """
         if not hasattr(self, "u1") or not hasattr(self, "u2"):
             raise RuntimeError("Call generate() before compute_spectrum()")
 
@@ -518,7 +536,7 @@ class LowFreqGenerator:
 
     # ------------------------------------------------------------------------------------------------ #
 
-    def analytical_spectrum(self, k1_arr: np.ndarray, warn=False) -> tuple[np.ndarray, np.ndarray]:
+    def analytical_spectrum(self, k1_arr: np.ndarray, warn: bool = False) -> tuple[np.ndarray, np.ndarray]:
         """
         Computes the analytical spectrum of the Mann Syed 2d model
 
@@ -637,7 +655,7 @@ class LowFreqGenerator:
 
     # ------------------------------------------------------------------------------------------------ #
 
-    def plot_velocity_fields(self):
+    def plot_velocity_fields(self) -> None:
         """
         Plots the generated fields u1 and u2 on the user's grid.
         """

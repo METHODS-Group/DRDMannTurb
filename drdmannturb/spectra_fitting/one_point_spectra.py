@@ -196,7 +196,6 @@ class OnePointSpectra(nn.Module):
 
         This operation is performed once on the CPU.
         """
-
         kL_temp = np.logspace(-3, 3, 50)
 
         kL_temp = kL_temp.reshape(-1, 1)
@@ -285,7 +284,6 @@ class OnePointSpectra(nn.Module):
         float
             Initial guess evaluation, presently, the :math:`0` function.
         """
-
         return 0.0
 
     @torch.jit.export
@@ -305,7 +303,6 @@ class OnePointSpectra(nn.Module):
             In the case that the Power Spectra is not RDT
             and therefore incorrect.
         """
-
         if self.type_PowerSpectra == PowerSpectraType.RDT:
             return PowerSpectraRDT(self.k, self.beta, self.E0)
         else:

@@ -54,7 +54,6 @@ class Rational(nn.Module):
         torch.Tensor
             Network output
         """
-
         a = self.nu - 2 / 3
         b = self.nu
         out = torch.abs(x)
@@ -229,7 +228,6 @@ class TauNet(nn.Module):
         learn_nu : bool, optional
             If true, learns also the exponent :math:`\nu`, by default True
         """
-
         super(TauNet, self).__init__()
 
         self.n_layers = n_layers

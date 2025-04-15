@@ -16,7 +16,8 @@ METHOD_VF_FFTW = "vf_fftw"
 
 class Sampling_method_base:
     """Meta class for different sampling methods. Each of these requires a ``RandomField`` object, which is
-    a subclass of :py:class:``GaussianRandomField``."""
+    a subclass of :py:class:``GaussianRandomField``.
+    """
 
     def __init__(self, RandomField):
         """
@@ -145,7 +146,8 @@ class Sampling_VF_FFTW(Sampling_method_freq):
 class Sampling_FFT(Sampling_method_freq):
     """Sampling using ``scipy.fftpack``, which is considerably slower than with FFTW but is a simpler interface.
 
-    Due to properties of the FFT, only stationary covariances are admissible."""
+    Due to properties of the FFT, only stationary covariances are admissible.
+    """
 
     def __init__(self, RandomField):
         super().__init__(RandomField)
@@ -161,7 +163,8 @@ class Sampling_DST(Sampling_method_freq):
     """Sampling using the discrete sine transform from ``scipy.fftpack``, with all other operations being identical as
     other sampling methods. Should only be used for stationary covariances
 
-    Due to properties of the FFT, only stationary covariances are admissible."""
+    Due to properties of the FFT, only stationary covariances are admissible.
+    """
 
     def __init__(self, RandomField):
         super().__init__(RandomField)
@@ -177,7 +180,8 @@ class Sampling_DCT(Sampling_method_freq):
     """Sampling using the discrete cosine transform from ``scipy.fftpack``, with all other operations being identical
     to other sampling methods.
 
-    Due to properties of the FFT, only stationary covariances are admissible."""
+    Due to properties of the FFT, only stationary covariances are admissible.
+    """
 
     def __init__(self, RandomField):
         super().__init__(RandomField)

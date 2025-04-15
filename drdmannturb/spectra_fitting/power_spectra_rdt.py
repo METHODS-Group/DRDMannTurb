@@ -1,6 +1,4 @@
-"""
-This module implements the RDT Power Spectra.
-"""
+"""Implements the RDT Power Spectra."""
 
 import torch
 from torch import Tensor
@@ -8,7 +6,9 @@ from torch import Tensor
 
 @torch.jit.script
 def PowerSpectraRDT(k: Tensor, beta: Tensor, E0: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
-    r"""Classical rapid distortion spectra, which is the solution to
+    r"""Classical rapid distortion spectra.
+
+    This is the solution to
 
     .. math::
         \frac{\bar{D} \mathrm{~d} Z_j(\boldsymbol{k}, t)}{\bar{D} t}=\frac{\partial U_{\ell}}{\partial x_k}
