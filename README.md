@@ -77,11 +77,6 @@ To set up a development environment, we recommend using [`uv`](https://github.co
     uv pip install -e '.[docs,dev]'
     ```
 
-> [!WARNING]
-> Due to current incompatibilities between dependencies and Numpy's API
-> changes in version 2.0, we have currently pinned ``numpy<2.0``
-> as a temporary fix in `pyproject.toml`.
-
 We also ask that you install our
 ``pre-commit`` configuration by running ``pre-commit install`` in the root directory
 of this repository. If you are unfamiliar with ``pre-commit``,
