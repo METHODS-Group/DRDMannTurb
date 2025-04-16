@@ -1,3 +1,70 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "drdmannturb"
+version = "1.0.2"
+description = "Synthetic turbulence generation software, focused on a data-driven extension of the Mann turbulence model"
+readme = "README.md"
+requires-python = ">=3.9.16"
+license = {text = "BSD 2-clause"}
+authors = [
+  {name = "Alexey Izmailov", email = "alizma@brown.edu"},
+  {name = "Matthew Meeker", email = "meeker.matthew@pm.me"},
+  {name = "Yorgos Deskos"},
+  {name = "Brendan Keith"},
+]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.9",
+]
+dependencies = [
+    "matplotlib==3.9.4",
+    "numba>=0.60.0",
+    "numpy>=2.0",
+    "plotly==5.17.0",
+    "pyevtk==1.6.0",
+    "pyFFTW==0.14.0",
+    "scikit_learn==1.3.0",
+    "scipy>=1.13.1",
+    "tensorboard==2.15.0",
+    "torch==2.6.0", # TODO: check CUDA
+    "tqdm==4.67.1",
+    # TODO: netcdf4
+]
+
+[project.urls]
+Homepage = "https://github.com/METHODS-Group/DRDMannTurb"
+
+[project.optional-dependencies]
+docs = [
+    "ipython",
+    "numpydoc",
+    "Sphinx>=1.8.3",
+    "pydata-sphinx-theme>=0.14.2",
+    "sphinx-panels",
+    "sphinx-notfound-page",
+    "sphinx-copybutton",
+    "sphinxcontrib-mermaid",
+    "sphinxcontrib-jsmath",
+    "nbsphinx",
+    "sphinx-gallery==0.19.0",
+    "myst_parser",
+    "enum_tools",
+    "sphinx_toolbox",
+    # NOTE: tensorboard, plotly are already core dependencies
+]
+dev = [
+    "pytest==8.3.5",
+    "pytest-cov",
+    "ruff>=0.4.8",
+]
+
+# Ruff configuration below
 [tool.ruff]
 # Enable pydocstyle (`D`), pycodestyle (`E`), Pyflakes (`F`), and import sorting (`I`)
 lint.select = ["D", "E", "F", "I"]
@@ -44,3 +111,8 @@ lint.dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 # Assume Python 3.9
 target-version = "py39"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+pythonpath = ["."]
+testpaths = ["tests"]

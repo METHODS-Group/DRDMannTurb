@@ -329,14 +329,24 @@ class LowFreqGenerator:
         return extracted_field
 
     def generate(self):
-        """
-        Generates the velocity field on the computational grid, stores the full and
-        extracted fields, and returns the portion matching the user's requested dimensions.
+        """Generate velocity fields u1, u2.
 
-        TODO: How to correctly "denote" this in the docstring?
-        Stores:
-            self.u1_full, self.u2_full : Fields on the full computational grid.
-            self.u1, self.u2 : Fields extracted to user's requested dimensions.
+        Specifically, we generate the velocity fields on an internal computational grid
+        which is large and fine enough to regain the desired statistical properties.
+
+        We then extract the portion of the fields that matches the user's requested dimensions.
+        Both the full and extracted fields are stored as class attributes.
+
+        Attributes
+        ----------
+        u1_full : np.ndarray
+            Velocity field u1 on the full internal, computational grid.
+        u2_full : np.ndarray
+            Velocity field u2 on the full internal, computational grid.
+        u1 : np.ndarray
+            Velocity field u1 extracted to match user's requested dimensions.
+        u2 : np.ndarray
+            Velocity field u2 extracted to match user's requested dimensions.
 
         Returns
         -------
@@ -384,9 +394,11 @@ class LowFreqGenerator:
     # Below are member functions for interpolating the low-frequency fields to the 3d grid
 
     def interp_slice(self, x_coords_target: np.ndarray, y_coords_target: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Given the 1D x and y coordinates defining a target grid slice, interpolates the
-        generated low-frequency fields (self.u1, self.u2) onto this target grid.
+        """Interpolate the low-frequency fields to a target grid slice.
+
+        Requires the 1D x and y physical coordinates defining a target grid slice.
+        Uses scipy's RegularGridInterpolator to interpolate the generated low-frequency fields
+        (self.u1, self.u2) onto this target grid.
 
         Assumes self.u1 and self.u2 (the extracted fields) and self.user_x_coords,
         self.user_y_coords (defining the source grid) exist.
@@ -494,14 +506,15 @@ class LowFreqGenerator:
         return F11, F22
 
     def compute_spectrum(self, k_tol: float = 1e-9) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Estimates the 1d spectra F11 and F22 of the velocity fields u1 and u2
-        computed on the **computational** grid before extraction.
+        """Estimate the 1d spectra F11 and F22 of the velocity fields u1 and u2.
+
+        This is computed on the **computational** grid before extraction.
         """
         if not hasattr(self, "u1") or not hasattr(self, "u2"):
             raise RuntimeError("Call generate() before compute_spectrum()")
 
-        # TODO: Why the fuck is this SO slow all of a sudden? It's more than 2x slower than it was before,
-        # .    so it's not only the up-scaled grid/domain for the L x 0.125L case
+        # TODO: Why is this SO slow all of a sudden? It's more than 2x slower than it was before,
+        #       so it's not only the up-scaled grid/domain for the L x 0.125L case
         u1_fft_extracted = np.fft.fft2(self.u1)
         u2_fft_extracted = np.fft.fft2(self.u2)
 
@@ -537,8 +550,7 @@ class LowFreqGenerator:
     # ------------------------------------------------------------------------------------------------ #
 
     def analytical_spectrum(self, k1_arr: np.ndarray, warn: bool = False) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Computes the analytical spectrum of the Mann Syed 2d model
+        """Compute the analytical spectrum of the Mann Syed 2d model.
 
         Parameters
         ----------
