@@ -1,3 +1,6 @@
+"""Implements the one point spectra"""
+
+
 from typing import Optional
 
 # these imports are only needed for obtaining the exponential approximation of the Mann eddy lifetime function.
@@ -14,9 +17,10 @@ from .power_spectra_rdt import PowerSpectraRDT
 
 
 class OnePointSpectra(nn.Module):
-    """
-    One point spectra implementation, including set-up of eddy lifetime function approximation with DRD models, or
-    several classical eddy lifetime functions.
+    """One point spectra calculations.
+
+    This includes set-up of eddy lifetime function approximation with DRD models, or several classical eddy lifetime
+    functions.
     """
 
     def __init__(
@@ -27,7 +31,9 @@ class OnePointSpectra(nn.Module):
         nn_parameters: Optional[NNParameters] = None,
         learn_nu: bool = False,
     ):
-        r"""Initialization of the one point spectra class. This requires the type of eddy lifetime function to use, the
+        r"""Initialize the one point spectra calculator.
+
+        This requires the type of eddy lifetime function to use, the
         power spectra type (currently only the von Karman spectra is implemented), the neural network parameters to use
         if a DRD model is selected, and whether or not to learn :math:`\nu` in
 
@@ -117,7 +123,7 @@ class OnePointSpectra(nn.Module):
         self.logMagnitude = nn.Parameter(torch.tensor(np.log10(physical_params.sigma), dtype=torch.float64))
 
     def set_scales(self, LengthScale: np.float64, TimeScale: np.float64, Magnitude: np.float64):
-        """Sets scalar values for values used in non-dimensionalization.
+        """Set scalar values for values used in non-dimensionalization.
 
         Parameters
         ----------
@@ -133,8 +139,7 @@ class OnePointSpectra(nn.Module):
         self.Magnitude_scalar = Magnitude
 
     def exp_scales(self) -> tuple[float, float, float]:
-        """
-        Exponentiates the length, time, and spectrum amplitude scales,
+        """Exponentiate the length, time, and spectrum amplitude scales.
 
         .. note::
             The first 3 parameters of self.parameters() are exactly
@@ -153,8 +158,7 @@ class OnePointSpectra(nn.Module):
         return self.LengthScale.item(), self.TimeScale.item(), self.Magnitude.item()
 
     def forward(self, k1_input: torch.Tensor) -> torch.Tensor:
-        r"""
-        Evaluation of one point spectra
+        r"""Evaluate one point spectra.
 
         .. math::
             \widetilde{J}_i(f ; \boldsymbol{\theta})=C k_1 \widetilde{F}_{i i}\left(k_1 z ; \boldsymbol{\theta}\right),
@@ -188,15 +192,15 @@ class OnePointSpectra(nn.Module):
         return kF
 
     def init_mann_approximation(self):
-        r"""Initializes Mann eddy lifetime function approximation by performing a linear regression in log-log space on
-        a given wave space and the true output of
+        r"""Initialize Mann eddy lifetime function approximation.
+
+        This is done by performing a linear regression in log-log space on a given wave space and the true output of
 
         .. math::
            \frac{x^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-x^{-2}\right)}}
 
         This operation is performed once on the CPU.
         """
-
         kL_temp = np.logspace(-3, 3, 50)
 
         kL_temp = kL_temp.reshape(-1, 1)
@@ -221,9 +225,9 @@ class OnePointSpectra(nn.Module):
 
     @torch.jit.export
     def EddyLifetime(self, k: Optional[torch.Tensor] = None) -> torch.Tensor:
-        r"""
-        Evaluation of eddy lifetime function :math:`\tau` constructed during object initialization. This may be the Mann
-        model or a DRD neural network that learns :math:`\tau`.
+        r"""Evaluate eddy lifetime function :math:`\tau` constructed during object initialization.
+
+        This may be the Mann model or a DRD neural network that learns :math:`\tau`.
 
         Parameters
         ----------
@@ -275,24 +279,23 @@ class OnePointSpectra(nn.Module):
 
     @torch.jit.export
     def InitialGuess_EddyLifetime(self):
-        r"""
-        Initial guess at the eddy lifetime function which the DRD model uses in learning the :math:`\tau` eddy lifetime
-        function. By default, this is just the :math:`0` function, but later functionality may allow this to be
-        dynamically set.
+        r"""Set initial guess for the eddy lifetime function.
+
+        This is the initialization for the DRD models for learning the eddy lifetime function :math:`\tau`. Currently,
+        this is just the :math:`0` function, but later functionality may allow this to be dynamically set.
 
         Returns
         -------
         float
             Initial guess evaluation, presently, the :math:`0` function.
         """
-
         return 0.0
 
     @torch.jit.export
     def PowerSpectra(self):
-        """
-        Calls the RDT Power Spectra model with current approximation of the eddy lifetime function and the
-        energy spectrum.
+        """Call the RDT Power Spectra model with current approximation.
+
+        TODO: Why does this exist? This just obfuscates things...
 
         Returns
         -------
@@ -305,7 +308,6 @@ class OnePointSpectra(nn.Module):
             In the case that the Power Spectra is not RDT
             and therefore incorrect.
         """
-
         if self.type_PowerSpectra == PowerSpectraType.RDT:
             return PowerSpectraRDT(self.k, self.beta, self.E0)
         else:
@@ -313,8 +315,9 @@ class OnePointSpectra(nn.Module):
 
     @torch.jit.export
     def quad23(self, f: torch.Tensor) -> torch.Tensor:
-        r"""
-        Computes an approximation of the integral of the discretized function :math:`f` in the dimensions defined by
+        r"""Approximate integral of discretized :math:`f` over frequency domain.
+
+        This computes an approximation of the integral of :math:`f` in the dimensions defined by
         :math:`k_2` and :math:`k_3` using the trapezoidal rule:
 
         .. math::
@@ -339,9 +342,9 @@ class OnePointSpectra(nn.Module):
 
     @torch.jit.export
     def get_div(self, Phi: torch.Tensor) -> torch.Tensor:
-        r"""
-        Evaluates the divergence of an evaluated spectral tensor. This is evaluated simply as :math:`\textbf{k} \cdot
-        \Phi_{\textbf{k}}` and normalized by the trace.
+        r"""Evaluate the divergence of an evaluated spectral tensor.
+
+        This is evaluated simply as :math:`\textbf{k} \cdot \Phi_{\textbf{k}}` and normalized by the trace.
 
         Parameters
         ----------

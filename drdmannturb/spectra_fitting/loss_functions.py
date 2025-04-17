@@ -1,7 +1,4 @@
-"""
-This module implements and exposes the various terms that can be
-added and scaled in a generic loss function
-"""
+"""Implements the loss function in an extensible and configurable manner without directly exposing the calculation."""
 
 from typing import Optional
 
@@ -12,6 +9,8 @@ from ..parameters import LossParameters
 
 
 class LossAggregator:
+    """Aggregator for all loss function terms."""
+
     def __init__(
         self,
         params: LossParameters,
@@ -20,7 +19,8 @@ class LossAggregator:
         tb_log_dir: Optional[str] = None,
         tb_comment: str = "",
     ):
-        r"""Combines all loss functions and evaluates each term for the optimizer.
+        r"""Initialize aggregator for given loss function parameters.
+
         The loss function for spectra fitting is determined by the following minimization problem:
 
         .. math::
@@ -35,6 +35,7 @@ class LossAggregator:
         .. math::
             \|g\|_{\mathcal{D}}^2:=\int_{\mathcal{D}}|g(f)|^2 \mathrm{~d}(\log f).
 
+        Additionally, writes results per epoch to TensorBoard.
 
         Parameters
         ----------
@@ -77,7 +78,9 @@ class LossAggregator:
         )
 
     def MSE_term(self, model: torch.Tensor, target: torch.Tensor, epoch: int) -> torch.Tensor:
-        r"""Evaluates the loss term
+        r"""Evaluate the MSE loss term.
+
+        This is given by
 
         .. math::
             \operatorname{MSE}[\boldsymbol{\theta}]:=\frac{1}{L} \sum_{i=1}^4
@@ -98,14 +101,15 @@ class LossAggregator:
         torch.Tensor
             Evaluated MSE loss term.
         """
-
         mse_loss = torch.mean(torch.log(torch.abs(model / target)).square())
         self.writer.add_scalar("MSE Loss", mse_loss, epoch)
 
         return mse_loss
 
     def Pen2ndOrder(self, y: torch.Tensor, epoch: int) -> torch.Tensor:
-        r"""Evaluates he second-order penalization term, defined as
+        r"""Evaluate the second-order penalization term.
+
+        This is given by
 
         .. math::
             \operatorname{Pen}_2[\boldsymbol{\theta}]:=\frac{1}{|\mathcal{D}|}
@@ -135,7 +139,9 @@ class LossAggregator:
         return pen2ndorder_loss
 
     def Pen1stOrder(self, y: torch.Tensor, epoch: int) -> torch.Tensor:
-        r"""Evaluates the first-order penalization term,  defined as
+        r"""Evaluate the first-order penalization term.
+
+        This is given by
 
         .. math::
             \operatorname{Pen}_1[\boldsymbol{\theta}]:=\frac{1}{|\mathcal{D}|}
@@ -157,7 +163,6 @@ class LossAggregator:
         torch.Tensor
             1st order penalty loss.
         """
-
         logy = torch.log(torch.abs(y))
         d1logy = torch.diff(logy, dim=-1) / self.h1
 
@@ -167,7 +172,7 @@ class LossAggregator:
         return pen1storder_loss
 
     def Regularization(self, theta_NN: torch.Tensor, epoch: int) -> torch.Tensor:
-        r"""Evaluates the regularization term, defined as
+        r"""Evaluate the regularization term.
 
         .. math::
             \operatorname{Reg}\left[\boldsymbol{\theta}_{\mathrm{NN}}\right]:=\frac{1}{N}
@@ -204,8 +209,9 @@ class LossAggregator:
         theta_NN: Optional[torch.Tensor],
         epoch: int,
     ) -> torch.Tensor:
-        """Evaluation method for computing the full loss term at a given epoch. This method sequentially evaluates each
-        term in the loss and returns the sum total loss.
+        """Evaluate the full loss term at a given epoch.
+
+        This method sequentially evaluates each term in the loss and returns the sum total loss.
 
         Parameters
         ----------
