@@ -166,3 +166,7 @@ runs/
 ## Open Journals compilation intermediates and results
 paper/jats
 paper/paper.pdf
+
+## Scalene profiling
+**/profile.html
+**/profile.json

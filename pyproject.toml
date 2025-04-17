@@ -61,6 +61,7 @@ dev = [
     "pytest==8.3.5",
     "pytest-cov",
     "ruff>=0.4.8",
+    "scalene",
 ]
 
 # Add this section to fix the build error
@@ -104,7 +105,7 @@ exclude = [
     "dist",
     "node_modules",
     "venv",
-    "runs", # Add other non-package dirs if needed
+    "runs",
     "paper",
 ]
 
