@@ -33,7 +33,7 @@ dependencies = [
     "tensorboard>=2.19.0",
     "torch==2.6.0", # TODO: check CUDA
     "tqdm==4.67.1",
-    # TODO: netcdf4
+    "xarray>=2024.7.0",
 ]
 
 [project.urls]
