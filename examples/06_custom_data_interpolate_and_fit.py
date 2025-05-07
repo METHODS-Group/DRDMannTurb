@@ -35,7 +35,7 @@ In the above, the :math:`a_i, b_i, c_i` are free parameters which are optimized 
 The result is a spectra model that is similar in form to the Kaimal spectra and which filters/smooths
 the spectra data from the real world and eases fitting by DRD models. This option is highly suggested
 in cases where spectra data have large deviations.
-"""
+"""  # noqa: D205, D400
 
 ##############################################################################
 # Import packages

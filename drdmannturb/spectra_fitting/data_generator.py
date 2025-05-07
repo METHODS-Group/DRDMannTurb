@@ -1,3 +1,10 @@
+"""Generate one-point spectra data.
+
+This module contains the ``OnePointSpectraDataGenerator`` class, which generates one-point spectra data for a given
+set of parameters.
+"""
+
+
 import warnings
 from collections.abc import Sequence
 from pathlib import Path
@@ -12,7 +19,8 @@ from ..enums import DataType
 
 
 class OnePointSpectraDataGenerator:
-    r"""
+    r"""One point spectra data generator.
+
     The one point spectra data generator, which evaluates one of a few spectral tensor models across a grid of
       :math:`k_1` wavevector points which is used as data in the fitting done in the :py:class:`OnePointSpectra` class.
 
@@ -61,7 +69,8 @@ class OnePointSpectraDataGenerator:
         spectra_file: Optional[Union[Path, str]] = None,
         seed: int = 3,
     ):
-        r"""
+        r"""Initialize the OnePointSpectraDataGenerator.
+
         Parameters
         ----------
         zref : float
@@ -210,7 +219,9 @@ class OnePointSpectraDataGenerator:
     def generate_Data(
         self, DataPoints: Sequence[tuple[torch.tensor, float]]
     ) -> tuple[list[tuple[torch.Tensor, float]], torch.Tensor]:
-        r"""Generates a single spectral tensor from provided data or from a surrogate model.
+        r"""Generate data from provided configuration.
+
+        Generates a single spectral tensor from provided data or from a surrogate model.
         The resulting tensor is of shape (number of :math:`k_1` points):math:`\times 3 \times 3`,
         ie the result consists of the spectral tensor evaluated across the provided range of
         :math:`k_1` points. The spectra model is set during object instantiation.
@@ -254,8 +265,9 @@ class OnePointSpectraDataGenerator:
         return self.Data
 
     def eval_VK(self, k1: tuple[Any, float]) -> torch.Tensor:
-        r"""
-        Evaluation of von Karman spectral tensor given in the form
+        r"""Evaluate frequerncy-weighted von Karman spectral tensor.
+
+        The von Karman spectral tensor is given by
 
         .. math::
                 \Phi_{i j}^{\mathrm{VK}}(\boldsymbol{k})=\frac{E(k)}{4 \pi k^2}
@@ -290,7 +302,8 @@ class OnePointSpectraDataGenerator:
         return k1 * F
 
     def eval_Kaimal(self, k1: tuple[Any, float]) -> torch.Tensor:
-        r"""
+        r"""Evaluate frequency-weighted Kaimal one-point spectra.
+
         Evaluates the one-point spectra as proposed by `Kaimal et al <https://apps.dtic.mil/sti/tr/pdf/AD0748543.pdf>`__
         in 1972. Clasically motivated by measurements taken over a flat homogeneous terrain in Kansas, the one-point
         spectra were proposed as
@@ -335,7 +348,9 @@ class OnePointSpectraDataGenerator:
         spectra_full: Optional[np.ndarray] = None,
         x_coords_full: Optional[np.ndarray] = None,
     ):
-        r"""Utility for plotting current spectra data over the wavevector domain. Note that if the datatype is chosen
+        r"""Plot spectra values over wavevector domain.
+
+        Utility for plotting current spectra data over the wavevector domain. Note that if the datatype is chosen
         to be ``DataType.AUTO``, the interpolation coordinates in the frequency space must be provided again to
         determine the domain over which to plot filtered spectra.
 
@@ -355,9 +370,11 @@ class OnePointSpectraDataGenerator:
         ValueError
             Provide original spectra and associated domains as a single stack of np.arrays, even if all x coordinates
             are matching.
-
         """
         custom_palette = ["royalblue", "crimson", "forestgreen", "mediumorchid"]
+
+
+        # TODO: This only works for DataType.AUTO?
 
         if self.data_type == DataType.AUTO:
             if x_interp is None:

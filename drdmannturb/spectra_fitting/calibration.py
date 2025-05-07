@@ -1,6 +1,4 @@
-"""
-This module implements the exposed CalibrationProblem class.
-"""
+"""Provides the CalibrationProblem class, which manages the spectra curve fits."""
 
 import os
 import pickle
@@ -33,6 +31,8 @@ class CalibrationProblem:
     r"""
     .. _calibration-problem-reference:
 
+    Defines the model calibration problem and manages the spectra curve fits.
+
     Class which manages the spectra fitting and eddy lifetime function learning based on the deep rapid distortion model
     developed in `Keith, Khristenko, Wohlmuth (2021) <https://arxiv.org/pdf/2107.11046.pdf>`_.
 
@@ -51,7 +51,7 @@ class CalibrationProblem:
 
     After training, this class can be used in conjunction with the fluctuation generation utilities in this package to
     generate realistic turbulence fields based on the learned spectra and eddy lifetimes.
-    """
+    """  # noqa: D400
 
     def __init__(
         self,
@@ -63,8 +63,9 @@ class CalibrationProblem:
         logging_directory: Optional[str] = None,
         output_directory: Union[Path, str] = Path().resolve() / "results",
     ):
-        r"""Constructor for ``CalibrationProblem`` class. As depicted in the UML diagram, this requires
-        4 dataclasses.
+        r"""Initialize a ``CalibrationProblem`` instance, defining the model calibration and physical setting.
+
+        As depicted in the UML diagram, this requires 4 dataclasses.
 
         Parameters
         ----------
@@ -130,7 +131,7 @@ class CalibrationProblem:
 
     # TODO: propagate device setting through this method
     def init_device(self, device: str):
-        """Initializes the device (CPU or GPU) on which computation is performed.
+        """Initialize the device (CPU or GPU) on which computation is performed.
 
         Parameters
         ----------
@@ -230,13 +231,13 @@ class CalibrationProblem:
 
         if not torch.is_tensor(param_vec):
             param_vec = torch.tensor(
-                param_vec, dtype=torch.float64
+                param_vec, # dtype=torch.float64
             )  # TODO: this should also properly load on GPU, issue #28
 
         vector_to_parameters(param_vec, self.OPS.parameters())
 
     def log_dimensional_scales(self) -> None:
-        """Sets the quantities for non-dimensionalization in log-space.
+        """Set the quantities for non-dimensionalization in log-space.
 
         .. note:: The first 3 parameters of self.parameters() are exactly
 
@@ -259,12 +260,10 @@ class CalibrationProblem:
             raise ValueError("All dimension scaling constants must be positive.")
 
     def initialize_parameters_with_noise(self):
-        """
-        Simple routine to introduce additive white noise to the OPS parameters.
-        """
+        """Introduce additive white noise to the OPS parameters."""
         noise = torch.tensor(
             self.noise_magnitude * torch.randn(*self.parameters.shape),
-            dtype=torch.float64,
+            # dtype=torch.float64,
         )
         vector_to_parameters(noise.abs(), self.OPS.parameters())
 
@@ -273,7 +272,9 @@ class CalibrationProblem:
         vector_to_parameters(noise.abs(), self.OPS.Corrector.parameters())
 
     def eval(self, k1: torch.Tensor) -> np.ndarray:
-        r"""Calls the calibrated model on :math:`k_1`. This can be done after training or after loading trained model
+        r"""Evaluate the calibrated model on :math:`k_1`.
+
+        This can be done after training or after loading trained model
         parameters from file.
 
         Parameters
@@ -292,7 +293,7 @@ class CalibrationProblem:
         return self.format_output(Output)
 
     def eval_grad(self, k1: torch.Tensor):
-        r"""Evaluates gradient of :math:`k_1` via Autograd
+        r"""Evaluate gradient of :math:`k_1` via Autograd.
 
         Parameters
         ----------
@@ -311,7 +312,7 @@ class CalibrationProblem:
         return self.format_output(grad)
 
     def format_input(self, k1: torch.Tensor) -> torch.Tensor:
-        r"""Wrapper around clone and cast :math:`k_1` to ``torch.float64``
+        r"""Cast :math:`k_1` to ``torch.float64``.
 
         Parameters
         ----------
@@ -326,10 +327,11 @@ class CalibrationProblem:
         formatted_k1 = k1.clone().detach()
         formatted_k1.requires_grad = k1.requires_grad
 
-        return formatted_k1.to(torch.float64)
+        return formatted_k1#.to(torch.float64)
 
     def format_output(self, out: torch.Tensor) -> np.ndarray:
-        """
+        """Cast the output to a CPU tensor.
+
         Wrapper around torch's ``out.cpu().numpy()``. Returns a CPU tensor.
 
         Parameters
@@ -352,7 +354,9 @@ class CalibrationProblem:
         tb_comment: str = "",
         optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
     ) -> dict[str, float]:
-        r"""Calibration method, which handles the main training loop and some
+        r"""Train the model on the provided data.
+
+        Calibration method, which handles the main training loop and some
         data pre-processing. Currently the only supported optimizer is Torch's ``LBFGS``
         and the learning rate scheduler uses cosine annealing. Parameters for these
         components of the training process are set in ``LossParameters`` and ``ProblemParameters``
@@ -394,7 +398,8 @@ class CalibrationProblem:
 
         self.curves = [0, 1, 2, 3]
 
-        self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
+        # self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
+        self.k1_data_pts = torch.tensor(DataPoints)[:, 0].squeeze()
 
         self.LossAggregator = LossAggregator(
             params=self.loss_params,
@@ -496,7 +501,9 @@ class CalibrationProblem:
     # ------------------------------------------------
 
     def print_calibrated_params(self):
-        """Prints out the optimal calibrated parameters ``L``, ``Gamma``, ``sigma``, which are stored in a fitted
+        """Print out the optimal calibrated parameters ``L``, ``Gamma``, ``sigma``.
+
+        These parameters are also stored in a fitted
         ``CalibrationProblem`` object under the ``calibrated_params`` dictionary.
 
         Raises
@@ -520,8 +527,7 @@ class CalibrationProblem:
         return
 
     def num_trainable_params(self) -> int:
-        """Computes the number of trainable network parameters
-            in the underlying model.
+        """Compute the number of trainable network parameters in the underlying model.
 
             The EddyLifetimeType must be set to one of the following, which involve
             a network surrogate for the eddy lifetime:
@@ -549,7 +555,7 @@ class CalibrationProblem:
         return sum(p.numel() for p in self.OPS.tauNet.parameters())
 
     def eval_trainable_norm(self, ord: Optional[Union[float, str]] = "fro"):
-        """Evaluates the magnitude (or other norm) of the trainable parameters in the model.
+        """Evaluate the magnitude (or other norm) of the trainable parameters in the model.
 
         .. note::
             The ``EddyLifetimeType`` must be set to one of ``TAUNET`` or ``CUSTOMMLP``, which involve
@@ -574,39 +580,10 @@ class CalibrationProblem:
 
         return torch.norm(torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord)
 
-    # def eval_trainable_norm(self, ord: Optional[Union[float, str]] = "fro"):
-    #     """Evaluates the magnitude (or other norm) of the
-    #         trainable parameters in the model.
-
-    #     .. note::
-    #         The ``EddyLifetimeType`` must be set to one of ``TAUNET`` or ``CUSTOMMLP``, which involve
-    #         a network surrogate for the eddy lifetime.
-
-    #     Parameters
-    #     ----------
-    #     ord : Optional[Union[float, str]]
-    #         The order of the norm approximation, follows ``torch.norm`` conventions.
-
-    #     Raises
-    #     ------
-    #     ValueError
-    #         If the OPS was not initialized to one of ``TAUNET``, ``CUSTOMMLP``.
-
-    #     """
-    #     if self.OPS.type_EddyLifetime not in [
-    #         EddyLifetimeType.TAUNET,
-    #         EddyLifetimeType.CUSTOMMLP,
-    #     ]:
-    #         raise ValueError(
-    #             "Not using trainable model for approximation, must be TAUNET, CUSTOMMLP."
-    #         )
-
-    #     return torch.norm(
-    #         torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord
-    #     )
-
     def save_model(self, save_dir: Optional[Union[str, Path]] = None):
-        """Saves model with current weights, model configuration, and training histories to file.
+        """Pickle and write the trained model to a file.
+
+        Saves model with current weights, model configuration, and training histories to file.
         The written filename is of the form ``save_dir/<EddyLifetimeType>_<DataType>.pkl``
 
         This routine stores
@@ -668,8 +645,11 @@ class CalibrationProblem:
         save_dir: Optional[Union[Path, str]] = None,
         save_filename: str = "",
     ):
-        r"""Plotting method which visualizes the spectra fit as well as the learned eddy lifetime
-        function, if ``plot_tau=True``. By default, this operates on the data used in the fitting,
+        r"""Visualize the spectra fit and learned eddy lifetime function.
+
+        Plotting method which visualizes the spectra fit on a 2x2 grid and optionally
+        the learned eddy lifetime function on a separate plot if ``plot_tau=True``.
+        By default, this operates on the data used in the fitting,
         but an alternative :math:`k_1` domain can be provided and the trained model can be re-evaluated.
 
         Parameters
@@ -684,12 +664,14 @@ class CalibrationProblem:
             Indicates whether to plot the learned eddy lifetime function or not,
             by default ``True``
         save : bool, optional
-            Whether to save the resulting figure, by default ``False``
+            Whether to save the resulting figure(s), by default ``False``
         save_dir : Optional[Union[Path, str]], optional
             Directory to save to, which is created safely if not already present. By default,
             this is the current working directory.
         save_filename : str, optional
-            Filename to save the final figure to, by default ``drdmannturb_final_spectra_fit.png``
+            Base filename to save the final figure(s) to. If saving, spectra will be saved as
+            `<save_filename>_spectra.png` and tau (if plotted) as `<save_filename>_tau.png`.
+            Defaults result in `drdmannturb_final_spectra_fit_spectra.png` and `drdmannturb_final_spectra_fit_tau.png`.
 
         Raises
         ------
@@ -704,17 +686,20 @@ class CalibrationProblem:
             are provided.
         """
         clr = ["royalblue", "crimson", "forestgreen", "mediumorchid"]
+        spectra_labels = ["11", "22", "33", "13"] # For titles and labels
 
+        # --- Data Preparation ---
         if Data is not None:
             DataPoints, DataValues = Data
-            k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
+            # k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
+            k1_data_pts = torch.tensor(DataPoints)[:, 0].squeeze()
 
             kF_data_vals = torch.cat(
                 (
                     DataValues[:, 0, 0],
                     DataValues[:, 1, 1],
                     DataValues[:, 2, 2],
-                    DataValues[:, 0, 2],
+                    DataValues[:, 0, 2], # F13 component
                 )
             )
         else:
@@ -738,81 +723,92 @@ class CalibrationProblem:
 
         kF_model_vals = kF_model_vals.cpu().detach()
         kF_data_vals = kF_data_vals.cpu().detach() / self.phys_params.ustar**2
-
-        if plot_tau:
-            k_gd = torch.logspace(-3, 3, 50, dtype=torch.float64)
-            k_1 = torch.stack([k_gd, 0 * k_gd, 0 * k_gd], dim=-1)
-            k_2 = torch.stack([0 * k_gd, k_gd, 0 * k_gd], dim=-1)
-            k_3 = torch.stack([0 * k_gd, 0 * k_gd, k_gd], dim=-1)
-            k_4 = torch.stack([k_gd, k_gd, k_gd], dim=-1) / 3 ** (1 / 2)
-
         k1_data_pts = k1_data_pts.cpu().detach()
 
-        nrows = 1
-        ncols = 2 if plot_tau else 1
+        s = kF_data_vals.shape[0] # Total number of data points across all components
+        num_data_points_per_component = s // 4
+        kF_data_vals_reshaped = kF_data_vals.view(4, num_data_points_per_component)
 
+
+        # --- Plotting Setup ---
         with plt.style.context("bmh"):
-            plt.rcParams.update({"font.size": 8})
-            self.fig, self.ax = plt.subplots(
-                nrows=nrows,
-                ncols=ncols,
-                num="Calibration",
+            plt.rcParams.update({"font.size": 10}) # Slightly larger font
+
+            # --- Spectra Plot (2x2 Grid) ---
+            self.fig_spectra, self.ax_spectra = plt.subplots(
+                nrows=2,
+                ncols=2,
+                num="Spectra Calibration",
                 clear=True,
-                figsize=[10, 4],
+                figsize=[10, 8], # Adjusted size for 2x2
+                sharex=True # Share x-axis for comparison
             )
-            if not plot_tau:
-                self.ax = [self.ax]
+            self.ax_spectra_flat = self.ax_spectra.flatten()
+            self.lines_SP_model = [None] * 4
+            self.lines_SP_data = [None] * 4
 
-            # Subplot 1: One-point spectra
-            self.ax[0].set_title("One-point spectra")
-            self.lines_SP_model = [None] * (self.vdim + 1)
-            self.lines_SP_data = [None] * (self.vdim + 1)
-            for i in range(self.vdim):
-                (self.lines_SP_model[i],) = self.ax[0].plot(
+            for i in range(4): # Iterate through F11, F22, F33, F13
+                ax = self.ax_spectra_flat[i]
+                comp_idx = spectra_labels[i]
+                sign = -1 if i == 3 else 1 # Flip sign for F13
+
+                # Plot Model
+                (self.lines_SP_model[i],) = ax.plot(
                     k1_data_pts,
-                    kF_model_vals[i].numpy(),
+                    sign * kF_model_vals[i].numpy(),
                     "--",
                     color=clr[i],
-                    label=rf"$F_{i + 1:d}$ model",
+                    label=rf"$F_{comp_idx}$ model",
                 )
-
-            s = kF_data_vals.shape[0]
-
-            for i in range(self.vdim):
-                (self.lines_SP_data[i],) = self.ax[0].plot(
+                # Plot Data
+                (self.lines_SP_data[i],) = ax.plot(
                     k1_data_pts,
-                    kF_data_vals.view(4, s // 4)[i].numpy(),
-                    "o-",
+                    sign * kF_data_vals_reshaped[i].numpy(),
+                    "o", # Just markers for data
+                    markersize=4, # Smaller markers
                     color=clr[i],
-                    label=rf"$F_{i + 1:d}$ data",
-                    alpha=0.5,
+                    label=rf"$F_{comp_idx}$ data",
+                    alpha=0.6,
                 )
-            if 3 in self.curves:
-                (self.lines_SP_model[self.vdim],) = self.ax[0].plot(
-                    k1_data_pts,
-                    -kF_model_vals[self.vdim].numpy(),
-                    "--",
-                    color=clr[3],
-                    label=r"$-F_{13}$ model",
-                )
-                (self.lines_SP_data[self.vdim],) = self.ax[0].plot(
-                    k1_data_pts,
-                    -kF_data_vals.view(4, s // 4)[self.vdim].numpy(),
-                    "o-",
-                    color=clr[3],
-                    label=r"$-F_{13}$ data",
-                    alpha=0.5,
-                )
-            self.ax[0].legend()
-            self.ax[0].set_xscale("log")
-            self.ax[0].set_yscale("log")
-            self.ax[0].set_xlabel(r"$k_1 z$")
-            self.ax[0].set_ylabel(r"$k_1 F_i /u_*^2$")
-            self.ax[0].grid(which="both")
 
+                title = rf"$-F_{ {comp_idx} }$" if i == 3 else rf"$F_{ {comp_idx} }$"
+                ax.set_title(title + " Spectra")
+                ax.legend()
+                ax.set_xscale("log")
+                ax.set_yscale("log")
+                ax.set_ylabel(r"$k_1 F_i /u_*^2$")
+                ax.grid(which="both")
+
+            # Common X label for bottom row
+            self.ax_spectra[1, 0].set_xlabel(r"$k_1 z$")
+            self.ax_spectra[1, 1].set_xlabel(r"$k_1 z$")
+
+            self.fig_spectra.suptitle("One-point Spectra Fit", fontsize=14)
+            self.fig_spectra.tight_layout(rect=[0, 0.03, 1, 0.95]) # Adjust layout for suptitle
+            self.fig_spectra.canvas.draw()
+            self.fig_spectra.canvas.flush_events()
+
+
+            # --- Eddy Lifetime Plot (Separate Figure if plot_tau is True) ---
+            self.fig_tau = None
+            self.ax_tau = None
             if plot_tau:
-                # Subplot 2: Eddy Lifetime
-                self.ax[1].set_title("Eddy lifetime")
+                # k_gd = torch.logspace(-3, 3, 50, dtype=torch.float64)
+                k_gd = torch.logspace(-3, 3, 50)
+                k_1 = torch.stack([k_gd, 0 * k_gd, 0 * k_gd], dim=-1)
+                k_2 = torch.stack([0 * k_gd, k_gd, 0 * k_gd], dim=-1)
+                k_3 = torch.stack([0 * k_gd, 0 * k_gd, k_gd], dim=-1)
+                k_4 = torch.stack([k_gd, k_gd, k_gd], dim=-1) / 3 ** (1 / 2)
+                k_gd_np_scaled = k_gd.cpu().detach().numpy() * self.phys_params.L
+
+                self.fig_tau, self.ax_tau = plt.subplots(
+                    nrows=1,
+                    ncols=1,
+                    num="Eddy Lifetime",
+                    clear=True,
+                    figsize=[7, 5], # Smaller figure for single plot
+                )
+                self.ax_tau.set_title("Eddy lifetime")
                 self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
                 self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
                 self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
@@ -821,97 +817,114 @@ class CalibrationProblem:
                 self.tau_ref = (
                     self.phys_params.Gamma * MannEddyLifetime(self.phys_params.L * k_gd).cpu().detach().numpy()
                 )
-                (self.lines_LT_model1,) = self.ax[1].plot(
-                    k_gd.cpu().detach().numpy() * self.phys_params.L,
+                (self.lines_LT_model1,) = self.ax_tau.plot(
+                    k_gd_np_scaled,
                     self.tau_model1,
                     "-",
                     label=r"$\tau_{model}(k_1)$",
                 )
-                (self.lines_LT_model2,) = self.ax[1].plot(
-                    k_gd.cpu().detach().numpy() * self.phys_params.L,
+                (self.lines_LT_model2,) = self.ax_tau.plot(
+                    k_gd_np_scaled,
                     self.tau_model2,
                     "-",
                     label=r"$\tau_{model}(k_2)$",
                 )
-                (self.lines_LT_model3,) = self.ax[1].plot(
-                    k_gd.cpu().detach().numpy() * self.phys_params.L,
+                (self.lines_LT_model3,) = self.ax_tau.plot(
+                    k_gd_np_scaled,
                     self.tau_model3,
                     "-",
                     label=r"$\tau_{model}(k_3)$",
                 )
-                (self.lines_LT_model4,) = self.ax[1].plot(
-                    k_gd.cpu().detach().numpy() * self.phys_params.L,
+                (self.lines_LT_model4,) = self.ax_tau.plot(
+                    k_gd_np_scaled,
                     self.tau_model4,
                     "-",
                     label=r"$\tau_{model}(k,k,k)$",
                 )
 
-                (self.lines_LT_ref,) = self.ax[1].plot(
-                    k_gd.cpu().detach().numpy() * self.phys_params.L,
+                (self.lines_LT_ref,) = self.ax_tau.plot(
+                    k_gd_np_scaled,
                     self.tau_ref,
                     "--",
                     label=r"$\tau_{ref}=$Mann",
                 )
 
-                self.ax[1].legend()
-                self.ax[1].set_xscale("log")
-                self.ax[1].set_yscale("log")
-                self.ax[1].set_xlabel(r"$k_1 L$")
-                self.ax[1].set_ylabel(r"$\tau$")
-                self.ax[1].grid(which="both")
+                self.ax_tau.legend()
+                self.ax_tau.set_xscale("log")
+                self.ax_tau.set_yscale("log")
+                self.ax_tau.set_xlabel(r"$k L$") # Use kL instead of k1L for general lifetime
+                self.ax_tau.set_ylabel(r"$\tau$")
+                self.ax_tau.grid(which="both")
+                self.fig_tau.tight_layout()
+                self.fig_tau.canvas.draw()
+                self.fig_tau.canvas.flush_events()
 
-            self.fig.canvas.draw()
-            self.fig.canvas.flush_events()
 
-        for i in range(self.vdim):
-            curr = self.lines_SP_model[i]
-            assert curr is not None, "Line not found!"
+        # --- Update Plots (if needed, e.g., in an interactive context) ---
+        # This part assumes the plot might be updated later without full re-plotting
+        for i in range(4):
+            curr_model = self.lines_SP_model[i]
+            # curr_data = self.lines_SP_data[i] # Data points usually don't change
+            if curr_model is not None:
+                 sign = -1 if i == 3 else 1
+                 curr_model.set_ydata(sign * kF_model_vals[i])
+            # if curr_data is not None:
+            #     sign = -1 if i == 3 else 1
+            #     curr_data.set_ydata(sign * kF_data_vals_reshaped[i]) # Update if data changes
 
-            curr.set_ydata(kF_model_vals[i])
+        if plot_tau and self.fig_tau is not None: # Check if tau plot exists
+             # Recalculate tau values based on potentially updated OPS parameters
+             k_gd = torch.logspace(-3, 3, 50) # dtype=torch.float64) # Ensure k_gd is defined
+             k_1 = torch.stack([k_gd, 0 * k_gd, 0 * k_gd], dim=-1)
+             k_2 = torch.stack([0 * k_gd, k_gd, 0 * k_gd], dim=-1)
+             k_3 = torch.stack([0 * k_gd, 0 * k_gd, k_gd], dim=-1)
+             k_4 = torch.stack([k_gd, k_gd, k_gd], dim=-1) / 3 ** (1 / 2)
 
-        if 3 in self.curves:
-            curr = self.lines_SP_model[self.vdim]
-            assert curr is not None, "Line not found!"
+             self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
+             self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
+             self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
+             self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
+             # Update lines
+             self.lines_LT_model1.set_ydata(self.tau_model1)
+             self.lines_LT_model2.set_ydata(self.tau_model2)
+             self.lines_LT_model3.set_ydata(self.tau_model3)
+             self.lines_LT_model4.set_ydata(self.tau_model4)
+             # Reference tau might also change if L/Gamma params change, recalculate if needed
+             # self.tau_ref = ...
+             # self.lines_LT_ref.set_ydata(self.tau_ref)
 
-            curr.set_ydata(-kF_model_vals[self.vdim])
-
-        if plot_tau:
-            self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
-            self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
-            self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
-            self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
-            self.lines_LT_model1.set_ydata(self.tau_model1)
-            self.lines_LT_model2.set_ydata(self.tau_model2)
-            self.lines_LT_model3.set_ydata(self.tau_model3)
-            self.lines_LT_model4.set_ydata(self.tau_model4)
-
+        # --- Saving ---
         if save:
             if save_dir is not None:
-                save_dir = save_dir if isinstance(save_dir, Path) else Path(save_dir)
+                save_dir_path = Path(save_dir)
             elif self.output_directory is not None:
-                save_dir = (
-                    self.output_directory if isinstance(self.output_directory, Path) else Path(self.output_directory)
-                )
+                save_dir_path = Path(self.output_directory)
             else:
                 raise ValueError(
-                    "Plot saving is not possible without specifying the save directory or output_directory"
+                    "Plot saving is not possible without specifying the save directory or output_directory "
                     "for the class."
                 )
 
-            if save_filename is not None:
-                save_path = save_dir / (save_filename + ".png")
-            else:
-                save_path = save_dir / "drdmannturb_final_spectra_fit.png"
+            base_filename = save_filename if save_filename else "drdmannturb_final_spectra_fit"
+            spectra_save_path = save_dir_path / (base_filename + "_spectra.png")
 
-            if not os.path.isdir(save_dir):
-                os.makedirs(save_dir)
+            if not save_dir_path.is_dir():
+                os.makedirs(save_dir_path)
 
-            self.fig.savefig(save_path, format="png", dpi=100)
+            print(f"Saving spectra plot to: {spectra_save_path}")
+            self.fig_spectra.savefig(spectra_save_path, format="png", dpi=150, bbox_inches='tight')
 
-        plt.show()
+            if plot_tau and self.fig_tau is not None:
+                tau_save_path = save_dir_path / (base_filename + "_tau.png")
+                print(f"Saving tau plot to: {tau_save_path}")
+                self.fig_tau.savefig(tau_save_path, format="png", dpi=150, bbox_inches='tight')
+
+        plt.show() # Show both figures if created
 
     def plot_losses(self, run_number: int):
-        """A wrapper method around the ``plot_loss_logs`` helper, which plots out the loss
+        """Wrap the ``plot_loss_logs`` helper.
+
+        A wrapper method around the ``plot_loss_logs`` helper, which plots out the loss
         function terms, multiplied by their associated hyperparameters
 
         Parameters

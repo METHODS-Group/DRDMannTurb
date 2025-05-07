@@ -16,7 +16,8 @@ __all__ = ["ProblemParameters", "PhysicalParameters", "NNParameters", "LossParam
 
 @dataclass
 class ProblemParameters:
-    r"""
+    r"""Define generic numerical parameters for the problem.
+
     This class provides a convenient method of storing and passing around
     generic numerical parameters; this also offers default values
 

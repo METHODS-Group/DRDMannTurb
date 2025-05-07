@@ -1,6 +1,4 @@
-"""
-This module defines the Enums determining the fundamental datatypes and choices of models available in the package. 
-"""
+"""Enums determining the fundamental datatypes and choices of models available in the package."""
 __all__ = ["DataType", "EddyLifetimeType", "PowerSpectraType"]
 
 from enum import Enum

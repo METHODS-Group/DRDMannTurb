@@ -10,7 +10,7 @@ The only difference here is in the neural network architecture.
 Although certain combinations of activation functions, such as ``GELU`` result in considerably
 improved spectra fitting and terminal loss values, the resulting eddy lifetime functions may
 be non-physical.
-"""
+"""  # noqa: D205, D400
 
 #######################################################################################
 # Import packages
