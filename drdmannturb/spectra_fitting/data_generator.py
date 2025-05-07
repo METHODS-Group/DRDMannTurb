@@ -281,7 +281,6 @@ class OnePointSpectraDataGenerator:
         torch.Tensor
             The :math:`3 \times 3` matrix with entries determined by the von Karman spectra.
         """
-
         C = 3.2
         L = 0.59
         F = torch.zeros([3, 3])

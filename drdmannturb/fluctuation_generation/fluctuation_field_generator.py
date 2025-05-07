@@ -82,8 +82,7 @@ class FluctuationFieldGenerator:
         energy_spectrum_scale: Optional[float] = None,
         path_to_parameters: Optional[Union[str, PathLike]] = None,
         seed: Optional[int] = None,
-        blend_num=10,
-        # 2D Model Parameters
+        blend_num: int = 10,
         config_2d_model: Optional[dict] = None,
     ):
         r"""
@@ -122,7 +121,6 @@ class FluctuationFieldGenerator:
         ValueError
             If ``model`` doesn't match one of the 3 available models: DRD, VK and Mann.
         """
-
         # Validate model type and required parameters
         if model not in ["DRD", "VK", "Mann"]:
             raise ValueError("Model must be one of: DRD, VK, Mann")
@@ -294,13 +292,12 @@ class FluctuationFieldGenerator:
         windprofiletype: str,
         plexp: Optional[float] = None,
     ) -> np.ndarray:
-        r"""Normalizes an individual block of wind under the given profile and physical parameters.
+        r"""Normalize an individual block of wind under the given profile and physical parameters.
 
         Parameters
         ----------
         curr_block : np.ndarray
-            _description_
-
+            The block of wind to normalize.
         zref : float
             Reference height.
         uref : float
@@ -321,7 +318,6 @@ class FluctuationFieldGenerator:
                 \left\langle U_1(z)\right\rangle= u_* \left( \frac{z}{z_{\text{ref}}} \right)^\alpha
 
             where :math:`u_*` is the friction velocity and :math:`z_{\text{ref}}` is the reference height.
-
         plexp : Optional[float], optional
             Power law exponent :math:`\alpha`, by default None.
 
@@ -378,12 +374,12 @@ class FluctuationFieldGenerator:
         z0: float,
         windprofiletype: str,
         plexp: Optional[float] = None,
-        suppress_warning: bool = False,
     ) -> np.ndarray:
-        r"""Generates the full fluctuation field in blocks. The resulting field is stored as the ``total_fluctuation``
-        field of this object, allowing for all metadata of the object to be stored safely with the fluctuation field,
-        and also reducing data duplication for post-processing; all operations can be performed on this public
-        variable.
+        r"""Generate the full fluctuation field block by block.
+
+        The resulting field is stored as the ``total_fluctuation`` field of this object, allowing for all metadata of
+        the object to be stored safely with the fluctuation field, and also reducing data duplication for
+        post-processing; all operations can be performed on this public variable.
 
         .. warning::
             If this method is called twice in the same object, additional fluctuation field blocks will be appended
@@ -417,6 +413,7 @@ class FluctuationFieldGenerator:
             Power law exponent :math:`\alpha`, by default None.
         suppress_warning : bool, optional
             Suppress warning about existing fluctuation field, by default False.
+
         Returns
         -------
         np.ndarray
@@ -505,8 +502,8 @@ class FluctuationFieldGenerator:
 
         return self.total_fluctuation
 
-    def save_to_vtk(self, filepath: Union[str, Path] = "./"):
-        """Saves generated fluctuation field in VTK format to specified filepath.
+    def save_to_vtk(self, filepath: Union[str, Path] = "./") -> None:
+        """Save generated fluctuation field in VTK format to specified filepath.
 
         Parameters
         ----------
@@ -527,7 +524,9 @@ class FluctuationFieldGenerator:
         imageToVTK(filepath, cellData=cellData, spacing=spacing)
 
     def evaluate_divergence(self, spacing: Union[tuple, np.ndarray], field: Optional[np.ndarray] = None) -> np.ndarray:
-        r"""Evaluates the point-wise divergence of a generated fluctuation vector (!) field on a given grid. The
+        r"""Evaluate the point-wise divergence of a generated fluctuation vector field.
+
+        Evaluates the point-wise divergence of a generated fluctuation vector (!) field on a given grid. The
         underlying method is numpy's ``gradient`` function, which is computed with second-order central
         difference methods.
 

@@ -63,7 +63,6 @@ def MannEddyLifetime(kL: Union[torch.Tensor, np.ndarray]) -> torch.Tensor:
     torch.Tensor
         Evaluated Mann eddy lifetime function.
     """
-
     x = kL.cpu().detach().numpy() if torch.is_tensor(kL) else kL
     y = x ** (-2 / 3) / np.sqrt(hyp2f1(1 / 3, 17 / 6, 4 / 3, -(x ** (-2))))
     y = torch.tensor(y, dtype=torch.float64) if torch.is_tensor(kL) else y
@@ -105,7 +104,6 @@ def Mann_linear_exponential_approx(
     torch.Tensor
         Exponential approximation to the Mann eddy lifetime function output.
     """
-
     return torch.exp(coefficient * torch.log(kL) + intercept)
 
 
@@ -129,7 +127,6 @@ def plot_loss_logs(log_file: Union[str, Path]):
     log_file : Union[str, Path]
        Full path to training log to be visualized.
     """
-
     event_acc = EventAccumulator(log_file)
     event_acc.Reload()
 

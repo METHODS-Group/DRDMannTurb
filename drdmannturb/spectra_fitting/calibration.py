@@ -384,7 +384,6 @@ class CalibrationProblem:
         RuntimeError
             Thrown in the case that the current loss is not finite.
         """
-
         DataPoints, DataValues = data
         OptimizerClass = optimizer_class
         lr = self.prob_params.learning_rate
@@ -632,7 +631,6 @@ class CalibrationProblem:
         ValueError
             No output_directory provided during object initialization and no save_dir provided for this method call.
         """
-
         if save_dir is None and self.output_directory is None:
             raise ValueError(
                 "Must provide directory to save output to. Both save_dir and self.output_directory are None"
@@ -705,7 +703,6 @@ class CalibrationProblem:
             Thrown in the case that ``save`` is true but neither the ``save_dir`` or ``output_directory``
             are provided.
         """
-
         clr = ["royalblue", "crimson", "forestgreen", "mediumorchid"]
 
         if Data is not None:

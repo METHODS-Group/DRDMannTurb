@@ -105,7 +105,6 @@ class NNCovariance(Covariance):
         np.ndarray
             Square-root of the spectral tensor evaluated in the frequency domain; note that these are complex values.
         """
-
         Nd = [Frequencies[j].size for j in range(self.ndim)]
         SqrtSpectralTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
         tmpTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))

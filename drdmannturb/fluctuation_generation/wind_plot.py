@@ -82,7 +82,6 @@ def plot_velocity_components(
     go.Figure
         Plotly Figure object to be used in visualization.
     """
-
     X, Y, Z = create_grid(spacing, wind_field.shape)
 
     formatted_wind_field = format_wind_field(wind_field) if reshape else wind_field
@@ -198,7 +197,6 @@ def plot_velocity_magnitude(
     go.Figure
         Plotly Figure object to be used in visualization.
     """
-
     X, Y, Z = create_grid(spacing, wind_field.shape)
 
     formatted_wind_field = format_wind_field(wind_field) if reshape else wind_field

@@ -47,6 +47,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+uv.lock
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -165,3 +166,7 @@ runs/
 ## Open Journals compilation intermediates and results
 paper/jats
 paper/paper.pdf
+
+## Scalene profiling
+**/profile.html
+**/profile.json

@@ -3,7 +3,6 @@ This module implements a random field generator.
 
 Notes
 -----
-
 This should not be directly used but is needed by ``FluctuationFieldGenerator``.
 """
 
@@ -184,7 +183,6 @@ class GaussianRandomField:
         np.ndarray
             Sampled random values from underlying distribution of size matching the given grid shape.
         """
-
         if grid_shape is None:
             noise = self.distribution(0, 1, self.ext_grid_shape)
         else:
@@ -215,7 +213,6 @@ class GaussianRandomField:
         Exception
             If Sampling method has not been set already.
         """
-
         if not hasattr(self, "Correlate"):
             raise Exception("Sampling method not set.")
 

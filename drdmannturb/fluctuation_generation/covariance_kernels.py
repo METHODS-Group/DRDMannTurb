@@ -1,5 +1,6 @@
 """Includes covariance kernels used in generating wind, specifically in evaluating
-the square roots of spectral tensors used in various models."""
+the square roots of spectral tensors used in various models.
+"""
 
 import numpy as np
 from scipy.special import hyp2f1
@@ -168,7 +169,6 @@ class MannCovariance(Covariance):
             Square-root of the spectral tensor evaluated in the frequency domain;
             note that these are complex values.
         """
-
         Nd = [Frequencies[j].size for j in range(self.ndim)]
         SqrtSpectralTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
         tmpTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
