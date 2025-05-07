@@ -31,7 +31,7 @@ dependencies = [
     "scikit_learn>=1.4.0",
     "scipy>=1.13.1",
     "tensorboard>=2.19.0",
-    "torch==2.6.0", # TODO: check CUDA
+    "torch==2.7.0", # TODO: check CUDA
     "tqdm==4.67.1",
     # TODO: netcdf4
 ]
