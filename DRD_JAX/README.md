@@ -12,6 +12,12 @@ cross-spectra.
 ### Recreating current capabilities
 
 - [ ] OnePointSpectraDataGenerator
+  - [ ] Documentation
+  - [X] Kaimal Spectra
+    - [ ] Kaimal Coherences
+  - [ ] Von Karman Spectra
+    - [ ] Von Karman Coherences
+  - [ ] Another example with known spectra/coherences
 
 
 
