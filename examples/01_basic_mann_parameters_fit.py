@@ -18,7 +18,7 @@ This set of models it widely used for flat, homogeneous terrains.
 ``drdmannturb`` can also be used directly to generate the corresponding 3D turbulence field, as demonstrated in
 Examples 8 and 9.
 
-"""
+"""  # noqa: D205, D400
 
 #######################################################################################
 # Import packages

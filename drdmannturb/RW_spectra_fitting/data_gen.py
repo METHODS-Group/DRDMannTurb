@@ -1,6 +1,5 @@
 """Synthetic data generators and some pre-processing utilities."""
 
-import numpy as np
 import torch
 
 

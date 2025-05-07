@@ -12,7 +12,7 @@ is learned for the rational function for :math:`\tau` given by
 .. math::
         \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}).
 
-"""
+"""  # noqa: D205, D400
 
 ##############################################################################
 # Import packages

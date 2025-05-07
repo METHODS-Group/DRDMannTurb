@@ -1,7 +1,7 @@
 """Rewrite the calibration class."""
 
-import numpy as np
 import torch
+
 
 class Calibrator:
     r"""Class for calibrating the DRD model."""
