@@ -171,3 +171,22 @@ venv.bak/
 ########################
 # SageMath
 *.sage.py
+# Others
+**.vscode
+**.DS_Store
+examples-unrendered/2d_plus_3d.ipynb
+
+## Data/ Paraview Files
+
+# *.png
+*.vti
+*.pvd
+runs/
+
+## Open Journals compilation intermediates and results
+paper/jats
+paper/paper.pdf
+
+## Scalene profiling
+**/profile.html
+
