@@ -171,3 +171,7 @@ venv.bak/
 ########################
 # SageMath
 *.sage.py
+
+
+
+DRD_JAX/*.ipynb
