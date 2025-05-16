@@ -8,8 +8,8 @@ The first two examples correspond to the experiments presented in `the original 
     :titlesonly:
     :numbered:
     :caption: Contents:
-    
-    01_basic_mann_parameters_fit.py 
+
+    01_basic_mann_parameters_fit.py
 
     02_eddy-lifetime_fit.py
 

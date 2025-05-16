@@ -1,0 +1,12 @@
+docs/
+examples-unrendered/
+STORM_fitting/
+paper/
+
+CITATION.cff
+.pre-commit-config.yaml
+.github/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv

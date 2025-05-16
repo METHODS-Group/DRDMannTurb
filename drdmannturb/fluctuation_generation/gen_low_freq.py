@@ -7,15 +7,6 @@ The methods implemented here are based on:
     <https://doi.org/10.5194/wes-9-1381-2024>
 """
 
-from typing import Dict, Optional, Tuple
-
-import jax
-import jax.numpy as jnp
-import numpy as np
-from jaxtyping import Array, Float
-from scipy import integrate
+from typing import Dict
 
 LowFreqConfig = Dict[str, float]
-
-
-

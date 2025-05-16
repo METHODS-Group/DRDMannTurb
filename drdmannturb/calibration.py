@@ -572,7 +572,7 @@ def training_loop(num_epochs: int = 2000, lr: float = 1e-3, key: Optional[jax.ra
     # ------------------------------------------------------------
     # Generate synthetic data (Kaimal)
     # ------------------------------------------------------------
-    import JAX_data_generator as jdg
+    import drdmannturb.data_generator as jdg
 
     zref = 40.0
     ustar = 1.773
@@ -658,7 +658,6 @@ def plot_kf_results(
     save_path : str | None
         If provided, figure is saved to this path; otherwise displayed.
     """
-
     # Get model predictions (CPU numpy for Matplotlib)
     kF_pred = compute_kF_components(model, integrator, k1_vec)
     k1_np = jnp.asarray(k1_vec).astype(float)
@@ -689,7 +688,7 @@ def plot_kf_results(
 
 if __name__ == "__main__":
 
-    import JAX_data_generator as jdg
+    import drdmannturb.data_generator as jdg
 
     zref = 40.0
     ustar = 1.773
@@ -712,4 +711,3 @@ if __name__ == "__main__":
     integrator = OnePointSpectra(calib, k23_params)
 
     plot_kf_results(calib, integrator, k1_vec, kF_target)
-

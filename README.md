@@ -17,9 +17,6 @@ Pre-compiled wheels for the package are available via ``pip install drdmannturb`
 See our [development environment instructions](#development-version-installation-instructions)
 for instructions on installing development versions.
 
-> [!NOTE]
-> `DRDMannTurb` requires the `FFTW` library to be installed on your system for the `pyFFTW` dependency. Please install it using your system's package manager (e.g., `brew install fftw` on macOS, `sudo apt-get install libfftw3-dev` on Debian/Ubuntu) before installing `DRDMannTurb`.
-
 ## Basic Usage
 
 See the ``/examples/`` folder for baselines from the paper and for examples of the many functionalities of the package. These examples are rendered in a more readable
