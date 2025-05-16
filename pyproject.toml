@@ -36,6 +36,8 @@ dependencies = [
     "xarray>=2024.7.0",
     "netcdf4",
     "jax>=0.4.30",
+    "optax>=0.2.4",
+    "equinox>=0.11.10",
 ]
 
 [project.urls]

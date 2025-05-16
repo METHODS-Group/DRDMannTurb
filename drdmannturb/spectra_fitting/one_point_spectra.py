@@ -313,6 +313,16 @@ class OnePointSpectra(nn.Module):
         else:
             raise Exception("Incorrect PowerSpectra model !")
 
+
+    @torch.jit.export
+    def PowerSpectra_RDT(self, k: torch.Tensor, beta: torch.Tensor, E0: torch.Tensor) -> torch.Tensor:
+        """Evaluate the RDT power spectra."""
+
+        k1, k2, k3 = k[..., 0], k[..., 1], k[..., 2]
+
+
+
+
     @torch.jit.export
     def quad23(self, f: torch.Tensor) -> torch.Tensor:
         r"""Approximate integral of discretized :math:`f` over frequency domain.
