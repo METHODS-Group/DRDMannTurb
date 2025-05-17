@@ -522,7 +522,6 @@ class OnePointSpectra(eqx.Module):
 # Loss functions and training loop
 #############################################################################################################
 
-@jax.jit
 def log_mse_term(y_pred: jnp.ndarray, y_true: jnp.ndarray) -> jnp.ndarray:
     """Mean-squared error on *log* scale (as in original PyTorch calibration).
 
@@ -608,7 +607,6 @@ def training_loop(num_epochs: int = 2000, lr: float = 1e-3, key: Optional[jax.ra
     optim = optax.adam(lr)
     opt_state = optim.init(params)
 
-    @jax.jit
     def step(params, opt_state):
         loss_val, grads = jax.value_and_grad(loss_DRD)(
             params, static, integrator, k1_vec, kF_target

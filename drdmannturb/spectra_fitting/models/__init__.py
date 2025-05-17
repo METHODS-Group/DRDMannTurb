@@ -1,5 +1,5 @@
+from .integrators import OnePointSpectra
 from .spectral import (
-    OnePointSpectra,
     PowerSpectraRDT,
     RDT_spectral_tensor,
     VKEnergySpectrum,

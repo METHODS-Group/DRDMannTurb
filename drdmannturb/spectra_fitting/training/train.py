@@ -14,11 +14,12 @@ import jax.numpy as jnp
 import optax
 
 from .. import data_generator as dg
-from ..models.spectral import OnePointSpectra, RDT_spectral_tensor
+from ..models.integrators import OnePointSpectra
+from ..models.spectral import RDT_spectral_tensor
 from ..models.taunet import TauNet
 from .losses import log_mse
 
-DEFAULT_SAVE = Path("model_params.npz")
+DEFAULT_SAVE = Path("model_params.eqx")
 
 
 def compute_kF(rdt: RDT_spectral_tensor, integrator: OnePointSpectra, k1: jnp.ndarray) -> jnp.ndarray:
@@ -56,12 +57,13 @@ def train(num_epochs: int = 1000, lr: float = 5e-4, *, seed: int = 0, save: Opti
     opt = optax.adam(lr)
     opt_state = opt.init(params)
 
-    @jax.jit
+    # Create integrator once outside the training loop
+    integrator = OnePointSpectra(rdt)
+
     def step(params, opt_state):
         def loss_fn(p):
             model = eqx.combine(static, p)
-            integ = OnePointSpectra(model)
-            pred = compute_kF(model, integ, k1)
+            pred = compute_kF(model, integrator, k1)
             return log_mse(pred, target_kF)
 
         loss_val, grads = jax.value_and_grad(loss_fn)(params)
@@ -77,10 +79,7 @@ def train(num_epochs: int = 1000, lr: float = 5e-4, *, seed: int = 0, save: Opti
     model_final = eqx.combine(static, params)
 
     if save is not None:
-        import numpy as np
-
-        leaves = jax.tree_util.tree_leaves(params)
-        np.savez_compressed(save, **{f"p{i}": np.asarray(ell) for i, ell in enumerate(leaves)})
+        eqx.tree_serialise_leaves(save, model_final)
         print("Saved parameters to", save)
 
     return model_final

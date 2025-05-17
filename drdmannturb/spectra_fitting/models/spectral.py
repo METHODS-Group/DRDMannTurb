@@ -1,10 +1,12 @@
-"""Spectral-tensor utilities in JAX.
+"""Implementation of the necessary spectral tensor models.
+
+See Section III of the paper for details.
 
 Contains:
     • VKEnergySpectrum - Von Karman curve
     • PowerSpectraRDT - classical RDT model
-    • RDT_spectral_tensor - wraps TauNet to produce Φ_ij(k)
-    • OnePointSpectra - k₂/k₃ integration helper
+    • RDT_spectral_tensor - wraps TauNet to produce Phi_ij(k)
+    • OnePointSpectra - k2/k3 integration helper
 """
 
 from typing import Optional, Tuple
@@ -28,6 +30,10 @@ __all__ = [
 # ---------------------------------------------------------
 
 def VKEnergySpectrum(kL: jnp.ndarray) -> jnp.ndarray:
+    """
+    Calculate the Von Karman energy spectrum without scaling.
+
+    """
     return kL ** 4 / (1.0 + kL ** 2) ** (17.0 / 6.0)
 
 
@@ -87,6 +93,15 @@ class k2_k3_parameters(eqx.Module):
 # ---------------------------------------------------------
 
 class RDT_spectral_tensor(eqx.Module):
+    """
+    Rapid Distortion Theory (RDT) spectral tensor model implementation.
+
+    Parameters
+    ----------
+
+
+    """
+
     eddy_lifetime: TauNet
     L: jnp.ndarray
     Gamma: jnp.ndarray
@@ -121,22 +136,3 @@ class RDT_spectral_tensor(eqx.Module):
         k0 = kvec.at[..., 2].add(beta * kvec[..., 0])
         E0 = self.sigma * VKEnergySpectrum(self.L * jnp.linalg.norm(k0, axis=-1))
         return PowerSpectraRDT(kvec, beta, E0)
-
-
-# ---------------------------------------------------------
-# One-point spectra integrator
-# ---------------------------------------------------------
-
-class OnePointSpectra(eqx.Module):
-    rdt: RDT_spectral_tensor
-    _k2: jnp.ndarray = eqx.static_field()
-    _k3: jnp.ndarray = eqx.static_field()
-
-    def __init__(self, rdt: RDT_spectral_tensor):
-        object.__setattr__(self, "rdt", rdt)
-        object.__setattr__(self, "_k2", rdt.k2_grid)
-        object.__setattr__(self, "_k3", rdt.k3_grid)
-
-    def __call__(self, phi_component: jnp.ndarray) -> jnp.ndarray:
-        tmp = jax.scipy.integrate.trapezoid(phi_component, x=self._k3, axis=2)
-        return jax.scipy.integrate.trapezoid(tmp, x=self._k2, axis=1)

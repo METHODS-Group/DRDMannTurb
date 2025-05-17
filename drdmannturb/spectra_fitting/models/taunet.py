@@ -61,11 +61,10 @@ class TauNet(eqx.Module):
         for i, lyr in enumerate(self.layers):
             subkey = jax.random.split(key)[0]
             noise = 1e-3 * jax.random.normal(subkey, lyr.weight.shape)
-            self.layers[i] = eqx.tree_at(lambda l: l.weight, lyr, lyr.weight + noise)
+            self.layers[i] = eqx.tree_at(lambda ell: ell.weight, lyr, lyr.weight + noise)
 
         self.kernel = RationalKernel(nu_value, learn_nu)
 
-    @jax.jit
     def _forward_vec(self, vec: jnp.ndarray) -> jnp.ndarray:
         """Forward pass for a single 3-vector."""
         h = jnp.abs(vec)
@@ -74,7 +73,6 @@ class TauNet(eqx.Module):
         h = self.layers[-1](h)
         return self.kernel(jnp.linalg.norm(h))
 
-    @jax.jit
     def __call__(self, k: jnp.ndarray) -> jnp.ndarray:
         """Supports input shape (...,3)."""
         if k.ndim == 1:

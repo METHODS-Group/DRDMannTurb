@@ -1,10 +1,8 @@
 """Loss utilities for DRD calibration."""
 
-import jax
 import jax.numpy as jnp
 
 
-@jax.jit
 def log_mse(y_pred: jnp.ndarray, y_true: jnp.ndarray) -> jnp.ndarray:
     """Log–MSE used in original DRD calibration."""
     eps = 1e-12
