@@ -7,6 +7,34 @@ The methods implemented here are based on:
     <https://doi.org/10.5194/wes-9-1381-2024>
 """
 
-from typing import Dict
+from dataclasses import dataclass
 
-LowFreqConfig = Dict[str, float]
+
+@dataclass
+class LowFreqGenerator_Params:
+
+    sigma2: float # Target variance of the low-frequency fluctuations
+    L_2d: float # 2D integral scale
+    psi: float # Anisotropy parameter
+    z_i: float # Attenuation length, assumed to be height of atmospheric boundary layer
+
+    c: float # Scaling constant, which is calculated from the parameters above
+
+    Lx: float # Length of the domain in x-direction
+    Ly: float # Length of the domain in y-direction
+
+    def __post_init__(self):
+        # REPLACE
+        self.c = self.sigma2 / (self.L_2d ** 2 * self.z_i ** 2)
+
+
+
+
+
+def generate_low_freq_fluctuation_field(
+    params: LowFreqGenerator_Params
+):
+    
+    pass
+
+

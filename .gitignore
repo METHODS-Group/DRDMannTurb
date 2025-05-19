@@ -152,6 +152,7 @@ ipython_config.py
 .ropeproject
 # VSCode
 **.vscode
+**.cursorignore
 # MacOS
 **.DS_Store
 
