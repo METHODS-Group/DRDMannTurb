@@ -1,5 +1,4 @@
-"""Implements the one point spectra"""
-
+"""Implements the one point spectra calculation."""
 
 from typing import Optional
 
@@ -180,15 +179,28 @@ class OnePointSpectra(nn.Module):
             Network output
         """
         self.exp_scales()
-        self.k = torch.stack(torch.meshgrid(k1_input, self.grid_k2, self.grid_k3, indexing="ij"), dim=-1)
-        self.k123 = self.k[..., 0], self.k[..., 1], self.k[..., 2]
+
+        self.k_grid = torch.stack(torch.meshgrid(k1_input, self.grid_k2, self.grid_k3, indexing="ij"), dim=-1)
+
+        self.k123 = self.k_grid[..., 0], self.k_grid[..., 1], self.k_grid[..., 2]
+
+        # TODO: Untangle this from the "using class attributes for everything" web
+        # NOTE: in the case that we provide an argument to this instead of letting it just use the
+        #       class attributes, it calls exp_scales() again. Why?
         self.beta = self.EddyLifetime()
-        self.k0 = self.k.clone()
-        self.k0[..., 2] = self.k[..., 2] + self.beta * self.k[..., 0]
+
+        self.k0 = self.k_grid.clone()
+
+        self.k0[..., 2] = self.k_grid[..., 2] + self.beta * self.k_grid[..., 0]
+
         k0L = self.LengthScale * self.k0.norm(dim=-1)
+
         self.E0 = self.Magnitude * self.LengthScale ** (5.0 / 3.0) * VKEnergySpectrum(k0L)
-        self.Phi = self.PowerSpectra()
+
+        self.Phi = self.PowerSpectra(self.k_grid, self.beta, self.E0)
+
         kF = torch.stack([k1_input * self.quad23(Phi) for Phi in self.Phi])
+
         return kF
 
     def init_mann_approximation(self):
@@ -246,9 +258,9 @@ class OnePointSpectra(nn.Module):
             Did not specify an admissible EddyLifetime model. Refer to the EddyLifetimeType documentation.
         """
         if k is None:
-            k = self.k
+            k = self.k_grid
         else:
-            self.exp_scales()
+            self.exp_scales()  # TODO: Why is this second call needed?
 
         kL = self.LengthScale * k.norm(dim=-1)
 
@@ -292,7 +304,7 @@ class OnePointSpectra(nn.Module):
         return 0.0
 
     @torch.jit.export
-    def PowerSpectra(self):
+    def PowerSpectra(self, k_grid: torch.Tensor, beta: torch.Tensor, E0: torch.Tensor):
         """Call the RDT Power Spectra model with current approximation.
 
         TODO: Why does this exist? This just obfuscates things...
@@ -308,10 +320,7 @@ class OnePointSpectra(nn.Module):
             In the case that the Power Spectra is not RDT
             and therefore incorrect.
         """
-        if self.type_PowerSpectra == PowerSpectraType.RDT:
-            return PowerSpectraRDT(self.k, self.beta, self.E0)
-        else:
-            raise Exception("Incorrect PowerSpectra model !")
+        return PowerSpectraRDT(k_grid, beta, E0)
 
     @torch.jit.export
     def quad23(self, f: torch.Tensor) -> torch.Tensor:
@@ -334,10 +343,10 @@ class OnePointSpectra(nn.Module):
             Evaluated double integral.
         """
         # NOTE: Integration in k3
-        quad = torch.trapz(f, x=self.k[..., 2], dim=-1)
+        quad = torch.trapz(f, x=self.k_grid[..., 2], dim=-1)
 
         # NOTE: Integration in k2 (fixed k3=0, since slices are identical in meshgrid)
-        quad = torch.trapz(quad, x=self.k[..., 0, 1], dim=-1)
+        quad = torch.trapz(quad, x=self.k_grid[..., 0, 1], dim=-1)
         return quad
 
     @torch.jit.export

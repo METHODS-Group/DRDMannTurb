@@ -38,6 +38,7 @@ from drdmannturb.parameters import (
 from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+# torch.set_default_dtype(torch.float64)
 
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
@@ -56,7 +57,7 @@ sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # magnitude (σ = αϵ^{2/3})
 
 print(f"Physical Parameters: {L,Gamma,sigma}")
 
-k1 = torch.logspace(-1, 2, 20) / zref
+k1 = torch.logspace(-1, 2, 20, dtype=torch.float64) / zref
 
 ##############################################################################
 # ``CalibrationProblem`` Construction
