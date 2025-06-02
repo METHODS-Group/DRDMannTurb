@@ -179,16 +179,37 @@ class OnePointSpectra(nn.Module):
         torch.Tensor
             Network output
         """
+        # print(f"\n[DEBUG OPS.forward] Input k1_input shape: {k1_input.shape}")
+        # print(f"[DEBUG OPS.forward] k1_input range: [{k1_input.min().item():.3e}, {k1_input.max().item():.3e}]")
+        
         self.exp_scales()
+        # print(f"[DEBUG OPS.forward] Scales: L={self.LengthScale.item():.3f}, Gamma={self.TimeScale.item():.3f}, sigma={self.Magnitude.item():.6f}")
+        
         self.k = torch.stack(torch.meshgrid(k1_input, self.grid_k2, self.grid_k3, indexing="ij"), dim=-1)
         self.k123 = self.k[..., 0], self.k[..., 1], self.k[..., 2]
         self.beta = self.EddyLifetime()
+        # print(f"[DEBUG OPS.forward] beta range: [{self.beta.min().item():.3e}, {self.beta.max().item():.3e}]")
+        # print(f"[DEBUG OPS.forward] Any NaN in beta? {torch.isnan(self.beta).any().item()}")
+        
         self.k0 = self.k.clone()
         self.k0[..., 2] = self.k[..., 2] + self.beta * self.k[..., 0]
         k0L = self.LengthScale * self.k0.norm(dim=-1)
+        # print(f"[DEBUG OPS.forward] k0L range: [{k0L.min().item():.3e}, {k0L.max().item():.3e}]")
+        
         self.E0 = self.Magnitude * self.LengthScale ** (5.0 / 3.0) * VKEnergySpectrum(k0L)
+        # print(f"[DEBUG OPS.forward] E0 range: [{self.E0.min().item():.3e}, {self.E0.max().item():.3e}]")
+        # print(f"[DEBUG OPS.forward] Any NaN in E0? {torch.isnan(self.E0).any().item()}")
+        
         self.Phi = self.PowerSpectra()
+        # print(f"[DEBUG OPS.forward] Number of Phi components: {len(self.Phi)}")
+        # for i, phi in enumerate(self.Phi):
+        #     print(f"[DEBUG OPS.forward] Phi[{i}] range: [{phi.min().item():.3e}, {phi.max().item():.3e}], NaN? {torch.isnan(phi).any().item()}")
+        
         kF = torch.stack([k1_input * self.quad23(Phi) for Phi in self.Phi])
+        # print(f"[DEBUG OPS.forward] Final kF shape: {kF.shape}")
+        # print(f"[DEBUG OPS.forward] Final kF range: [{kF.min().item():.3e}, {kF.max().item():.3e}]")
+        # print(f"[DEBUG OPS.forward] Any NaN in kF? {torch.isnan(kF).any().item()}")
+        
         return kF
 
     def init_mann_approximation(self):
@@ -287,9 +308,9 @@ class OnePointSpectra(nn.Module):
         Returns
         -------
         float
-            Initial guess evaluation, presently, the :math:`0` function.
+            Initial guess evaluation. (Presently, constant function)
         """
-        return 0.0
+        return 10.0
 
     @torch.jit.export
     def PowerSpectra(self):

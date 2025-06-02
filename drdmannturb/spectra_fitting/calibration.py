@@ -397,6 +397,7 @@ class CalibrationProblem:
         self.plot_loss_optim = False
 
         self.curves = [0, 1, 2, 3, 4, 5]
+        # self.curves = [0, 1, 2, 3]
 
         # self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
         self.k1_data_pts = torch.tensor(DataPoints)[:, 0].squeeze()
@@ -423,8 +424,15 @@ class CalibrationProblem:
         k1_data_pts, y_data0 = self.k1_data_pts, self.kF_data_vals
 
         y = self.OPS(k1_data_pts)
+        # print(f"\n[DEBUG calibrate] Model output y shape: {y.shape}")
+        # print(f"[DEBUG calibrate] Model output y range: [{y.min().item():.3e}, {y.max().item():.3e}]")
+        # print(f"[DEBUG calibrate] Any NaN in y? {torch.isnan(y).any().item()}")
+
         y_data = torch.zeros_like(y)
         y_data[:6, ...] = y_data0.view(6, y_data0.shape[0] // 6)
+        # print(f"[DEBUG calibrate] Data y_data shape: {y_data.shape}")
+        # print(f"[DEBUG calibrate] Data y_data range: [{y_data.min().item():.3e}, {y_data.max().item():.3e}]")
+        # print(f"[DEBUG calibrate] Number of zeros in y_data: {(y_data == 0).sum().item()}")
 
         ########################################
         # Optimizer and Scheduler Initialization
@@ -453,6 +461,8 @@ class CalibrationProblem:
             self.gen_theta_NN = lambda: 0.0
 
         theta_NN = self.gen_theta_NN()
+        # print("\n[DEBUG calibrate] About to calculate initial loss...")
+        # print(f"[DEBUG calibrate] self.curves: {self.curves}")
 
         self.loss = self.LossAggregator.eval(y[self.curves], y_data[self.curves], theta_NN, 0)
 
@@ -649,7 +659,7 @@ class CalibrationProblem:
     ):
         r"""Visualize the spectra fit and learned eddy lifetime function.
 
-        Plotting method which visualizes the spectra fit on a 2x2 grid and optionally
+        Plotting method which visualizes the spectra fit on a 2x3 grid and optionally
         the learned eddy lifetime function on a separate plot if ``plot_tau=True``.
         By default, this operates on the data used in the fitting,
         but an alternative :math:`k_1` domain can be provided and the trained model can be re-evaluated.
@@ -693,15 +703,17 @@ class CalibrationProblem:
         # --- Data Preparation ---
         if Data is not None:
             DataPoints, DataValues = Data
-            # k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
             k1_data_pts = torch.tensor(DataPoints)[:, 0].squeeze()
 
+            # Extract all 6 components: F11, F22, F33, F13, F12, F23
             kF_data_vals = torch.cat(
                 (
-                    DataValues[:, 0, 0],
-                    DataValues[:, 1, 1],
-                    DataValues[:, 2, 2],
-                    DataValues[:, 0, 2], # F13 component
+                    DataValues[:, 0, 0], # F11 (uu)
+                    DataValues[:, 1, 1], # F22 (vv)
+                    DataValues[:, 2, 2], # F33 (ww)
+                    - DataValues[:, 0, 2], # F13 (uw)
+                    DataValues[:, 0, 1], # F12 (uv)
+                    DataValues[:, 1, 2], # F23 (vw)
                 )
             )
         else:
@@ -728,31 +740,31 @@ class CalibrationProblem:
         k1_data_pts = k1_data_pts.cpu().detach()
 
         s = kF_data_vals.shape[0] # Total number of data points across all components
-        num_data_points_per_component = s // 4
-        kF_data_vals_reshaped = kF_data_vals.view(4, num_data_points_per_component)
-
+        num_data_points_per_component = s // 6  # Now 6 components instead of 4
+        kF_data_vals_reshaped = kF_data_vals.view(6, num_data_points_per_component)
 
         # --- Plotting Setup ---
         with plt.style.context("bmh"):
             plt.rcParams.update({"font.size": 10}) # Slightly larger font
 
-            # --- Spectra Plot (2x2 Grid) ---
+            # --- Spectra Plot (2x3 Grid) ---
             self.fig_spectra, self.ax_spectra = plt.subplots(
                 nrows=2,
-                ncols=2,
+                ncols=3,  # Changed to 2x3 for 6 components
                 num="Spectra Calibration",
                 clear=True,
-                figsize=[10, 8], # Adjusted size for 2x2
+                figsize=[15, 8], # Adjusted size for 2x3
                 sharex=True # Share x-axis for comparison
             )
             self.ax_spectra_flat = self.ax_spectra.flatten()
-            self.lines_SP_model = [None] * 4
-            self.lines_SP_data = [None] * 4
+            self.lines_SP_model = [None] * 6  # Now 6 components
+            self.lines_SP_data = [None] * 6
 
-            for i in range(4): # Iterate through F11, F22, F33, F13
+            for i in range(6): # Iterate through all 6 components
                 ax = self.ax_spectra_flat[i]
                 comp_idx = spectra_labels[i]
-                sign = -1 if i == 3 else 1 # Flip sign for F13
+                # Flip sign for F13 (uw component) - index 3
+                sign = -1 if i == 3 else 1
 
                 # Plot Model
                 (self.lines_SP_model[i],) = ax.plot(
@@ -782,21 +794,20 @@ class CalibrationProblem:
                 ax.grid(which="both")
 
             # Common X label for bottom row
-            self.ax_spectra[1, 0].set_xlabel(r"$k_1 z$")
-            self.ax_spectra[1, 1].set_xlabel(r"$k_1 z$")
+            for j in range(3):  # Bottom row has 3 subplots now
+                self.ax_spectra[1, j].set_xlabel(r"$k_1 z$")
 
-            self.fig_spectra.suptitle("One-point Spectra Fit", fontsize=14)
+            self.fig_spectra.suptitle("One-point Spectra Fit (6 Components)", fontsize=14)
             self.fig_spectra.tight_layout(rect=[0, 0.03, 1, 0.95]) # Adjust layout for suptitle
             self.fig_spectra.canvas.draw()
             self.fig_spectra.canvas.flush_events()
-
 
             # --- Eddy Lifetime Plot (Separate Figure if plot_tau is True) ---
             self.fig_tau = None
             self.ax_tau = None
             if plot_tau:
-                # k_gd = torch.logspace(-3, 3, 50, dtype=torch.float64)
-                k_gd = torch.logspace(-3, 3, 50)
+                k_gd = torch.logspace(-3, 3, 50, dtype=torch.float64)
+                # k_gd = torch.logspace(-3, 3, 50)
                 k_1 = torch.stack([k_gd, 0 * k_gd, 0 * k_gd], dim=-1)
                 k_2 = torch.stack([0 * k_gd, k_gd, 0 * k_gd], dim=-1)
                 k_3 = torch.stack([0 * k_gd, 0 * k_gd, k_gd], dim=-1)
@@ -864,15 +875,11 @@ class CalibrationProblem:
 
         # --- Update Plots (if needed, e.g., in an interactive context) ---
         # This part assumes the plot might be updated later without full re-plotting
-        for i in range(4):
+        for i in range(6):  # Now 6 components
             curr_model = self.lines_SP_model[i]
-            # curr_data = self.lines_SP_data[i] # Data points usually don't change
             if curr_model is not None:
                  sign = -1 if i == 3 else 1
                  curr_model.set_ydata(sign * kF_model_vals[i])
-            # if curr_data is not None:
-            #     sign = -1 if i == 3 else 1
-            #     curr_data.set_ydata(sign * kF_data_vals_reshaped[i]) # Update if data changes
 
         if plot_tau and self.fig_tau is not None: # Check if tau plot exists
              # Recalculate tau values based on potentially updated OPS parameters

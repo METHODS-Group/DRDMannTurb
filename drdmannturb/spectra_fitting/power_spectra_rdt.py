@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 
 
-@torch.jit.script
+# @torch.jit.script
 def PowerSpectraRDT(k: Tensor, beta: Tensor, E0: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
     r"""Classical rapid distortion spectra.
 
@@ -44,6 +44,11 @@ def PowerSpectraRDT(k: Tensor, beta: Tensor, E0: Tensor) -> tuple[Tensor, Tensor
     kk = k1**2 + k2**2 + k3**2
     s = k1**2 + k2**2
 
+    # Debug prints (Note: might need to remove @torch.jit.script decorator temporarily)
+    # print(f"[DEBUG PowerSpectraRDT] s min: {s.min().item():.3e}, zeros: {(s == 0).sum().item()}")
+    # print(f"[DEBUG PowerSpectraRDT] kk min: {kk.min().item():.3e}, zeros: {(kk == 0).sum().item()}")
+    # print(f"[DEBUG PowerSpectraRDT] kk0 min: {kk0.min().item():.3e}, zeros: {(kk0 == 0).sum().item()}")
+
     C1 = beta * k1**2 * (kk0 - 2 * k30**2 + beta * k1 * k30) / (kk * s)
     C2 = k2 * kk0 / torch.sqrt(s**3) * torch.atan2(beta * k1 * torch.sqrt(s), kk0 - k30 * k1 * beta)
 
@@ -57,6 +62,16 @@ def PowerSpectraRDT(k: Tensor, beta: Tensor, E0: Tensor) -> tuple[Tensor, Tensor
 
     Phi12 = E0 / (kk0**2) * (-k1 * k2 - k1 * k30 * zeta2 - k2 * k30 * zeta1 + (k1**2 + k2**2) * zeta1 * zeta2)
     Phi23 = E0 / (kk * kk0) * (-k2 * k30 + (k1**2 + k2**2) * zeta2)
+
+    # DEBUG: add a small epsilon to prevent extremely small values
+    epsilon = 1e-12
+
+    Phi11 = torch.where(Phi11 < epsilon, epsilon, Phi11)
+    Phi22 = torch.where(Phi22 < epsilon, epsilon, Phi22)
+    Phi33 = torch.where(Phi33 < epsilon, epsilon, Phi33)
+    Phi13 = torch.where(Phi13 < epsilon, epsilon, Phi13)
+    Phi12 = torch.where(Phi12 < epsilon, epsilon, Phi12)
+    Phi23 = torch.where(Phi23 < epsilon, epsilon, Phi23)
 
     # In order, uu, vv, ww, uw, vw, uv
     return Phi11, Phi22, Phi33, Phi13, Phi23, Phi12
