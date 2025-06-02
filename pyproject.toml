@@ -25,7 +25,7 @@ dependencies = [
     "matplotlib==3.9.4",
     "numba>=0.60.0",
     "numpy>=2.0",
-    "plotly==5.17.0",
+    "plotly==6.1.2",
     "pyevtk==1.6.0",
     "pyFFTW==0.14.0",
     "scikit_learn>=1.4.0",
