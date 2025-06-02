@@ -4,7 +4,6 @@ This module contains the ``OnePointSpectraDataGenerator`` class, which generates
 set of parameters.
 """
 
-
 import warnings
 from collections.abc import Sequence
 from pathlib import Path
@@ -246,16 +245,18 @@ class OnePointSpectraDataGenerator:
             DataType set such that an iterable set of spectra values is required. This is for any DataType other than
             ``CUSTOM`` and ``AUTO``.
         """
-        if DataPoints is None:  # TODO: Isn't this just unreachable?
-            raise ValueError("DataPoints cannot be None")
-
         DataValues = torch.zeros([len(DataPoints), 3, 3])
 
         if self.data_type == DataType.CUSTOM:
-            DataValues[:, 0, 0] = self.CustomData[:, 1]
-            DataValues[:, 1, 1] = self.CustomData[:, 2]
-            DataValues[:, 2, 2] = self.CustomData[:, 3]
-            DataValues[:, 0, 2] = -self.CustomData[:, 4]
+            DataValues[:, 0, 0] = self.CustomData[:, 1] # uu
+            DataValues[:, 1, 1] = self.CustomData[:, 2] # vv
+            DataValues[:, 2, 2] = self.CustomData[:, 3] # ww
+            # NOTE: is always negative
+            DataValues[:, 0, 2] = -self.CustomData[:, 4] # uw
+            # TODO: Can be negative, skipping for now
+            DataValues[:, 1, 2] = self.CustomData[:, 5] # vw
+            # TODO: Can be negative, skipping for now
+            DataValues[:, 0, 1] = self.CustomData[:, 6] # uv
         else:
             for i, Point in enumerate(DataPoints):
                 DataValues[i] = self.eval(Point)
@@ -372,7 +373,6 @@ class OnePointSpectraDataGenerator:
             are matching.
         """
         custom_palette = ["royalblue", "crimson", "forestgreen", "mediumorchid"]
-
 
         # TODO: This only works for DataType.AUTO?
 

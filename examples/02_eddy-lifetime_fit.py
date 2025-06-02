@@ -56,7 +56,7 @@ sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # magnitude (σ = αϵ^{2/3})
 
 print(f"Physical Parameters: {L,Gamma,sigma}")
 
-k1 = torch.logspace(-1, 2, 20) / zref
+k1 = torch.logspace(-1, 2, 20, dtype=torch.float64) / zref
 
 #######################################################################################
 # ``CalibrationProblem`` construction

@@ -396,7 +396,7 @@ class CalibrationProblem:
 
         self.plot_loss_optim = False
 
-        self.curves = [0, 1, 2, 3]
+        self.curves = [0, 1, 2, 3, 4, 5]
 
         # self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
         self.k1_data_pts = torch.tensor(DataPoints)[:, 0].squeeze()
@@ -411,10 +411,12 @@ class CalibrationProblem:
 
         self.kF_data_vals = torch.cat(
             (
-                DataValues[:, 0, 0],
-                DataValues[:, 1, 1],
-                DataValues[:, 2, 2],
-                DataValues[:, 0, 2],
+                DataValues[:, 0, 0], # uu
+                DataValues[:, 1, 1], # vv
+                DataValues[:, 2, 2], # ww
+                DataValues[:, 0, 2], # uw
+                DataValues[:, 1, 2], # vw
+                DataValues[:, 0, 1], # uv
             )
         )
 
@@ -422,7 +424,7 @@ class CalibrationProblem:
 
         y = self.OPS(k1_data_pts)
         y_data = torch.zeros_like(y)
-        y_data[:4, ...] = y_data0.view(4, y_data0.shape[0] // 4)
+        y_data[:6, ...] = y_data0.view(6, y_data0.shape[0] // 6)
 
         ########################################
         # Optimizer and Scheduler Initialization
@@ -685,8 +687,8 @@ class CalibrationProblem:
             Thrown in the case that ``save`` is true but neither the ``save_dir`` or ``output_directory``
             are provided.
         """
-        clr = ["royalblue", "crimson", "forestgreen", "mediumorchid"]
-        spectra_labels = ["11", "22", "33", "13"] # For titles and labels
+        clr = ["royalblue", "crimson", "forestgreen", "mediumorchid", "orange", "purple"]
+        spectra_labels = ["11", "22", "33", "13", "12", "23"] # For titles and labels
 
         # --- Data Preparation ---
         if Data is not None:

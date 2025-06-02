@@ -58,4 +58,5 @@ def PowerSpectraRDT(k: Tensor, beta: Tensor, E0: Tensor) -> tuple[Tensor, Tensor
     Phi12 = E0 / (kk0**2) * (-k1 * k2 - k1 * k30 * zeta2 - k2 * k30 * zeta1 + (k1**2 + k2**2) * zeta1 * zeta2)
     Phi23 = E0 / (kk * kk0) * (-k2 * k30 + (k1**2 + k2**2) * zeta2)
 
-    return Phi11, Phi22, Phi33, Phi13, Phi12, Phi23
+    # In order, uu, vv, ww, uw, vw, uv
+    return Phi11, Phi22, Phi33, Phi13, Phi23, Phi12
