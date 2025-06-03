@@ -13,7 +13,6 @@ from ..common import Mann_linear_exponential_approx, MannEddyLifetime, VKEnergyS
 from ..enums import EddyLifetimeType, PowerSpectraType
 from ..nn_modules import CustomNet, TauNet
 from ..parameters import NNParameters, PhysicalParameters
-from .power_spectra_rdt import PowerSpectraRDT
 
 
 class OnePointSpectra(nn.Module):
@@ -181,35 +180,35 @@ class OnePointSpectra(nn.Module):
         """
         # print(f"\n[DEBUG OPS.forward] Input k1_input shape: {k1_input.shape}")
         # print(f"[DEBUG OPS.forward] k1_input range: [{k1_input.min().item():.3e}, {k1_input.max().item():.3e}]")
-        
+
         self.exp_scales()
         # print(f"[DEBUG OPS.forward] Scales: L={self.LengthScale.item():.3f}, Gamma={self.TimeScale.item():.3f}, sigma={self.Magnitude.item():.6f}")
-        
+
         self.k = torch.stack(torch.meshgrid(k1_input, self.grid_k2, self.grid_k3, indexing="ij"), dim=-1)
         self.k123 = self.k[..., 0], self.k[..., 1], self.k[..., 2]
         self.beta = self.EddyLifetime()
         # print(f"[DEBUG OPS.forward] beta range: [{self.beta.min().item():.3e}, {self.beta.max().item():.3e}]")
         # print(f"[DEBUG OPS.forward] Any NaN in beta? {torch.isnan(self.beta).any().item()}")
-        
+
         self.k0 = self.k.clone()
         self.k0[..., 2] = self.k[..., 2] + self.beta * self.k[..., 0]
         k0L = self.LengthScale * self.k0.norm(dim=-1)
         # print(f"[DEBUG OPS.forward] k0L range: [{k0L.min().item():.3e}, {k0L.max().item():.3e}]")
-        
+
         self.E0 = self.Magnitude * self.LengthScale ** (5.0 / 3.0) * VKEnergySpectrum(k0L)
         # print(f"[DEBUG OPS.forward] E0 range: [{self.E0.min().item():.3e}, {self.E0.max().item():.3e}]")
         # print(f"[DEBUG OPS.forward] Any NaN in E0? {torch.isnan(self.E0).any().item()}")
-        
+
         self.Phi = self.PowerSpectra()
         # print(f"[DEBUG OPS.forward] Number of Phi components: {len(self.Phi)}")
         # for i, phi in enumerate(self.Phi):
         #     print(f"[DEBUG OPS.forward] Phi[{i}] range: [{phi.min().item():.3e}, {phi.max().item():.3e}], NaN? {torch.isnan(phi).any().item()}")
-        
+
         kF = torch.stack([k1_input * self.quad23(Phi) for Phi in self.Phi])
         # print(f"[DEBUG OPS.forward] Final kF shape: {kF.shape}")
         # print(f"[DEBUG OPS.forward] Final kF range: [{kF.min().item():.3e}, {kF.max().item():.3e}]")
         # print(f"[DEBUG OPS.forward] Any NaN in kF? {torch.isnan(kF).any().item()}")
-        
+
         return kF
 
     def init_mann_approximation(self):
@@ -329,10 +328,49 @@ class OnePointSpectra(nn.Module):
             In the case that the Power Spectra is not RDT
             and therefore incorrect.
         """
-        if self.type_PowerSpectra == PowerSpectraType.RDT:
-            return PowerSpectraRDT(self.k, self.beta, self.E0)
-        else:
-            raise Exception("Incorrect PowerSpectra model !")
+        k = self.k
+        beta = self.beta
+        E0 = self.E0
+
+        # BEGIN rdt power spectra calculation.
+        k1, k2, k3 = k[..., 0], k[..., 1], k[..., 2]
+
+        k30 = k3 + beta * k1
+        kk0 = k1**2 + k2**2 + k30**2
+        kk = k1**2 + k2**2 + k3**2
+        s = k1**2 + k2**2
+
+        # Debug prints (Note: might need to remove @torch.jit.script decorator temporarily)
+        # print(f"[DEBUG PowerSpectraRDT] s min: {s.min().item():.3e}, zeros: {(s == 0).sum().item()}")
+        # print(f"[DEBUG PowerSpectraRDT] kk min: {kk.min().item():.3e}, zeros: {(kk == 0).sum().item()}")
+        # print(f"[DEBUG PowerSpectraRDT] kk0 min: {kk0.min().item():.3e}, zeros: {(kk0 == 0).sum().item()}")
+
+        C1 = beta * k1**2 * (kk0 - 2 * k30**2 + beta * k1 * k30) / (kk * s)
+        C2 = k2 * kk0 / torch.sqrt(s**3) * torch.atan2(beta * k1 * torch.sqrt(s), kk0 - k30 * k1 * beta)
+
+        zeta1 = C1 - k2 / k1 * C2
+        zeta2 = C1 * k2 / k1 + C2
+        E0 /= 4 * torch.pi
+        Phi11 = E0 / (kk0**2) * (kk0 - k1**2 - 2 * k1 * k30 * zeta1 + (k1**2 + k2**2) * zeta1**2)
+        Phi22 = E0 / (kk0**2) * (kk0 - k2**2 - 2 * k2 * k30 * zeta2 + (k1**2 + k2**2) * zeta2**2)
+        Phi33 = E0 / (kk**2) * (k1**2 + k2**2)
+        Phi13 = E0 / (kk * kk0) * (-k1 * k30 + (k1**2 + k2**2) * zeta1)
+
+        Phi12 = E0 / (kk0**2) * (-k1 * k2 - k1 * k30 * zeta2 - k2 * k30 * zeta1 + (k1**2 + k2**2) * zeta1 * zeta2)
+        Phi23 = E0 / (kk * kk0) * (-k2 * k30 + (k1**2 + k2**2) * zeta2)
+
+        # DEBUG: add a small epsilon to prevent extremely small values
+        epsilon = 1e-12
+
+        Phi11 = torch.where(Phi11 < epsilon, epsilon, Phi11)
+        Phi22 = torch.where(Phi22 < epsilon, epsilon, Phi22)
+        Phi33 = torch.where(Phi33 < epsilon, epsilon, Phi33)
+        Phi13 = torch.where(Phi13 < epsilon, epsilon, Phi13)
+        Phi12 = torch.where(Phi12 < epsilon, epsilon, Phi12)
+        Phi23 = torch.where(Phi23 < epsilon, epsilon, Phi23)
+
+        # In order, uu, vv, ww, uw, vw, uv
+        return Phi11, Phi22, Phi33, Phi13, Phi23, Phi12
 
     @torch.jit.export
     def quad23(self, f: torch.Tensor) -> torch.Tensor:
