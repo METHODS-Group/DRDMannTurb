@@ -1,5 +1,4 @@
-"""Implements the one point spectra"""
-
+"""Implements the one point spectra."""
 
 from typing import Optional
 
@@ -80,6 +79,7 @@ class OnePointSpectra(nn.Module):
                 nn_parameters.nlayers,
                 nn_parameters.hidden_layer_size,
                 learn_nu=learn_nu,
+                k_inf_asymptote=physical_params.k_inf_asymptote,
             )
 
         elif type_eddy_lifetime == EddyLifetimeType.CUSTOMMLP:
@@ -89,6 +89,7 @@ class OnePointSpectra(nn.Module):
                 nn_parameters.hidden_layer_sizes,
                 nn_parameters.activations,
                 learn_nu=learn_nu,
+                k_inf_asymptote=physical_params.k_inf_asymptote,
             )
 
         elif type_eddy_lifetime == EddyLifetimeType.MANN_APPROX:
@@ -97,21 +98,23 @@ class OnePointSpectra(nn.Module):
         self.type_EddyLifetime = type_eddy_lifetime
         self.type_PowerSpectra = type_power_spectra
 
+        ####
+        # OPS grid
         # k2 grid
         p1, p2, N = -3, 3, 100
         grid_zero = torch.tensor([0], dtype=torch.float64)
         grid_plus = torch.logspace(p1, p2, N, dtype=torch.float64)
         grid_minus = -torch.flip(grid_plus, dims=[0])
-        self.grid_k2 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
+        self.ops_grid_k2 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
 
         # k3 grid
         p1, p2, N = -3, 3, 100
         grid_zero = torch.tensor([0], dtype=torch.float64)
         grid_plus = torch.logspace(p1, p2, N, dtype=torch.float64)
         grid_minus = -torch.flip(grid_plus, dims=[0])
-        self.grid_k3 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
+        self.ops_grid_k3 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
 
-        self.meshgrid23 = torch.meshgrid(self.grid_k2, self.grid_k3, indexing="ij")
+        self.ops_meshgrid23 = torch.meshgrid(self.ops_grid_k2, self.ops_grid_k3, indexing="ij")
 
         assert physical_params.L > 0, "Length scale L must be positive."
         assert physical_params.Gamma > 0, "Characteristic time scale Gamma must be positive."
@@ -182,9 +185,9 @@ class OnePointSpectra(nn.Module):
         # print(f"[DEBUG OPS.forward] k1_input range: [{k1_input.min().item():.3e}, {k1_input.max().item():.3e}]")
 
         self.exp_scales()
-        # print(f"[DEBUG OPS.forward] Scales: L={self.LengthScale.item():.3f}, Gamma={self.TimeScale.item():.3f}, sigma={self.Magnitude.item():.6f}")
+        # print(f"[DEBUG OPS.forward] Scales: L={self.LengthScale}, Gamma={self.TimeScale}, sigma={self.Magnitude}")
 
-        self.k = torch.stack(torch.meshgrid(k1_input, self.grid_k2, self.grid_k3, indexing="ij"), dim=-1)
+        self.k = torch.stack(torch.meshgrid(k1_input, self.ops_grid_k2, self.ops_grid_k3, indexing="ij"), dim=-1)
         self.k123 = self.k[..., 0], self.k[..., 1], self.k[..., 2]
         self.beta = self.EddyLifetime()
         # print(f"[DEBUG OPS.forward] beta range: [{self.beta.min().item():.3e}, {self.beta.max().item():.3e}]")
@@ -202,7 +205,8 @@ class OnePointSpectra(nn.Module):
         self.Phi = self.PowerSpectra()
         # print(f"[DEBUG OPS.forward] Number of Phi components: {len(self.Phi)}")
         # for i, phi in enumerate(self.Phi):
-        #     print(f"[DEBUG OPS.forward] Phi[{i}] range: [{phi.min().item():.3e}, {phi.max().item():.3e}], NaN? {torch.isnan(phi).any().item()}")
+        #     print(f"[DEBUG OPS.forward] Phi[{i}] range: [{phi.min().item():.3e}, {phi.max().item():.3e}], "
+        #           f"NaN? {torch.isnan(phi).any().item()}")
 
         kF = torch.stack([k1_input * self.quad23(Phi) for Phi in self.Phi])
         # print(f"[DEBUG OPS.forward] Final kF shape: {kF.shape}")
@@ -210,6 +214,21 @@ class OnePointSpectra(nn.Module):
         # print(f"[DEBUG OPS.forward] Any NaN in kF? {torch.isnan(kF).any().item()}")
 
         return kF
+
+    def SpectralCoherence(self, k1_input: torch.Tensor) -> torch.Tensor:
+        r"""Evaluate spectral coherence.
+
+        Parameters
+        ----------
+        k1_input : torch.Tensor
+            Discrete :math:`k_1` wavevector domain.
+
+        Returns
+        -------
+        torch.Tensor
+            Spectral coherence.
+        """
+        pass
 
     def init_mann_approximation(self):
         r"""Initialize Mann eddy lifetime function approximation.

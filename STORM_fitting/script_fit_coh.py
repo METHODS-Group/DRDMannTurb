@@ -18,16 +18,16 @@ domain = torch.logspace(-1, 3, 40)
 #       heights that we were given, so this is height[30]
 zref = 148.56202535609793
 
+# NOTE: Empricially obtained from the LES data.
+#       As k \to \infty, the Fij data is approximately \propto k^{-5}
+k_inf_asymptote = 5.0
+
 spectra_file = Path("data_cleaned/log_downsampled_6component_spectra.dat")
 CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=","))
 
-data_scale = CustomData[:, 1:4].mean().item()  # Average of uu, vv, ww components
-print(f"Average data scale: {data_scale:.3f}")
-
 L = 70
 Gamma = 3.7
-sigma = data_scale * 0.1
-# sigma = 0.04
+sigma = 0.04
 Uref = 21
 
 
@@ -83,7 +83,7 @@ pb = drdmt.CalibrationProblem(
         data_type=drdmt.DataType.CUSTOM,
         tol=1e-9,
         nepochs=5,
-        learn_nu=True,
+        learn_nu=False,
         learning_rate=0.1,
     ),
     loss_params=drdmt.LossParameters(alpha_pen1=1.0, alpha_pen2=1.0, beta_reg=1e-3),
@@ -94,6 +94,7 @@ pb = drdmt.CalibrationProblem(
         domain=domain,
         Uref=Uref,
         zref=zref,
+        k_inf_asymptote=k_inf_asymptote,
     ),
     logging_directory="runs/custom_data",
     device=device,

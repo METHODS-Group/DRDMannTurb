@@ -1,6 +1,4 @@
-"""
-This module defines several dataclasses that comprise the set-up for a calibration problem of a DRD-Mann model.
-"""
+"""Several dataclasses that make it easy to pass around parameters."""
 
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Union
@@ -68,7 +66,8 @@ class ProblemParameters:
 
 @dataclass
 class PhysicalParameters:
-    r"""
+    r"""Define physical parameters for the learning problem.
+
     This class provides a convenient method of storing and passing around
     the physical parameters required to define a problem; this also offers
     generic default values.
@@ -98,12 +97,15 @@ class PhysicalParameters:
 
     ustar: float = 1.0
 
+    k_inf_asymptote: float = -2.0 / 3.0
+
     domain: torch.Tensor = torch.logspace(-1, 2, 20)
 
 
 @dataclass
 class LossParameters:
-    r"""
+    r"""Set coefficients for loss function terms.
+
     This class provides a convenient method of storing and passing around
     the loss function term coefficients; this also offers default values, which result in the loss function
     consisting purely of an MSE loss.
@@ -130,7 +132,8 @@ class LossParameters:
 
 @dataclass
 class NNParameters:
-    r"""
+    r"""Define neural network architecture.
+
     This class provides a generic and convenient method of storing and passing
     around values required for the definition of the different neural networks
     that are implemented in this package; this also offers default values.
@@ -169,7 +172,8 @@ class NNParameters:
 
 @dataclass
 class DomainParameters:
-    r"""
+    r"""Define domain parameters for the fluctuation field generation component.
+
     This class provides a convenient method of storing and passing around
     the domain parameters required for the fluctuation field generation.
 
@@ -209,18 +213,19 @@ class DomainParameters:
 
     @property
     def grid_dimensions(self):
-        """Getter for grid dimensions"""
+        """Getter for grid dimensions."""
         return self._grid_dimensions
 
     @property
     def grid_levels(self):
-        """Getter for grid levels"""
+        """Getter for grid levels."""
         return self._grid_levels
 
 
 @dataclass
 class LowFreqParameters:
-    r"""
+    r"""Define parameters for the low-frequency model extension.
+
     This class provides a convenient method of storing and passing around
     the physical parameters required for the low-frequency model extension.
 
