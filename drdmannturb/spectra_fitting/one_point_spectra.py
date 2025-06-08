@@ -215,7 +215,10 @@ class OnePointSpectra(nn.Module):
 
         return kF
 
-    def SpectralCoherence(self, k1_input: torch.Tensor) -> torch.Tensor:
+    def SpectralCoherence(
+        self,
+        k1_input: torch.Tensor,
+    ) -> torch.Tensor:
         r"""Evaluate spectral coherence.
 
         Parameters
@@ -228,6 +231,7 @@ class OnePointSpectra(nn.Module):
         torch.Tensor
             Spectral coherence.
         """
+        self.k = torch.stack(torch.meshgrid(k1_input, self.ops_grid_k2, self.ops_grid_k3, indexing="ij"), dim=-1)
         pass
 
     def init_mann_approximation(self):
@@ -332,20 +336,36 @@ class OnePointSpectra(nn.Module):
 
     @torch.jit.export
     def PowerSpectra(self):
-        """Call the RDT Power Spectra model with current approximation.
+        r"""Classical rapid distortion spectra.
 
-        TODO: Why does this exist? This just obfuscates things...
+        This is the solution to
+
+        .. math::
+            \frac{\bar{D} \mathrm{~d} Z_j(\boldsymbol{k}, t)}{\bar{D} t}=\frac{\partial U_{\ell}}{\partial x_k}
+            \left(2 \frac{k_j k_{\ell}}{k^2}-\delta_{j \ell}\right) \mathrm{d} Z_k(\boldsymbol{k}, t)
+
+        given by
+
+        .. math::
+            \mathrm{d} \mathbf{Z}(\boldsymbol{k}(t), t)=\boldsymbol{D}_\tau(\boldsymbol{k}) \mathrm{d} \mathbf{Z}
+            \left(\boldsymbol{k}_0, 0\right).
+
+        Refer to the original DRD paper, Section III, subsection B for a full expansion.
+
+        Parameters
+        ----------
+        k : torch.Tensor
+            Wave vector domain.
+        beta : torch.Tensor
+            Evaluated eddy lifetime function.
+        E0 : torch.Tensor
+            Evaluated and non-dimensionalized von Karman energy spectrum.
 
         Returns
         -------
-        torch.Tensor
-            RDT power spectra evaluation.
-
-        Raises
-        ------
-        Exception
-            In the case that the Power Spectra is not RDT
-            and therefore incorrect.
+        tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]
+            6-tuple of the components of the velocity-spectrum tensor in the order:
+            :math:`\Phi_{11}, \Phi_{22}, \Phi_{33}, \Phi_{13}, \Phi_{12}, \Phi_{23}`.
         """
         k = self.k
         beta = self.beta
@@ -381,10 +401,13 @@ class OnePointSpectra(nn.Module):
         # DEBUG: add a small epsilon to prevent extremely small values
         epsilon = 1e-12
 
+        # DEBUG: test sign of Phi13 -- are we just resetting it to 1e-12 since it's negative?
+        # print(f"[DEBUG PowerSpectraRDT] Phi13 sign: {torch.sign(Phi13.mean()).item()}")
+
         Phi11 = torch.where(Phi11 < epsilon, epsilon, Phi11)
         Phi22 = torch.where(Phi22 < epsilon, epsilon, Phi22)
         Phi33 = torch.where(Phi33 < epsilon, epsilon, Phi33)
-        Phi13 = torch.where(Phi13 < epsilon, epsilon, Phi13)
+        Phi13 = torch.where(torch.abs(Phi13) < epsilon, epsilon * torch.sign(Phi13), Phi13)
         Phi12 = torch.where(Phi12 < epsilon, epsilon, Phi12)
         Phi23 = torch.where(Phi23 < epsilon, epsilon, Phi23)
 

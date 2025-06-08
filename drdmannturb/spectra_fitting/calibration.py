@@ -93,6 +93,9 @@ class CalibrationProblem:
 
         self.nn_params = nn_params
         self.prob_params = prob_params
+        if self.prob_params.num_components not in [3, 4, 6]:
+            raise ValueError(f"Invalid number of components: {self.prob_params.num_components}; must be 3, 4, or 6")
+
         self.loss_params = loss_params
         self.phys_params = phys_params
 
@@ -231,7 +234,7 @@ class CalibrationProblem:
 
         if not torch.is_tensor(param_vec):
             param_vec = torch.tensor(
-                param_vec, # dtype=torch.float64
+                param_vec,  # dtype=torch.float64
             )  # TODO: this should also properly load on GPU, issue #28
 
         vector_to_parameters(param_vec, self.OPS.parameters())
@@ -327,7 +330,7 @@ class CalibrationProblem:
         formatted_k1 = k1.clone().detach()
         formatted_k1.requires_grad = k1.requires_grad
 
-        return formatted_k1#.to(torch.float64)
+        return formatted_k1  # .to(torch.float64)
 
     def format_output(self, out: torch.Tensor) -> np.ndarray:
         """Cast the output to a CPU tensor.
@@ -396,10 +399,8 @@ class CalibrationProblem:
 
         self.plot_loss_optim = False
 
-        self.curves = [0, 1, 2, 3, 4, 5]
-        # self.curves = [0, 1, 2, 3]
+        self.curves = list(range(0, self.prob_params.num_components))
 
-        # self.k1_data_pts = torch.tensor(DataPoints, dtype=torch.float64)[:, 0].squeeze()
         self.k1_data_pts = torch.tensor(DataPoints)[:, 0].squeeze()
 
         self.LossAggregator = LossAggregator(
@@ -410,16 +411,36 @@ class CalibrationProblem:
             tb_comment=tb_comment,
         )
 
-        self.kF_data_vals = torch.cat(
-            (
-                DataValues[:, 0, 0], # uu
-                DataValues[:, 1, 1], # vv
-                DataValues[:, 2, 2], # ww
-                DataValues[:, 0, 2], # uw
-                DataValues[:, 1, 2], # vw
-                DataValues[:, 0, 1], # uv
+        if self.prob_params.num_components == 3:
+            self.kF_data_vals = torch.cat(
+                (
+                    DataValues[:, 0, 0],  # uu
+                    DataValues[:, 1, 1],  # vv
+                    DataValues[:, 2, 2],  # ww
+                )
             )
-        )
+        elif self.prob_params.num_components == 4:
+            self.kF_data_vals = torch.cat(
+                (
+                    DataValues[:, 0, 0],  # uu
+                    DataValues[:, 1, 1],  # vv
+                    DataValues[:, 2, 2],  # ww
+                    DataValues[:, 0, 2],  # uw
+                )
+            )
+        elif self.prob_params.num_components == 6:
+            self.kF_data_vals = torch.cat(
+                (
+                    DataValues[:, 0, 0],  # uu
+                    DataValues[:, 1, 1],  # vv
+                    DataValues[:, 2, 2],  # ww
+                    DataValues[:, 0, 2],  # uw
+                    DataValues[:, 1, 2],  # vw
+                    DataValues[:, 0, 1],  # uv
+                )
+            )
+
+        _num_components = self.prob_params.num_components
 
         k1_data_pts, y_data0 = self.k1_data_pts, self.kF_data_vals
 
@@ -429,7 +450,7 @@ class CalibrationProblem:
         # print(f"[DEBUG calibrate] Any NaN in y? {torch.isnan(y).any().item()}")
 
         y_data = torch.zeros_like(y)
-        y_data[:6, ...] = y_data0.view(6, y_data0.shape[0] // 6)
+        y_data[:_num_components, ...] = y_data0.view(_num_components, y_data0.shape[0] // _num_components)
         # print(f"[DEBUG calibrate] Data y_data shape: {y_data.shape}")
         # print(f"[DEBUG calibrate] Data y_data range: [{y_data.min().item():.3e}, {y_data.max().item():.3e}]")
         # print(f"[DEBUG calibrate] Number of zeros in y_data: {(y_data == 0).sum().item()}")
@@ -650,7 +671,8 @@ class CalibrationProblem:
 
     def plot(
         self,
-        Data: Optional[tuple[Iterable[float], torch.Tensor]] = None,
+        OPSData: Optional[tuple[Iterable[float], torch.Tensor]] = None,
+        CoherenceData=None,
         model_vals: torch.Tensor = None,
         plot_tau: bool = True,
         save: bool = False,
@@ -698,24 +720,60 @@ class CalibrationProblem:
             are provided.
         """
         clr = ["royalblue", "crimson", "forestgreen", "mediumorchid", "orange", "purple"]
-        spectra_labels = ["11", "22", "33", "13", "12", "23"] # For titles and labels
+        spectra_labels = ["11", "22", "33", "13", "23", "12"]  # For titles and labels (model order)
+
+        # Define which components have data based on num_components
+        # Model order: [F11, F22, F33, F13, F23, F12] (indices 0, 1, 2, 3, 4, 5)
+        # Data order depends on num_components:
+        # 3 components: [F11, F22, F33] -> model indices [0, 1, 2]
+        # 4 components: [F11, F22, F33, F13] -> model indices [0, 1, 2, 3]
+        # 6 components: [F11, F22, F33, F13, F12, F23] -> model indices [0, 1, 2, 3, 5, 4] (reordered)
+
+        if self.prob_params.num_components == 3:
+            data_component_map = {0: 0, 1: 1, 2: 2}  # model_idx: data_idx
+        elif self.prob_params.num_components == 4:
+            data_component_map = {0: 0, 1: 1, 2: 2, 3: 3}  # model_idx: data_idx
+        elif self.prob_params.num_components == 6:
+            data_component_map = {0: 0, 1: 1, 2: 2, 3: 3, 4: 5, 5: 4}  # model_idx: data_idx (F23 and F12 swapped)
+        else:
+            raise ValueError(f"Invalid number of components: {self.prob_params.num_components}")
 
         # --- Data Preparation ---
-        if Data is not None:
-            DataPoints, DataValues = Data
+        if OPSData is not None:
+            DataPoints, DataValues = OPSData
             k1_data_pts = torch.tensor(DataPoints)[:, 0].squeeze()
 
-            # Extract all 6 components: F11, F22, F33, F13, F12, F23
-            kF_data_vals = torch.cat(
-                (
-                    DataValues[:, 0, 0], # F11 (uu)
-                    DataValues[:, 1, 1], # F22 (vv)
-                    DataValues[:, 2, 2], # F33 (ww)
-                    - DataValues[:, 0, 2], # F13 (uw)
-                    DataValues[:, 0, 1], # F12 (uv)
-                    DataValues[:, 1, 2], # F23 (vw)
+            kF_data_vals: torch.Tensor
+
+            if self.prob_params.num_components == 3:
+                kF_data_vals = torch.cat(
+                    [
+                        DataValues[:, 0, 0],  # F11 (uu)
+                        DataValues[:, 1, 1],  # F22 (vv)
+                        DataValues[:, 2, 2],  # F33 (ww)
+                    ]
                 )
-            )
+            elif self.prob_params.num_components == 4:
+                kF_data_vals = torch.cat(
+                    [
+                        DataValues[:, 0, 0],  # F11 (uu)
+                        DataValues[:, 1, 1],  # F22 (vv)
+                        DataValues[:, 2, 2],  # F33 (ww)
+                        DataValues[:, 0, 2],  # F13 (uw)
+                    ]
+                )
+            elif self.prob_params.num_components == 6:
+                kF_data_vals = torch.cat(
+                    [
+                        DataValues[:, 0, 0],  # F11 (uu)
+                        DataValues[:, 1, 1],  # F22 (vv)
+                        DataValues[:, 2, 2],  # F33 (ww)
+                        DataValues[:, 0, 2],  # F13 (uw)
+                        DataValues[:, 0, 1],  # F12 (uv)
+                        DataValues[:, 1, 2],  # F23 (vw)
+                    ]
+                )
+
         else:
             if hasattr(self, "k1_data_pts") and self.k1_data_pts is not None:
                 k1_data_pts = self.k1_data_pts
@@ -733,40 +791,48 @@ class CalibrationProblem:
                     "currently specified."
                 )
 
+        if CoherenceData is not None:
+            DataPoints, DataValues = CoherenceData
+
+        # Always get all 6 components from the model
         kF_model_vals = model_vals if model_vals is not None else self.OPS(k1_data_pts) / self.phys_params.ustar**2.0
 
         kF_model_vals = kF_model_vals.cpu().detach()
         kF_data_vals = kF_data_vals.cpu().detach() / self.phys_params.ustar**2
         k1_data_pts = k1_data_pts.cpu().detach()
 
-        s = kF_data_vals.shape[0] # Total number of data points across all components
-        num_data_points_per_component = s // 6  # Now 6 components instead of 4
-        kF_data_vals_reshaped = kF_data_vals.view(6, num_data_points_per_component)
+        _num_components = self.prob_params.num_components
+
+        # Reshape data for the components that were provided
+        s = kF_data_vals.shape[0]  # Total number of data points across provided components
+        num_data_points_per_component = s // _num_components
+        kF_data_vals_reshaped = kF_data_vals.view(_num_components, num_data_points_per_component)
 
         # --- Plotting Setup ---
         with plt.style.context("bmh"):
-            plt.rcParams.update({"font.size": 10}) # Slightly larger font
+            plt.rcParams.update({"font.size": 10})  # Slightly larger font
 
-            # --- Spectra Plot (2x3 Grid) ---
+            # --- Spectra Plot (2x3 Grid) - Always 6 plots ---
             self.fig_spectra, self.ax_spectra = plt.subplots(
                 nrows=2,
-                ncols=3,  # Changed to 2x3 for 6 components
+                ncols=3,
                 num="Spectra Calibration",
                 clear=True,
-                figsize=[15, 8], # Adjusted size for 2x3
-                sharex=True # Share x-axis for comparison
+                figsize=[15, 8],  # Adjusted size for 2x3
+                sharex=True,  # Share x-axis for comparison
             )
             self.ax_spectra_flat = self.ax_spectra.flatten()
-            self.lines_SP_model = [None] * 6  # Now 6 components
+            self.lines_SP_model = [None] * 6  # Always 6 components
             self.lines_SP_data = [None] * 6
 
-            for i in range(6): # Iterate through all 6 components
+            # Plot all 6 components
+            for i in range(6):
                 ax = self.ax_spectra_flat[i]
                 comp_idx = spectra_labels[i]
                 # Flip sign for F13 (uw component) - index 3
                 sign = -1 if i == 3 else 1
 
-                # Plot Model
+                # Always plot model (all 6 components available)
                 (self.lines_SP_model[i],) = ax.plot(
                     k1_data_pts,
                     sign * kF_model_vals[i].numpy(),
@@ -774,16 +840,19 @@ class CalibrationProblem:
                     color=clr[i],
                     label=rf"$F_{comp_idx}$ model",
                 )
-                # Plot Data
-                (self.lines_SP_data[i],) = ax.plot(
-                    k1_data_pts,
-                    sign * kF_data_vals_reshaped[i].numpy(),
-                    "o", # Just markers for data
-                    markersize=4, # Smaller markers
-                    color=clr[i],
-                    label=rf"$F_{comp_idx}$ data",
-                    alpha=0.6,
-                )
+
+                # Only plot data if this component was provided
+                if i in data_component_map:
+                    data_idx = data_component_map[i]
+                    (self.lines_SP_data[i],) = ax.plot(
+                        k1_data_pts,
+                        sign * kF_data_vals_reshaped[data_idx].numpy(),
+                        "o",  # Just markers for data
+                        markersize=4,  # Smaller markers
+                        color=clr[i],
+                        label=rf"$F_{comp_idx}$ data",
+                        alpha=0.6,
+                    )
 
                 title = rf"$-F_{ {comp_idx} }$" if i == 3 else rf"$F_{ {comp_idx} }$"
                 ax.set_title(title + " Spectra")
@@ -794,11 +863,11 @@ class CalibrationProblem:
                 ax.grid(which="both")
 
             # Common X label for bottom row
-            for j in range(3):  # Bottom row has 3 subplots now
+            for j in range(3):  # Bottom row has 3 subplots
                 self.ax_spectra[1, j].set_xlabel(r"$k_1 z$")
 
-            self.fig_spectra.suptitle("One-point Spectra Fit (6 Components)", fontsize=14)
-            self.fig_spectra.tight_layout(rect=[0, 0.03, 1, 0.95]) # Adjust layout for suptitle
+            self.fig_spectra.suptitle("One-point Spectra Fit (All 6 Components)", fontsize=14)
+            self.fig_spectra.tight_layout(rect=[0, 0.03, 1, 0.95])  # Adjust layout for suptitle
             self.fig_spectra.canvas.draw()
             self.fig_spectra.canvas.flush_events()
 
@@ -819,7 +888,7 @@ class CalibrationProblem:
                     ncols=1,
                     num="Eddy Lifetime",
                     clear=True,
-                    figsize=[7, 5], # Smaller figure for single plot
+                    figsize=[7, 5],  # Smaller figure for single plot
                 )
                 self.ax_tau.set_title("Eddy lifetime")
                 self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
@@ -865,42 +934,41 @@ class CalibrationProblem:
                 self.ax_tau.legend()
                 self.ax_tau.set_xscale("log")
                 self.ax_tau.set_yscale("log")
-                self.ax_tau.set_xlabel(r"$k L$") # Use kL instead of k1L for general lifetime
+                self.ax_tau.set_xlabel(r"$k L$")  # Use kL instead of k1L for general lifetime
                 self.ax_tau.set_ylabel(r"$\tau$")
                 self.ax_tau.grid(which="both")
                 self.fig_tau.tight_layout()
                 self.fig_tau.canvas.draw()
                 self.fig_tau.canvas.flush_events()
 
-
         # --- Update Plots (if needed, e.g., in an interactive context) ---
         # This part assumes the plot might be updated later without full re-plotting
-        for i in range(6):  # Now 6 components
+        for i in range(6):  # Always 6 components
             curr_model = self.lines_SP_model[i]
             if curr_model is not None:
-                 sign = -1 if i == 3 else 1
-                 curr_model.set_ydata(sign * kF_model_vals[i])
+                sign = -1 if i == 3 else 1
+                curr_model.set_ydata(sign * kF_model_vals[i])
 
-        if plot_tau and self.fig_tau is not None: # Check if tau plot exists
-             # Recalculate tau values based on potentially updated OPS parameters
-             k_gd = torch.logspace(-3, 3, 50) # dtype=torch.float64) # Ensure k_gd is defined
-             k_1 = torch.stack([k_gd, 0 * k_gd, 0 * k_gd], dim=-1)
-             k_2 = torch.stack([0 * k_gd, k_gd, 0 * k_gd], dim=-1)
-             k_3 = torch.stack([0 * k_gd, 0 * k_gd, k_gd], dim=-1)
-             k_4 = torch.stack([k_gd, k_gd, k_gd], dim=-1) / 3 ** (1 / 2)
+        if plot_tau and self.fig_tau is not None:  # Check if tau plot exists
+            # Recalculate tau values based on potentially updated OPS parameters
+            k_gd = torch.logspace(-3, 3, 50)  # dtype=torch.float64) # Ensure k_gd is defined
+            k_1 = torch.stack([k_gd, 0 * k_gd, 0 * k_gd], dim=-1)
+            k_2 = torch.stack([0 * k_gd, k_gd, 0 * k_gd], dim=-1)
+            k_3 = torch.stack([0 * k_gd, 0 * k_gd, k_gd], dim=-1)
+            k_4 = torch.stack([k_gd, k_gd, k_gd], dim=-1) / 3 ** (1 / 2)
 
-             self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
-             self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
-             self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
-             self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
-             # Update lines
-             self.lines_LT_model1.set_ydata(self.tau_model1)
-             self.lines_LT_model2.set_ydata(self.tau_model2)
-             self.lines_LT_model3.set_ydata(self.tau_model3)
-             self.lines_LT_model4.set_ydata(self.tau_model4)
-             # Reference tau might also change if L/Gamma params change, recalculate if needed
-             # self.tau_ref = ...
-             # self.lines_LT_ref.set_ydata(self.tau_ref)
+            self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
+            self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
+            self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
+            self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
+            # Update lines
+            self.lines_LT_model1.set_ydata(self.tau_model1)
+            self.lines_LT_model2.set_ydata(self.tau_model2)
+            self.lines_LT_model3.set_ydata(self.tau_model3)
+            self.lines_LT_model4.set_ydata(self.tau_model4)
+            # Reference tau might also change if L/Gamma params change, recalculate if needed
+            # self.tau_ref = ...
+            # self.lines_LT_ref.set_ydata(self.tau_ref)
 
         # --- Saving ---
         if save:
@@ -921,14 +989,14 @@ class CalibrationProblem:
                 os.makedirs(save_dir_path)
 
             print(f"Saving spectra plot to: {spectra_save_path}")
-            self.fig_spectra.savefig(spectra_save_path, format="png", dpi=150, bbox_inches='tight')
+            self.fig_spectra.savefig(spectra_save_path, format="png", dpi=150, bbox_inches="tight")
 
             if plot_tau and self.fig_tau is not None:
                 tau_save_path = save_dir_path / (base_filename + "_tau.png")
                 print(f"Saving tau plot to: {tau_save_path}")
-                self.fig_tau.savefig(tau_save_path, format="png", dpi=150, bbox_inches='tight')
+                self.fig_tau.savefig(tau_save_path, format="png", dpi=150, bbox_inches="tight")
 
-        plt.show() # Show both figures if created
+        plt.show()  # Show both figures if created
 
     def plot_losses(self, run_number: int):
         """Wrap the ``plot_loss_logs`` helper.
