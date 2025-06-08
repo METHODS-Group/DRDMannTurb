@@ -9,7 +9,7 @@ In this example, the exponent :math:`\\nu=-\\frac{1}{3}` is fixed so that :math:
 matches the slope of :math:`\\tau^{IEC}` for in the energy-containing range, :math:`k \\rightarrow 0`.
 
 The following example is also discussed in the `original DRD paper <https://arxiv.org/abs/2107.11046>`_.
-"""
+"""  # noqa
 
 #######################################################################################
 # Import packages
@@ -18,6 +18,9 @@ The following example is also discussed in the `original DRD paper <https://arxi
 # First, we import the packages we need for this example. Additionally, we choose to use
 # CUDA if it is available.
 
+import pickle
+
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -34,6 +37,8 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
+
+torch.set_default_dtype(torch.float64)
 
 #######################################################################################
 # Setting Physical Parameters
@@ -88,13 +93,14 @@ pb = CalibrationProblem(
         activations=[nn.ReLU(), nn.ReLU()],
     ),
     prob_params=ProblemParameters(
-        nepochs=10, learn_nu=False, eddy_lifetime=EddyLifetimeType.TAUNET
+        nepochs=10,
+        learn_nu=False,
+        eddy_lifetime=EddyLifetimeType.TAUNET,
+        num_components=4,
     ),
     # Note that we have not activated the first order term, but this can be done by passing a value for ``alpha_pen1``
     loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1.0e-5),
-    phys_params=PhysicalParameters(
-        L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1
-    ),
+    phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1),
     logging_directory="runs/synthetic_fit",
     device=device,
 )
@@ -148,7 +154,6 @@ pb.save_model("./outputs/")
 # Lastly, we load our model back in.
 
 # %%
-import pickle
 
 path_to_parameters = "./outputs/EddyLifetimeType.TAUNET_DataType.KAIMAL.pkl"
 
@@ -174,7 +179,5 @@ pb_new = CalibrationProblem(
 )
 
 pb_new.parameters = model_params
-
-import numpy as np
 
 assert np.ma.allequal(pb.parameters, pb_new.parameters)

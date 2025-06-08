@@ -327,12 +327,15 @@ class OnePointSpectra(nn.Module):
         This is the initialization for the DRD models for learning the eddy lifetime function :math:`\tau`. Currently,
         this is just the :math:`0` function, but later functionality may allow this to be dynamically set.
 
+        TODO: This should depend on the scale of the data, eg. for Kaimal, 0.0 is better
+            but for the STORM data, the initial guess should be higher.
+
         Returns
         -------
         float
             Initial guess evaluation. (Presently, constant function)
         """
-        return 10.0
+        return 0.0
 
     @torch.jit.export
     def PowerSpectra(self):

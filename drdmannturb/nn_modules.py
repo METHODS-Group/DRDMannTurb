@@ -59,7 +59,7 @@ class Rational(nn.Module):
         torch.Tensor
             Network output
         """
-        a = self.nu - self.k_inf_asymptote
+        a = self.nu + self.k_inf_asymptote
         b = self.nu / 2.0
         out = torch.abs(x)
         out = (out**a) / ((1 + out**2) ** b)
