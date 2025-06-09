@@ -1,17 +1,11 @@
+"""Test the data generation utilities."""
+
 from pathlib import Path
 
 import numpy as np
 import pytest
 import torch
 
-from drdmannturb import EddyLifetimeType
-from drdmannturb.enums import DataType
-from drdmannturb.parameters import (
-    LossParameters,
-    NNParameters,
-    PhysicalParameters,
-    ProblemParameters,
-)
 from drdmannturb.spectra_fitting import OnePointSpectraDataGenerator
 
 device = "cpu"
@@ -20,9 +14,7 @@ fp = Path(__file__).parent
 
 
 def test_kaimal_mann():
-    """
-    Tests data generation for Kaimal spectra under Mann parameters from the original 90s paper.
-    """
+    """Test data generation for Kaimal spectra under Mann parameters from the original 90s paper."""
     zref = 40  # reference height
     ustar = 1.773  # friction velocity
 
@@ -39,3 +31,8 @@ def test_kaimal_mann():
     )
 
     assert np.allclose(kaimal_mann_spectra_new, kaimal_mann_spectra_true)
+
+
+def test_vk_mann():
+    """Test data generation for von Karman spectra."""
+    pass

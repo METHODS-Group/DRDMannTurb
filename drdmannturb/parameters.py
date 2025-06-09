@@ -1,6 +1,4 @@
-"""
-This module defines several dataclasses that comprise the set-up for a calibration problem of a DRD-Mann model.
-"""
+"""Several dataclasses that make it easy to pass around parameters."""
 
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Union
@@ -16,12 +14,18 @@ __all__ = ["ProblemParameters", "PhysicalParameters", "NNParameters", "LossParam
 
 @dataclass
 class ProblemParameters:
-    r"""
+    r"""Define generic numerical parameters for the problem.
+
     This class provides a convenient method of storing and passing around
     generic numerical parameters; this also offers default values
 
     Args
     ----
+    num_components : int
+        Number of components to fit, either 3, 4, or 6. By default, 4.
+        - If 3, assumes that 11, 22, and 33 are provided in that order.
+        - If 4, assumes that 11, 22, 33, and 13 are provided in that order.
+        - If 6, assumes that 11, 22, 33, 13, 12, and 23 are provided in that order.
     learning_rate : float
         Initial earning rate for optimizer.
     tol : float
@@ -49,6 +53,8 @@ class ProblemParameters:
         If true, learns also the exponent :math:`\nu`, by default True
     """
 
+    num_components: int = 4
+
     learning_rate: float = 1e-1
     tol: float = 1e-3
     nepochs: int = 10
@@ -67,7 +73,8 @@ class ProblemParameters:
 
 @dataclass
 class PhysicalParameters:
-    r"""
+    r"""Define physical parameters for the learning problem.
+
     This class provides a convenient method of storing and passing around
     the physical parameters required to define a problem; this also offers
     generic default values.
@@ -97,12 +104,15 @@ class PhysicalParameters:
 
     ustar: float = 1.0
 
+    k_inf_asymptote: float = -2.0 / 3.0
+
     domain: torch.Tensor = torch.logspace(-1, 2, 20)
 
 
 @dataclass
 class LossParameters:
-    r"""
+    r"""Set coefficients for loss function terms.
+
     This class provides a convenient method of storing and passing around
     the loss function term coefficients; this also offers default values, which result in the loss function
     consisting purely of an MSE loss.
@@ -129,7 +139,8 @@ class LossParameters:
 
 @dataclass
 class NNParameters:
-    r"""
+    r"""Define neural network architecture.
+
     This class provides a generic and convenient method of storing and passing
     around values required for the definition of the different neural networks
     that are implemented in this package; this also offers default values.
@@ -168,7 +179,8 @@ class NNParameters:
 
 @dataclass
 class DomainParameters:
-    r"""
+    r"""Define domain parameters for the fluctuation field generation component.
+
     This class provides a convenient method of storing and passing around
     the domain parameters required for the fluctuation field generation.
 
@@ -208,18 +220,19 @@ class DomainParameters:
 
     @property
     def grid_dimensions(self):
-        """Getter for grid dimensions"""
+        """Getter for grid dimensions."""
         return self._grid_dimensions
 
     @property
     def grid_levels(self):
-        """Getter for grid levels"""
+        """Getter for grid levels."""
         return self._grid_levels
 
 
 @dataclass
 class LowFreqParameters:
-    r"""
+    r"""Define parameters for the low-frequency model extension.
+
     This class provides a convenient method of storing and passing around
     the physical parameters required for the low-frequency model extension.
 

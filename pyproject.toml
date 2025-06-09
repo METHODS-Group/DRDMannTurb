@@ -33,7 +33,10 @@ dependencies = [
     "tensorboard>=2.19.0",
     "torch==2.6.0", # TODO: check CUDA
     "tqdm==4.67.1",
-    # TODO: netcdf4
+    "xarray>=2024.7.0",
+    "netcdf4",
+    "jax>=0.4.30",
+    "polars>=1.29.0",
 ]
 
 [project.urls]
@@ -62,6 +65,7 @@ dev = [
     "pytest-cov",
     "ruff>=0.4.8",
     "scalene",
+    "ipykernel",
 ]
 
 # Add this section to fix the build error
@@ -81,6 +85,8 @@ lint.unfixable = []
 # Configure docstring style
 lint.pydocstyle.convention = "numpy"
 
+# Allow unused variables when underscore-prefixed.
+lint.dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 # Exclude a variety of commonly ignored directories.
 exclude = [
@@ -111,9 +117,6 @@ exclude = [
 
 # Same as Black.
 line-length = 120
-
-# Allow unused variables when underscore-prefixed.
-lint.dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 # Assume Python 3.9
 target-version = "py39"

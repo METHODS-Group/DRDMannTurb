@@ -1,4 +1,6 @@
 """
+Data-driven ABL turbulence modeling software, intended for synthetic inlet data generation.
+
 DRDMannTurb (short for Deep Rapid Distortion theory Mann Turbulence model) is a data-driven
 framework for syntetic turbulence generation in Python. The code is based on the original work
 of Jacob Mann in 1994 and 1998 as well as in the deep-learning enhancement developed by Keith
@@ -46,7 +48,6 @@ from .spectra_fitting import (
     LossAggregator,
     OnePointSpectra,
     OnePointSpectraDataGenerator,
-    PowerSpectraRDT,
 )
 
 __all__ = [
@@ -99,5 +100,4 @@ __all__ = [
     "LossAggregator",
     "OnePointSpectra",
     "OnePointSpectraDataGenerator",
-    "PowerSpectraRDT",
 ]

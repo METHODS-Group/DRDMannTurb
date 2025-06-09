@@ -108,10 +108,10 @@ def test_grid_calculation(l1_factor, l2_factor, exp1, exp2):
     ],
 )
 def test_generate_output_shape_and_variance(l1_factor, l2_factor, exp1, exp2, request, num_realizations=30):
-    """
-    Tests that generate() returns fields with the correct USER shape and
-    that the AVERAGE total variance over the FULL COMPUTATIONAL domain
-    is close to the target sigma2.
+    """Test that generate() returns correct fields (variance, shape).
+
+    For each of the above param set cases, we check that generate() returns fields with the desired
+    shape and variance specified by the user in the configuration.
     """
     config = create_base_config(l1_factor, l2_factor, exp1, exp2)
     target_variance = config["sigma2"]

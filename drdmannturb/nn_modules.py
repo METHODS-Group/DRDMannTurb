@@ -1,7 +1,4 @@
-"""
-This module contains all the implementations PyTorch nn.Module subclasses
-used throughout.
-"""
+"""All nn.Module's used throughout the framework."""
 
 __all__ = ["TauNet", "CustomNet"]
 
@@ -13,7 +10,10 @@ import torch.nn as nn
 
 class Rational(nn.Module):
     r"""
-    Learnable rational kernel; a neural network that learns the rational function
+    Learnable rational kernel.
+
+    We require the MLP to be composed with this kernel to ensure certain
+    properties and asymptotics of the eddy lifetime function in the end.
 
         .. math::
             \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}
@@ -26,8 +26,10 @@ class Rational(nn.Module):
             \mathrm{NN}(\operatorname{abs}(\boldsymbol{k})).
     """
 
-    def __init__(self, learn_nu: bool = True) -> None:
+    def __init__(self, learn_nu: bool = True, k_inf_asymptote: float = -2.0 / 3.0) -> None:
         """
+        Initialize the rational kernel.
+
         Parameters
         ----------
         learn_nu : bool, optional
@@ -36,13 +38,16 @@ class Rational(nn.Module):
         """
         super().__init__()
         self.fg_learn_nu = learn_nu
+
+        self.k_inf_asymptote = k_inf_asymptote
+
         self.nu = -1.0 / 3.0
         if self.fg_learn_nu:
-            self.nu = nn.Parameter(torch.tensor(float(self.nu)))
+            self.nu = nn.Parameter(torch.tensor(float(-1.0 / 3.0)))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Forward method implementation
+        Forward pass of the rational kernel.
 
         Parameters
         ----------
@@ -54,21 +59,24 @@ class Rational(nn.Module):
         torch.Tensor
             Network output
         """
-        a = self.nu - 2 / 3
-        b = self.nu
+        a = self.nu + self.k_inf_asymptote
+        b = self.nu / 2.0
         out = torch.abs(x)
-        out = out**a / (1 + out**2) ** (b / 2)
+        out = (out**a) / ((1 + out**2) ** b)
         return out
 
 
 class SimpleNN(nn.Module):
     """
-    A simple feed-forward neural network consisting of n layers with a ReLU activation function. The default
-    initialization is to random noise of magnitude 1e-9.
+    A simple feed-forward neural network consisting of n layers with a ReLU activation function.
+
+    The default initialization is to random noise of magnitude 1e-9.
     """
 
     def __init__(self, nlayers: int = 2, inlayer: int = 3, hlayer: int = 3, outlayer: int = 3) -> None:
         """
+        Initialize a simple feed-forward network.
+
         Parameters
         ----------
         nlayers : int, optional
@@ -95,7 +103,7 @@ class SimpleNN(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Forward method implementation
+        Forward pass of the simple feed-forward network.
 
         Parameters
         ----------
@@ -119,8 +127,9 @@ class SimpleNN(nn.Module):
 
 class CustomMLP(nn.Module):
     """
-    Feed-forward neural network with variable widths of layers and activation functions. Useful for DNN
-    configurations and experimentation with different activation functions.
+    Feed-forward neural network with variable widths of layers and activation functions.
+
+    Useful for DNN configurations and experimentation with different activation functions.
     """
 
     def __init__(
@@ -131,6 +140,8 @@ class CustomMLP(nn.Module):
         outlayer: int = 3,
     ) -> None:
         """
+        Initialize a feed-forward network with variable widths of layers and activation functions.
+
         Parameters
         ----------
         hlayers : list
@@ -160,7 +171,7 @@ class CustomMLP(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Forward method implementation
+        Forward pass of the feed-forward network with variable widths of layers and activation functions.
 
         Parameters
         ----------
@@ -193,7 +204,8 @@ Learnable eddy lifetime models
 
 class TauNet(nn.Module):
     r"""
-    Classical implementation of neural network that learns the eddy lifetime function :math:`\tau(\boldsymbol{k})`.
+    A neural network which learns the eddy lifetime function :math:`\tau(\boldsymbol{k})`.
+
     A SimpleNN and Rational network comprise this class. The network widths are determined by a single integer and
     thereafter the networks have hidden layers of only that width.
 
@@ -217,8 +229,11 @@ class TauNet(nn.Module):
         n_layers: int = 2,
         hidden_layer_size: int = 3,
         learn_nu: bool = True,
+        k_inf_asymptote: float = -2.0 / 3.0,
     ):
         r"""
+        Initialize the tauNet.
+
         Parameters
         ----------
         n_layers : int, optional
@@ -235,13 +250,15 @@ class TauNet(nn.Module):
         self.fg_learn_nu = learn_nu
 
         self.NN = SimpleNN(nlayers=self.n_layers, inlayer=3, hlayer=self.hidden_layer_size, outlayer=3)
-        self.Ra = Rational(learn_nu=self.fg_learn_nu)
+        self.Ra = Rational(learn_nu=self.fg_learn_nu, k_inf_asymptote=k_inf_asymptote)
 
         self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
 
     def forward(self, k: torch.Tensor) -> torch.Tensor:
-        """
-        Forward method implementation. Evaluates
+        r"""
+        Forward pass of the tauNet.
+
+        Evaluates the eddy lifetime function :math:`\tau(\boldsymbol{k})`.
 
         Parameters
         ----------
@@ -260,7 +277,9 @@ class TauNet(nn.Module):
 
 class CustomNet(nn.Module):
     r"""
-    A more versatile version of the tauNet. The objective is the same: to learn the eddy lifetime function
+    A more versatile version of the tauNet.
+
+    The objective is the same: to learn the eddy lifetime function
     :math:`\tau(\boldsymbol{k})` in the same way. This class allows for neural networks of variable widths and
     different kinds of activation functions used between layers.
     """
@@ -271,8 +290,11 @@ class CustomNet(nn.Module):
         hidden_layer_sizes: Union[int, list[int]] = [10, 10],
         activations: List[nn.Module] = [nn.ReLU(), nn.ReLU()],
         learn_nu: bool = True,
+        k_inf_asymptote: float = -2.0 / 3.0,
     ):
         r"""
+        Initialize the customNet.
+
         Parameters
         ----------
         n_layers : int, optional
@@ -298,13 +320,15 @@ class CustomNet(nn.Module):
             hls = hidden_layer_sizes
 
         self.NN = CustomMLP(hlayers=hls, activations=self.activations, inlayer=3, outlayer=3)
-        self.Ra = Rational(learn_nu=self.fg_learn_nu)
+        self.Ra = Rational(learn_nu=self.fg_learn_nu, k_inf_asymptote=k_inf_asymptote)
 
         self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
 
     def forward(self, k: torch.Tensor) -> torch.Tensor:
-        """
-        Forward method implementation
+        r"""
+        Forward pass of the customNet.
+
+        Evaluates the eddy lifetime function :math:`\tau(\boldsymbol{k})`.
 
         Parameters
         ----------

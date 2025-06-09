@@ -1,7 +1,4 @@
-"""
-This module will be moved into /test at some point. It implements graphical and numerical tests for the implementation
-of the low-frequency generator.
-"""
+"""Graphical and numerical tests for the implementation of the low-frequency generator."""
 
 import concurrent.futures
 
@@ -13,9 +10,9 @@ import drdmannturb.fluctuation_generation.low_frequency.fluctuation_field_genera
 
 # ------------------------------------------------------------------------------------------------ #
 def _run_single_mesh(exponent, config, num_realizations=5):
-    """
-    Complete a single run with a config and exponent, return
-    exponent itself (to be used for sorting), the u1 norm, and
+    """Complete a single run with a config and exponent.
+
+    Return the exponent itself (to be used for sorting), the u1 norm, and
     the u2 norm
     """
     local_config = config.copy()
@@ -48,9 +45,7 @@ def _run_single_mesh(exponent, config, num_realizations=5):
 
 
 def mesh_independence_study(low=4, high=12):
-    """
-    Compute norm of field over several grid sizes.
-    """
+    """Compute norm of field over several grid sizes."""
     cfg_mesh_base = {
         "sigma2": 2.0,
         "L_2d": 15_000.0,
@@ -103,9 +98,9 @@ def mesh_independence_study(low=4, high=12):
 
 
 def _run_single_domain_size(domain_factor, config, num_realizations=5):
-    """
-    Complete a single run with a config and domain size factor, return
-    the factor itself (to be used for sorting), the u1 norm, the u2 norm,
+    """Complete a single run with a config and domain size factor.
+
+    Return the factor itself (to be used for sorting), the u1 norm, the u2 norm,
     and variances
     """
     local_config = config.copy()
@@ -140,9 +135,7 @@ def _run_single_domain_size(domain_factor, config, num_realizations=5):
 
 
 def domain_size_study(factors=None):
-    """
-    Compute norm and variance of field over several domain sizes.
-    """
+    """Compute norm and variance of field over several domain sizes."""
     if factors is None:
         factors = np.arange(1, 17)
 
@@ -200,8 +193,8 @@ def domain_size_study(factors=None):
 
 
 def plot_spectra_comparison(gen: ffg.LowFreqGenerator):
-    """
-    Computes and plots numerical vs analytical spectra F11 and F22.
+    """Compute and plot numerical vs analytical spectra F11 and F22.
+
     Plots k1*F vs k1*L_2d on log-log axes.
 
     Parameters
@@ -264,8 +257,7 @@ def plot_spectra_comparison(gen: ffg.LowFreqGenerator):
 
 
 def recreate_fig2(gen_a, gen_b, num_realizations=10, do_plot=True):
-    """
-    Computes and plots numerical vs analytical spectra F11 and F22.
+    """Compute and plot numerical vs analytical spectra F11 and F22.
 
     Plots k1*F vs k1*L_2d on semilogx axes, recreating figure 2 from the Mann-Syed paper
     """
@@ -498,6 +490,7 @@ def recreate_fig2(gen_a, gen_b, num_realizations=10, do_plot=True):
 
 
 def length_AND_grid_size_study(base_config, do_plot=False, num_realizations=10):
+    """Compute norm of field over several grid sizes and domain factors."""
     config = base_config.copy()
 
     grid_exponents = [7, 8, 9, 10, 11]
@@ -648,9 +641,7 @@ def length_AND_grid_size_study(base_config, do_plot=False, num_realizations=10):
 
 
 def rectangular_domain_study(base_config, num_realizations=30, do_plot=True):
-    """
-    Same thing as above but we want to try large rectangles wrt. L_2d
-    """
+    """Compute norm of field over several rectangular domain sizes."""
     L1_L2_factor_pairs = [
         (16, 8),
         (16, 4),
@@ -723,10 +714,7 @@ def rectangular_domain_study(base_config, num_realizations=30, do_plot=True):
 
 
 def anisotropy_study(base_config, psi_degrees, num_realizations=10, do_plot=True):
-    """
-    Computes statistics (variances) and plots a representative generated
-    velocity field (u1, u2) for different anisotropy angles (psi).
-    """
+    """Compute (variances) and plot (u1, u2) for different anisotropy angles (psi)."""
     print("=" * 80)
     print("RUNNING ANISOTROPY STUDY (Plotting Fields)")
     print(f"Psi angles: {psi_degrees} degrees")
