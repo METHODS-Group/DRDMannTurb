@@ -93,6 +93,14 @@ class PhysicalParameters:
         Reference height value; should be measured at hub height (meters)
     domain : torch.Tensor
         :math:`k_1` domain over which spectra data are defined.
+    alpha_low : float, optional
+        Low wavenumber asymptotic slope for energy spectrum, by default 4.0 (von Karman)
+    alpha_high : float, optional
+        High wavenumber asymptotic slope for energy spectrum, by default -5.0/3.0 (von Karman)
+    transition_slope : float, optional
+        Transition slope parameter for energy spectrum, by default 17.0/3.0 (von Karman)
+    use_parametrizable_spectrum : bool, optional
+        Whether to use the parametrizable energy spectrum, by default False
     """
 
     L: float
@@ -105,6 +113,12 @@ class PhysicalParameters:
     ustar: float = 1.0
 
     k_inf_asymptote: float = -2.0 / 3.0
+
+    # Energy spectrum asymptotic slope parameters
+    alpha_low: float = 4.0  # Low k asymptote (von Karman default)
+    alpha_high: float = -5.0 / 3.0  # High k asymptote (von Karman default)
+    transition_slope: float = 17.0 / 3.0  # Transition parameter (von Karman default)
+    use_parametrizable_spectrum: bool = False  # Whether to use parametrizable spectrum
 
     domain: torch.Tensor = torch.logspace(-1, 2, 20)
 

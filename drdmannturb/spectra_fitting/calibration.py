@@ -113,6 +113,7 @@ class CalibrationProblem:
             type_eddy_lifetime=self.prob_params.eddy_lifetime,
             physical_params=self.phys_params,
             type_power_spectra=self.prob_params.power_spectra,
+            use_parametrizable_spectrum=self.phys_params.use_parametrizable_spectrum,
             nn_parameters=self.nn_params,
             learn_nu=self.prob_params.learn_nu,
         )
@@ -354,6 +355,7 @@ class CalibrationProblem:
     def calibrate(
         self,
         data: tuple[Iterable[float], torch.Tensor],
+        coherence_data_file: Optional[str] = None,
         tb_comment: str = "",
         optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
     ) -> dict[str, float]:
@@ -398,10 +400,33 @@ class CalibrationProblem:
         nepochs = self.prob_params.nepochs
 
         self.plot_loss_optim = False
-
         self.curves = list(range(0, self.prob_params.num_components))
-
         self.k1_data_pts = torch.tensor(DataPoints)[:, 0].squeeze()
+
+        if coherence_data_file is not None:
+            print(f"Loading coherence data from {coherence_data_file}")
+            self.load_coherence_data(coherence_data_file)
+            self.has_coherence_data = True
+
+            # Set up coherence calculation for the same 4 spatial separations used in plotting
+            print("Setting up coherence calculation for calibration...")
+            self.coherence_separations_tensor = torch.tensor(self.coherence_plot_separations, dtype=torch.float64)
+            print(
+                f"Using {len(self.coherence_plot_separations)} "
+                "spatial separations: {self.coherence_plot_separations}"
+            )
+
+            # Extract coherence data for the selected separations
+            self.coherence_data_u_selected = self.coherence_u[self.coherence_plot_sep_indices, :]
+            self.coherence_data_v_selected = self.coherence_v[self.coherence_plot_sep_indices, :]
+            self.coherence_data_w_selected = self.coherence_w[self.coherence_plot_sep_indices, :]
+
+            # Enable coherence calculation in OPS
+            self.OPS.use_coherence = True
+
+        else:
+            self.has_coherence_data = False
+            self.OPS.use_coherence = False
 
         self.LossAggregator = LossAggregator(
             params=self.loss_params,
@@ -443,6 +468,15 @@ class CalibrationProblem:
         _num_components = self.prob_params.num_components
 
         k1_data_pts, y_data0 = self.k1_data_pts, self.kF_data_vals
+
+        # Compute initial model coherence if coherence data is available
+        if self.has_coherence_data:
+            print("Computing initial model coherence...")
+            self.model_coherence_u, self.model_coherence_v, self.model_coherence_w = self._compute_model_coherence()
+            print("Model coherence shapes:")
+            print(f"\tu = {self.model_coherence_u.shape}")
+            print(f"\tv = {self.model_coherence_v.shape}")
+            print(f"\tw = {self.model_coherence_w.shape}")
 
         y = self.OPS(k1_data_pts)
         # print(f"\n[DEBUG calibrate] Model output y shape: {y.shape}")
@@ -497,8 +531,11 @@ class CalibrationProblem:
 
             self.loss = self.LossAggregator.eval(y[self.curves], y_data[self.curves], self.gen_theta_NN(), self.e_count)
 
-            self.loss.backward()
+            # Update model coherence if coherence data is available
+            if self.has_coherence_data and self.e_count % 10 == 0:  # Update every 10 iterations to save time
+                self.model_coherence_u, self.model_coherence_v, self.model_coherence_w = self._compute_model_coherence()
 
+            self.loss.backward()
             self.e_count += 1
 
             return self.loss
@@ -528,6 +565,24 @@ class CalibrationProblem:
         }
 
         return self.calibrated_params
+
+    def _compute_model_coherence(self) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Compute model coherence for the selected spatial separations."""
+        with torch.no_grad():
+            # Use coherence frequencies directly as k1 (assuming they're in the right units)
+            coherence_k1 = torch.tensor(self.coherence_frequencies, dtype=torch.float64)
+
+            # Filter out zero frequency if present
+            if coherence_k1[0] == 0:
+                coherence_k1[0] = 1e-6  # Replace zero with small positive value
+
+            model_coherence = self.OPS.SpectralCoherence(coherence_k1, self.coherence_separations_tensor)
+            # model_coherence shape: (3, n_selected_separations, n_frequencies)
+            coh_u = model_coherence[0, :, :]  # Shape: (4, 221)
+            coh_v = model_coherence[1, :, :]  # Shape: (4, 221)
+            coh_w = model_coherence[2, :, :]  # Shape: (4, 221)
+
+        return coh_u, coh_v, coh_w
 
     # ------------------------------------------------
     ### Post-treatment and Export
@@ -672,7 +727,6 @@ class CalibrationProblem:
     def plot(
         self,
         OPSData: Optional[tuple[Iterable[float], torch.Tensor]] = None,
-        CoherenceData=None,
         model_vals: torch.Tensor = None,
         plot_tau: bool = True,
         save: bool = False,
@@ -790,9 +844,6 @@ class CalibrationProblem:
                     "Must either provide data points or re-use what was used for model calibration, neither is"
                     "currently specified."
                 )
-
-        if CoherenceData is not None:
-            DataPoints, DataValues = CoherenceData
 
         # Always get all 6 components from the model
         kF_model_vals = model_vals if model_vals is not None else self.OPS(k1_data_pts) / self.phys_params.ustar**2.0
@@ -996,7 +1047,97 @@ class CalibrationProblem:
                 print(f"Saving tau plot to: {tau_save_path}")
                 self.fig_tau.savefig(tau_save_path, format="png", dpi=150, bbox_inches="tight")
 
-        plt.show()  # Show both figures if created
+        # Add coherence plotting after spectra plots
+        if hasattr(self, "has_coherence_data") and self.has_coherence_data:
+            self._plot_coherence_data()
+
+        plt.show()  # Show all created figures
+
+    def _plot_coherence_data(self):
+        """
+        Plot coherence data in a 4x3 grid.
+
+        - 4 rows: different spatial separations
+        - 3 columns: coh_u, coh_v, coh_w vs frequency
+        """
+        import matplotlib.pyplot as plt
+
+        with plt.style.context("bmh"):
+            plt.rcParams.update({"font.size": 10})
+
+            # Create coherence figure
+            self.fig_coherence, self.ax_coherence = plt.subplots(
+                nrows=4, ncols=3, num="Coherence Data", clear=True, figsize=[15, 12], sharex=False, sharey=True
+            )
+
+            coherence_data = [
+                self.coherence_data_u_selected,
+                self.coherence_data_v_selected,
+                self.coherence_data_w_selected,
+            ]
+            coherence_labels = ["u", "v", "w"]
+            colors = ["royalblue", "crimson", "forestgreen"]
+
+            # Get model coherence if available
+            if hasattr(self, "model_coherence_u"):
+                model_coherence = [self.model_coherence_u, self.model_coherence_v, self.model_coherence_w]
+            else:
+                model_coherence = [None, None, None]
+
+            # Frequency shift factors to align model with data (adjust these as needed)
+            freq_shift_factors = [10.0, 20.0, 15.0]  # Multiply model frequencies by these factors
+
+            # Plot for each selected spatial separation
+            for row in range(4):  # 4 spatial separations
+                sep_value = self.coherence_plot_separations[row]
+
+                # Plot each component (u, v, w)
+                for col, (coh_data, model_coh, label, color, shift_factor) in enumerate(
+                    zip(coherence_data, model_coherence, coherence_labels, colors, freq_shift_factors)
+                ):
+                    ax = self.ax_coherence[row, col]
+
+                    # Plot experimental data
+                    ax.plot(
+                        self.coherence_frequencies,
+                        coh_data[row, :],
+                        "o",
+                        color=color,
+                        markersize=3,
+                        alpha=0.7,
+                        label="Data",
+                    )
+
+                    # Plot model prediction with frequency shift
+                    if model_coh is not None:
+                        model_coh_cpu = model_coh[row, :].cpu().detach().numpy()
+
+                        # Shift model frequencies
+                        shifted_frequencies = self.coherence_frequencies * shift_factor
+
+                        ax.plot(shifted_frequencies, model_coh_cpu, "-", color=color, linewidth=2, label="Model")
+
+                    # Match the eddy lifetime plot style
+                    ax.legend()
+                    ax.set_xscale("log")
+                    ax.set_ylim(0, 1)  # Coherence should be between 0 and 1
+                    ax.grid(which="both")
+
+                    # Labels and titles
+                    if row == 0:  # Top row
+                        ax.set_title(f"Coherence {label.upper()}")
+
+                    if col == 0:  # Left column
+                        ax.set_ylabel(f"r = {sep_value:.1f}")
+
+                    if row == 3:  # Bottom row
+                        ax.set_xlabel("Frequency")
+
+            # Overall formatting
+            self.fig_coherence.suptitle("Coherence Functions vs Frequency", fontsize=14)
+            self.fig_coherence.tight_layout(rect=[0, 0.03, 1, 0.95])
+            self.fig_coherence.canvas.draw()
+            self.fig_coherence.canvas.flush_events()
 
     def plot_losses(self, run_number: int):
         """Wrap the ``plot_loss_logs`` helper.
@@ -1020,3 +1161,85 @@ class CalibrationProblem:
         from drdmannturb import plot_loss_logs
 
         plot_loss_logs(full_fpath)
+
+    def load_coherence_data(self, coherence_data_file: str):
+        """
+        Load coherence data from .dat file and store as class attributes.
+
+        Parameters
+        ----------
+        coherence_data_file : str
+            Path to the coherence data file
+        """
+        import numpy as np
+        import pandas as pd
+
+        # Read the data with header - the file has comments (#) and then a header row
+        df = pd.read_csv(coherence_data_file, sep=r"\s+", comment="#", header=0)
+
+        print(f"Total data points read: {len(df)}")
+        print(f"Column names: {df.columns.tolist()}")
+
+        # Get the actual separation and frequency values
+        sep_mapping = df.groupby("sep_idx")["spatial_sep"].first().sort_index()
+        freq_mapping = df.groupby("freq_idx")["frequency"].first().sort_index()
+
+        unique_seps = sep_mapping.values
+        unique_freqs = freq_mapping.values
+
+        n_seps = len(unique_seps)
+        n_freqs = len(unique_freqs)
+
+        print(f"Expected grid: {n_seps} x {n_freqs} = {n_seps * n_freqs}")
+        print(f"Actual data points: {len(df)}")
+
+        # Check if we have complete data
+        expected_size = n_seps * n_freqs
+        if len(df) != expected_size:
+            print(f"Warning: Expected {expected_size} points but got {len(df)}")
+            print("This could indicate missing data points.")
+
+            # Create a complete grid and fill with NaN where data is missing
+            coh_u = np.full((n_seps, n_freqs), np.nan)
+            coh_v = np.full((n_seps, n_freqs), np.nan)
+            coh_w = np.full((n_seps, n_freqs), np.nan)
+
+            # Fill in the available data
+            for _, row in df.iterrows():
+                i = int(row["sep_idx"])
+                j = int(row["freq_idx"])
+                if i < n_seps and j < n_freqs:
+                    coh_u[i, j] = row["coh_u"]
+                    coh_v[i, j] = row["coh_v"]
+                    coh_w[i, j] = row["coh_w"]
+
+            # Check how many NaN values we have
+            nan_count = np.sum(np.isnan(coh_u))
+            if nan_count > 0:
+                print(f"Warning: {nan_count} missing data points filled with NaN")
+        else:
+            # We have complete data, can reshape normally
+            print("Complete data grid detected")
+            coh_u = df["coh_u"].values.reshape(n_seps, n_freqs)
+            coh_v = df["coh_v"].values.reshape(n_seps, n_freqs)
+            coh_w = df["coh_w"].values.reshape(n_seps, n_freqs)
+
+        # Store as class attributes
+        self.coherence_spatial_seps = unique_seps
+        self.coherence_frequencies = unique_freqs
+        self.coherence_u = coh_u
+        self.coherence_v = coh_v
+        self.coherence_w = coh_w
+        self.coherence_shape = (n_seps, n_freqs)
+
+        # Select 4 spatial separations evenly spaced across the range
+        sep_indices = np.linspace(0, n_seps - 1, 4, dtype=int)
+        self.coherence_plot_sep_indices = sep_indices
+        self.coherence_plot_separations = unique_seps[sep_indices]
+
+        print(f"Loaded coherence data: {self.coherence_shape} grid")
+        print(f"Spatial separations range: [{unique_seps.min():.3f}, {unique_seps.max():.3f}]")
+        print(f"Frequencies range: [{unique_freqs.min():.6f}, {unique_freqs.max():.6f}]")
+        print(f"Selected separations for plotting: {self.coherence_plot_separations}")
+
+        return True

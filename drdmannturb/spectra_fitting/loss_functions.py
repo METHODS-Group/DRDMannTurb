@@ -103,26 +103,26 @@ class LossAggregator:
         """
         # print(f"\n[DEBUG MSE_term] model shape: {model.shape}, target shape: {target.shape}")
         # print(f"[DEBUG MSE_term] abs(model) range: [{model.abs().min().item():.3e}, {model.abs().max().item():.3e}]")
-        # print(f"[DEBUG MSE_term] abs(target) range: [{target.abs().min().item():.3e}, {target.abs().max().item():.3e}]")
+        # print(f"[DBG MSE_term] abs(target) range: [{target.abs().min().item():.3e}, {target.abs().max().item():.3e}]")
         # print(f"[DEBUG MSE_term] Number of zeros in target: {(target == 0).sum().item()}")
         # print(f"[DEBUG MSE_term] Number of zeros in model output: {(model == 0).sum().item()}")
 
         # print(f"[DEBUG MSE_TERM] Model: {model}")
         # print(f"[DEBUG MSE_TERM] Target: {target}")
-        
+
         # ratio = model / target
         # print(f"[DEBUG MSE_term] ratio range: [{ratio.min().item():.3e}, {ratio.max().item():.3e}]")
         # print(f"[DEBUG MSE_term] Any NaN in ratio? {torch.isnan(ratio).any().item()}")
         # print(f"[DEBUG MSE_term] Any Inf in ratio? {torch.isinf(ratio).any().item()}")
-        
+
         # log_ratio = torch.log(torch.abs(ratio))
         # print(f"[DEBUG MSE_term] log_ratio range: [{log_ratio.min().item():.3e}, {log_ratio.max().item():.3e}]")
         # print(f"[DEBUG MSE_term] Any NaN in log_ratio? {torch.isnan(log_ratio).any().item()}")
         # print(f"[DEBUG MSE_term] Any Inf in log_ratio? {torch.isinf(log_ratio).any().item()}")
-        
+
         mse_loss = torch.mean(torch.log(torch.abs(model / target)).square())
         # print(f"[DEBUG MSE_term] Final MSE loss: {mse_loss.item()}")
-        
+
         self.writer.add_scalar("MSE Loss", mse_loss, epoch)
 
         return mse_loss

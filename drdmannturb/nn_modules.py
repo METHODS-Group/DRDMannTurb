@@ -26,7 +26,7 @@ class Rational(nn.Module):
             \mathrm{NN}(\operatorname{abs}(\boldsymbol{k})).
     """
 
-    def __init__(self, learn_nu: bool = True, k_inf_asymptote: float = -2.0 / 3.0) -> None:
+    def __init__(self, learn_nu: bool = True, nu_init: float = -1.0 / 3.0) -> None:
         """
         Initialize the rational kernel.
 
@@ -39,11 +39,10 @@ class Rational(nn.Module):
         super().__init__()
         self.fg_learn_nu = learn_nu
 
-        self.k_inf_asymptote = k_inf_asymptote
-
-        self.nu = -1.0 / 3.0
+        self.nu = nu_init
         if self.fg_learn_nu:
-            self.nu = nn.Parameter(torch.tensor(float(-1.0 / 3.0)))
+            self.nu = nn.Parameter(torch.tensor(float(nu_init)))
+        print(f"DEBUG: nu initial = {self.nu}")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -59,7 +58,7 @@ class Rational(nn.Module):
         torch.Tensor
             Network output
         """
-        a = self.nu + self.k_inf_asymptote
+        a = self.nu - (2.0 / 3.0)
         b = self.nu / 2.0
         out = torch.abs(x)
         out = (out**a) / ((1 + out**2) ** b)
@@ -225,11 +224,7 @@ class TauNet(nn.Module):
     """
 
     def __init__(
-        self,
-        n_layers: int = 2,
-        hidden_layer_size: int = 3,
-        learn_nu: bool = True,
-        k_inf_asymptote: float = -2.0 / 3.0,
+        self, n_layers: int = 2, hidden_layer_size: int = 3, learn_nu: bool = True, nu_init: float = -1.0 / 3.0
     ):
         r"""
         Initialize the tauNet.
@@ -250,7 +245,7 @@ class TauNet(nn.Module):
         self.fg_learn_nu = learn_nu
 
         self.NN = SimpleNN(nlayers=self.n_layers, inlayer=3, hlayer=self.hidden_layer_size, outlayer=3)
-        self.Ra = Rational(learn_nu=self.fg_learn_nu, k_inf_asymptote=k_inf_asymptote)
+        self.Ra = Rational(learn_nu=self.fg_learn_nu, nu_init=nu_init)
 
         self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
 
@@ -290,7 +285,7 @@ class CustomNet(nn.Module):
         hidden_layer_sizes: Union[int, list[int]] = [10, 10],
         activations: List[nn.Module] = [nn.ReLU(), nn.ReLU()],
         learn_nu: bool = True,
-        k_inf_asymptote: float = -2.0 / 3.0,
+        nu_init: float = -1.0 / 3.0,
     ):
         r"""
         Initialize the customNet.
@@ -320,7 +315,7 @@ class CustomNet(nn.Module):
             hls = hidden_layer_sizes
 
         self.NN = CustomMLP(hlayers=hls, activations=self.activations, inlayer=3, outlayer=3)
-        self.Ra = Rational(learn_nu=self.fg_learn_nu, k_inf_asymptote=k_inf_asymptote)
+        self.Ra = Rational(learn_nu=self.fg_learn_nu, nu_init=nu_init)
 
         self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
 

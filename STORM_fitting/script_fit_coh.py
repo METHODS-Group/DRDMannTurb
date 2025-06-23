@@ -23,6 +23,7 @@ zref = 148.56202535609793
 k_inf_asymptote = 5.0
 
 spectra_file = Path("data_cleaned/log_downsampled_6component_spectra.dat")
+coherence_file = Path("data_cleaned/coherence_data.dat")
 CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=","))
 
 L = 70
@@ -64,40 +65,44 @@ gen.Data = (DataPoints, DataValues)
 
 domain = torch.logspace(-1, 3, 40)
 
-L = 70
-Gamma = 3.7
-sigma = 0.04
-Uref = 21
-
 # NOTE: Below is obtained from the LES data... we used the 31st of 60
 #       heights that we were given, so this is height[30]
 zref = 148.56202535609793
-device = "cpu"
 
 # Define Calibration Problem
 pb = drdmt.CalibrationProblem(
     nn_params=drdmt.NNParameters(
-        nlayers=3, hidden_layer_sizes=[10, 10, 10], activations=[nn.ReLU(), nn.ReLU(), nn.ReLU()]
+        nlayers=4, hidden_layer_sizes=[10, 10, 10, 10], activations=[nn.ReLU(), nn.ReLU(), nn.ReLU(), nn.ReLU()]
     ),
     prob_params=drdmt.ProblemParameters(
         data_type=drdmt.DataType.CUSTOM,
         tol=1e-9,
-        nepochs=5,
+        nepochs=2,  # TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:
         learn_nu=False,
         learning_rate=0.1,
+        num_components=6,
     ),
-    loss_params=drdmt.LossParameters(alpha_pen1=1.0, alpha_pen2=1.0, beta_reg=1e-3),
+    loss_params=drdmt.LossParameters(
+        alpha_pen1=1.5,
+        alpha_pen2=1.5,
+        beta_reg=1e-2,
+    ),
     phys_params=drdmt.PhysicalParameters(
-        L=L,
-        Gamma=Gamma,
-        sigma=sigma,
+        L=500.0,
+        Gamma=13.0,
+        sigma=0.25,
         domain=domain,
-        Uref=Uref,
+        Uref=21.0,
         zref=zref,
-        k_inf_asymptote=k_inf_asymptote,
+        use_parametrizable_spectrum=False,
+        alpha_low=11.0 / 9.0,  # NOTE: Taken from eye-balling the plot
+        alpha_high=-5.0 / 3.0,
+        transition_slope=1.0,
+        # NOTE: Fij follows k^-5
+        # k_inf_asymptote=k_inf_asymptote,
     ),
     logging_directory="runs/custom_data",
-    device=device,
+    device="cpu",
 )
 
 # Add debugging before calibration
@@ -116,7 +121,7 @@ with torch.no_grad():
 
 # Try fitting
 try:
-    optimal_params = pb.calibrate(data=gen.Data)
+    optimal_params = pb.calibrate(data=gen.Data, coherence_data_file=coherence_file)
 except RuntimeError as e:
     print(f"Error during calibration: {e}")
 
