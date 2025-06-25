@@ -14,7 +14,7 @@ from .common import (
     VKEnergySpectrum,
     plot_loss_logs,
 )
-from .enums import DataType, EddyLifetimeType, PowerSpectraType
+from .enums import DataType, EddyLifetimeType
 from .fluctuation_generation import (
     Covariance,
     FluctuationFieldGenerator,
@@ -60,7 +60,6 @@ __all__ = [
     # Enums
     "DataType",
     "EddyLifetimeType",
-    "PowerSpectraType",
     # Fluctuation Generation
     "Covariance",
     "FluctuationFieldGenerator",

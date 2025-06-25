@@ -5,7 +5,7 @@ import pickle
 from collections.abc import Iterable
 from functools import partial
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -112,7 +112,6 @@ class CalibrationProblem:
         self.OPS = OnePointSpectra(
             type_eddy_lifetime=self.prob_params.eddy_lifetime,
             physical_params=self.phys_params,
-            type_power_spectra=self.prob_params.power_spectra,
             use_parametrizable_spectrum=self.phys_params.use_parametrizable_spectrum,
             nn_parameters=self.nn_params,
             learn_nu=self.prob_params.learn_nu,
@@ -354,7 +353,7 @@ class CalibrationProblem:
 
     def calibrate(
         self,
-        data: tuple[Iterable[float], torch.Tensor],
+        data: tuple[list[tuple[Any, float]], torch.Tensor],
         coherence_data_file: Optional[str] = None,
         tb_comment: str = "",
         optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
@@ -559,9 +558,9 @@ class CalibrationProblem:
 
         # physical parameters are stored as natural logarithms internally
         self.calibrated_params = {
-            "L       ": np.exp(self.parameters[0]),
-            "Γ       ": np.exp(self.parameters[1]),
-            "αϵ^{2/3}": np.exp(self.parameters[2]),
+            "L": np.exp(self.parameters[0]),
+            "Γ": np.exp(self.parameters[1]),
+            "σ": np.exp(self.parameters[2]),
         }
 
         return self.calibrated_params

@@ -14,7 +14,7 @@ from ..common import (
     ParametrizableEnergySpectrum,
     VKLike_EnergySpectrum,
 )
-from ..enums import EddyLifetimeType, PowerSpectraType
+from ..enums import EddyLifetimeType
 from ..nn_modules import CustomNet, TauNet
 from ..parameters import NNParameters, PhysicalParameters
 
@@ -30,7 +30,6 @@ class OnePointSpectra(nn.Module):
         self,
         type_eddy_lifetime: EddyLifetimeType,
         physical_params: PhysicalParameters,
-        type_power_spectra: PowerSpectraType = PowerSpectraType.RDT,
         use_parametrizable_spectrum: bool = False,
         nn_parameters: Optional[NNParameters] = None,
         learn_nu: bool = False,
@@ -101,7 +100,6 @@ class OnePointSpectra(nn.Module):
             self.init_mann_linear_approx = False
 
         self.type_EddyLifetime = type_eddy_lifetime
-        self.type_PowerSpectra = type_power_spectra
         self.use_parametrizable_spectrum = use_parametrizable_spectrum
         self.use_coherence = use_coherence
 

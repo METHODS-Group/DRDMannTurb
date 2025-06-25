@@ -4,15 +4,12 @@ This module contains the ``OnePointSpectraDataGenerator`` class, which generates
 set of parameters.
 """
 
-import warnings
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from scipy.optimize import curve_fit, differential_evolution
 
 from ..enums import DataType
 
@@ -127,91 +124,8 @@ class OnePointSpectraDataGenerator:
             else:
                 raise ValueError("Indicated custom data type, but did not provide a spectra_file argument.")
 
-        elif self.data_type == DataType.AUTO:
-            if self.k1 is not None:
-
-                def func124(k1, a, b, c):
-                    ft = 1 / (2 * np.pi) * k1 * self.zref
-
-                    return a * ft / (1.0 + b * ft) ** c
-
-                def func3(k1, a, b, c):
-                    ft = 1 / (2 * np.pi) * k1 * self.zref
-
-                    return a * ft / (1 + b * ft**c)
-
-                def fitOPS(xData, yData, num):
-                    func = func3 if num == 3 else func124
-
-                    def sumOfSquaredError(parameterTuple):
-                        warnings.filterwarnings("ignore")  # do not print warnings by genetic algorithm
-                        val = func(xData, *parameterTuple)
-                        return np.sum((yData - val) ** 2.0)
-
-                    def generate_Initial_Parameters():
-                        # min and max used for bounds
-                        maxX = max(xData)
-                        minX = min(xData)
-                        maxY = max(yData)
-
-                        parameterBounds = []
-                        # search bounds for a
-                        parameterBounds.append([minX, maxX])
-                        # search bounds for b
-                        parameterBounds.append([minX, maxX])
-                        parameterBounds.append([0.0, maxY])  # search bounds for Offset
-
-                        # "seed" the numpy random number generator for
-                        #   replicable results
-                        result = differential_evolution(sumOfSquaredError, parameterBounds, seed=seed)
-                        return result.x
-
-                    geneticParameters = generate_Initial_Parameters()
-
-                    # curve fit the test data
-                    fittedParameters, _ = curve_fit(func, xData, yData, geneticParameters, maxfev=50_000)
-
-                    return fittedParameters
-
-                if self.spectra_values is not None:
-                    Data_temp = self.spectra_values.copy()
-                else:
-                    raise ValueError("Indicated DataType.AUTO, but did not provide raw spectra data. ")
-
-                assert self.DataPoints is not None, "DataPoints should not be None when using DataType.AUTO."
-
-                DataValues = np.zeros([len(self.DataPoints), 3, 3])
-                print("Filtering provided spectra interpolation.")
-                print("=" * 50)
-
-                fit1 = fitOPS(self.k1, Data_temp[:, 0], 1)
-                DataValues[:, 0, 0] = func124(self.k1, *fit1)
-
-                fit2 = fitOPS(self.k1, Data_temp[:, 1], 2)
-                DataValues[:, 1, 1] = func124(self.k1, *fit2)
-
-                fit3 = fitOPS(self.k1, Data_temp[:, 2], 4)
-                DataValues[:, 2, 2] = func124(self.k1, *fit3)
-
-                fit4 = fitOPS(self.k1, Data_temp[:, 3], 3)
-                DataValues[:, 0, 2] = -func3(self.k1, *fit4)
-
-                DataValues = torch.tensor(DataValues * self.ustar**2)
-                DataPoints = list(zip(self.DataPoints, [self.zref] * len(self.DataPoints)))
-
-                self.Data = (DataPoints, DataValues)
-
-                self.CustomData = torch.tensor(Data_temp)
-            else:
-                raise ValueError("Indicated DataType.AUTO, but did not provide k1_data_points")
-
-        if self.data_type != DataType.AUTO:
-            if self.DataPoints is not None:
-                self.generate_Data(self.DataPoints)
-            else:
-                raise ValueError(
-                    "Did not provide DataPoints during initialization for DataType method requiring spectra data."
-                )
+        else:
+            raise ValueError(f"Invalid data type: {self.data_type}")
 
         return
 
@@ -248,15 +162,15 @@ class OnePointSpectraDataGenerator:
         DataValues = torch.zeros([len(DataPoints), 3, 3])
 
         if self.data_type == DataType.CUSTOM:
-            DataValues[:, 0, 0] = self.CustomData[:, 1] # uu
-            DataValues[:, 1, 1] = self.CustomData[:, 2] # vv
-            DataValues[:, 2, 2] = self.CustomData[:, 3] # ww
+            DataValues[:, 0, 0] = self.CustomData[:, 1]  # uu
+            DataValues[:, 1, 1] = self.CustomData[:, 2]  # vv
+            DataValues[:, 2, 2] = self.CustomData[:, 3]  # ww
             # NOTE: is always negative
-            DataValues[:, 0, 2] = -self.CustomData[:, 4] # uw
+            DataValues[:, 0, 2] = -self.CustomData[:, 4]  # uw
             # TODO: Can be negative, skipping for now
-            DataValues[:, 1, 2] = self.CustomData[:, 5] # vw
+            DataValues[:, 1, 2] = self.CustomData[:, 5]  # vw
             # TODO: Can be negative, skipping for now
-            DataValues[:, 0, 1] = self.CustomData[:, 6] # uv
+            DataValues[:, 0, 1] = self.CustomData[:, 6]  # uv
         else:
             for i, Point in enumerate(DataPoints):
                 DataValues[i] = self.eval(Point)
@@ -265,7 +179,7 @@ class OnePointSpectraDataGenerator:
         self.Data = (DataPoints, DataValues)
         return self.Data
 
-    def eval_VK(self, k1: tuple[Any, float]) -> torch.Tensor:
+    def eval_VK(self, k1: Union[torch.Tensor, float]) -> torch.Tensor:
         r"""Evaluate frequerncy-weighted von Karman spectral tensor.
 
         The von Karman spectral tensor is given by
@@ -302,7 +216,7 @@ class OnePointSpectraDataGenerator:
         F[2, 2] = 3 / 110 * C * (3 * L ** (-2) + 8 * k1**2) / (L ** (-2) + k1**2) ** (11 / 6)
         return k1 * F
 
-    def eval_Kaimal(self, k1: tuple[Any, float]) -> torch.Tensor:
+    def eval_Kaimal(self, k1: Union[torch.Tensor, float]) -> torch.Tensor:
         r"""Evaluate frequency-weighted Kaimal one-point spectra.
 
         Evaluates the one-point spectra as proposed by `Kaimal et al <https://apps.dtic.mil/sti/tr/pdf/AD0748543.pdf>`__
@@ -342,120 +256,3 @@ class OnePointSpectraDataGenerator:
         F[0, 2] = -7 * n / (1 + 9.6 * n) ** (12.0 / 5.0)
 
         return F * self.ustar**2
-
-    def plot(
-        self,
-        x_interp: Optional[np.ndarray] = None,
-        spectra_full: Optional[np.ndarray] = None,
-        x_coords_full: Optional[np.ndarray] = None,
-    ):
-        r"""Plot spectra values over wavevector domain.
-
-        Utility for plotting current spectra data over the wavevector domain. Note that if the datatype is chosen
-        to be ``DataType.AUTO``, the interpolation coordinates in the frequency space must be provided again to
-        determine the domain over which to plot filtered spectra.
-
-        Parameters
-        ----------
-        x_interp : Optional[np.ndarray], optional
-           Interpolation domain in normal space (not log-space), if used ``DataType.AUTO``, by default None
-        spectra_full : Optional[np.ndarray], optional
-            Full tensor of spectra data, by default None
-        x_coords_full : Optional[np.ndarray], optional
-           Full :math:`k_1` log-space coordinates, by default None
-
-        Raises
-        ------
-        ValueError
-            Provide interpolation domain (normal space) for filtered plots.
-        ValueError
-            Provide original spectra and associated domains as a single stack of np.arrays, even if all x coordinates
-            are matching.
-        """
-        custom_palette = ["royalblue", "crimson", "forestgreen", "mediumorchid"]
-
-        # TODO: This only works for DataType.AUTO?
-
-        if self.data_type == DataType.AUTO:
-            if x_interp is None:
-                raise ValueError("Provide interpolation domain (normal space) for filtered plots.")
-
-            if spectra_full is None or x_coords_full is None:
-                raise ValueError(
-                    "Provide original spectra and associated domains as a single stack of np.arrays, even if all x"
-                    "coordinates are matching."
-                )
-
-            x_interp_plt = np.log10(x_interp)
-            filtered_data_fit = self.Data[1].cpu().numpy() if torch.cuda.is_available() else self.Data[1].numpy()
-
-            with plt.style.context("bmh"):
-                plt.rcParams.update({"font.size": 8})
-                fig, ax = plt.subplots()
-
-                ax.plot(
-                    x_interp_plt,
-                    filtered_data_fit[:, 0, 0],
-                    label="Filtered u spectra",
-                    color=custom_palette[0],
-                )
-
-                ax.plot(
-                    x_coords_full[0],
-                    spectra_full[0],
-                    "o",
-                    label="Observed u spectra",
-                    color=custom_palette[0],
-                )
-
-                ax.plot(
-                    x_interp_plt,
-                    filtered_data_fit[:, 1, 1],
-                    label="Filtered v spectra",
-                    color=custom_palette[1],
-                )
-
-                ax.plot(
-                    x_coords_full[1],
-                    spectra_full[1],
-                    "o",
-                    label="Observed v spectra",
-                    color=custom_palette[1],
-                )
-
-                ax.plot(
-                    x_interp_plt,
-                    filtered_data_fit[:, 2, 2],
-                    label="Filtered w spectra",
-                    color=custom_palette[2],
-                )
-
-                ax.plot(
-                    x_coords_full[2],
-                    spectra_full[2],
-                    "o",
-                    label="Observed w spectra",
-                    color=custom_palette[2],
-                )
-
-                ax.plot(
-                    x_interp_plt,
-                    filtered_data_fit[:, 0, 2],
-                    label="Filtered uw cospectra",
-                    color=custom_palette[3],
-                )
-
-                ax.plot(
-                    x_coords_full[3],
-                    spectra_full[3],
-                    "o",
-                    label="Observed uw cospectra",
-                    color=custom_palette[3],
-                )
-
-                ax.set_title("Filtered and Original Spectra")
-                ax.set_xlabel(r"$k_1$")
-                ax.set_ylabel(r"$k_1 F_i /u_*^2$")
-                ax.legend()
-
-            plt.show()
