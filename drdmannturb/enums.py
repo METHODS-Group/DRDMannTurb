@@ -1,16 +1,7 @@
 """Enums determining the fundamental datatypes and choices of models available in the package."""
 
-__all__ = ["DataType", "EddyLifetimeType"]
+__all__ = ["EddyLifetimeType"]
 from enum import Enum
-
-DataType = Enum(
-    "DataType",
-    [
-        "KAIMAL",
-        "CUSTOM",
-        "VK",
-    ],
-)
 
 EddyLifetimeType = Enum(
     "EddyLifetimeType",

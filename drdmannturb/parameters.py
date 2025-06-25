@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from .enums import DataType, EddyLifetimeType
+from .enums import EddyLifetimeType
 
 __all__ = ["ProblemParameters", "PhysicalParameters", "NNParameters", "LossParameters"]
 
@@ -60,7 +60,6 @@ class ProblemParameters:
     init_with_noise: bool = False
     noise_magnitude: float = 1e-3
 
-    data_type: DataType = DataType.KAIMAL
     eddy_lifetime: EddyLifetimeType = EddyLifetimeType.CUSTOMMLP
 
     wolfe_iter_count: int = 20

@@ -709,7 +709,7 @@ class CalibrationProblem:
 
             save_dir = str(save_dir)
 
-        filename = save_dir + "/" + str(self.prob_params.eddy_lifetime) + "_" + str(self.prob_params.data_type) + ".pkl"
+        filename = save_dir + "/" + str(self.prob_params.eddy_lifetime) + ".pkl"
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, "wb+") as file:
             pickle.dump(
