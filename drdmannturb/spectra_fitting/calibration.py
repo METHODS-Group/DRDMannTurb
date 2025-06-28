@@ -235,9 +235,7 @@ class CalibrationProblem:
             )
 
         if not torch.is_tensor(param_vec):
-            param_vec = torch.tensor(
-                param_vec,  # dtype=torch.float64
-            )  # TODO: this should also properly load on GPU, issue #28
+            param_vec = torch.tensor(param_vec)  # TODO: this should also properly load on GPU, issue #28
 
         vector_to_parameters(param_vec, self.OPS.parameters())
 

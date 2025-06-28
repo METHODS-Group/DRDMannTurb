@@ -70,7 +70,7 @@ def generate_kaimal_spectra(k1: torch.Tensor, zref: float, ustar: float) -> torc
     """
     n = 1 / (2 * np.pi) * k1 * zref
 
-    ops_values = torch.zeros([len(k1), 3, 3])
+    ops_values = torch.zeros([len(k1), 3, 3], dtype=k1.dtype)
 
     ops_values[:, 0, 0] = 52.5 * n / (1 + 33 * n) ** (5 / 3)
     ops_values[:, 1, 1] = 8.5 * n / (1 + 9.5 * n) ** (5 / 3)
@@ -81,7 +81,7 @@ def generate_kaimal_spectra(k1: torch.Tensor, zref: float, ustar: float) -> torc
 
     return {
         "k1": k1,
-        "ops": ops_values * ustar**2,
+        "ops": ops_values * torch.tensor(ustar**2, dtype=k1.dtype),
         "coherence": None,
     }
 

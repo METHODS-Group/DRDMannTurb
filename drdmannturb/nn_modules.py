@@ -2,7 +2,7 @@
 
 __all__ = ["TauNet", "CustomNet"]
 
-from typing import List, Union
+from typing import Union
 
 import torch
 import torch.nn as nn
@@ -88,9 +88,9 @@ class SimpleNN(nn.Module):
             Number of output features, by default 3
         """
         super().__init__()
-        self.linears = nn.ModuleList([nn.Linear(hlayer, hlayer, bias=False).double() for _ in range(nlayers - 1)])
-        self.linears.insert(0, nn.Linear(inlayer, hlayer, bias=False).double())
-        self.linear_out = nn.Linear(hlayer, outlayer, bias=False).double()
+        self.linears = nn.ModuleList([nn.Linear(hlayer, hlayer, bias=False) for _ in range(nlayers - 1)])
+        self.linears.insert(0, nn.Linear(inlayer, hlayer, bias=False))
+        self.linear_out = nn.Linear(hlayer, outlayer, bias=False)
 
         self.actfc = nn.ReLU()
 
@@ -155,11 +155,9 @@ class CustomMLP(nn.Module):
         super().__init__()
 
         num_layers = len(hlayers)
-        self.linears = nn.ModuleList(
-            [nn.Linear(hlayers[k], hlayers[k + 1], bias=False).double() for k in range(num_layers - 1)]
-        )
-        self.linears.insert(0, nn.Linear(inlayer, hlayers[0], bias=False).double())
-        self.linear_out = nn.Linear(hlayers[-1], outlayer, bias=False).double()
+        self.linears = nn.ModuleList([nn.Linear(hlayers[k], hlayers[k + 1], bias=False) for k in range(num_layers - 1)])
+        self.linears.insert(0, nn.Linear(inlayer, hlayers[0], bias=False))
+        self.linear_out = nn.Linear(hlayers[-1], outlayer, bias=False)
 
         self.activations = activations
 
@@ -238,7 +236,7 @@ class TauNet(nn.Module):
         learn_nu : bool, optional
             If true, learns also the exponent :math:`\nu`, by default True
         """
-        super(TauNet, self).__init__()
+        super().__init__()
 
         self.n_layers = n_layers
         self.hidden_layer_size = hidden_layer_size
@@ -247,7 +245,7 @@ class TauNet(nn.Module):
         self.NN = SimpleNN(nlayers=self.n_layers, inlayer=3, hlayer=self.hidden_layer_size, outlayer=3)
         self.Ra = Rational(learn_nu=self.fg_learn_nu, nu_init=nu_init)
 
-        self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
+        self.sign = torch.tensor([1, -1, 1]).detach()
 
     def forward(self, k: torch.Tensor) -> torch.Tensor:
         r"""
@@ -283,7 +281,7 @@ class CustomNet(nn.Module):
         self,
         n_layers: int = 2,
         hidden_layer_sizes: Union[int, list[int]] = [10, 10],
-        activations: List[nn.Module] = [nn.ReLU(), nn.ReLU()],
+        activations: list[nn.Module] = [nn.ReLU(), nn.ReLU()],
         learn_nu: bool = True,
         nu_init: float = -1.0 / 3.0,
     ):
@@ -308,7 +306,7 @@ class CustomNet(nn.Module):
 
         self.fg_learn_nu = learn_nu
 
-        hls: List[int]
+        hls: list[int]
         if isinstance(hidden_layer_sizes, int):
             hls = [hidden_layer_sizes for _ in range(n_layers)]
         else:
@@ -317,7 +315,7 @@ class CustomNet(nn.Module):
         self.NN = CustomMLP(hlayers=hls, activations=self.activations, inlayer=3, outlayer=3)
         self.Ra = Rational(learn_nu=self.fg_learn_nu, nu_init=nu_init)
 
-        self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
+        self.sign = torch.tensor([1, -1, 1]).detach()
 
     def forward(self, k: torch.Tensor) -> torch.Tensor:
         r"""

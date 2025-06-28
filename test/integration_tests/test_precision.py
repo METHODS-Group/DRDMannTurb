@@ -13,6 +13,9 @@ from drdmannturb import (
 )
 from drdmannturb.spectra_fitting import CalibrationProblem
 
+# TODO: These do not pass
+# .     Revisit after breaking model out from the Enums and Parameters dataclasses
+
 
 def test_single_precision_tensors():
     """
@@ -21,6 +24,12 @@ def test_single_precision_tensors():
     Simple integration test to check that DRDMannTurb's calibration
     methods work as expected with single precision inputs.
     """
+    # TODO: This test is not working as expected...
+    #       Need to fix it...
+
+    # TEMP:
+    torch.set_default_dtype(torch.float32)
+
     k1 = torch.logspace(-1, 2, 20, dtype=torch.float32)
 
     pb = CalibrationProblem(
@@ -63,6 +72,12 @@ def test_double_precision_tensors():
     Simple integration test to check that DRDMannTurb's calibration
     methods work as expected with double precision inputs.
     """
+    # TODO: This test is not working as expected...
+    #       Need to fix it...
+
+    # TEMP:
+    torch.set_default_dtype(torch.float64)
+
     k1 = torch.logspace(-1, 2, 20, dtype=torch.float64)
 
     pb = CalibrationProblem(

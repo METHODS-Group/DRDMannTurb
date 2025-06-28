@@ -202,22 +202,35 @@ class OnePointSpectra(nn.Module):
         torch.Tensor
             Network output
         """
-        # print(f"\n[DEBUG OPS.forward] Input k1_input shape: {k1_input.shape}")
-        # print(f"[DEBUG OPS.forward] k1_input range: [{k1_input.min().item():.3e}, {k1_input.max().item():.3e}]")
-
         self.exp_scales()
-        # print(f"[DEBUG OPS.forward] Scales: L={self.LengthScale}, Gamma={self.TimeScale}, sigma={self.Magnitude}")
+
+        # Get dtype from input
+        input_dtype = k1_input.dtype
+
+        # Use input dtype for grid creation (if not already created)
+        if not hasattr(self, "ops_grid_k2"):
+            p1, p2, N = -3, 3, 100
+            grid_zero = torch.tensor([0], dtype=input_dtype)
+            grid_plus = torch.logspace(p1, p2, N, dtype=input_dtype)
+            grid_minus = -torch.flip(grid_plus, dims=[0])
+            self.ops_grid_k2 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
+
+            # k3 grid
+            p1, p2, N = -3, 3, 100
+            grid_zero = torch.tensor([0], dtype=input_dtype)
+            grid_plus = torch.logspace(p1, p2, N, dtype=input_dtype)
+            grid_minus = -torch.flip(grid_plus, dims=[0])
+            self.ops_grid_k3 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
+
+            self.ops_meshgrid23 = torch.meshgrid(self.ops_grid_k2, self.ops_grid_k3, indexing="ij")
 
         self.k = torch.stack(torch.meshgrid(k1_input, self.ops_grid_k2, self.ops_grid_k3, indexing="ij"), dim=-1)
         self.k123 = self.k[..., 0], self.k[..., 1], self.k[..., 2]
         self.beta = self.EddyLifetime()
-        # print(f"[DEBUG OPS.forward] beta range: [{self.beta.min().item():.3e}, {self.beta.max().item():.3e}]")
-        # print(f"[DEBUG OPS.forward] Any NaN in beta? {torch.isnan(self.beta).any().item()}")
 
         self.k0 = self.k.clone()
         self.k0[..., 2] = self.k[..., 2] + self.beta * self.k[..., 0]
         k0L = self.LengthScale * self.k0.norm(dim=-1)
-        # print(f"[DEBUG OPS.forward] k0L range: [{k0L.min().item():.3e}, {k0L.max().item():.3e}]")
 
         # Choose energy spectrum based on parameters
         if self.use_parametrizable_spectrum:
@@ -227,19 +240,10 @@ class OnePointSpectra(nn.Module):
             energy_spectrum = VKLike_EnergySpectrum(k0L)
 
         self.E0 = self.Magnitude * self.LengthScale ** (5.0 / 3.0) * energy_spectrum
-        # print(f"[DEBUG OPS.forward] E0 range: [{self.E0.min().item():.3e}, {self.E0.max().item():.3e}]")
-        # print(f"[DEBUG OPS.forward] Any NaN in E0? {torch.isnan(self.E0).any().item()}")
 
         self.Phi = self.PowerSpectra()
-        # print(f"[DEBUG OPS.forward] Number of Phi components: {len(self.Phi)}")
-        # for i, phi in enumerate(self.Phi):
-        #     print(f"[DEBUG OPS.forward] Phi[{i}] range: [{phi.min().item():.3e}, {phi.max().item():.3e}], "
-        #           f"NaN? {torch.isnan(phi).any().item()}")
 
         kF = torch.stack([k1_input * self.quad23(Phi) for Phi in self.Phi])
-        # print(f"[DEBUG OPS.forward] Final kF shape: {kF.shape}")
-        # print(f"[DEBUG OPS.forward] Final kF range: [{kF.min().item():.3e}, {kF.max().item():.3e}]")
-        # print(f"[DEBUG OPS.forward] Any NaN in kF? {torch.isnan(kF).any().item()}")
 
         return kF
 
@@ -364,6 +368,7 @@ class OnePointSpectra(nn.Module):
         Phi12 = E0_coh / (kk0**2) * (-k1 * k2 - k1 * k30 * zeta2 - k2 * k30 * zeta1 + (k1**2 + k2**2) * zeta1 * zeta2)
         Phi23 = E0_coh / (kk * kk0) * (-k2 * k30 + (k1**2 + k2**2) * zeta2)
 
+        # TODO: Remove this... recall bug with ``self.curves``
         # Regularization
         epsilon = 1e-12
         Phi11 = torch.where(Phi11 < epsilon, epsilon, Phi11)

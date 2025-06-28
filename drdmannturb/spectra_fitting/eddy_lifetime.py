@@ -7,6 +7,8 @@ import torch
 import torch.nn as nn
 
 
+# TODO: Finish this class and the subclasses
+#       Then, can remove the ``EddyLifetimeType`` enum also
 class EddyLifetimeFunction(nn.Module, ABC):
     """Base class for eddy lifetime functions."""
 
