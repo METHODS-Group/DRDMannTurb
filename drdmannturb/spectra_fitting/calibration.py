@@ -5,7 +5,7 @@ import pickle
 from collections.abc import Iterable
 from functools import partial
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -52,6 +52,8 @@ class CalibrationProblem:
     After training, this class can be used in conjunction with the fluctuation generation utilities in this package to
     generate realistic turbulence fields based on the learned spectra and eddy lifetimes.
     """  # noqa: D400
+
+    data: dict[str, torch.Tensor]  # TODO: This typing may change in the future
 
     def __init__(
         self,
@@ -353,7 +355,8 @@ class CalibrationProblem:
 
     def calibrate(
         self,
-        data: tuple[list[tuple[Any, float]], torch.Tensor],
+        # data: tuple[list[tuple[Any, float]], torch.Tensor],
+        data: dict[str, torch.Tensor],
         coherence_data_file: Optional[str] = None,
         tb_comment: str = "",
         optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
@@ -392,7 +395,13 @@ class CalibrationProblem:
         RuntimeError
             Thrown in the case that the current loss is not finite.
         """
-        DataPoints, DataValues = data
+        # Save provided data dictionary to object for later use in plotting, etc
+        self.data = data
+
+        data_k1_arr = data["k1"]
+        data_ops = data["ops"]
+        # data_coh = data["coherence"]
+
         OptimizerClass = optimizer_class
         lr = self.prob_params.learning_rate
         tol = self.prob_params.tol
@@ -400,7 +409,6 @@ class CalibrationProblem:
 
         self.plot_loss_optim = False
         self.curves = list(range(0, self.prob_params.num_components))
-        self.k1_data_pts = torch.tensor(DataPoints)[:, 0].squeeze()
 
         if coherence_data_file is not None:
             print(f"Loading coherence data from {coherence_data_file}")
@@ -429,7 +437,7 @@ class CalibrationProblem:
 
         self.LossAggregator = LossAggregator(
             params=self.loss_params,
-            k1space=self.k1_data_pts,
+            k1space=data_k1_arr,
             zref=self.phys_params.zref,
             tb_log_dir=self.logging_directory,
             tb_comment=tb_comment,
@@ -438,35 +446,33 @@ class CalibrationProblem:
         if self.prob_params.num_components == 3:
             self.kF_data_vals = torch.cat(
                 (
-                    DataValues[:, 0, 0],  # uu
-                    DataValues[:, 1, 1],  # vv
-                    DataValues[:, 2, 2],  # ww
+                    data_ops[:, 0, 0],  # uu
+                    data_ops[:, 1, 1],  # vv
+                    data_ops[:, 2, 2],  # ww
                 )
             )
         elif self.prob_params.num_components == 4:
             self.kF_data_vals = torch.cat(
                 (
-                    DataValues[:, 0, 0],  # uu
-                    DataValues[:, 1, 1],  # vv
-                    DataValues[:, 2, 2],  # ww
-                    DataValues[:, 0, 2],  # uw
+                    data_ops[:, 0, 0],  # uu
+                    data_ops[:, 1, 1],  # vv
+                    data_ops[:, 2, 2],  # ww
+                    data_ops[:, 0, 2],  # uw
                 )
             )
         elif self.prob_params.num_components == 6:
             self.kF_data_vals = torch.cat(
                 (
-                    DataValues[:, 0, 0],  # uu
-                    DataValues[:, 1, 1],  # vv
-                    DataValues[:, 2, 2],  # ww
-                    DataValues[:, 0, 2],  # uw
-                    DataValues[:, 1, 2],  # vw
-                    DataValues[:, 0, 1],  # uv
+                    data_ops[:, 0, 0],  # uu
+                    data_ops[:, 1, 1],  # vv
+                    data_ops[:, 2, 2],  # ww
+                    data_ops[:, 0, 2],  # uw
+                    data_ops[:, 1, 2],  # vw
+                    data_ops[:, 0, 1],  # uv
                 )
             )
 
         _num_components = self.prob_params.num_components
-
-        k1_data_pts, y_data0 = self.k1_data_pts, self.kF_data_vals
 
         # Compute initial model coherence if coherence data is available
         if self.has_coherence_data:
@@ -477,16 +483,13 @@ class CalibrationProblem:
             print(f"\tv = {self.model_coherence_v.shape}")
             print(f"\tw = {self.model_coherence_w.shape}")
 
-        y = self.OPS(k1_data_pts)
-        # print(f"\n[DEBUG calibrate] Model output y shape: {y.shape}")
-        # print(f"[DEBUG calibrate] Model output y range: [{y.min().item():.3e}, {y.max().item():.3e}]")
-        # print(f"[DEBUG calibrate] Any NaN in y? {torch.isnan(y).any().item()}")
+        y = self.OPS(data_k1_arr)
 
         y_data = torch.zeros_like(y)
-        y_data[:_num_components, ...] = y_data0.view(_num_components, y_data0.shape[0] // _num_components)
-        # print(f"[DEBUG calibrate] Data y_data shape: {y_data.shape}")
-        # print(f"[DEBUG calibrate] Data y_data range: [{y_data.min().item():.3e}, {y_data.max().item():.3e}]")
-        # print(f"[DEBUG calibrate] Number of zeros in y_data: {(y_data == 0).sum().item()}")
+        y_data[:_num_components, ...] = self.kF_data_vals.view(
+            _num_components,
+            self.kF_data_vals.shape[0] // _num_components,
+        )
 
         ########################################
         # Optimizer and Scheduler Initialization
@@ -526,7 +529,7 @@ class CalibrationProblem:
 
         def closure():
             optimizer.zero_grad()
-            y = self.OPS(k1_data_pts)
+            y = self.OPS(data_k1_arr)
 
             self.loss = self.LossAggregator.eval(y[self.curves], y_data[self.curves], self.gen_theta_NN(), self.e_count)
 
@@ -828,27 +831,48 @@ class CalibrationProblem:
                 )
 
         else:
-            if hasattr(self, "k1_data_pts") and self.k1_data_pts is not None:
-                k1_data_pts = self.k1_data_pts
-            else:
-                raise ValueError(
-                    "Must either provide k1space or re-use what was used for model calibration, neither is"
-                    "currently specified."
-                )
+            if self.data is None:
+                raise ValueError("Requires data set to plot against.")
 
-            if hasattr(self, "kF_data_vals") and self.kF_data_vals is not None:
-                kF_data_vals = self.kF_data_vals
-            else:
-                raise ValueError(
-                    "Must either provide data points or re-use what was used for model calibration, neither is"
-                    "currently specified."
+            k1_data_pts = self.data["k1"]
+
+            # Use the same flattening logic as in calibrate() method
+            data_ops = self.data["ops"]
+
+            if self.prob_params.num_components == 3:
+                kF_data_vals = torch.cat(
+                    (
+                        data_ops[:, 0, 0],  # uu
+                        data_ops[:, 1, 1],  # vv
+                        data_ops[:, 2, 2],  # ww
+                    )
+                )
+            elif self.prob_params.num_components == 4:
+                kF_data_vals = torch.cat(
+                    (
+                        data_ops[:, 0, 0],  # uu
+                        data_ops[:, 1, 1],  # vv
+                        data_ops[:, 2, 2],  # ww
+                        data_ops[:, 0, 2],  # uw
+                    )
+                )
+            elif self.prob_params.num_components == 6:
+                kF_data_vals = torch.cat(
+                    (
+                        data_ops[:, 0, 0],  # uu
+                        data_ops[:, 1, 1],  # vv
+                        data_ops[:, 2, 2],  # ww
+                        data_ops[:, 0, 2],  # uw
+                        data_ops[:, 1, 2],  # vw
+                        data_ops[:, 0, 1],  # uv
+                    )
                 )
 
         # Always get all 6 components from the model
         kF_model_vals = model_vals if model_vals is not None else self.OPS(k1_data_pts) / self.phys_params.ustar**2.0
 
         kF_model_vals = kF_model_vals.cpu().detach()
-        kF_data_vals = kF_data_vals.cpu().detach() / self.phys_params.ustar**2
+        kF_data_vals = kF_data_vals.cpu().detach() / self.phys_params.ustar**2  # TODO: Is this being done twice?
         k1_data_pts = k1_data_pts.cpu().detach()
 
         _num_components = self.prob_params.num_components

@@ -45,7 +45,7 @@ def generate_von_karman_spectra(k1: torch.Tensor, L: float = 0.59, C: float = 3.
 
     # TODO: Implement spectral coherence generation
 
-    return ops_values
+    return {"k1": k1, "ops": ops_values, "coherence": None}
 
 
 def generate_kaimal_spectra(k1: torch.Tensor, zref: float, ustar: float) -> torch.Tensor:
@@ -80,8 +80,9 @@ def generate_kaimal_spectra(k1: torch.Tensor, zref: float, ustar: float) -> torc
     # TODO: Implement spectral coherence generation
 
     return {
+        "k1": k1,
         "ops": ops_values * ustar**2,
-        "coherence": torch.zeros([len(k1), 3, 3]),
+        "coherence": None,
     }
 
 

@@ -63,8 +63,6 @@ class OnePointSpectra(nn.Module):
             Type of eddy lifetime function :math:`\tau` to use.
         physical_params : PhysicalParameters,
             Object specifying physical parameters of the problem.
-        type_power_spectra : PowerSpectraType, optional
-            Type of power spectra function to use, by default PowerSpectraType.RDT, the only one currently implemented.
         nn_parameters : NNParameters, optional
             Dataclass containing neural network initialization if a neural network is used to approximate the eddy
             lifetime function, by default None.

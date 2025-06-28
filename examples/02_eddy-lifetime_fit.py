@@ -31,7 +31,7 @@ from drdmannturb.parameters import (
     PhysicalParameters,
     ProblemParameters,
 )
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+from drdmannturb.spectra_fitting import CalibrationProblem, generate_kaimal_spectra
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -100,7 +100,7 @@ pb = CalibrationProblem(
     ),
     # Note that we have not activated the first order term, but this can be done by passing a value for ``alpha_pen1``
     loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1.0e-5),
-    phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1),
+    phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, zref=zref, domain=k1),
     logging_directory="runs/synthetic_fit",
     device=device,
 )
@@ -108,10 +108,7 @@ pb = CalibrationProblem(
 ##############################################################################
 # Data Generation
 # ---------------
-# We now collect ``Data = (<data points>, <data values>)`` and specify the
-# reference height (``zref``) to be used during calibration. Note that ``DataType.KAIMAL``
-# is used by default.
-Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
+data = generate_kaimal_spectra(k1, zref, ustar)
 
 ##############################################################################
 # Calibration
@@ -119,7 +116,7 @@ Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
 # Now, we fit our model. ``CalibrationProblem.calibrate`` takes the tuple ``Data``
 # which we just constructed and performs a typical training loop.
 
-optimal_parameters = pb.calibrate(data=Data)
+optimal_parameters = pb.calibrate(data)
 
 pb.print_calibrated_params()
 
@@ -155,7 +152,7 @@ pb.save_model("./outputs/")
 
 # %%
 
-path_to_parameters = "./outputs/EddyLifetimeType.TAUNET_DataType.KAIMAL.pkl"
+path_to_parameters = "./outputs/EddyLifetimeType.TAUNET.pkl"
 
 with open(path_to_parameters, "rb") as file:
     (

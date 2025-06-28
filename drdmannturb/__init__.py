@@ -45,8 +45,11 @@ from .parameters import (
 )
 from .spectra_fitting import (
     CalibrationProblem,
+    CustomDataGenerator,
     LossAggregator,
     OnePointSpectra,
+    generate_kaimal_spectra,
+    generate_von_karman_spectra,
 )
 
 __all__ = [
@@ -57,7 +60,6 @@ __all__ = [
     "VKEnergySpectrum",
     "plot_loss_logs",
     # Enums
-    "DataType",
     "EddyLifetimeType",
     # Fluctuation Generation
     "Covariance",
@@ -95,7 +97,9 @@ __all__ = [
     "ProblemParameters",
     # Spectra Fitting
     "CalibrationProblem",
+    "CustomDataGenerator",
+    "generate_kaimal_spectra",
+    "generate_von_karman_spectra",
     "LossAggregator",
     "OnePointSpectra",
-    "OnePointSpectraDataGenerator",
 ]
