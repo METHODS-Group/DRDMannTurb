@@ -105,15 +105,15 @@ class OnePointSpectra(nn.Module):
         # OPS grid
         # k2 grid
         p1, p2, N = -3, 3, 100
-        grid_zero = torch.tensor([0], dtype=torch.float64)
-        grid_plus = torch.logspace(p1, p2, N, dtype=torch.float64)
+        grid_zero = torch.tensor([0])
+        grid_plus = torch.logspace(p1, p2, N)
         grid_minus = -torch.flip(grid_plus, dims=[0])
         self.ops_grid_k2 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
 
         # k3 grid
         p1, p2, N = -3, 3, 100
-        grid_zero = torch.tensor([0], dtype=torch.float64)
-        grid_plus = torch.logspace(p1, p2, N, dtype=torch.float64)
+        grid_zero = torch.tensor([0])
+        grid_plus = torch.logspace(p1, p2, N)
         grid_minus = -torch.flip(grid_plus, dims=[0])
         self.ops_grid_k3 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
 
@@ -123,8 +123,8 @@ class OnePointSpectra(nn.Module):
         # Separate coherence grid (finer resolution for better accuracy)
         if use_coherence:
             p1, p2, N_coh = -3, 3, 100
-            grid_zero_coh = torch.tensor([0], dtype=torch.float64)
-            grid_plus_coh = torch.logspace(p1, p2, N_coh, dtype=torch.float64)
+            grid_zero_coh = torch.tensor([0])
+            grid_plus_coh = torch.logspace(p1, p2, N_coh)
             grid_minus_coh = -torch.flip(grid_plus_coh, dims=[0])
             self.coh_grid_k2 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach()
             self.coh_grid_k3 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach()
@@ -145,7 +145,7 @@ class OnePointSpectra(nn.Module):
             self.alpha_high = physical_params.alpha_high
             self.transition_slope = physical_params.transition_slope
 
-    def set_scales(self, LengthScale: np.float64, TimeScale: np.float64, Magnitude: np.float64):
+    def set_scales(self, LengthScale: float, TimeScale: float, Magnitude: float):
         """Set scalar values for values used in non-dimensionalization.
 
         Parameters

@@ -57,11 +57,11 @@ class CalibrationProblem:
 
     def __init__(
         self,
-        device: str,
         nn_params: NNParameters,
         prob_params: ProblemParameters,
         loss_params: LossParameters,
         phys_params: PhysicalParameters,
+        device: str = "cpu",
         logging_directory: Optional[str] = None,
         output_directory: Union[Path, str] = Path().resolve() / "results",
     ):
@@ -268,7 +268,6 @@ class CalibrationProblem:
         """Introduce additive white noise to the OPS parameters."""
         noise = torch.tensor(
             self.noise_magnitude * torch.randn(*self.parameters.shape),
-            # dtype=torch.float64,
         )
         vector_to_parameters(noise.abs(), self.OPS.parameters())
 
