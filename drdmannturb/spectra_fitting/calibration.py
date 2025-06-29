@@ -5,7 +5,6 @@ import pickle
 from collections.abc import Iterable
 from functools import partial
 from pathlib import Path
-from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -62,8 +61,8 @@ class CalibrationProblem:
         loss_params: LossParameters,
         phys_params: PhysicalParameters,
         device: str = "cpu",
-        logging_directory: Optional[str] = None,
-        output_directory: Union[Path, str] = Path().resolve() / "results",
+        logging_directory: str | None = None,
+        output_directory: Path | str = Path().resolve() / "results",
     ):
         r"""Initialize a ``CalibrationProblem`` instance, defining the model calibration and physical setting.
 
@@ -176,7 +175,7 @@ class CalibrationProblem:
         return param_vec
 
     @parameters.setter
-    def parameters(self, param_vec: Union[np.ndarray, torch.tensor]) -> None:
+    def parameters(self, param_vec: np.ndarray | torch.tensor) -> None:
         """Setter method for loading in model parameters from a given vector.
 
         .. note:: The first 3 parameters of self.parameters() are exactly
@@ -354,7 +353,7 @@ class CalibrationProblem:
         self,
         # data: tuple[list[tuple[Any, float]], torch.Tensor],
         data: dict[str, torch.Tensor],
-        coherence_data_file: Optional[str] = None,
+        coherence_data_file: str | None = None,
         tb_comment: str = "",
         optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
     ) -> dict[str, float]:
@@ -510,7 +509,8 @@ class CalibrationProblem:
             EddyLifetimeType.TAUNET,
             EddyLifetimeType.CUSTOMMLP,
         ]:
-            self.gen_theta_NN = lambda: parameters_to_vector(self.OPS.tauNet.NN.parameters())
+            # NOTE: Old code used tauNet.NN.parameters() since the NN wasn't "built-in" to the tauNet
+            self.gen_theta_NN = lambda: parameters_to_vector(self.OPS.tauNet.parameters())
         else:
             self.gen_theta_NN = lambda: 0.0
 
@@ -641,7 +641,7 @@ class CalibrationProblem:
 
         return sum(p.numel() for p in self.OPS.tauNet.parameters())
 
-    def eval_trainable_norm(self, ord: Optional[Union[float, str]] = "fro"):
+    def eval_trainable_norm(self, ord: float | str | None = "fro"):
         """Evaluate the magnitude (or other norm) of the trainable parameters in the model.
 
         .. note::
@@ -667,7 +667,7 @@ class CalibrationProblem:
 
         return torch.norm(torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord)
 
-    def save_model(self, save_dir: Optional[Union[str, Path]] = None):
+    def save_model(self, save_dir: str | Path | None = None):
         """Pickle and write the trained model to a file.
 
         Saves model with current weights, model configuration, and training histories to file.
@@ -725,11 +725,11 @@ class CalibrationProblem:
 
     def plot(
         self,
-        OPSData: Optional[tuple[Iterable[float], torch.Tensor]] = None,
+        OPSData: tuple[Iterable[float], torch.Tensor] | None = None,
         model_vals: torch.Tensor = None,
         plot_tau: bool = True,
         save: bool = False,
-        save_dir: Optional[Union[Path, str]] = None,
+        save_dir: Path | str | None = None,
         save_filename: str = "",
     ):
         r"""Visualize the spectra fit and learned eddy lifetime function.

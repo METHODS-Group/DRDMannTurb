@@ -1,7 +1,5 @@
 """Implements the one point spectra."""
 
-from typing import Optional
-
 # these imports are only needed for obtaining the exponential approximation of the Mann eddy lifetime function.
 import numpy as np
 import torch
@@ -31,7 +29,7 @@ class OnePointSpectra(nn.Module):
         type_eddy_lifetime: EddyLifetimeType,
         physical_params: PhysicalParameters,
         use_parametrizable_spectrum: bool = False,
-        nn_parameters: Optional[NNParameters] = None,
+        nn_parameters: NNParameters | None = None,
         learn_nu: bool = False,
         use_coherence: bool = False,
     ):
@@ -138,6 +136,10 @@ class OnePointSpectra(nn.Module):
         self.logLengthScale = nn.Parameter(torch.tensor(np.log10(physical_params.L), dtype=torch.float64))
         self.logTimeScale = nn.Parameter(torch.tensor(np.log10(physical_params.Gamma), dtype=torch.float64))
         self.logMagnitude = nn.Parameter(torch.tensor(np.log10(physical_params.sigma), dtype=torch.float64))
+
+        self.LengthScale_scalar = physical_params.L
+        self.TimeScale_scalar = physical_params.Gamma
+        self.Magnitude_scalar = physical_params.sigma
 
         self.use_parametrizable_spectrum = physical_params.use_parametrizable_spectrum
         if self.use_parametrizable_spectrum:
@@ -446,7 +448,7 @@ class OnePointSpectra(nn.Module):
         self.init_mann_linear_approx = True
 
     @torch.jit.export
-    def EddyLifetime(self, k: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def EddyLifetime(self, k: torch.Tensor | None = None) -> torch.Tensor:
         r"""Evaluate eddy lifetime function :math:`\tau` constructed during object initialization.
 
         This may be the Mann model or a DRD neural network that learns :math:`\tau`.

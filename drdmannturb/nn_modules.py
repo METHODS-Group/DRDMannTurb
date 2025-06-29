@@ -63,78 +63,12 @@ class Rational(nn.Module):
         return out
 
 
-class CustomMLP(nn.Module):
-    """
-    Feed-forward neural network with variable widths of layers and activation functions.
-
-    Useful for DNN configurations and experimentation with different activation functions.
-    """
-
-    def __init__(
-        self,
-        hlayers: list[int],
-        activations: list[nn.Module],
-        inlayer: int = 3,
-        outlayer: int = 3,
-    ) -> None:
-        """
-        Initialize a feed-forward network with variable widths of layers and activation functions.
-
-        Parameters
-        ----------
-        hlayers : list
-            list specifying widths of hidden layers in NN
-        activations : list[nn.Module]
-            list specifying activation functions for each hidden layer
-        inlayer : int, optional
-            Number of input features, by default 3
-        outlayer : int, optional
-            Number of features to output, by default 3
-        """
-        super().__init__()
-
-        num_layers = len(hlayers)
-        self.linears = nn.ModuleList([nn.Linear(hlayers[k], hlayers[k + 1], bias=False) for k in range(num_layers - 1)])
-        self.linears.insert(0, nn.Linear(inlayer, hlayers[0], bias=False))
-        self.linear_out = nn.Linear(hlayers[-1], outlayer, bias=False)
-
-        self.activations = activations
-
-        noise_magnitude = 1.0e-9
-        with torch.no_grad():
-            for param in self.parameters():
-                param.add_(torch.randn(param.size()) * noise_magnitude)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Forward pass of the feed-forward network with variable widths of layers and activation functions.
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            Input to the network
-
-        Returns
-        -------
-        torch.Tensor
-            Output of the network
-        """
-        out = x.clone()
-
-        for idx, lin in enumerate(self.linears):
-            out = self.activations[idx](lin(out))
-
-        out = self.linear_out(out)
-
-        return x + out
-
-
 class TauNet(nn.Module):
     r"""
     A neural network which learns the eddy lifetime function :math:`\tau(\boldsymbol{k})`.
 
-    A SimpleNN and Rational network comprise this class. The network widths are determined by a single integer and
-    thereafter the networks have hidden layers of only that width.
+    This network combines a simple feed-forward MLP with a rational kernel. The network widths are
+    determined by a single integer and thereafter the networks have hidden layers of only that width.
 
     The objective is to learn the function
 
@@ -172,15 +106,35 @@ class TauNet(nn.Module):
         self.hidden_layer_size = hidden_layer_size
         self.fg_learn_nu = learn_nu
 
-        self.NN = CustomMLP(
-            hlayers=[hidden_layer_size for _ in range(n_layers)],
-            activations=[nn.ReLU() for _ in range(n_layers)],
-            inlayer=3,
-            outlayer=3,
+        # Build MLP layers directly (formerly SimpleNN functionality)
+        self.linears = nn.ModuleList(
+            [nn.Linear(hidden_layer_size, hidden_layer_size, bias=False) for _ in range(n_layers - 1)]
         )
+        self.linears.insert(0, nn.Linear(3, hidden_layer_size, bias=False))  # inlayer = 3
+        self.linear_out = nn.Linear(hidden_layer_size, 3, bias=False)  # outlayer = 3
+
+        self.actfc = nn.ReLU()
+
+        # Rational kernel
         self.Ra = Rational(learn_nu=self.fg_learn_nu, nu_init=nu_init)
 
+        # Initialize with small noise to prevent zero initialization
+        noise_magnitude = 1.0e-9
+        with torch.no_grad():
+            for param in self.parameters():
+                param.add_(torch.randn(param.size()) * noise_magnitude)
+
         self.sign = torch.tensor([1, -1, 1]).detach()
+
+    def _mlp_forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the MLP layers."""
+        out = x.clone()
+
+        for lin in self.linears:
+            out = self.actfc(lin(out))
+
+        out = self.linear_out(out)
+        return out + x  # Residual connection
 
     def forward(self, k: torch.Tensor) -> torch.Tensor:
         r"""
@@ -198,7 +152,7 @@ class TauNet(nn.Module):
         torch.Tensor
             Output of forward pass of neural network.
         """
-        k_mod = self.NN(k.abs()).norm(dim=-1)
+        k_mod = self._mlp_forward(k.abs()).norm(dim=-1)
         tau = self.Ra(k_mod)
         return tau
 
@@ -216,7 +170,7 @@ class CustomNet(nn.Module):
         self,
         n_layers: int = 2,
         hidden_layer_sizes: int | list[int] = [10, 10],
-        activations: list[nn.Module] = [nn.ReLU(), nn.ReLU()],
+        activations: list[nn.Module] | None = None,
         learn_nu: bool = True,
         nu_init: float = -1.0 / 3.0,
     ):
@@ -229,7 +183,7 @@ class CustomNet(nn.Module):
             Number of hidden layers, by default 2
         hidden_layer_sizes : Union[int, list[int]]
             Sizes of each layer; by default [10, 10].
-        activations : List[nn.Module], optional
+        activations : list[nn.Module], optional
             List of activation functions to use, by default [nn.ReLU(), nn.ReLU()]
         learn_nu : bool, optional
             If true, learns also the exponent :math:`\nu`, by default True
@@ -237,25 +191,46 @@ class CustomNet(nn.Module):
         super().__init__()
 
         self.n_layers = n_layers
-        self.activations = activations
-
         self.fg_learn_nu = learn_nu
 
+        # Handle default activations
+        if activations is None:
+            activations = [nn.ReLU() for _ in range(n_layers)]
+        self.activations = activations
+
+        # Handle layer sizes
         hls: list[int]
         if isinstance(hidden_layer_sizes, int):
             hls = [hidden_layer_sizes for _ in range(n_layers)]
         else:
             hls = hidden_layer_sizes
 
-        self.NN = CustomMLP(
-            hlayers=hls,
-            activations=self.activations,
-            inlayer=3,
-            outlayer=3,
-        )
+        # Build MLP layers directly (formerly CustomMLP functionality)
+        num_layers = len(hls)
+        self.linears = nn.ModuleList([nn.Linear(hls[k], hls[k + 1], bias=False) for k in range(num_layers - 1)])
+        self.linears.insert(0, nn.Linear(3, hls[0], bias=False))  # inlayer = 3
+        self.linear_out = nn.Linear(hls[-1], 3, bias=False)  # outlayer = 3
+
+        # Rational kernel
         self.Ra = Rational(learn_nu=self.fg_learn_nu, nu_init=nu_init)
 
+        # Initialize with small noise to prevent zero initialization
+        noise_magnitude = 1.0e-9
+        with torch.no_grad():
+            for param in self.parameters():
+                param.add_(torch.randn(param.size()) * noise_magnitude)
+
         self.sign = torch.tensor([1, -1, 1]).detach()
+
+    def _mlp_forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the custom MLP layers."""
+        out = x.clone()
+
+        for idx, lin in enumerate(self.linears):
+            out = self.activations[idx](lin(out))
+
+        out = self.linear_out(out)
+        return x + out  # Residual connection
 
     def forward(self, k: torch.Tensor) -> torch.Tensor:
         r"""
@@ -273,6 +248,6 @@ class CustomNet(nn.Module):
         torch.Tensor
             Output of forward pass of neural network
         """
-        k_mod = self.NN(k.abs()).norm(dim=-1)
+        k_mod = self._mlp_forward(k.abs()).norm(dim=-1)
         tau = self.Ra(k_mod)
         return tau
