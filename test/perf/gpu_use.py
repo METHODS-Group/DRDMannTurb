@@ -61,7 +61,7 @@ def test_gpu_utilization_synth_fit():
         device=device,
     )
 
-    Data = generate_kaimal_spectra(zref=zref, data_points=domain)
+    Data = generate_kaimal_spectra(data_points=domain, zref=zref, ustar=Uref)
 
     import importlib.util as util
 
