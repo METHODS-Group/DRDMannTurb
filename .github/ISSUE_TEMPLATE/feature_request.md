@@ -8,7 +8,7 @@ assignees: ''
 ---
 
 **Problem you'd like to address**
-A clear and concise description of the problem you'd like to address. 
+A clear and concise description of the problem you'd like to address.
 
 - I'm always frustrated when [...];
 - `DRDMannTurb` would benefit from having [...];

@@ -7,8 +7,7 @@ This example demonstrates the utilities for generating fluctuation fields,
 which can be either from a pre-trained DRD model, or based on some well-known spectra models.
 ``DRDMannTurb`` provides several utilities for plotting the resulting fields through Plotly,
 which can be done in several contexts as well as utilities for saving to VTK for downstream analysis.
-
-"""
+"""  # noqa
 
 #######################################################################################
 #   .. centered::

@@ -6,7 +6,7 @@ Example 3: Adding Regularization and Penalty Terms to Fitting
 This example is nearly identical to Example 2, however we
 use a more sophisticated loss function, introducing an additional first-order
 penalty term. The previous synthetic fit relied only on MSE loss and a second-order penalty.
-"""
+"""  # noqa
 
 #######################################################################################
 # Import packages
@@ -60,9 +60,7 @@ pb = CalibrationProblem(
     ),
     prob_params=ProblemParameters(nepochs=5),
     loss_params=LossParameters(alpha_pen2=1.0, alpha_pen1=1.0e-5, beta_reg=2e-4),
-    phys_params=PhysicalParameters(
-        L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1
-    ),
+    phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1),
     logging_directory="runs/synthetic_3term",
     device=device,
 )

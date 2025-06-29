@@ -1,7 +1,4 @@
-"""
-This module implements and exposes a covariance implementation for
-neural network models.
-"""
+"""Covariance kernel implementation for neural network models."""
 
 import numpy as np
 import torch
@@ -12,7 +9,9 @@ from .covariance_kernels import Covariance
 
 class NNCovariance(Covariance):
     r"""
-    Neural Network covariance kernel. Like other covariance kernel implementations, this evaluates the
+    Neural Network covariance kernel.
+
+    Like other covariance kernel implementations, this evaluates the
     :math:`G(\boldsymbol{k})` which satisfies :math:`G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k},
     \tau(\boldsymbol{k}))` where the spectral tensor is defined through the eddy lifetime function learned by the neural
     network as well as the fitted spectra. Here,
@@ -52,7 +51,8 @@ class NNCovariance(Covariance):
         ops: OnePointSpectra,
         h_ref: float,
     ):
-        """
+        """Initialize the neural network covariance kernel.
+
         Parameters
         ----------
         ndim : int, optional
@@ -93,7 +93,7 @@ class NNCovariance(Covariance):
         ###       the physical setting
 
     def precompute_Spectrum(self, Frequencies: np.ndarray) -> np.ndarray:
-        """Evaluation method which pre-computes the square-root of the associated spectrum tensor in the complex domain.
+        """Pre-compute the square-root of the associated spectrum tensor in the complex domain.
 
         Parameters
         ----------

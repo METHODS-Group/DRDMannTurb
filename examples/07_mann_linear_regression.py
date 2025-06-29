@@ -20,7 +20,7 @@ used for the one-point-spectra model.
 
 The external API works the same as with other models, but the following may speed up some tasks
 that rely exclusively on the Mann eddy lifetime function.
-"""
+"""  # noqa
 
 #######################################################################################
 # Import packages
@@ -73,7 +73,8 @@ domain = torch.logspace(-1, 2, 20)
 # The ``EddyLifetimeType.MANN_APPROX`` argument determines the type of eddy lifetime function to use.
 # Here, we will employ a linear regression to determine a surrogate eddy lifetime function. Using one
 # evaluation of the Mann function on the provided spectra (here we are just taking it as if it's from a Mann model)
-# which can be done from either synthetic or real-world data. In normal space, this is a function of the form :math:`` \exp(\alpha \boldsymbol{k} + \beta)`
+# which can be done from either synthetic or real-world data. In normal space, this is a function of the form
+# :math:`` \exp(\alpha \boldsymbol{k} + \beta)`
 # where the :math:`\alpha, \beta` are coefficients determined by the linear regression in log-log space.
 pb = CalibrationProblem(
     nn_params=NNParameters(
@@ -81,9 +82,7 @@ pb = CalibrationProblem(
         hidden_layer_sizes=[10, 10],
         activations=[nn.ReLU(), nn.ReLU()],
     ),
-    prob_params=ProblemParameters(
-        nepochs=10, eddy_lifetime=EddyLifetimeType.MANN_APPROX
-    ),
+    prob_params=ProblemParameters(nepochs=10, eddy_lifetime=EddyLifetimeType.MANN_APPROX),
     loss_params=LossParameters(),
     phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, domain=domain),
     device=device,

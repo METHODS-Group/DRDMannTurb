@@ -3,11 +3,11 @@
 Getting Started
 ===============
 
-`DRDMannTurb` consists of two major components: (1) fitting a Deep Rapid Distortion (DRD) spectral tensor model to one-point spectra from real-world wind observations, and (2) generating divergence-free fluctuation fields from the inferred spectral tensor using a novel and efficient block-wise approach. Additional utilities for data pre-processing, such as interpolation and filtering, as well as 3D visualization tools are provided as part of the package. 
+`DRDMannTurb` consists of two major components: (1) fitting a Deep Rapid Distortion (DRD) spectral tensor model to one-point spectra from real-world wind observations, and (2) generating divergence-free fluctuation fields from the inferred spectral tensor using a novel and efficient block-wise approach. Additional utilities for data pre-processing, such as interpolation and filtering, as well as 3D visualization tools are provided as part of the package.
 
-Please consider reading `the original DRD paper <https://arxiv.org/pdf/2107.11046.pdf>`_ and the examples. Please also see the UML diagrams for both :doc:`spectra fitting <./uml_drd>` and :doc:`fluctuation field generation <./uml_fluct_gen>` to see how the models are configured.  
+Please consider reading `the original DRD paper <https://arxiv.org/pdf/2107.11046.pdf>`_ and the examples. Please also see the UML diagrams for both :doc:`spectra fitting <./uml_drd>` and :doc:`fluctuation field generation <./uml_fluct_gen>` to see how the models are configured.
 
-Spectra Fitting 
+Spectra Fitting
 ===============
 
 ``DRDMannTurb`` performs an operator regression task that characterizes an optimal nonlocal covariance kernel via neural network training. These kernels are part of a family of DRD models that preserve physical fluid flow properties such as mass conservation as well as turbulence statistics up to second order. DRD models are generalizations of `the Mann model <https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/spatial-structure-of-neutral-atmospheric-surfacelayer-turbulence/ACFE1EA8C45763481CBEB193B314E2EB>`_, which admits three parameters: the Kolmogorov constant multiplied by the two-thirds power law for the rate of viscous dissipation, a turbulence length scale, and a non-dimensional time-scale related to the eddy-lifetime function. ``DRDMannTurb`` allows users to easily extend the classical Mann model to a DRD model by using neural networks to approximate the function related to the lifetime of the eddies. These networks have a wide range of customizability in terms of architecture and their training is facilitated via ``PyTorch``.  This leads to a model that can better fit field data without changing the complexity of generating the associated synthetic turbulence wind field.
@@ -17,14 +17,14 @@ The overall workflow consists of a ``OnePointSpectraDataGenerator`` which provid
 Field Generation
 ================
 
-Fluctuation field generation involves one class and is performed in an efficient block-wise manner: rather than generating the field in the whole domain, the field is generated locally on overlapping blocks that partition the domain and are then composed together to form a single turbulence field. Please see the final section of the original DRD paper for a more in-depth discussion. Plotting utilities facilitated by ``Plotly`` are provided. 
+Fluctuation field generation involves one class and is performed in an efficient block-wise manner: rather than generating the field in the whole domain, the field is generated locally on overlapping blocks that partition the domain and are then composed together to form a single turbulence field. Please see the final section of the original DRD paper for a more in-depth discussion. Plotting utilities facilitated by ``Plotly`` are provided.
 
 Installation
 =============
 
-For users, pre-compiled wheels for the package are available via ``pip install drdmannturb``. 
+For users, pre-compiled wheels for the package are available via ``pip install drdmannturb``.
 
-Alternatively, the following section will guide you through the installation of DRDMannTurb and its dependencies in a fresh environment. The following instructions should work on any operating system (OS) that is supported by `Anaconda <https://docs.conda.io/projects/conda/en/stable/user-guide/getting-started.html>`_, including **Windows**, **macOS**, and **Linux**. 
+Alternatively, the following section will guide you through the installation of DRDMannTurb and its dependencies in a fresh environment. The following instructions should work on any operating system (OS) that is supported by `Anaconda <https://docs.conda.io/projects/conda/en/stable/user-guide/getting-started.html>`_, including **Windows**, **macOS**, and **Linux**.
 
 #. Clone DRDMannTurb from its `GitHub repository <https://github.com/METHODS-Group/DRDMannTurb>`_.
    Enter the directory and check out the branch of your choice.

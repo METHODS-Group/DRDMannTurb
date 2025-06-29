@@ -1,5 +1,6 @@
-"""Includes covariance kernels used in generating wind, specifically in evaluating
-the square roots of spectral tensors used in various models.
+"""Includes covariance kernels used in generating wind.
+
+Specifically, in evaluating the square roots of spectral tensors used in various models.
 """
 
 import numpy as np
@@ -8,8 +9,10 @@ from scipy.special import hyp2f1
 
 class Covariance:
     r"""
-    Generic Covariance kernel metaclass. In particular, every subclass involves the computation of
-     :math:`G(\boldsymbol{k})` where
+    Generic covariance kernel metaclass.
+
+    In particular, every subclass involves the computation of
+    :math:`G(\boldsymbol{k})` where
 
      .. math::
          G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k}, \tau(\boldsymbol{k}))
@@ -29,12 +32,15 @@ class Covariance:
         self.eval_func = kwargs.get("func")
 
     def eval(self, *argv, **kwargs):
+        """Evaluate the covariance kernel."""
         self.eval_func(*argv, **kwargs)
 
 
 class VonKarmanCovariance(Covariance):
     r"""
-    Von Karman covariance kernel. Evaluates the :math:`G(\boldsymbol{k})` which satisfies
+    Von Karman covariance kernel.
+
+    Evaluates the :math:`G(\boldsymbol{k})` which satisfies
     :math:`G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k})` where
 
     .. math::
@@ -53,6 +59,8 @@ class VonKarmanCovariance(Covariance):
 
     def __init__(self, ndim: int, length_scale: float, E0: float, **kwargs):
         """
+        Initialize the Von Karman covariance kernel.
+
         Parameters
         ----------
         ndim : int
@@ -78,8 +86,8 @@ class VonKarmanCovariance(Covariance):
         self.E0 = E0
 
     def precompute_Spectrum(self, Frequencies: np.ndarray) -> np.ndarray:
-        """Evaluation method which pre-computes the square-root of the associated spectral tensor
-        in the frequency domain.
+        """
+        Pre-compute the square-root of the associated spectral tensor in the frequency domain.
 
         Parameters
         ----------
@@ -113,7 +121,9 @@ class VonKarmanCovariance(Covariance):
 
 class MannCovariance(Covariance):
     r"""
-    Mann covariance kernel implementation. Evaluates the :math:`G(\boldsymbol{k})` which satisfies
+    Mann covariance kernel implementation.
+
+    Evaluates the :math:`G(\boldsymbol{k})` which satisfies
     :math:`G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k}, \tau(\boldsymbol{k}))` where
 
     .. math::
@@ -127,6 +137,8 @@ class MannCovariance(Covariance):
 
     def __init__(self, ndim: int = 3, length_scale: float = 1.0, E0: float = 1.0, Gamma: float = 1.0, **kwargs):
         """
+        Initialize the Mann covariance kernel.
+
         Parameters
         ----------
         ndim : int, optional
@@ -155,8 +167,8 @@ class MannCovariance(Covariance):
         self.Gamma = Gamma
 
     def precompute_Spectrum(self, Frequencies: np.ndarray) -> np.ndarray:
-        """Evaluation method which pre-computes the square-root of the associated spectral tensor
-        in the frequency domain.
+        """
+        Pre-compute the square-root of the associated spectral tensor in the frequency domain.
 
         Parameters
         ----------

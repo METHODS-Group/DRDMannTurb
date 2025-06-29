@@ -93,9 +93,7 @@ x_coords_w, w_spectra = extract_x_spectra(datapath / "w_spectra.csv")
 x_coords_uw, uw_cospectra = extract_x_spectra(datapath / "uw_cospectra.csv")
 x_full = [x_coords_u, x_coords_v, x_coords_w, x_coords_uw]
 spectra_full = [u_spectra, v_spectra, w_spectra, uw_cospectra]
-x_interp, interp_u, interp_v, interp_w, interp_uw = interpolate(
-    datapath, num_k1_points=40, plot=True
-)
+x_interp, interp_u, interp_v, interp_w, interp_uw = interpolate(datapath, num_k1_points=40, plot=True)
 domain = torch.tensor(x_interp)
 
 f = domain
@@ -107,9 +105,7 @@ datagen = OnePointSpectraDataGenerator(
     zref=zref,
     data_points=k1_data_pts,
     data_type=DataType.AUTO,
-    k1_data_points=(
-        k1_data_pts.cpu().numpy() if torch.cuda.is_available() else k1_data_pts.numpy()
-    ),
+    k1_data_points=(k1_data_pts.cpu().numpy() if torch.cuda.is_available() else k1_data_pts.numpy()),
     spectra_values=interpolated_spectra,
 )
 
@@ -145,9 +141,7 @@ pb = CalibrationProblem(
     ),
     prob_params=ProblemParameters(nepochs=5),
     loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1e-5),
-    phys_params=PhysicalParameters(
-        L=L, Gamma=Gamma, sigma=sigma, Uref=Uref, domain=domain
-    ),
+    phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, Uref=Uref, domain=domain),
     logging_directory="runs/interpolating_and_fitting",
     device=device,
 )

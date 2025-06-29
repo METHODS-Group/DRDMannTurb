@@ -3,9 +3,9 @@
 Spectra Fitting with DRD Calibration
 ====================================
 
-Half of DRDMannTurb provides models for learning wind spectra from data. 
+Half of DRDMannTurb provides models for learning wind spectra from data.
 
-The package has `Tensorboard <https://pytorch.org/docs/stable/tensorboard.html>`__ integration, which performs all of the logging and post-training visualization of neural network models used in the package.  
+The package has `Tensorboard <https://pytorch.org/docs/stable/tensorboard.html>`__ integration, which performs all of the logging and post-training visualization of neural network models used in the package.
 
 .. toctree::
    :maxdepth: 2
@@ -20,7 +20,7 @@ The package has `Tensorboard <https://pytorch.org/docs/stable/tensorboard.html>`
 .. toctree::
    :maxdepth: 2
 
-   calibration 
+   calibration
 
 .. raw:: html
 
@@ -38,7 +38,7 @@ The package has `Tensorboard <https://pytorch.org/docs/stable/tensorboard.html>`
 .. toctree::
    :maxdepth: 2
 
-   interpolation 
+   interpolation
 
 .. raw:: html
 
@@ -48,4 +48,4 @@ The package has `Tensorboard <https://pytorch.org/docs/stable/tensorboard.html>`
 .. toctree::
    :maxdepth: 2
 
-   tb_loss 
+   tb_loss

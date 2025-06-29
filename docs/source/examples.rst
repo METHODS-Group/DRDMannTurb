@@ -1,7 +1,7 @@
 Examples
 ========
 
-The examples below give introductions to the framework and the utilities provided in this package. 
+The examples below give introductions to the framework and the utilities provided in this package.
 
 .. toctree::
    :maxdepth: 1
@@ -17,7 +17,7 @@ The examples below give introductions to the framework and the utilities provide
    :maxdepth: 1
 
    auto_examples/02_eddy-lifetime_fit
-    
+
 .. raw:: html
 
     <hr>
@@ -25,7 +25,7 @@ The examples below give introductions to the framework and the utilities provide
 
 .. toctree::
    :maxdepth: 1
-   
+
 
    auto_examples/03_eddy-lifetime_fit_3term_loss
 
@@ -35,7 +35,7 @@ The examples below give introductions to the framework and the utilities provide
 
 .. toctree::
    :maxdepth: 1
-   
+
 
    auto_examples/04_eddy-lifetime_fit_gelu
 
@@ -56,7 +56,7 @@ The examples below give introductions to the framework and the utilities provide
 
 .. toctree::
    :maxdepth: 1
-   
+
 
    auto_examples/06_custom_data_interpolate_and_fit
 
@@ -73,11 +73,11 @@ The examples below give introductions to the framework and the utilities provide
 .. raw:: html
 
     <hr>
-   
+
 
 .. toctree::
    :maxdepth: 1
-   
+
    auto_examples/08_mann_box_generation_IEC
 
 .. raw:: html

@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import numpy as np
-import pytest
 import torch
 
 from drdmannturb.spectra_fitting import OnePointSpectraDataGenerator
@@ -25,9 +24,7 @@ def test_kaimal_mann():
     kaimal_mann_spectra_new = Data[1].to("cpu").numpy()
 
     kaimal_mann_spectra_true = (
-        torch.load(fp / "kaimal_mann_data_raw.pt", map_location=torch.device(device))
-        .to("cpu")
-        .numpy()
+        torch.load(fp / "kaimal_mann_data_raw.pt", map_location=torch.device(device)).to("cpu").numpy()
     )
 
     assert np.allclose(kaimal_mann_spectra_new, kaimal_mann_spectra_true)

@@ -1,6 +1,4 @@
-"""
-This module implements and exposes the various sampling methods required
-"""
+"""Sampling methods for the ``FluctuationFieldGenerator`` class."""
 
 import os
 
@@ -15,12 +13,14 @@ METHOD_VF_FFTW = "vf_fftw"
 
 
 class Sampling_method_base:
-    """Meta class for different sampling methods. Each of these requires a ``RandomField`` object, which is
-    a subclass of :py:class:``GaussianRandomField``.
+    """Meta class for different sampling methods.
+
+    Each of these requires a ``RandomField`` object, which is a subclass of :py:class:`GaussianRandomField`.
     """
 
     def __init__(self, RandomField):
-        """
+        """Initialize the sampling method.
+
         Parameters
         ----------
         RandomField : GaussianRandomField
@@ -36,7 +36,9 @@ class Sampling_method_base:
 
 
 class Sampling_method_freq(Sampling_method_base):
-    """Sampling method specifically in the frequency domain. This metaclass involves a single precomputation of the
+    """Sampling method specifically in the frequency domain.
+
+    This metaclass involves a single precomputation of the
     covariance spectrum of the underlying ``GaussianRandomField``. Refer to specific subclasses for details on what
     each of these entails, but generally, the approximate square-root of each associated spectral tensor is computed
     and transformed into the frequency domain.
@@ -53,7 +55,9 @@ class Sampling_method_freq(Sampling_method_base):
 
 
 class Sampling_FFTW(Sampling_method_freq):
-    """Sampling with FFTW. Two stencils for the forward and inverse FFTs are generated using the following FFTW flags:
+    """Sampling with FFTW.
+
+    Two stencils for the forward and inverse FFTs are generated using the following FFTW flags:
     ``"FFTW_MEASURE", "FFTW_DESTROY_INPUT", "FFTW_UNALIGNED"``.
 
     Due to properties of the FFT, only stationary covariances are admissible.
@@ -76,6 +80,7 @@ class Sampling_FFTW(Sampling_method_freq):
         self.Spectrum_half = self.Spectrum[..., : shpC[-1]] * np.sqrt(self.Nd.prod())
 
     def __call__(self, noise):
+        """Sample the random field."""
         self.fft_x[:] = noise
         self.fft_plan()
         self.fft_y[:] *= self.Spectrum_half
@@ -84,7 +89,7 @@ class Sampling_FFTW(Sampling_method_freq):
 
 
 class Sampling_VF_FFTW(Sampling_method_freq):
-    """Random vector fields using
+    """Random vector fields using FFTW.
 
     FFTW applied to a vector field. This should be used in conjunction with :py:class:`VectorGaussianRandomField`.
     This sampling method is also multi-threaded across 4 threads, or else the maximum allowed by the environment. As in
@@ -130,6 +135,7 @@ class Sampling_VF_FFTW(Sampling_method_freq):
         self.shpC = shpC
 
     def __call__(self, noise):
+        """Sample the random field."""
         tmp = np.zeros(noise.shape)
         for i in range(noise.shape[-1]):
             self.fft_x[:] = noise[..., i]
@@ -153,6 +159,7 @@ class Sampling_FFT(Sampling_method_freq):
         super().__init__(RandomField)
 
     def __call__(self, noise):
+        """Sample the random field."""
         noise_hat = fft.ifftn(noise)
         y = self.Spectrum * noise_hat
         y = fft.fftn(y)
@@ -160,8 +167,9 @@ class Sampling_FFT(Sampling_method_freq):
 
 
 class Sampling_DST(Sampling_method_freq):
-    """Sampling using the discrete sine transform from ``scipy.fftpack``, with all other operations being identical as
-    other sampling methods. Should only be used for stationary covariances
+    """Sampling using the discrete sine transform from ``scipy.fftpack``.
+
+    All other operations are identical to other sampling methods. Should only be used for stationary covariances
 
     Due to properties of the FFT, only stationary covariances are admissible.
     """
@@ -170,6 +178,7 @@ class Sampling_DST(Sampling_method_freq):
         super().__init__(RandomField)
 
     def __call__(self, noise):
+        """Sample the random field."""
         y = self.Spectrum * noise
         for j in range(self.ndim):
             y = fft.dst(y, axis=j, type=1)
@@ -177,8 +186,9 @@ class Sampling_DST(Sampling_method_freq):
 
 
 class Sampling_DCT(Sampling_method_freq):
-    """Sampling using the discrete cosine transform from ``scipy.fftpack``, with all other operations being identical
-    to other sampling methods.
+    """Sampling using the discrete cosine transform from ``scipy.fftpack``.
+
+    All other operations are identical to other sampling methods.
 
     Due to properties of the FFT, only stationary covariances are admissible.
     """
@@ -187,6 +197,7 @@ class Sampling_DCT(Sampling_method_freq):
         super().__init__(RandomField)
 
     def __call__(self, noise):
+        """Sample the random field."""
         y = self.Spectrum * noise
         for j in range(self.ndim):
             y = fft.dct(y, axis=j, type=2)

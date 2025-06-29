@@ -3,8 +3,8 @@
 Covariance Kernels
 ==================
 
-.. autoclass:: drdmannturb.Covariance 
-    :members: 
+.. autoclass:: drdmannturb.Covariance
+    :members:
 
 .. autoclass:: drdmannturb.VonKarmanCovariance
     :members:

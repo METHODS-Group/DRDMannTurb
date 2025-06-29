@@ -19,16 +19,13 @@ Spectra Fitting
 Random Field Generation
 =======================
 
-Please refer to :doc:`the UML diagram <./uml_fluct_gen>` to see the class hierarchy. 
+Please refer to :doc:`the UML diagram <./uml_fluct_gen>` to see the class hierarchy.
 
 .. toctree::
     :maxdepth: 1
 
-    internal_cov 
+    internal_cov
 
-    internal_cov_sampling 
+    internal_cov_sampling
 
     grf
-   
-
-

@@ -4,4 +4,4 @@ Spectra Interpolation
 =====================
 
 .. automodule:: drdmannturb.interpolation
-    :members: 
+    :members:

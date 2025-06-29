@@ -1,6 +1,4 @@
-"""
-Utilities and constants for colormaps used in plotting. 
-"""
+"""Utilities and constants for colormaps used in plotting."""
 
 FIELD_COLORSCALE = [
     [0.0, "#000059"],

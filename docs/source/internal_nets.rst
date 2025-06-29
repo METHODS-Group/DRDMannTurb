@@ -3,7 +3,7 @@
 Internal Neural Network Interfaces
 ==================================
 
-.. autoclass:: drdmannturb.TauNet 
+.. autoclass:: drdmannturb.TauNet
     :members:
 
 .. autoclass:: drdmannturb.CustomNet

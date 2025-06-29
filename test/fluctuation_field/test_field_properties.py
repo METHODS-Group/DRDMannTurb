@@ -37,7 +37,9 @@ path_to_trained = Path(__file__).parent.parent.parent / "docs/source/results"
     ],
 )
 def test_field_divergence(model_save_filename: str):
-    """Evaluates divergence of generated fluctuation field from pre-trained DRD model. These are expected to be
+    """Evaluates divergence of generated fluctuation field from pre-trained DRD model.
+
+    These are expected to be
     nearly 0. Both the maximum point-wise divergence and the average are compared against the tolerances of 1e-2
     and 1e-5,respectively, within one order of magnitude difference (these are random quantities since network
     output may differ).

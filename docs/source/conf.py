@@ -1,5 +1,5 @@
+# noqa
 import plotly.io as pio
-import sphinx_gallery
 
 pio.renderers.default = "sphinx_gallery"
 
