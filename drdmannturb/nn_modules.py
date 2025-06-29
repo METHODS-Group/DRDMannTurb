@@ -2,7 +2,6 @@
 
 __all__ = ["TauNet", "CustomNet"]
 
-from typing import Union
 
 import torch
 import torch.nn as nn
@@ -42,7 +41,6 @@ class Rational(nn.Module):
         self.nu = nu_init
         if self.fg_learn_nu:
             self.nu = nn.Parameter(torch.tensor(float(nu_init)))
-        print(f"DEBUG: nu initial = {self.nu}")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -63,65 +61,6 @@ class Rational(nn.Module):
         out = torch.abs(x)
         out = (out**a) / ((1 + out**2) ** b)
         return out
-
-
-class SimpleNN(nn.Module):
-    """
-    A simple feed-forward neural network consisting of n layers with a ReLU activation function.
-
-    The default initialization is to random noise of magnitude 1e-9.
-    """
-
-    def __init__(self, nlayers: int = 2, inlayer: int = 3, hlayer: int = 3, outlayer: int = 3) -> None:
-        """
-        Initialize a simple feed-forward network.
-
-        Parameters
-        ----------
-        nlayers : int, optional
-            Number of layers to use, by default 2
-        inlayer : int, optional
-            Number of input features, by default 3
-        hlayer : int, optional
-            Number of hidden layers, by default 3
-        outlayer : int, optional
-            Number of output features, by default 3
-        """
-        super().__init__()
-        self.linears = nn.ModuleList([nn.Linear(hlayer, hlayer, bias=False) for _ in range(nlayers - 1)])
-        self.linears.insert(0, nn.Linear(inlayer, hlayer, bias=False))
-        self.linear_out = nn.Linear(hlayer, outlayer, bias=False)
-
-        self.actfc = nn.ReLU()
-
-        # NOTE: init parameters with noise
-        noise_magnitude = 1.0e-9
-        with torch.no_grad():
-            for param in self.parameters():
-                param.add_(torch.randn(param.size()) * noise_magnitude)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Forward pass of the simple feed-forward network.
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            Network input
-
-        Returns
-        -------
-        torch.Tensor
-            Network output
-        """
-        out = x.clone()
-
-        for lin in self.linears:
-            out = self.actfc(lin(out))
-
-        out = self.linear_out(out)
-
-        return out + x
 
 
 class CustomMLP(nn.Module):
@@ -190,15 +129,6 @@ class CustomMLP(nn.Module):
         return x + out
 
 
-"""
-Learnable eddy lifetime models
-"""
-
-##############################################################################
-# Below here are exposed.
-##############################################################################
-
-
 class TauNet(nn.Module):
     r"""
     A neural network which learns the eddy lifetime function :math:`\tau(\boldsymbol{k})`.
@@ -242,7 +172,12 @@ class TauNet(nn.Module):
         self.hidden_layer_size = hidden_layer_size
         self.fg_learn_nu = learn_nu
 
-        self.NN = SimpleNN(nlayers=self.n_layers, inlayer=3, hlayer=self.hidden_layer_size, outlayer=3)
+        self.NN = CustomMLP(
+            hlayers=[hidden_layer_size for _ in range(n_layers)],
+            activations=[nn.ReLU() for _ in range(n_layers)],
+            inlayer=3,
+            outlayer=3,
+        )
         self.Ra = Rational(learn_nu=self.fg_learn_nu, nu_init=nu_init)
 
         self.sign = torch.tensor([1, -1, 1]).detach()
@@ -280,7 +215,7 @@ class CustomNet(nn.Module):
     def __init__(
         self,
         n_layers: int = 2,
-        hidden_layer_sizes: Union[int, list[int]] = [10, 10],
+        hidden_layer_sizes: int | list[int] = [10, 10],
         activations: list[nn.Module] = [nn.ReLU(), nn.ReLU()],
         learn_nu: bool = True,
         nu_init: float = -1.0 / 3.0,
@@ -312,7 +247,12 @@ class CustomNet(nn.Module):
         else:
             hls = hidden_layer_sizes
 
-        self.NN = CustomMLP(hlayers=hls, activations=self.activations, inlayer=3, outlayer=3)
+        self.NN = CustomMLP(
+            hlayers=hls,
+            activations=self.activations,
+            inlayer=3,
+            outlayer=3,
+        )
         self.Ra = Rational(learn_nu=self.fg_learn_nu, nu_init=nu_init)
 
         self.sign = torch.tensor([1, -1, 1]).detach()

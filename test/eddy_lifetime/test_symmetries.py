@@ -12,7 +12,7 @@ from drdmannturb.parameters import (
     PhysicalParameters,
     ProblemParameters,
 )
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+from drdmannturb.spectra_fitting import CalibrationProblem, generate_kaimal_spectra
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -42,7 +42,7 @@ def test_mann_kaimal():
         device=device,
     )
 
-    Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
+    Data = generate_kaimal_spectra(data_points=k1, zref=zref, ustar=ustar)
 
     pb.calibrate(data=Data)
 
@@ -101,7 +101,7 @@ def test_synth_basic():
         device=device,
     )
 
-    Data = OnePointSpectraDataGenerator(zref=zref, data_points=domain).Data
+    Data = generate_kaimal_spectra(data_points=domain, zref=zref, ustar=Uref)
 
     pb.calibrate(data=Data)
 

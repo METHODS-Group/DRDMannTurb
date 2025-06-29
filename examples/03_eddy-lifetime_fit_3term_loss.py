@@ -24,7 +24,7 @@ from drdmannturb.parameters import (
     PhysicalParameters,
     ProblemParameters,
 )
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+from drdmannturb.spectra_fitting import CalibrationProblem, generate_kaimal_spectra
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -68,14 +68,14 @@ pb = CalibrationProblem(
 ##############################################################################
 # In the following cell, we construct our :math:`k_1` data points grid and
 # generate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.
-Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
+Data = generate_kaimal_spectra(k1=k1, zref=zref, ustar=ustar)
 
 ##############################################################################
 # Calibration
 # -----------
 # Now, we fit our model. ``CalibrationProblem.calibrate`` takes the tuple ``Data``
 # which we just constructed and performs a typical training loop.
-optimal_parameters = pb.calibrate(data=Data)
+pb.calibrate(Data)
 
 pb.print_calibrated_params()
 

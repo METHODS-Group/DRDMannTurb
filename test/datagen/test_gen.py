@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from drdmannturb.spectra_fitting import OnePointSpectraDataGenerator
+from drdmannturb.spectra_fitting.data_generator import generate_kaimal_spectra
 
 device = "cpu"
 
@@ -19,7 +19,7 @@ def test_kaimal_mann():
 
     k1 = torch.logspace(-1, 2, 20) / zref
 
-    Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
+    Data = generate_kaimal_spectra(data_points=k1, zref=zref, ustar=ustar)
 
     kaimal_mann_spectra_new = Data[1].to("cpu").numpy()
 

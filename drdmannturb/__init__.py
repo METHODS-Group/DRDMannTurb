@@ -36,7 +36,7 @@ from .fluctuation_generation import (
     plot_velocity_magnitude,
 )
 from .interpolation import extract_x_spectra, interp_spectra, interpolate
-from .nn_modules import CustomMLP, CustomNet, Rational, SimpleNN, TauNet
+from .nn_modules import CustomMLP, CustomNet, Rational, TauNet
 from .parameters import (
     LossParameters,
     NNParameters,

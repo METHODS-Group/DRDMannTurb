@@ -16,7 +16,7 @@ from drdmannturb.parameters import (
     PhysicalParameters,
     ProblemParameters,
 )
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+from drdmannturb.spectra_fitting import CalibrationProblem, generate_kaimal_spectra
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -61,7 +61,7 @@ def test_gpu_utilization_synth_fit():
         device=device,
     )
 
-    Data = OnePointSpectraDataGenerator(zref=zref, data_points=domain).Data
+    Data = generate_kaimal_spectra(zref=zref, data_points=domain)
 
     import importlib.util as util
 
@@ -70,4 +70,4 @@ def test_gpu_utilization_synth_fit():
     if torch.cuda.is_available() and util.find_spec("pynvml") is not None:
         assert torch.cuda.utilization() >= 95
     else:
-        raise EnvironmentError("CUDA must be available in test runner with pynvml installed in the environment.")
+        raise OSError("CUDA must be available in test runner with pynvml installed in the environment.")

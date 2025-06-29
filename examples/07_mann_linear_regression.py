@@ -38,7 +38,7 @@ from drdmannturb.parameters import (
     PhysicalParameters,
     ProblemParameters,
 )
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+from drdmannturb.spectra_fitting import CalibrationProblem, generate_kaimal_spectra
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -94,7 +94,7 @@ pb = CalibrationProblem(
 # generate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.
 # It is worth noting that the second element of each tuple in ``DataPoints`` is the corresponding
 # reference height, which we have chosen to be uniformly `zref`.
-Data = OnePointSpectraDataGenerator(zref=zref, data_points=domain).Data
+Data = generate_kaimal_spectra(k1=domain, zref=zref, ustar=1.0)
 
 ##############################################################################
 # Calibration

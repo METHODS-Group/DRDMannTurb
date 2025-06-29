@@ -15,7 +15,7 @@ from drdmannturb.parameters import (
     PhysicalParameters,
     ProblemParameters,
 )
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+from drdmannturb.spectra_fitting import CalibrationProblem, generate_kaimal_spectra
 
 """
 Define necessary global variables for this suite.
@@ -99,7 +99,7 @@ def test_nnparams_load_trained_TAUNET():
     )
 
     k1_data_pts = domain
-    Data = OnePointSpectraDataGenerator(zref=1, data_points=k1_data_pts).Data
+    Data = generate_kaimal_spectra(data_points=k1_data_pts, zref=1, ustar=1.0)
 
     # Train, write out (A)
     pb_A.eval(k1_data_pts)
@@ -171,7 +171,7 @@ def test_nnparams_load_trained_CUSTOMMLP():
     )
 
     k1_data_pts = domain
-    Data = OnePointSpectraDataGenerator(zref=1, data_points=k1_data_pts).Data
+    Data = generate_kaimal_spectra(data_points=k1_data_pts, zref=1, ustar=1.0)
 
     # Train, write out (A)
     pb_A.eval(k1_data_pts)
