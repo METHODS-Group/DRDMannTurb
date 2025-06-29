@@ -288,10 +288,10 @@ class CalibrationProblem:
         np.ndarray
             Evaluation of the model represented in a Numpy array (CPU bound)
         """
-        Input = self.format_input(k1)
+        res: torch.Tensor
         with torch.no_grad():
-            Output = self.OPS(Input)
-        return self.format_output(Output)
+            res = self.OPS(k1)
+        return res.cpu().numpy()
 
     def eval_grad(self, k1: torch.Tensor):
         r"""Evaluate gradient of :math:`k_1` via Autograd.
@@ -307,45 +307,12 @@ class CalibrationProblem:
             Numpy array of resultant gradient (CPU bound)
         """
         self.OPS.zero_grad()
-        Input = self.format_input(k1)
-        self.OPS(Input).backward()
+        res: torch.Tensor
+        with torch.no_grad():
+            res = self.OPS(k1)
+        res.backward()
         grad = torch.cat([param.grad.view(-1) for param in self.OPS.parameters()])
-        return self.format_output(grad)
-
-    def format_input(self, k1: torch.Tensor) -> torch.Tensor:
-        r"""Cast :math:`k_1` to ``torch.float64``.
-
-        Parameters
-        ----------
-        k1 : torch.Tensor
-            Tensor of :math:`k_1`
-
-        Returns
-        -------
-        torch.Tensor
-            Copy of `:math:`k_1` casted to doubles
-        """
-        formatted_k1 = k1.clone().detach()
-        formatted_k1.requires_grad = k1.requires_grad
-
-        return formatted_k1  # .to(torch.float64)
-
-    def format_output(self, out: torch.Tensor) -> np.ndarray:
-        """Cast the output to a CPU tensor.
-
-        Wrapper around torch's ``out.cpu().numpy()``. Returns a CPU tensor.
-
-        Parameters
-        ----------
-        out : torch.Tensor
-            Tensor to be brought to CPU and converted to an `np.ndarray`
-
-        Returns
-        -------
-        np.ndarray
-            Numpy array of the input tensor
-        """
-        return out.cpu().numpy()
+        return grad.cpu().numpy()
 
     # -----------------------------------------
 
