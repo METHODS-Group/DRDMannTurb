@@ -175,7 +175,7 @@ class CalibrationProblem:
         return param_vec
 
     @parameters.setter
-    def parameters(self, param_vec: np.ndarray | torch.tensor) -> None:
+    def parameters(self, param_vec: np.ndarray | torch.Tensor) -> None:
         """Setter method for loading in model parameters from a given vector.
 
         .. note:: The first 3 parameters of self.parameters() are exactly
@@ -320,7 +320,7 @@ class CalibrationProblem:
         self,
         # data: tuple[list[tuple[Any, float]], torch.Tensor],
         data: dict[str, torch.Tensor],
-        coherence_data_file: str | None = None,
+        coherence_data_file: Path | str | None = None,
         tb_comment: str = "",
         optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
     ) -> dict[str, float]:
@@ -1149,7 +1149,7 @@ class CalibrationProblem:
 
         plot_loss_logs(full_fpath)
 
-    def load_coherence_data(self, coherence_data_file: str):
+    def load_coherence_data(self, coherence_data_file: Path | str):
         """
         Load coherence data from .dat file and store as class attributes.
 

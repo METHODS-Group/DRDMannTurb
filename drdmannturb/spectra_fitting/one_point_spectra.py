@@ -1,4 +1,9 @@
-"""Implements the one point spectra."""
+"""Implements several "integrators" for the spectral tensor.
+
+Several physical quantities of interest in turbulence are computed as integrals of the spectral tensor,
+namely the spectral/spatial coherence functions and the one-point spectra functions. This module implements
+several integrators for these quantities.
+"""
 
 # these imports are only needed for obtaining the exponential approximation of the Mann eddy lifetime function.
 import numpy as np

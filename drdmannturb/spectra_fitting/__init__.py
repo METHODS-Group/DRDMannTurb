@@ -2,7 +2,7 @@
 
 __all__ = [
     "CalibrationProblem",
-    "CustomDataGenerator",
+    "CustomDataFormatter",
     "generate_kaimal_spectra",
     "generate_von_karman_spectra",
     "LossAggregator",
@@ -10,6 +10,6 @@ __all__ = [
 ]
 
 from .calibration import CalibrationProblem
-from .data_generator import CustomDataGenerator, generate_kaimal_spectra, generate_von_karman_spectra
+from .data_generator import CustomDataFormatter, generate_kaimal_spectra, generate_von_karman_spectra
 from .loss_functions import LossAggregator
 from .one_point_spectra import OnePointSpectra

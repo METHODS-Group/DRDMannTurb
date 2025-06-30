@@ -7,5 +7,3 @@ EddyLifetimeType = Enum(
     "EddyLifetimeType",
     ["TWOTHIRD", "CUSTOMMLP", "TAUNET", "MANN", "MANN_APPROX", "CONST"],
 )
-
-SamplingMethod = Enum("SamplingMethod", ["DST", "DCT", "FFT", "FFTW", "VF_FFTW"])

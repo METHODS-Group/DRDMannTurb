@@ -2,11 +2,11 @@
 
 This module contains the ``OnePointSpectraDataGenerator`` class, which generates one-point spectra data for a given
 set of parameters.
+
+.. note:: This module does NOT contain any examples which provide generated spectral coherence data.
 """
 
-from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Union
 
 import numpy as np
 import torch
@@ -40,7 +40,6 @@ def generate_von_karman_spectra(k1: torch.Tensor, L: float = 0.59, C: float = 3.
     ops_values[:, 1, 1] = 3 / 110 * C * (3 * L_inv_squared + 8 * k1_squared) / denominator ** (11 / 6)
     ops_values[:, 2, 2] = 3 / 110 * C * (3 * L_inv_squared + 8 * k1_squared) / denominator ** (11 / 6)
 
-    # Multiply by k1 (broadcasting across the 3x3 matrices)
     ops_values = ops_values * k1.unsqueeze(-1).unsqueeze(-1)
 
     # TODO: Implement spectral coherence generation
@@ -94,111 +93,41 @@ def generate_kaimal_spectra(k1: torch.Tensor, zref: float, ustar: float) -> torc
 #       for cleaning data and performing "generic computations" on the data.
 #
 #       This API/interface was just impossible to understand and use.
-class CustomDataGenerator:
-    r"""One point spectra data generator.
+class CustomDataFormatter:
+    """Custom data formatter.
 
-    The one point spectra data generator, which evaluates one of a few spectral tensor models across a grid of
-      :math:`k_1` wavevector points which is used as data in the fitting done in the :py:class:`OnePointSpectra` class.
+    Given a one point spectra data file (CSV) formatted as:
 
-    The type of spectral tensor is determined by the :py:enum:`DataType` argument, which determines one of the
-    following models:
+    .. code-block:: text
 
-    #. ``DataType.CUSTOM``, usually used for data that is processed from real-world data. The spectra values are to be
-        provided as the ``spectra_values`` field, or else to be loaded from a provided ``spectra_file``. The result is
-        that the provided data are matched on the wavevector domain.
+        f, F11(f), F22(f), F33(f), F13(f), F23(f), F12(f)
+
+    TODO: Add in functionalities for loading spectral coherence data.
+    TODO: This should also accept NetCDF and other formats.
     """
+
+    data_file: Path | str
+    k1_domain: torch.Tensor
+    CustomData: torch.Tensor
 
     def __init__(
         self,
-        zref: float,
-        ustar: float = 1.0,
-        data_points: Optional[Sequence[tuple[torch.tensor, float]]] = None,
-        k1_data_points: Optional[torch.Tensor] = None,
-        spectra_values: Optional[torch.Tensor] = None,
-        spectra_file: Optional[Union[Path, str]] = None,
-        seed: int = 3,
+        data_file: Path | str,
     ):
-        r"""Initialize the OnePointSpectraDataGenerator.
+        _data_file = Path(data_file)
+        if not _data_file.exists():
+            raise FileNotFoundError(f'Provided data file path "{_data_file}" does not exist.')
 
-        Parameters
-        ----------
-        zref : float
-            Reference altitude value
-        ustar : float
-            Friction velocity, by default 1.0.
-        data_points : Iterable[Tuple[torch.tensor, float]], optional
-            Observed spectra data points at each of the :math:`k_1` coordinates, paired with the associated reference
-            height (typically kept at 1, but may depend on applications).
-        data_type : DataType, optional
-            Indicates the data format to generate and operate with, by
-            default ``DataType.KAIMAL``
-        k1_data_points : Optional[Any], optional
-            Wavevector domain of :math:`k_1`, by default None. This is only to be used when the ``AUTO`` tag is chosen
-            to define the domain over which a non-linear regression is to be computed. See the interpolation module
-            for examples of unifying different :math:`k_1` domains.
-        spectra_file : Optional[Path], optional
-            If using ``DataType.CUSTOM`` or ``DataType.AUTO``, this
-            is used to indicate the data file (a .dat) to read
-            from. Since it is not used by others, it is by
-            default None
+        # Check that the file is a CSV
+        if _data_file.suffix not in [".csv", ".dat"]:
+            raise ValueError(f'Provided data file path "{_data_file}" is not a CSV file.')
 
-        Raises
-        ------
-        ValueError
-            In the case that ``DataType.CUSTOM`` is indicated, but no spectra_file
-            is provided
-        ValueError
-            Did not provide DataPoints during initialization for DataType method requiring spectra data.
-        """
-        self.DataPoints = data_points
-        self.k1 = k1_data_points
+    def _load_data(self) -> np.ndarray:
+        pass
 
-        self.seed = seed
-
-        if spectra_values is not None:
-            self.spectra_values = spectra_values
-
-        self.zref = zref
-        self.ustar = ustar
-
-        if spectra_file is not None:
-            self.CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=","))
-        else:
-            raise ValueError("Did not provide a spectra_file argument.")
-
-        return
-
-    def generate_Data(
-        self, DataPoints: Sequence[tuple[torch.tensor, float]]
-    ) -> tuple[list[tuple[torch.Tensor, float]], torch.Tensor]:
-        r"""Generate data from provided configuration.
-
-        Generates a single spectral tensor from provided data or from a surrogate model.
-        The resulting tensor is of shape (number of :math:`k_1` points):math:`\times 3 \times 3`,
-        ie the result consists of the spectral tensor evaluated across the provided range of
-        :math:`k_1` points. The spectra model is set during object instantiation.
-
-        .. note::
-            The ``DataType.CUSTOM`` type results in replication of the provided spectra data.
-
-        Parameters
-        ----------
-        DataPoints : Iterable[Tuple[torch.tensor, float]]
-            Observed spectra data points at each of the :math:`k_1` coordinates, paired with the associated reference
-            height (typically kept at 1, but may depend on applications).
-
-        Returns
-        -------
-        tuple[torch.Tensor, torch.Tensor]
-            Evaluated spectral tensor on each of the provided grid points depending on the ``DataType`` selected.
-
-        Raises
-        ------
-        ValueError
-            DataType set such that an iterable set of spectra values is required. This is for any DataType other than
-            ``CUSTOM`` and ``AUTO``.
-        """
-        DataValues = torch.zeros([len(DataPoints), 3, 3])
+    def format_data(self) -> dict[str, torch.Tensor]:
+        r"""Provide a correctly formatted data dictionary based on provided data file."""
+        DataValues = torch.zeros([len(self.k1_domain), 3, 3])
 
         DataValues[:, 0, 0] = self.CustomData[:, 1]  # uu
         DataValues[:, 1, 1] = self.CustomData[:, 2]  # vv
@@ -210,6 +139,8 @@ class CustomDataGenerator:
         # TODO: Can be negative, skipping for now
         DataValues[:, 0, 1] = self.CustomData[:, 6]  # uv
 
-        DataPoints = list(zip(DataPoints, [self.zref] * len(DataPoints)))
-        self.Data = (DataPoints, DataValues)
-        return self.Data
+        return {
+            "k1": self.k1_domain,
+            "ops": DataValues,
+            "coherence": None,
+        }
