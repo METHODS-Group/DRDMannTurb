@@ -66,48 +66,34 @@ def VKLike_EnergySpectrum(kL: torch.Tensor) -> torch.Tensor:
 
 
 @torch.jit.script
-def ParametrizableEnergySpectrum(
-    kL: torch.Tensor, alpha_low: float, alpha_high: float, transition_slope: float = 17.0 / 3.0
-) -> torch.Tensor:
-    r"""Evaluate a parameterizable energy spectrum with controllable asymptotic slopes.
+def LearnableEnergySpectrum(kL: torch.Tensor, p: torch.Tensor, q: torch.Tensor) -> torch.Tensor:
+    r"""
+    Evaluate the learnable energy spectrum, with adjustable low- and high-k slopes.
 
     The energy spectrum has the form:
 
     .. math::
-        E(kL) = \frac{(kL)^{\alpha_{low}}}{\left(1+(kL)^2\right)^{(\alpha_{low} + \alpha_{high} + transition\_slope)/2}}
+        E(k) = C \frac{(kL)^{2p}}{(1 + (kL)^2)^q}
 
-    This generalizes the von Karman spectrum to allow control over:
-    - Low wavenumber asymptote: E(k) ~ k^{alpha_low} as k → 0
-    - High wavenumber asymptote: E(k) ~ k^{alpha_high} as k → ∞
-    - Transition behavior controlled by transition_slope parameter
+    where C and L are learned parameters elsewhere in the model. p and q are learnable parameters which control
+    the low- and high-k slopes respectively. For a traditional von Karman spectrum, we have p=2 and q=17/6, which
+    we use to initialize the learnable parameters.
 
     Parameters
     ----------
     kL : torch.Tensor
-        Scaled wave number domain.
-    alpha_low : float
-        Low wavenumber asymptotic slope. Traditional von Karman uses 4.
-    alpha_high : float
-        High wavenumber asymptotic slope. Traditional von Karman uses -5/3.
-    transition_slope : float, optional
-        Controls the sharpness of transition between asymptotes, by default 17/3.
+        Scaled wave number.
+    p : torch.Tensor
+        Learnable parameter controlling the low-k slope.
+    q : torch.Tensor
+        Learnable parameter controlling the high-k slope.
 
     Returns
     -------
     torch.Tensor
-        Result of the evaluation
-
-    Notes
-    -----
-    For the traditional von Karman spectrum, use alpha_low=4, alpha_high=-5/3, transition_slope=17/3.
-
-    Examples of asymptotic behavior:
-    - alpha_low=4, alpha_high=-5/3: Traditional Kolmogorov-like spectrum
-    - alpha_low=2, alpha_high=-3: Steeper spectrum
-    - alpha_low=1, alpha_high=-1: Linear low-k, less steep high-k
+        Result of the evaluation.
     """
-    exponent = (alpha_low + abs(alpha_high) + transition_slope) / 2.0
-    return kL**alpha_low / (1.0 + kL**2) ** exponent
+    return (kL ** (2.0 * p)) / ((1.0 + kL**2) ** q)
 
 
 def MannEddyLifetime(kL: torch.Tensor | np.ndarray) -> torch.Tensor:

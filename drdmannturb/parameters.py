@@ -116,7 +116,17 @@ class PhysicalParameters:
     transition_slope: float = 17.0 / 3.0  # Transition parameter (von Karman default)
     use_parametrizable_spectrum: bool = False  # Whether to use parametrizable spectrum
 
+    # Learnable energy spectrum parameters
+    p_low: float = 2.0  # Low-k exponent
+    q_high: float = 17.0 / 6.0  # High-k exponent
+    use_learnable_spectrum: bool = False  # Whether to use learnable spectrum
+
     domain: torch.Tensor = torch.logspace(-1, 2, 20)
+
+    def __post_init__(self):
+        """Post-initialization validations."""
+        if self.use_learnable_spectrum and self.use_parametrizable_spectrum:
+            raise ValueError("Cannot use both learnable and parametrizable energy spectrum.")
 
 
 @dataclass
@@ -147,6 +157,9 @@ class LossParameters:
     beta_reg: float = 0.0
 
     gamma_coherence: float = 0.0
+
+    auto_balance_losses: bool = False
+    balance_freq: int = 10
 
 
 @dataclass

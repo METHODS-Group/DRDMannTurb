@@ -206,24 +206,34 @@ class CalibrationProblem:
             same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported
             against the currently constructed architecture if this mismatch occurs."
         """
-        if len(param_vec) < 3:
+        # Determine number of required physical parameters
+        required_params_num = 3 if not self.phys_params.use_learnable_spectrum else 5
+
+        # Determine total expected parameters
+        if self.OPS.type_EddyLifetime == EddyLifetimeType.TAUNET:
+            expected_total_params = required_params_num + self.num_trainable_params()
+        else:
+            expected_total_params = required_params_num
+
+        if len(param_vec) < required_params_num:
             raise ValueError(
-                "Parameter vector must contain at least 3 dimensionless scale quantities (L, Gamma, sigma) as well as"
-                "network parameters, if using one of TAUNET, CUSTOMMLP."
+                f"Parameter vector must contain at least {required_params_num} dimensionless scale quantities "
+                f"(L, Gamma, sigma{'[, p_low, q_high]' if self.phys_params.use_learnable_spectrum else ''}) "
+                f"as well as network parameters, if using one of TAUNET, CUSTOMMLP."
             )
 
-        if len(param_vec) != len(list(self.parameters)):
+        if len(param_vec) != expected_total_params:
             raise ValueError(
-                "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as"
-                "the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being"
-                "imported against the currently constructed architecture if this mismatch occurs."
-            )
-
-        if self.OPS.type_EddyLifetime == EddyLifetimeType.TAUNET and len(param_vec[3:]) != self.num_trainable_params():
-            raise ValueError(
-                "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as"
-                "the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being"
-                "imported against the currently constructed architecture if this mismatch occurs."
+                f"Parameter vector must contain values for {required_params_num} "
+                f"dimensionless scale quantities "
+                f"(L, Gamma, sigma"
+                f"{'[, p_low, q_high]' if self.phys_params.use_learnable_spectrum else ''}) "
+                f"as well as "
+                f"{self.num_trainable_params() if self.OPS.type_EddyLifetime == EddyLifetimeType.TAUNET else 0} "
+                f"network parameters. Expected {expected_total_params} total parameters, "
+                f"got {len(param_vec)}. "
+                f"Check the architecture being imported against the currently constructed "
+                f"architecture if this mismatch occurs."
             )
 
         if not torch.is_tensor(param_vec):
@@ -249,6 +259,10 @@ class CalibrationProblem:
                 np.log(self.phys_params.Gamma),
                 np.log(self.phys_params.sigma),
             ]
+
+            if self.phys_params.use_learnable_spectrum:
+                parameters[3] = self.phys_params.p_low
+                parameters[4] = self.phys_params.q_high
 
             self.parameters = parameters[: len(self.parameters)]
         else:
@@ -539,6 +553,10 @@ class CalibrationProblem:
             "Γ": np.exp(self.parameters[1]),
             "σ": np.exp(self.parameters[2]),
         }
+
+        if self.phys_params.use_learnable_spectrum:
+            self.calibrated_params["p_low"] = self.parameters[3].item()
+            self.calibrated_params["q_high"] = self.parameters[4].item()
 
         return self.calibrated_params
 
@@ -1075,16 +1093,13 @@ class CalibrationProblem:
             else:
                 model_coherence = [None, None, None]
 
-            # Frequency shift factors to align model with data (adjust these as needed)
-            freq_shift_factors = [10.0, 20.0, 15.0]  # Multiply model frequencies by these factors
-
             # Plot for each selected spatial separation
             for row in range(4):  # 4 spatial separations
                 sep_value = self.coherence_plot_separations[row]
 
                 # Plot each component (u, v, w)
-                for col, (coh_data, model_coh, label, color, shift_factor) in enumerate(
-                    zip(coherence_data, model_coherence, coherence_labels, colors, freq_shift_factors)
+                for col, (coh_data, model_coh, label, color) in enumerate(
+                    zip(coherence_data, model_coherence, coherence_labels, colors)
                 ):
                     ax = self.ax_coherence[row, col]
 
@@ -1103,10 +1118,7 @@ class CalibrationProblem:
                     if model_coh is not None:
                         model_coh_cpu = model_coh[row, :].cpu().detach().numpy()
 
-                        # Shift model frequencies
-                        shifted_frequencies = self.coherence_frequencies * shift_factor
-
-                        ax.plot(shifted_frequencies, model_coh_cpu, "-", color=color, linewidth=2, label="Model")
+                        ax.plot(self.coherence_frequencies, model_coh_cpu, "-", color=color, linewidth=2, label="Model")
 
                     # Match the eddy lifetime plot style
                     ax.legend()

@@ -41,7 +41,7 @@ ops_data = torch.zeros([len(k1_domain), 3, 3], dtype=torch.float64)
 ops_data[:, 0, 0] = CustomData[:, 1]
 ops_data[:, 1, 1] = CustomData[:, 2]
 ops_data[:, 2, 2] = CustomData[:, 3]
-ops_data[:, 0, 2] = CustomData[:, 4]
+ops_data[:, 0, 2] = -1 * CustomData[:, 4]
 ops_data[:, 1, 2] = CustomData[:, 5]
 ops_data[:, 0, 1] = CustomData[:, 5]
 
@@ -58,7 +58,7 @@ pb = drdmt.CalibrationProblem(
     ),
     prob_params=drdmt.ProblemParameters(
         tol=1e-9,
-        nepochs=5,  # TODO: TODO: TODO: TODO:
+        nepochs=1,  # TODO: TODO: TODO: TODO:
         learn_nu=False,
         learning_rate=0.1,
         num_components=6,
@@ -76,12 +76,9 @@ pb = drdmt.CalibrationProblem(
         domain=domain,
         Uref=21.0,
         zref=zref,
-        use_parametrizable_spectrum=False,
-        alpha_low=11.0 / 9.0,  # NOTE: Taken from eye-balling the plot
-        alpha_high=-5.0 / 3.0,
-        transition_slope=1.0,
-        # NOTE: Fij follows k^-5
-        # k_inf_asymptote=k_inf_asymptote,
+        use_learnable_spectrum=True,
+        p_low=2.0,  # NOTE: 2.0 = default
+        q_high=17.0 / 6.0,  # NOTE: 17/6 = default
     ),
     logging_directory="runs/custom_data",
     device="cpu",

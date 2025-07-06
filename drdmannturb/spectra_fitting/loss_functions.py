@@ -90,6 +90,10 @@ class LossAggregator:
             + t_gamma_coherence(y, theta_NN, epoch, **kwargs)
         )
 
+        self.auto_balance = True
+        self.balance_freq = 10  # Recompute weights every N epochs
+        self.loss_scales: dict[str, torch.Tensor] = {}
+
     def MSE_term(self, model: torch.Tensor, target: torch.Tensor, epoch: int) -> torch.Tensor:
         r"""Evaluate the MSE loss term.
 
@@ -293,6 +297,37 @@ class LossAggregator:
 
         return coherence_loss
 
+    def compute_loss_scales(self, epoch, mse_loss, coherence_loss):
+        """Compute scaling factors to balance losses."""
+        # Initialize loss_scales if it doesn't exist
+        if not hasattr(self, "loss_scales") or not self.loss_scales:
+            self.loss_scales = {}
+
+        # Initialize on first call or recompute every balance_freq epochs
+        if epoch % self.balance_freq == 0 or "mse" not in self.loss_scales:
+            # Use exponential moving average of loss magnitudes
+            beta = 0.9
+
+            if "mse" not in self.loss_scales:
+                # First initialization
+                self.loss_scales["mse"] = mse_loss.item()
+                self.loss_scales["coherence"] = (
+                    coherence_loss.item() if (coherence_loss is not None and coherence_loss != 0) else 1.0
+                )
+            else:
+                # Update existing values
+                self.loss_scales["mse"] = beta * self.loss_scales["mse"] + (1 - beta) * mse_loss.item()
+                if coherence_loss is not None and coherence_loss != 0:
+                    self.loss_scales["coherence"] = (
+                        beta * self.loss_scales["coherence"] + (1 - beta) * coherence_loss.item()
+                    )
+
+        # Return scaling factors (inverse of magnitude)
+        mse_scale = 1.0 / max(self.loss_scales.get("mse", 1.0), 1e-8)
+        coh_scale = 1.0 / max(self.loss_scales.get("coherence", 1.0), 1e-8)
+
+        return mse_scale, coh_scale
+
     def eval(
         self,
         y: torch.Tensor,
@@ -300,33 +335,51 @@ class LossAggregator:
         theta_NN: torch.Tensor | None,
         epoch: int,
         coherence_data: dict | None = None,
+        **kwargs,
     ) -> torch.Tensor:
-        """Evaluate the full loss term at a given epoch.
-
-        This method sequentially evaluates each term in the loss and returns the sum total loss.
-
-        Parameters
-        ----------
-        y : torch.Tensor
-            Model spectra output on k1space in constructor.
-        y_data : torch.Tensor
-            True spectra data on k1space in constructor.
-        theta_NN : Optional[torch.Tensor]
-            Neural network parameters, used in the regularization loss term if activated. Can be set to None if no
-            neural network is used.
-        epoch : int
-            Epoch number, used for the TensorBoard loss writer.
-
-        Returns
-        -------
-        torch.Tensor
-            Evaluated total loss, as a weighted sum of all terms with non-zero hyperparameters.
-        """
+        """Evaluate with automatic loss balancing."""
         kwargs = {}
         if coherence_data is not None:
             kwargs["coherence_data"] = coherence_data
 
-        total_loss = self.MSE_term(y, y_data, epoch) + self.loss_func(y, theta_NN, epoch, **kwargs)
+        # Compute individual losses
+        mse_loss = self.MSE_term(y, y_data, epoch)
+        coherence_loss = None
+
+        if coherence_data and self.params.gamma_coherence > 0:
+            coherence_loss = self.CoherenceLoss(
+                coherence_data["model_u"],
+                coherence_data["model_v"],
+                coherence_data["model_w"],
+                coherence_data["data_u"],
+                coherence_data["data_v"],
+                coherence_data["data_w"],
+                epoch,
+            )
+
+        # Apply automatic balancing
+        if hasattr(self.params, "auto_balance_losses") and self.params.auto_balance_losses and epoch > 0:
+            mse_scale, coh_scale = self.compute_loss_scales(epoch, mse_loss, coherence_loss)
+
+            # Normalize losses to similar scales
+            normalized_mse = mse_scale * mse_loss
+            normalized_coherence = coh_scale * coherence_loss if coherence_loss is not None else 0.0
+
+            total_loss = normalized_mse + self.params.gamma_coherence * normalized_coherence
+
+            # Log the scaling factors
+            self.writer.add_scalar("Loss_Scales/MSE", mse_scale, epoch)
+            self.writer.add_scalar("Loss_Scales/Coherence", coh_scale, epoch)
+            self.writer.add_scalar("Loss_Values/MSE_Raw", mse_loss.item(), epoch)
+            if coherence_loss is not None:
+                self.writer.add_scalar("Loss_Values/Coherence_Raw", coherence_loss.item(), epoch)
+        else:
+            # No auto-balancing
+            coherence_term = self.params.gamma_coherence * coherence_loss if coherence_loss is not None else 0.0
+            total_loss = mse_loss + coherence_term
+
+        # Add regularization terms
+        total_loss += self.loss_func(y, theta_NN, epoch, **kwargs)
 
         self.writer.add_scalar("Total Loss", total_loss, epoch)
 
