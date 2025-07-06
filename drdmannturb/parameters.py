@@ -146,6 +146,8 @@ class LossParameters:
 
     beta_reg: float = 0.0
 
+    gamma_coherence: float = 0.0
+
 
 @dataclass
 class NNParameters:

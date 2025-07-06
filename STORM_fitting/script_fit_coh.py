@@ -58,7 +58,7 @@ pb = drdmt.CalibrationProblem(
     ),
     prob_params=drdmt.ProblemParameters(
         tol=1e-9,
-        nepochs=2,
+        nepochs=5,  # TODO: TODO: TODO: TODO:
         learn_nu=False,
         learning_rate=0.1,
         num_components=6,
@@ -67,6 +67,7 @@ pb = drdmt.CalibrationProblem(
         alpha_pen1=1.5,
         alpha_pen2=1.5,
         beta_reg=1e-2,
+        gamma_coherence=0.5,
     ),
     phys_params=drdmt.PhysicalParameters(
         L=500.0,

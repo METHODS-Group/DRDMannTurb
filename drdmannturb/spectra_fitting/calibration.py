@@ -482,14 +482,34 @@ class CalibrationProblem:
         print("=" * 40)
 
         def closure():
+            """Closure function for the optimizer.
+
+            This function is called by the optimizer to compute the loss and perform a step.
+            It is not exposed and should not be otherwise called by the user.
+            """
             optimizer.zero_grad()
             y = self.OPS(data_k1_arr)
 
-            self.loss = self.LossAggregator.eval(y[self.curves], y_data[self.curves], self.gen_theta_NN(), self.e_count)
+            coherence_data: dict | None = None
+            if self.has_coherence_data:
+                model_coh_u, model_coh_v, model_coh_w = self._compute_model_coherence()
 
-            # Update model coherence if coherence data is available
-            if self.has_coherence_data and self.e_count % 10 == 0:  # Update every 10 iterations to save time
-                self.model_coherence_u, self.model_coherence_v, self.model_coherence_w = self._compute_model_coherence()
+                coherence_data = {
+                    "model_u": model_coh_u,
+                    "model_v": model_coh_v,
+                    "model_w": model_coh_w,
+                    "data_u": self.coherence_data_u_selected,
+                    "data_v": self.coherence_data_v_selected,
+                    "data_w": self.coherence_data_w_selected,
+                }
+
+            self.loss = self.LossAggregator.eval(
+                y[self.curves],
+                y_data[self.curves],
+                self.gen_theta_NN(),
+                self.e_count,
+                coherence_data=coherence_data,
+            )
 
             self.loss.backward()
             self.e_count += 1

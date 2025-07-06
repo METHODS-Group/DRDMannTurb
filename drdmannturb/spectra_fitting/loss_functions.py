@@ -60,19 +60,34 @@ class LossAggregator:
         self.h1 = torch.diff(self.logk1)
         self.h2 = torch.diff(0.5 * (self.logk1[:-1] + self.logk1[1:]))
 
-        def t_alphapen1(y, theta_NN, epoch):
+        def t_alphapen1(y, theta_NN, epoch, **kwargs):
             return self.Pen1stOrder(y, epoch) if self.params.alpha_pen1 else 0.0
 
-        def t_alphapen2(y, theta_NN, epoch):
+        def t_alphapen2(y, theta_NN, epoch, **kwargs):
             return self.Pen2ndOrder(y, epoch) if self.params.alpha_pen2 else 0.0
 
-        def t_beta_reg(y, theta_NN, epoch):
+        def t_beta_reg(y, theta_NN, epoch, **kwargs):
             return self.Regularization(theta_NN, epoch) if self.params.beta_reg else 0.0
 
+        def t_gamma_coherence(y, theta_NN, epoch, **kwargs):
+            if self.params.gamma_coherence and "coherence_data" in kwargs:
+                coh_data = kwargs["coherence_data"]
+                return self.CoherenceLoss(
+                    coh_data["model_u"],
+                    coh_data["model_v"],
+                    coh_data["model_w"],
+                    coh_data["data_u"],
+                    coh_data["data_v"],
+                    coh_data["data_w"],
+                    epoch,
+                )
+            return 0.0
+
         self.loss_func = (
-            lambda y, theta_NN, epoch: t_alphapen1(y, theta_NN, epoch)
-            + t_alphapen2(y, theta_NN, epoch)
-            + t_beta_reg(y, theta_NN, epoch)
+            lambda y, theta_NN, epoch, **kwargs: t_alphapen1(y, theta_NN, epoch, **kwargs)
+            + t_alphapen2(y, theta_NN, epoch, **kwargs)
+            + t_beta_reg(y, theta_NN, epoch, **kwargs)
+            + t_gamma_coherence(y, theta_NN, epoch, **kwargs)
         )
 
     def MSE_term(self, model: torch.Tensor, target: torch.Tensor, epoch: int) -> torch.Tensor:
@@ -201,12 +216,90 @@ class LossAggregator:
 
         return reg_loss
 
+    def CoherenceLoss(
+        self,
+        model_coherence_u: torch.Tensor,
+        model_coherence_v: torch.Tensor,
+        model_coherence_w: torch.Tensor,
+        data_coherence_u: torch.Tensor,
+        data_coherence_v: torch.Tensor,
+        data_coherence_w: torch.Tensor,
+        epoch: int,
+    ) -> torch.Tensor:
+        r"""Evaluate the coherence loss term.
+
+        Computes MSE between model and experimental coherence functions:
+
+        .. math::
+            \text{CoherenceLoss} = \frac{1}{N} \sum_{i \in \{u,v,w\}} \sum_{r,f}
+            \left( C_{ii}^{\text{model}}(r,f) - C_{ii}^{\text{data}}(r,f) \right)^2
+
+        Parameters
+        ----------
+        model_coherence_u : torch.Tensor
+            Model coherence for u-component. Shape: (n_separations, n_frequencies)
+        model_coherence_v : torch.Tensor
+            Model coherence for v-component. Shape: (n_separations, n_frequencies)
+        model_coherence_w : torch.Tensor
+            Model coherence for w-component. Shape: (n_separations, n_frequencies)
+        data_coherence_u : torch.Tensor
+            Experimental coherence for u-component. Shape: (n_separations, n_frequencies)
+        data_coherence_v : torch.Tensor
+            Experimental coherence for v-component. Shape: (n_separations, n_frequencies)
+        data_coherence_w : torch.Tensor
+            Experimental coherence for w-component. Shape: (n_separations, n_frequencies)
+        epoch : int
+            Epoch number, used for the TensorBoard loss writer.
+
+        Returns
+        -------
+        torch.Tensor
+            Evaluated coherence loss term.
+        """
+        # Convert data to tensors if needed and ensure they're on the same device
+        if not torch.is_tensor(data_coherence_u):
+            data_coherence_u = torch.tensor(
+                data_coherence_u,
+                dtype=model_coherence_u.dtype,
+                device=model_coherence_u.device,
+            )
+            data_coherence_v = torch.tensor(
+                data_coherence_v,
+                dtype=model_coherence_v.dtype,
+                device=model_coherence_v.device,
+            )
+            data_coherence_w = torch.tensor(
+                data_coherence_w,
+                dtype=model_coherence_w.dtype,
+                device=model_coherence_w.device,
+            )
+
+        # Compute MSE for each component
+        mse_u = torch.mean((model_coherence_u - data_coherence_u) ** 2)
+        mse_v = torch.mean((model_coherence_v - data_coherence_v) ** 2)
+        mse_w = torch.mean((model_coherence_w - data_coherence_w) ** 2)
+
+        # Average across components
+        coherence_loss = (mse_u + mse_v + mse_w) / 3.0
+
+        # Scale by coherence weight parameter
+        coherence_loss = self.params.gamma_coherence * coherence_loss
+
+        # Log individual components and total
+        self.writer.add_scalar("Coherence Loss/Total", coherence_loss, epoch)
+        self.writer.add_scalar("Coherence Loss/U-component", mse_u, epoch)
+        self.writer.add_scalar("Coherence Loss/V-component", mse_v, epoch)
+        self.writer.add_scalar("Coherence Loss/W-component", mse_w, epoch)
+
+        return coherence_loss
+
     def eval(
         self,
         y: torch.Tensor,
         y_data: torch.Tensor,
         theta_NN: torch.Tensor | None,
         epoch: int,
+        coherence_data: dict | None = None,
     ) -> torch.Tensor:
         """Evaluate the full loss term at a given epoch.
 
@@ -229,7 +322,11 @@ class LossAggregator:
         torch.Tensor
             Evaluated total loss, as a weighted sum of all terms with non-zero hyperparameters.
         """
-        total_loss = self.MSE_term(y, y_data, epoch) + self.loss_func(y, theta_NN, epoch)
+        kwargs = {}
+        if coherence_data is not None:
+            kwargs["coherence_data"] = coherence_data
+
+        total_loss = self.MSE_term(y, y_data, epoch) + self.loss_func(y, theta_NN, epoch, **kwargs)
 
         self.writer.add_scalar("Total Loss", total_loss, epoch)
 
