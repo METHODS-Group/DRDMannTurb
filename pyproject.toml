@@ -27,7 +27,7 @@ dependencies = [
     "numpy>=2.0",
     "plotly==5.17.0",
     "pyevtk==1.6.0",
-    "pyFFTW==0.14.0",
+    "pyFFTW==0.15.0",
     "scikit_learn>=1.4.0",
     "scipy>=1.13.1",
     "tensorboard>=2.19.0",
