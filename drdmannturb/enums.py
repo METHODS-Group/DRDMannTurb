@@ -5,5 +5,5 @@ from enum import Enum
 
 EddyLifetimeType = Enum(
     "EddyLifetimeType",
-    ["TWOTHIRD", "CUSTOMMLP", "TAUNET", "MANN", "MANN_APPROX", "CONST"],
+    ["TWOTHIRD", "TAUNET", "MANN", "MANN_APPROX", "CONST"],
 )

@@ -1,7 +1,7 @@
 """Several dataclasses that make it easy to pass around parameters."""
 
 from dataclasses import dataclass, field
-from typing import Optional, Union
+from typing import Union
 
 import numpy as np
 import torch
@@ -60,7 +60,7 @@ class ProblemParameters:
     init_with_noise: bool = False
     noise_magnitude: float = 1e-3
 
-    eddy_lifetime: EddyLifetimeType = EddyLifetimeType.CUSTOMMLP
+    eddy_lifetime: EddyLifetimeType = EddyLifetimeType.TAUNET
 
     wolfe_iter_count: int = 20
 
@@ -254,4 +254,4 @@ class LowFreqParameters:
     z_i: float = 500.0
     psi_degs: float = 43.0
 
-    c: Optional[float] = None
+    c: float | None = None

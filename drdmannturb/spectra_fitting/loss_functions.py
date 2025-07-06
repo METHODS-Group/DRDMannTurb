@@ -1,7 +1,5 @@
 """Implements the loss function in an extensible and configurable manner without directly exposing the calculation."""
 
-from typing import Optional
-
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
@@ -16,7 +14,7 @@ class LossAggregator:
         params: LossParameters,
         k1space: torch.Tensor,
         zref: float,
-        tb_log_dir: Optional[str] = None,
+        tb_log_dir: str | None = None,
         tb_comment: str = "",
     ):
         r"""Initialize aggregator for given loss function parameters.
@@ -101,27 +99,7 @@ class LossAggregator:
         torch.Tensor
             Evaluated MSE loss term.
         """
-        # print(f"\n[DEBUG MSE_term] model shape: {model.shape}, target shape: {target.shape}")
-        # print(f"[DEBUG MSE_term] abs(model) range: [{model.abs().min().item():.3e}, {model.abs().max().item():.3e}]")
-        # print(f"[DBG MSE_term] abs(target) range: [{target.abs().min().item():.3e}, {target.abs().max().item():.3e}]")
-        # print(f"[DEBUG MSE_term] Number of zeros in target: {(target == 0).sum().item()}")
-        # print(f"[DEBUG MSE_term] Number of zeros in model output: {(model == 0).sum().item()}")
-
-        # print(f"[DEBUG MSE_TERM] Model: {model}")
-        # print(f"[DEBUG MSE_TERM] Target: {target}")
-
-        # ratio = model / target
-        # print(f"[DEBUG MSE_term] ratio range: [{ratio.min().item():.3e}, {ratio.max().item():.3e}]")
-        # print(f"[DEBUG MSE_term] Any NaN in ratio? {torch.isnan(ratio).any().item()}")
-        # print(f"[DEBUG MSE_term] Any Inf in ratio? {torch.isinf(ratio).any().item()}")
-
-        # log_ratio = torch.log(torch.abs(ratio))
-        # print(f"[DEBUG MSE_term] log_ratio range: [{log_ratio.min().item():.3e}, {log_ratio.max().item():.3e}]")
-        # print(f"[DEBUG MSE_term] Any NaN in log_ratio? {torch.isnan(log_ratio).any().item()}")
-        # print(f"[DEBUG MSE_term] Any Inf in log_ratio? {torch.isinf(log_ratio).any().item()}")
-
         mse_loss = torch.mean(torch.log(torch.abs(model / target)).square())
-        # print(f"[DEBUG MSE_term] Final MSE loss: {mse_loss.item()}")
 
         self.writer.add_scalar("MSE Loss", mse_loss, epoch)
 
@@ -227,7 +205,7 @@ class LossAggregator:
         self,
         y: torch.Tensor,
         y_data: torch.Tensor,
-        theta_NN: Optional[torch.Tensor],
+        theta_NN: torch.Tensor | None,
         epoch: int,
     ) -> torch.Tensor:
         """Evaluate the full loss term at a given epoch.

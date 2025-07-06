@@ -18,7 +18,7 @@ from ..common import (
     VKLike_EnergySpectrum,
 )
 from ..enums import EddyLifetimeType
-from ..nn_modules import CustomNet, TauNet
+from ..nn_modules import TauNet
 from ..parameters import NNParameters, PhysicalParameters
 
 
@@ -85,15 +85,6 @@ class OnePointSpectra(nn.Module):
             self.tauNet = TauNet(
                 nn_parameters.nlayers,
                 nn_parameters.hidden_layer_size,
-                learn_nu=learn_nu,
-            )
-
-        elif type_eddy_lifetime == EddyLifetimeType.CUSTOMMLP:
-            assert nn_parameters is not None, "Custom MLP EddyLifetimeType requires NNParameters!"
-            self.tauNet = CustomNet(
-                nn_parameters.nlayers,
-                nn_parameters.hidden_layer_sizes,
-                nn_parameters.activations,
                 learn_nu=learn_nu,
             )
 
@@ -494,10 +485,7 @@ class OnePointSpectra(nn.Module):
             tau = Mann_linear_exponential_approx(kL, self.tau_approx_coeff_, self.tau_approx_intercept_)
         elif self.type_EddyLifetime == EddyLifetimeType.TWOTHIRD:
             tau = kL ** (-2 / 3)
-        elif self.type_EddyLifetime in [
-            EddyLifetimeType.TAUNET,
-            EddyLifetimeType.CUSTOMMLP,
-        ]:
+        elif self.type_EddyLifetime == EddyLifetimeType.TAUNET:
             tau0 = self.InitialGuess_EddyLifetime()
             tau = tau0 + self.tauNet(k * self.LengthScale)
         else:

@@ -219,14 +219,7 @@ class CalibrationProblem:
                 "imported against the currently constructed architecture if this mismatch occurs."
             )
 
-        if (
-            self.OPS.type_EddyLifetime
-            in [
-                EddyLifetimeType.TAUNET,
-                EddyLifetimeType.CUSTOMMLP,
-            ]
-            and len(param_vec[3:]) != self.num_trainable_params()
-        ):
+        if self.OPS.type_EddyLifetime == EddyLifetimeType.TAUNET and len(param_vec[3:]) != self.num_trainable_params():
             raise ValueError(
                 "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as"
                 "the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being"
@@ -472,10 +465,7 @@ class CalibrationProblem:
 
         self.e_count: int = 0
 
-        if self.OPS.type_EddyLifetime in [
-            EddyLifetimeType.TAUNET,
-            EddyLifetimeType.CUSTOMMLP,
-        ]:
+        if self.OPS.type_EddyLifetime == EddyLifetimeType.TAUNET:
             # NOTE: Old code used tauNet.NN.parameters() since the NN wasn't "built-in" to the tauNet
             self.gen_theta_NN = lambda: parameters_to_vector(self.OPS.tauNet.parameters())
         else:
@@ -600,10 +590,7 @@ class CalibrationProblem:
         ValueError
             If the OPS was not initialized to one of TAUNET, CUSTOMMLP
         """
-        if self.OPS.type_EddyLifetime not in [
-            EddyLifetimeType.TAUNET,
-            EddyLifetimeType.CUSTOMMLP,
-        ]:
+        if self.OPS.type_EddyLifetime != EddyLifetimeType.TAUNET:
             raise ValueError("Not using trainable model for approximation, must be TAUNET, CUSTOMMLP.")
 
         return sum(p.numel() for p in self.OPS.tauNet.parameters())
@@ -626,10 +613,7 @@ class CalibrationProblem:
             If the OPS was not initialized to one of ``TAUNET``, ``CUSTOMMLP``.
 
         """
-        if self.OPS.type_EddyLifetime not in [
-            EddyLifetimeType.TAUNET,
-            EddyLifetimeType.CUSTOMMLP,
-        ]:
+        if self.OPS.type_EddyLifetime != EddyLifetimeType.TAUNET:
             raise ValueError("Not using trainable model for approximation, must be TAUNET, CUSTOMMLP.")
 
         return torch.norm(torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord)
