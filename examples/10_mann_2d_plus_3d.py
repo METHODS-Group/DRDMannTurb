@@ -14,7 +14,7 @@ Generating a box from a 2d+3d model requires simulating the 2d field first. Then
 physical coordinates (by default, centered on the :math:`y`-axis of the 2d field) and interpolate the 2d field onto
 this finer grid. Since we assume that the 2d field is vertically invariant and statistically independent of the 3d
 field, we can simply add the 2d field to each vertical slice of the 3d field to obtain the complete result.
-"""
+"""  # noqa
 
 import numpy as np
 

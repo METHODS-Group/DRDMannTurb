@@ -1,13 +1,13 @@
 """Several dataclasses that make it easy to pass around parameters."""
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Union
+from typing import Union
 
 import numpy as np
 import torch
 import torch.nn as nn
 
-from .enums import DataType, EddyLifetimeType, PowerSpectraType
+from .enums import EddyLifetimeType
 
 __all__ = ["ProblemParameters", "PhysicalParameters", "NNParameters", "LossParameters"]
 
@@ -45,8 +45,6 @@ class ProblemParameters:
     eddy_lifetime : EddyLifetimeType
         Type of model to use for eddy lifetime function. This determines whether a neural network is to be used
         to learn to approximate the function, or if a known model, such as the Mann eddy lifetime is to be used.
-    power_spectra : PowerSpectraType
-        Type of model to use for power spectra
     wolfe_iter_count : int
         Sets the number of Wolfe iterations that each step of LBFGS uses
     learn_nu : bool
@@ -62,9 +60,7 @@ class ProblemParameters:
     init_with_noise: bool = False
     noise_magnitude: float = 1e-3
 
-    data_type: DataType = DataType.KAIMAL
-    eddy_lifetime: EddyLifetimeType = EddyLifetimeType.CUSTOMMLP
-    power_spectra: PowerSpectraType = PowerSpectraType.RDT
+    eddy_lifetime: EddyLifetimeType = EddyLifetimeType.TAUNET
 
     wolfe_iter_count: int = 20
 
@@ -93,6 +89,14 @@ class PhysicalParameters:
         Reference height value; should be measured at hub height (meters)
     domain : torch.Tensor
         :math:`k_1` domain over which spectra data are defined.
+    alpha_low : float, optional
+        Low wavenumber asymptotic slope for energy spectrum, by default 4.0 (von Karman)
+    alpha_high : float, optional
+        High wavenumber asymptotic slope for energy spectrum, by default -5.0/3.0 (von Karman)
+    transition_slope : float, optional
+        Transition slope parameter for energy spectrum, by default 17.0/3.0 (von Karman)
+    use_parametrizable_spectrum : bool, optional
+        Whether to use the parametrizable energy spectrum, by default False
     """
 
     L: float
@@ -106,7 +110,23 @@ class PhysicalParameters:
 
     k_inf_asymptote: float = -2.0 / 3.0
 
+    # Energy spectrum asymptotic slope parameters
+    alpha_low: float = 4.0  # Low k asymptote (von Karman default)
+    alpha_high: float = -5.0 / 3.0  # High k asymptote (von Karman default)
+    transition_slope: float = 17.0 / 3.0  # Transition parameter (von Karman default)
+    use_parametrizable_spectrum: bool = False  # Whether to use parametrizable spectrum
+
+    # Learnable energy spectrum parameters
+    p_low: float = 2.0  # Low-k exponent
+    q_high: float = 17.0 / 6.0  # High-k exponent
+    use_learnable_spectrum: bool = False  # Whether to use learnable spectrum
+
     domain: torch.Tensor = torch.logspace(-1, 2, 20)
+
+    def __post_init__(self):
+        """Post-initialization validations."""
+        if self.use_learnable_spectrum and self.use_parametrizable_spectrum:
+            raise ValueError("Cannot use both learnable and parametrizable energy spectrum.")
 
 
 @dataclass
@@ -135,6 +155,11 @@ class LossParameters:
     alpha_pen2: float = 0.0
 
     beta_reg: float = 0.0
+
+    gamma_coherence: float = 0.0
+
+    auto_balance_losses: bool = False
+    balance_freq: int = 10
 
 
 @dataclass
@@ -166,8 +191,8 @@ class NNParameters:
     input_size: int = 3
 
     hidden_layer_size: int = 10
-    hidden_layer_sizes: List[int] = field(default_factory=list)
-    activations: List[nn.Module] = field(default_factory=list)
+    hidden_layer_sizes: list[int] = field(default_factory=list)
+    activations: list[nn.Module] = field(default_factory=list)
 
     output_size: int = 3
 
@@ -193,8 +218,8 @@ class DomainParameters:
         These are calculated as :math:`2^{\text{grid\_levels}} + 1`.
     """
 
-    d_dimensions: Union[Tuple[float, float, float], "np.ndarray", List[float]]
-    d_levels: Union[Tuple[int, int, int], "np.ndarray", List[int]]
+    d_dimensions: Union[tuple[float, float, float], "np.ndarray", list[float]]
+    d_levels: Union[tuple[int, int, int], "np.ndarray", list[int]]
 
     def __post_init__(self):
         # Check grid dimensions
@@ -244,4 +269,4 @@ class LowFreqParameters:
     z_i: float = 500.0
     psi_degs: float = 43.0
 
-    c: Optional[float] = None
+    c: float | None = None

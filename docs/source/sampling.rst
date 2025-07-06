@@ -24,6 +24,3 @@
 
 .. autoclass:: drdmannturb.Sampling_DCT
     :members:
-
-
-

@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "drdmannturb"
-version = "1.0.2"
+version = "1.1-beta.0"
 description = "Synthetic turbulence generation software, focused on a data-driven extension of the Mann turbulence model"
 readme = "README.md"
-requires-python = ">=3.9.16"
+requires-python = ">=3.10"
 license = "BSD-2-Clause"
 authors = [
   {name = "Alexey Izmailov", email = "alizma@brown.edu"},
@@ -19,7 +19,7 @@ classifiers = [
     "Development Status :: 1 - Planning",
     "Intended Audience :: Science/Research",
     "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
 ]
 dependencies = [
     "matplotlib==3.9.4",
@@ -118,8 +118,8 @@ exclude = [
 # Same as Black.
 line-length = 120
 
-# Assume Python 3.9
-target-version = "py39"
+# Assume Python >=3.10
+target-version = "py310"
 
 [tool.pytest.ini_options]
 minversion = "7.0"

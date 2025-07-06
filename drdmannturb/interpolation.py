@@ -9,8 +9,10 @@ from scipy.interpolate import CubicSpline
 
 def extract_x_spectra(filepath: Path, abs: bool = False) -> tuple[np.ndarray, np.ndarray]:
     """
-    Given a filepath to a csv with data in two cols; the first should
-    be the x coordinates and the second should be the spectra value
+    Extract x-coords and spectra from a CSV file.
+
+    Given a filepath to a CSV file with data in two columns; the first
+    should be the x coordinates and the second should be the spectra value.
 
     Parameters
     ----------
@@ -38,8 +40,10 @@ def extract_x_spectra(filepath: Path, abs: bool = False) -> tuple[np.ndarray, np
 
 def interp_spectra(x_interp: np.ndarray, x_true: np.ndarray, spectra: np.ndarray) -> np.ndarray:
     """
-    Cubic spline interpolation of spectra over x_interp, given original
-    x-coords x_true
+    Interpolate spectra over x_interp.
+
+    Cubic spline interpolation of spectra over ``x_interp``, given original
+    x-coords ``x_true``.
 
     Parameters
     ----------
@@ -61,7 +65,8 @@ def interp_spectra(x_interp: np.ndarray, x_true: np.ndarray, spectra: np.ndarray
 
 
 def interpolate(datapath: Path, num_k1_points: int, plot: bool = False) -> tuple[np.ndarray, ...]:
-    """Calculates and returns the interpolations over a common set of x-coordinates.
+    """
+    Calculate and return the interpolations over a common set of x-coordinates.
 
     Parameters
     ----------

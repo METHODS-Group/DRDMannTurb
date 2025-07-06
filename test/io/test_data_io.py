@@ -1,14 +1,11 @@
 """Tests for assessing data input-output accuracy. This specifically concerns the DataGenerator class."""
 
-
 from pathlib import Path
 
 import numpy as np
-import pytest
 import torch
 
-from drdmannturb.enums import DataType
-from drdmannturb.spectra_fitting import OnePointSpectraDataGenerator
+from drdmannturb.spectra_fitting import generate_kaimal_spectra
 
 path = Path(__file__).parent
 
@@ -32,19 +29,11 @@ zref = 1
 
 
 def test_custom_spectra_load():
-
-    CustomData = torch.tensor(
-        np.genfromtxt(spectra_file, skip_header=1, delimiter=","), dtype=torch.float
-    )
+    """Test custom spectra loading."""
+    CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=","), dtype=torch.float)
     f = CustomData[:, 0]
     k1_data_pts = 2 * torch.pi * f / Uref
-    Data = OnePointSpectraDataGenerator(
-        zref=zref,
-        data_points=k1_data_pts,
-        data_type=DataType.CUSTOM,
-        spectra_file=spectra_file,
-        k1_data_points=k1_data_pts.data.cpu().numpy(),
-    ).Data
+    Data = generate_kaimal_spectra(data_points=k1_data_pts, zref=zref, ustar=Uref)
 
     assert torch.equal(CustomData[:, 1], Data[1][:, 0, 0])
     assert torch.equal(CustomData[:, 2], Data[1][:, 1, 1])

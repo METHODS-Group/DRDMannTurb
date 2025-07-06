@@ -10,7 +10,8 @@ from those measurements. Additionally, the :math:`\nu` parameter is also learned
 is learned for the rational function for :math:`\tau` given by
 
 .. math::
-        \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}).
+        \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}{\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}},
+        \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}).
 
 """  # noqa: D205, D400
 
@@ -43,11 +44,7 @@ if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
 
-spectra_file = (
-    path / "./inputs/Spectra.dat"
-    if path.name == "examples"
-    else path / "../data/Spectra.dat"
-)
+spectra_file = path / "./inputs/Spectra.dat" if path.name == "examples" else path / "../data/Spectra.dat"
 
 ##############################################################################
 # Setting Physical Parameters
@@ -88,12 +85,8 @@ zref = 1  # reference height
 # Note that :math:`\nu` is learned here.
 
 pb = CalibrationProblem(
-    nn_params=NNParameters(
-        nlayers=2, hidden_layer_sizes=[10, 10], activations=[nn.ReLU(), nn.ReLU()]
-    ),
-    prob_params=ProblemParameters(
-        data_type=DataType.CUSTOM, tol=1e-9, nepochs=5, learn_nu=True
-    ),
+    nn_params=NNParameters(nlayers=2, hidden_layer_sizes=[10, 10], activations=[nn.ReLU(), nn.ReLU()]),
+    prob_params=ProblemParameters(tol=1e-9, nepochs=5, learn_nu=True),
     loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1e-5),
     phys_params=PhysicalParameters(
         L=L,
@@ -111,8 +104,9 @@ pb = CalibrationProblem(
 ##############################################################################
 # Data from File
 # --------------
-# The data are provided in a CSV format with the first column determining the frequency domain, which must be non-dimensionalized by the reference velocity.
-# The different spectra are provided in the order ``uu, vv, ww, uw`` where the last is the u-w cospectra (the convention for 3D velocity vector components being u, v, w for x, y, z).
+# The data are provided in a CSV format with the first column determining the frequency domain, which must be
+# non-dimensionalized by the reference velocity. The different spectra are provided in the order ``uu, vv, ww, uw``
+# where the last is the u-w cospectra (the convention for 3D velocity vector components being u, v, w for x, y, z).
 # The ``k1_data_points`` key word argument is needed here to define the domain over which the spectra are defined.
 CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=","))
 f = CustomData[:, 0]

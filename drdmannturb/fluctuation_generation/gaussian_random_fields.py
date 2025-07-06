@@ -1,9 +1,11 @@
 """
-This module implements a random field generator.
+Implements several random field generators.
 
-Notes
------
-This should not be directly used but is needed by ``FluctuationFieldGenerator``.
+The main class is `GaussianRandomField`, which generates
+a Gaussian random field from a given covariance kernel.
+
+The `VectorGaussianRandomField` class generates a vector of
+Gaussian random fields in a specified number of dimensions.
 """
 
 from typing import Optional, Protocol, runtime_checkable
@@ -27,19 +29,27 @@ from .sampling_methods import (
 
 @runtime_checkable
 class SamplingMethod(Protocol):
-    """
-    Defines an interface for sampling methods for typing purposes.
-    """
+    """Interface for sampling methods."""
 
     DomainSlice: tuple[slice, ...]
 
-    def __call__(self, noise: np.ndarray) -> np.ndarray: ...
+    def __call__(self, noise: np.ndarray) -> np.ndarray:
+        """
+        Correlate the noise with the covariance kernel.
+
+        Parameters
+        ----------
+        noise : np.ndarray
+            Noise to be correlated with the covariance kernel.
+        """
+        ...
 
 
 class GaussianRandomField:
     r"""
-    Generator for a discrete Gaussian random field: a random Gaussian variable at each point in a domain. Several
-    sampling methods are provided by default:
+    Generator for a discrete Gaussian random field.
+
+    Several sampling methods are provided by default:
 
     #. fft - SciPy Fast Fourier Transform (default)
     #. fftw - "Fastest Fourier Transform in the West"
@@ -60,6 +70,8 @@ class GaussianRandomField:
         sampling_method: str = "fft",
     ):
         """
+        Initialize the Gaussian random field generator.
+
         Parameters
         ----------
         Covariance : Covariance
@@ -123,7 +135,8 @@ class GaussianRandomField:
         self.setSamplingMethod(sampling_method)
 
     def setSamplingMethod(self, method: str):
-        """Initialize the sampling method
+        """
+        Initialize the sampling method.
 
         Parameters
         ----------
@@ -156,7 +169,8 @@ class GaussianRandomField:
             raise Exception(f'Unknown sampling method "{method}".')
 
     def reseed(self, seed=None):
-        """Sets a new seed for the class's PRNG.
+        """
+        Set a new seed for the class's PRNG.
 
         Parameters
         ----------
@@ -170,7 +184,8 @@ class GaussianRandomField:
 
     ### Sample noise
     def sample_noise(self, grid_shape: Optional[np.ndarray] = None) -> np.ndarray:
-        """Samples random grid from specified distribution (currently only a Gaussian).
+        """
+        Sample random grid from specified distribution.
 
         Parameters
         ----------
@@ -194,8 +209,11 @@ class GaussianRandomField:
     ### Sample GRF
     def sample(self, noise: Optional[np.ndarray] = None) -> np.ndarray:
         """
-        Samples the Gaussian Random Field with specified sampling method. Note this is not just what is sampled
-        from the distribution; this field is also correlated with the covariance kernel provided during construction.
+        Sample the Gaussian random field with specified sampling method.
+
+        Note this is not just what is sampled from the distribution;
+        this field is also correlated with the covariance kernel provided
+        during construction.
 
         Parameters
         ----------
@@ -226,12 +244,16 @@ class GaussianRandomField:
 
 class VectorGaussianRandomField(GaussianRandomField):
     """
-    Gaussian random vector field generator
+    Gaussian random vector field generator.
+
+    This class generates a vector of Gaussian random fields in a specified number of dimensions.
     """
 
     def __init__(self, vdim: int = 3, **kwargs):
-        """Constructor for vector of GRFs in specified number of dimensions (presently only 3). ``kwargs`` must
-        contain all information required by :py:class:`GaussianRandomField`.
+        """
+        Initialize a vector GRF generator in specified number of dimensions.
+
+        ``kwargs`` must contain all information required by :py:class:`GaussianRandomField`.
 
         Parameters
         ----------

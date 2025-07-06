@@ -3,7 +3,7 @@
 Gaussian Random Field Generation
 ================================
 
-See 
+See
 
 .. autoclass:: drdmannturb.GaussianRandomField
     :members:

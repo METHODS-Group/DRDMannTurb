@@ -1,23 +1,9 @@
 """Enums determining the fundamental datatypes and choices of models available in the package."""
-__all__ = ["DataType", "EddyLifetimeType", "PowerSpectraType"]
 
+__all__ = ["EddyLifetimeType"]
 from enum import Enum
-
-DataType = Enum(
-    "DataType",
-    [
-        "KAIMAL",
-        "CUSTOM",
-        "AUTO",
-        "VK",
-    ],
-)
 
 EddyLifetimeType = Enum(
     "EddyLifetimeType",
-    ["TWOTHIRD", "CUSTOMMLP", "TAUNET", "MANN", "MANN_APPROX", "CONST"],
+    ["TWOTHIRD", "TAUNET", "MANN", "MANN_APPROX", "CONST"],
 )
-
-PowerSpectraType = Enum("PowerSpectraType", ["RDT"])
-
-SamplingMethod = Enum("SamplingMethod", ["DST", "DCT", "FFT", "FFTW", "VF_FFTW"])

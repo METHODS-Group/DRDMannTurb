@@ -6,7 +6,7 @@ Example 3: Adding Regularization and Penalty Terms to Fitting
 This example is nearly identical to Example 2, however we
 use a more sophisticated loss function, introducing an additional first-order
 penalty term. The previous synthetic fit relied only on MSE loss and a second-order penalty.
-"""
+"""  # noqa
 
 #######################################################################################
 # Import packages
@@ -24,7 +24,7 @@ from drdmannturb.parameters import (
     PhysicalParameters,
     ProblemParameters,
 )
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+from drdmannturb.spectra_fitting import CalibrationProblem, generate_kaimal_spectra
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -60,9 +60,7 @@ pb = CalibrationProblem(
     ),
     prob_params=ProblemParameters(nepochs=5),
     loss_params=LossParameters(alpha_pen2=1.0, alpha_pen1=1.0e-5, beta_reg=2e-4),
-    phys_params=PhysicalParameters(
-        L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1
-    ),
+    phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1),
     logging_directory="runs/synthetic_3term",
     device=device,
 )
@@ -70,14 +68,14 @@ pb = CalibrationProblem(
 ##############################################################################
 # In the following cell, we construct our :math:`k_1` data points grid and
 # generate the values. ``Data`` will be a tuple ``(<data points>, <data values>)``.
-Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
+Data = generate_kaimal_spectra(k1=k1, zref=zref, ustar=ustar)
 
 ##############################################################################
 # Calibration
 # -----------
 # Now, we fit our model. ``CalibrationProblem.calibrate`` takes the tuple ``Data``
 # which we just constructed and performs a typical training loop.
-optimal_parameters = pb.calibrate(data=Data)
+pb.calibrate(Data)
 
 pb.print_calibrated_params()
 

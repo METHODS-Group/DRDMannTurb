@@ -2,10 +2,8 @@
 
 import os
 import pickle
-import sys
 from pathlib import Path
 
-import numpy as np
 import pytest
 import torch
 import torch.nn as nn
@@ -17,7 +15,7 @@ from drdmannturb.parameters import (
     PhysicalParameters,
     ProblemParameters,
 )
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+from drdmannturb.spectra_fitting import CalibrationProblem, generate_kaimal_spectra
 
 """
 Define necessary global variables for this suite.
@@ -44,7 +42,10 @@ Begin tests
     [EddyLifetimeType.CUSTOMMLP, EddyLifetimeType.TAUNET],
 )
 def test_network_paramcount(eddylifetime: EddyLifetimeType):
-    """Test the number of trainable parameters in different neural network-based eddy lifetime function DRD models. These are static values; note that the first 3 parameters are always the length, time, and spectrum amplitude quantities.
+    """Test the number of trainable parameters in different neural network-based eddy lifetime function DRD models.
+
+    These are static values; note that the first 3 parameters are always the length, time, and spectrum
+    amplitude quantities.
 
     Parameters
     ----------
@@ -67,13 +68,7 @@ def test_network_paramcount(eddylifetime: EddyLifetimeType):
 
 @pytest.mark.slow
 def test_nnparams_load_trained_TAUNET():
-    """
-    Ensures file I/O utilities are correctly reading and writing for TAUNET
-
-    Specifically, trains a model (A), writes parameters out to file,
-    immediately reads into (B), and compares (A) to (B).
-    """
-
+    """Ensures file I/O utilities are correctly reading and writing for TAUNET."""
     # Create and cd into temporary directory
     CWD_PATH = Path().cwd()
     TEMP_VAR_DIR = CWD_PATH / "TEMP_VAR_DIR"
@@ -96,9 +91,7 @@ def test_nnparams_load_trained_TAUNET():
 
     # Create (A)
     pb_A = CalibrationProblem(
-        nn_params=NNParameters(
-            nlayers=2, hidden_layer_size=10, hidden_layer_sizes=[10, 10]
-        ),
+        nn_params=NNParameters(nlayers=2, hidden_layer_size=10, hidden_layer_sizes=[10, 10]),
         prob_params=ProblemParameters(nepochs=2, eddy_lifetime=EddyLifetimeType.TAUNET),
         loss_params=LossParameters(alpha_pen2=1.0, alpha_pen1=1.0e-5, beta_reg=2e-4),
         phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, domain=domain),
@@ -106,7 +99,7 @@ def test_nnparams_load_trained_TAUNET():
     )
 
     k1_data_pts = domain
-    Data = OnePointSpectraDataGenerator(zref=1, data_points=k1_data_pts).Data
+    Data = generate_kaimal_spectra(data_points=k1_data_pts, zref=1, ustar=1.0)
 
     # Train, write out (A)
     pb_A.eval(k1_data_pts)
@@ -145,12 +138,7 @@ def test_nnparams_load_trained_TAUNET():
 
 @pytest.mark.slow
 def test_nnparams_load_trained_CUSTOMMLP():
-    """
-    Ensures file I/O utilities are correctly reading and writing for CUSTOMMLP
-
-    Specifically, trains a model
-    """
-
+    """Ensures file I/O utilities are correctly reading and writing for CUSTOMMLP."""
     # Create and cd into temporary directory
     CWD_PATH = Path().cwd()
     TEMP_VAR_DIR = CWD_PATH / "TEMP_VAR_DIR"
@@ -159,15 +147,11 @@ def test_nnparams_load_trained_CUSTOMMLP():
     os.chdir(TEMP_VAR_DIR)
 
     def clean_exit():
-        """
-        Chdir to .. and rm -rf the temporary directory.
-        """
+        """Chdir to .. and rm -rf the temporary directory."""
         os.chdir(CWD_PATH)
 
         def rm_tree(pth: Path):
-            """
-            Recursive deletion for a Path to a Dir
-            """
+            """Recursive deletion for a Path to a Dir."""
             for child in pth.iterdir():
                 if child.is_file():
                     child.unlink()
@@ -179,19 +163,15 @@ def test_nnparams_load_trained_CUSTOMMLP():
 
     # Create (A)
     pb_A = CalibrationProblem(
-        nn_params=NNParameters(
-            nlayers=2, hidden_layer_sizes=[10, 10], activations=[nn.GELU(), nn.ReLU()]
-        ),
-        prob_params=ProblemParameters(
-            nepochs=2, eddy_lifetime=EddyLifetimeType.CUSTOMMLP
-        ),
+        nn_params=NNParameters(nlayers=2, hidden_layer_sizes=[10, 10], activations=[nn.GELU(), nn.ReLU()]),
+        prob_params=ProblemParameters(nepochs=2, eddy_lifetime=EddyLifetimeType.CUSTOMMLP),
         loss_params=LossParameters(alpha_pen2=1.0, alpha_pen1=1.0e-5, beta_reg=2e-4),
         phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, domain=domain),
         device=device,
     )
 
     k1_data_pts = domain
-    Data = OnePointSpectraDataGenerator(zref=1, data_points=k1_data_pts).Data
+    Data = generate_kaimal_spectra(data_points=k1_data_pts, zref=1, ustar=1.0)
 
     # Train, write out (A)
     pb_A.eval(k1_data_pts)

@@ -546,7 +546,7 @@ def length_AND_grid_size_study(base_config, do_plot=False, num_realizations=10):
 
     figs = []
 
-    def create_heatmap(data, title, cmap="viridis", logscale=False):
+    def create_heatmap(data, title: str, cmap: str = "viridis", logscale: bool = False) -> tuple[plt.Figure, plt.Axes]:
         fig, ax = plt.subplots(figsize=(10, 8))
 
         x_labels = [str(f) for f in domain_factors]

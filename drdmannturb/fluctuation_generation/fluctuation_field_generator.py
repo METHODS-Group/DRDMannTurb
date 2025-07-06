@@ -1,6 +1,4 @@
-"""
-This module implements the wind generation functionality forward facing API
-"""
+"""Wind generation functionality forward facing API."""
 
 import pickle
 from math import ceil
@@ -20,13 +18,12 @@ from .nn_covariance import NNCovariance
 
 
 class FluctuationFieldGenerator:
-    r"""
+    r"""Class for generating a fluctuation field.
+
     .. _generate-fluctuation-field-reference:
-    Class for generating a fluctuation field either from a Mann model or a pre-fit DRD model that generates
-    the field spectra.
 
     Turbulent fluctuations can be formally written as a convolution of a covariance kernel with Gaussian noise
-    :math:`\boldsymbol{\xi}` in the physical domain:
+    :math:`\boldsymbol{\xi}` in the physical domain::
 
     .. math::
         \mathbf{u}=\mathcal{F}^{-1} \mathcal{G} \widehat{\boldsymbol{\xi}}=\mathcal{F}^{-1} \mathcal{G}
@@ -85,7 +82,8 @@ class FluctuationFieldGenerator:
         blend_num: int = 10,
         config_2d_model: Optional[dict] = None,
     ):
-        r"""
+        r"""Initialize the fluctuation field generator.
+
         Parameters
         ----------
         friction_velocity : float
@@ -258,7 +256,7 @@ class FluctuationFieldGenerator:
             self.low_freq_gen.generate()
 
     def _generate_block(self) -> np.ndarray:
-        """Generates a single block of the fluctuation field.
+        """Generate a single block of the fluctuation field.
 
         Returns
         -------

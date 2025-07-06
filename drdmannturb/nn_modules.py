@@ -1,8 +1,7 @@
 """All nn.Module's used throughout the framework."""
 
-__all__ = ["TauNet", "CustomNet"]
+__all__ = ["TauNet"]
 
-from typing import List, Union
 
 import torch
 import torch.nn as nn
@@ -26,7 +25,7 @@ class Rational(nn.Module):
             \mathrm{NN}(\operatorname{abs}(\boldsymbol{k})).
     """
 
-    def __init__(self, learn_nu: bool = True, k_inf_asymptote: float = -2.0 / 3.0) -> None:
+    def __init__(self, learn_nu: bool = True, nu_init: float = -1.0 / 3.0) -> None:
         """
         Initialize the rational kernel.
 
@@ -35,15 +34,15 @@ class Rational(nn.Module):
         learn_nu : bool, optional
             Indicates whether or not the exponent nu should be learned
             also; by default True
+        nu_init : float, optional
+            Initial value for the nu parameter; by default -1.0/3.0
         """
         super().__init__()
         self.fg_learn_nu = learn_nu
 
-        self.k_inf_asymptote = k_inf_asymptote
-
-        self.nu = -1.0 / 3.0
+        self.nu = nu_init
         if self.fg_learn_nu:
-            self.nu = nn.Parameter(torch.tensor(float(-1.0 / 3.0)))
+            self.nu = nn.Parameter(torch.tensor(float(nu_init)))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -59,155 +58,19 @@ class Rational(nn.Module):
         torch.Tensor
             Network output
         """
-        a = self.nu + self.k_inf_asymptote
+        a = self.nu - (2.0 / 3.0)
         b = self.nu / 2.0
         out = torch.abs(x)
         out = (out**a) / ((1 + out**2) ** b)
         return out
 
 
-class SimpleNN(nn.Module):
-    """
-    A simple feed-forward neural network consisting of n layers with a ReLU activation function.
-
-    The default initialization is to random noise of magnitude 1e-9.
-    """
-
-    def __init__(self, nlayers: int = 2, inlayer: int = 3, hlayer: int = 3, outlayer: int = 3) -> None:
-        """
-        Initialize a simple feed-forward network.
-
-        Parameters
-        ----------
-        nlayers : int, optional
-            Number of layers to use, by default 2
-        inlayer : int, optional
-            Number of input features, by default 3
-        hlayer : int, optional
-            Number of hidden layers, by default 3
-        outlayer : int, optional
-            Number of output features, by default 3
-        """
-        super().__init__()
-        self.linears = nn.ModuleList([nn.Linear(hlayer, hlayer, bias=False).double() for _ in range(nlayers - 1)])
-        self.linears.insert(0, nn.Linear(inlayer, hlayer, bias=False).double())
-        self.linear_out = nn.Linear(hlayer, outlayer, bias=False).double()
-
-        self.actfc = nn.ReLU()
-
-        # NOTE: init parameters with noise
-        noise_magnitude = 1.0e-9
-        with torch.no_grad():
-            for param in self.parameters():
-                param.add_(torch.randn(param.size()) * noise_magnitude)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Forward pass of the simple feed-forward network.
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            Network input
-
-        Returns
-        -------
-        torch.Tensor
-            Network output
-        """
-        out = x.clone()
-
-        for lin in self.linears:
-            out = self.actfc(lin(out))
-
-        out = self.linear_out(out)
-
-        return out + x
-
-
-class CustomMLP(nn.Module):
-    """
-    Feed-forward neural network with variable widths of layers and activation functions.
-
-    Useful for DNN configurations and experimentation with different activation functions.
-    """
-
-    def __init__(
-        self,
-        hlayers: list[int],
-        activations: list[nn.Module],
-        inlayer: int = 3,
-        outlayer: int = 3,
-    ) -> None:
-        """
-        Initialize a feed-forward network with variable widths of layers and activation functions.
-
-        Parameters
-        ----------
-        hlayers : list
-            list specifying widths of hidden layers in NN
-        activations : list[nn.Module]
-            list specifying activation functions for each hidden layer
-        inlayer : int, optional
-            Number of input features, by default 3
-        outlayer : int, optional
-            Number of features to output, by default 3
-        """
-        super().__init__()
-
-        num_layers = len(hlayers)
-        self.linears = nn.ModuleList(
-            [nn.Linear(hlayers[k], hlayers[k + 1], bias=False).double() for k in range(num_layers - 1)]
-        )
-        self.linears.insert(0, nn.Linear(inlayer, hlayers[0], bias=False).double())
-        self.linear_out = nn.Linear(hlayers[-1], outlayer, bias=False).double()
-
-        self.activations = activations
-
-        noise_magnitude = 1.0e-9
-        with torch.no_grad():
-            for param in self.parameters():
-                param.add_(torch.randn(param.size()) * noise_magnitude)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Forward pass of the feed-forward network with variable widths of layers and activation functions.
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            Input to the network
-
-        Returns
-        -------
-        torch.Tensor
-            Output of the network
-        """
-        out = x.clone()
-
-        for idx, lin in enumerate(self.linears):
-            out = self.activations[idx](lin(out))
-
-        out = self.linear_out(out)
-
-        return x + out
-
-
-"""
-Learnable eddy lifetime models
-"""
-
-##############################################################################
-# Below here are exposed.
-##############################################################################
-
-
 class TauNet(nn.Module):
     r"""
-    A neural network which learns the eddy lifetime function :math:`\tau(\boldsymbol{k})`.
+    A neural network designed for approximating the eddy lifetime function :math:`\tau(\boldsymbol{k})`.
 
-    A SimpleNN and Rational network comprise this class. The network widths are determined by a single integer and
-    thereafter the networks have hidden layers of only that width.
+    By default, this composes a multi-layer perceptron with a "rational kernel," which is used
+    to enforce certain analytic behaviors.
 
     The objective is to learn the function
 
@@ -220,43 +83,107 @@ class TauNet(nn.Module):
     .. math::
         \boldsymbol{a}(\boldsymbol{k}) = \operatorname{abs}(\boldsymbol{k}) +
         \mathrm{NN}(\operatorname{abs}(\boldsymbol{k})).
-
-    This class implements the simplest architectures which solve this problem.
     """
 
     def __init__(
         self,
         n_layers: int = 2,
-        hidden_layer_size: int = 3,
+        hidden_layer_sizes: int | list[int] = 10,
+        activations: list[nn.Module] | nn.Module | None = None,
         learn_nu: bool = True,
-        k_inf_asymptote: float = -2.0 / 3.0,
+        nu_init: float = -1.0 / 3.0,
     ):
         r"""
-        Initialize the tauNet.
+        Initialize the TauNet.
 
         Parameters
         ----------
         n_layers : int, optional
             Number of hidden layers, by default 2
-        hidden_layer_size : int, optional
-            Size of the hidden layers, by default 3
+        hidden_layer_sizes : Union[int, list[int]], optional
+            Sizes of each layer; by default 10
+        activations : Union[list[nn.Module], nn.Module, None], optional
+            Activation functions to use, by default None (uses ReLU)
         learn_nu : bool, optional
-            If true, learns also the exponent :math:`\nu`, by default True
+            If true, learns also the exponent nu, by default True
+        nu_init : float, optional
+            Initial value for the nu parameter, by default -1.0/3.0
         """
-        super(TauNet, self).__init__()
+        super().__init__()
 
+        # Validate n_layers
+        if not isinstance(n_layers, int) or n_layers <= 0:
+            raise ValueError("n_layers must be a positive integer")
         self.n_layers = n_layers
-        self.hidden_layer_size = hidden_layer_size
-        self.fg_learn_nu = learn_nu
 
-        self.NN = SimpleNN(nlayers=self.n_layers, inlayer=3, hlayer=self.hidden_layer_size, outlayer=3)
-        self.Ra = Rational(learn_nu=self.fg_learn_nu, k_inf_asymptote=k_inf_asymptote)
+        # Handle layer sizes
+        if isinstance(hidden_layer_sizes, int):
+            if hidden_layer_sizes <= 0:
+                raise ValueError("hidden_layer_sizes must be a positive integer")
+            hidden_layer_sizes = [hidden_layer_sizes] * n_layers
+        else:
+            if len(hidden_layer_sizes) != n_layers:
+                raise ValueError("hidden_layer_sizes must be a list of integers of length n_layers")
+            for size in hidden_layer_sizes:
+                if size <= 0:
+                    raise ValueError("hidden_layer_sizes must be a list of positive integers")
 
-        self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
+        self.hidden_layer_sizes = hidden_layer_sizes
+
+        # Handle activations
+        if activations is None:
+            self.activations = [nn.ReLU() for _ in range(n_layers)]
+        elif isinstance(activations, nn.Module):
+            self.activations = [activations] * n_layers
+        elif isinstance(activations, list):
+            if len(activations) != n_layers:
+                raise ValueError("activations must be a list of nn.Module's of length n_layers")
+            for act in activations:
+                if not isinstance(act, nn.Module):
+                    raise ValueError("activations must be a list of nn.Module's")
+            self.activations = activations
+        else:
+            raise ValueError("activations must be None, nn.Module, or list of nn.Module's")
+
+        # Build MLP layers - includes input, hidden, and output layers
+        layers = [nn.Linear(3, hidden_layer_sizes[0], bias=False)]  # Input layer
+
+        # Hidden layers
+        for i in range(n_layers - 1):
+            layers.append(nn.Linear(hidden_layer_sizes[i], hidden_layer_sizes[i + 1], bias=False))
+
+        # Output layer
+        layers.append(nn.Linear(hidden_layer_sizes[-1], 3, bias=False))
+
+        self.linears = nn.ModuleList(layers)
+
+        # Rational kernel
+        self.Ra = Rational(learn_nu=learn_nu, nu_init=nu_init)
+
+        # Initialize with small noise to prevent zero initialization
+        noise_magnitude = 1.0e-9
+        with torch.no_grad():
+            for param in self.parameters():
+                param.add_(torch.randn(param.size()) * noise_magnitude)
+
+        self.sign = torch.tensor([1, -1, 1]).detach()
+
+    def _mlp_forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the MLP layers."""
+        out = x.clone()
+
+        # Apply all layers except the last one with activation
+        for idx, layer in enumerate(self.linears[:-1]):
+            out = self.activations[idx](layer(out))
+
+        # Apply final layer without activation
+        out = self.linears[-1](out)
+
+        return x + out  # Residual connection
 
     def forward(self, k: torch.Tensor) -> torch.Tensor:
         r"""
-        Forward pass of the tauNet.
+        Forward pass of the TauNet.
 
         Evaluates the eddy lifetime function :math:`\tau(\boldsymbol{k})`.
 
@@ -270,76 +197,6 @@ class TauNet(nn.Module):
         torch.Tensor
             Output of forward pass of neural network.
         """
-        k_mod = self.NN(k.abs()).norm(dim=-1)
-        tau = self.Ra(k_mod)
-        return tau
-
-
-class CustomNet(nn.Module):
-    r"""
-    A more versatile version of the tauNet.
-
-    The objective is the same: to learn the eddy lifetime function
-    :math:`\tau(\boldsymbol{k})` in the same way. This class allows for neural networks of variable widths and
-    different kinds of activation functions used between layers.
-    """
-
-    def __init__(
-        self,
-        n_layers: int = 2,
-        hidden_layer_sizes: Union[int, list[int]] = [10, 10],
-        activations: List[nn.Module] = [nn.ReLU(), nn.ReLU()],
-        learn_nu: bool = True,
-        k_inf_asymptote: float = -2.0 / 3.0,
-    ):
-        r"""
-        Initialize the customNet.
-
-        Parameters
-        ----------
-        n_layers : int, optional
-            Number of hidden layers, by default 2
-        hidden_layer_sizes : Union[int, list[int]]
-            Sizes of each layer; by default [10, 10].
-        activations : List[nn.Module], optional
-            List of activation functions to use, by default [nn.ReLU(), nn.ReLU()]
-        learn_nu : bool, optional
-            If true, learns also the exponent :math:`\nu`, by default True
-        """
-        super().__init__()
-
-        self.n_layers = n_layers
-        self.activations = activations
-
-        self.fg_learn_nu = learn_nu
-
-        hls: List[int]
-        if isinstance(hidden_layer_sizes, int):
-            hls = [hidden_layer_sizes for _ in range(n_layers)]
-        else:
-            hls = hidden_layer_sizes
-
-        self.NN = CustomMLP(hlayers=hls, activations=self.activations, inlayer=3, outlayer=3)
-        self.Ra = Rational(learn_nu=self.fg_learn_nu, k_inf_asymptote=k_inf_asymptote)
-
-        self.sign = torch.tensor([1, -1, 1], dtype=torch.float64).detach()
-
-    def forward(self, k: torch.Tensor) -> torch.Tensor:
-        r"""
-        Forward pass of the customNet.
-
-        Evaluates the eddy lifetime function :math:`\tau(\boldsymbol{k})`.
-
-        Parameters
-        ----------
-        k : torch.Tensor
-            Input wavevector domain.
-
-        Returns
-        -------
-        torch.Tensor
-            Output of forward pass of neural network
-        """
-        k_mod = self.NN(k.abs()).norm(dim=-1)
+        k_mod = self._mlp_forward(k.abs()).norm(dim=-1)
         tau = self.Ra(k_mod)
         return tau

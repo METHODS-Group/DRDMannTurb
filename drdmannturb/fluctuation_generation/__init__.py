@@ -1,3 +1,13 @@
+"""
+Fluctuation generation module.
+
+This module contains the classes and functions for generating
+fluctuation fields.
+
+The main class is `FluctuationFieldGenerator`, which generates
+a fluctuation field from a given covariance kernel.
+"""
+
 __all__ = [
     "Covariance",
     "VonKarmanCovariance",

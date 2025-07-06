@@ -14,7 +14,7 @@ from .common import (
     VKEnergySpectrum,
     plot_loss_logs,
 )
-from .enums import DataType, EddyLifetimeType, PowerSpectraType
+from .enums import EddyLifetimeType
 from .fluctuation_generation import (
     Covariance,
     FluctuationFieldGenerator,
@@ -36,7 +36,7 @@ from .fluctuation_generation import (
     plot_velocity_magnitude,
 )
 from .interpolation import extract_x_spectra, interp_spectra, interpolate
-from .nn_modules import CustomMLP, CustomNet, Rational, SimpleNN, TauNet
+from .nn_modules import Rational, TauNet
 from .parameters import (
     LossParameters,
     NNParameters,
@@ -45,9 +45,11 @@ from .parameters import (
 )
 from .spectra_fitting import (
     CalibrationProblem,
+    CustomDataFormatter,
     LossAggregator,
     OnePointSpectra,
-    OnePointSpectraDataGenerator,
+    generate_kaimal_spectra,
+    generate_von_karman_spectra,
 )
 
 __all__ = [
@@ -58,9 +60,7 @@ __all__ = [
     "VKEnergySpectrum",
     "plot_loss_logs",
     # Enums
-    "DataType",
     "EddyLifetimeType",
-    "PowerSpectraType",
     # Fluctuation Generation
     "Covariance",
     "FluctuationFieldGenerator",
@@ -97,7 +97,9 @@ __all__ = [
     "ProblemParameters",
     # Spectra Fitting
     "CalibrationProblem",
+    "CustomDataFormatter",
+    "generate_kaimal_spectra",
+    "generate_von_karman_spectra",
     "LossAggregator",
     "OnePointSpectra",
-    "OnePointSpectraDataGenerator",
 ]

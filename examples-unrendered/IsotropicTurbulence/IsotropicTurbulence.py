@@ -1,23 +1,27 @@
-"""
-This example does TODO
-"""
+"""Generates an isotropic turbulence field."""
 
 from time import time
 
-import matplotlib.pyplot as plt
 import numpy as np
 from pyevtk.hl import imageToVTK
+
+import drdmannturb.fluctuation_generation.gaussian_random_fields as grf
 
 # from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectra
 from drdmannturb.fluctuation_generation.covariance_kernels import (
     MannCovariance,
     VonKarmanCovariance,
 )
-from drdmannturb.fluctuation_generation.gaussian_random_fields import *
-from drdmannturb.fluctuation_generation.nn_covariance import NNCovariance
 
 
 class GenerateWindTurbulence:
+    """
+    Generate an isotropic turbulence field.
+
+    This class generates an isotropic turbulence field by sampling a
+    random field and then applying a mean profile to it.
+    """
+
     def __init__(
         self,
         friction_velocity,
@@ -39,10 +43,8 @@ class GenerateWindTurbulence:
         time_buffer = 3 * Gamma * L
         spatial_margin = 1 * L
 
-        try:
-            grid_levels = [grid_levels[i].GetInt() for i in range(3)]
-        except:
-            pass
+        grid_levels = [int(grid_levels[i]) for i in range(3)]
+
         Nx = 2 ** grid_levels[0] + 1
         Ny = 2 ** grid_levels[1] + 1
         Nz = 2 ** grid_levels[2] + 1
@@ -50,22 +52,15 @@ class GenerateWindTurbulence:
         hy = grid_dimensions[1] / Ny
         hz = grid_dimensions[2] / Nz
 
-        n_buffer = ceil(time_buffer / hx)
-        n_marginy = ceil(spatial_margin / hy)
-        n_marginz = ceil(spatial_margin / hz)
+        n_buffer = int(np.ceil(time_buffer / hx))
+        n_marginy = int(np.ceil(spatial_margin / hy))
+        n_marginz = int(np.ceil(spatial_margin / hz))
 
         wind_shape = [0] + [Ny] + [Nz] + [3]
         if blend_num > 0:
-            noise_shape = (
-                [Nx + 2 * n_buffer + (blend_num - 1)]
-                + [Ny + 2 * n_marginy]
-                + [Nz + 2 * n_marginz]
-                + [3]
-            )
+            noise_shape = [Nx + 2 * n_buffer + (blend_num - 1)] + [Ny + 2 * n_marginy] + [Nz + 2 * n_marginz] + [3]
         else:
-            noise_shape = (
-                [Nx + 2 * n_buffer] + [Ny + 2 * n_marginy] + [Nz + 2 * n_marginz] + [3]
-            )
+            noise_shape = [Nx + 2 * n_buffer] + [Ny + 2 * n_marginy] + [Nz + 2 * n_marginz] + [3]
         new_part_shape = [Nx] + [Ny + 2 * n_marginy] + [Nz + 2 * n_marginz] + [3]
 
         central_part = [
@@ -97,7 +92,7 @@ class GenerateWindTurbulence:
         print(model)
         if model == "VK":
             self.Covariance = VonKarmanCovariance(ndim=3, length_scale=L, E0=E0)
-            self.RF = VectorGaussianRandomField(
+            self.RF = grf.VectorGaussianRandomField(
                 **kwargs,
                 ndim=3,
                 grid_level=grid_levels,
@@ -108,7 +103,7 @@ class GenerateWindTurbulence:
             )
         elif model == "Mann":
             self.Covariance = MannCovariance(ndim=3, length_scale=L, E0=E0, Gamma=Gamma)
-            self.RF = VectorGaussianRandomField(
+            self.RF = grf.VectorGaussianRandomField(
                 **kwargs,
                 ndim=3,
                 grid_level=grid_levels,
@@ -122,6 +117,12 @@ class GenerateWindTurbulence:
         # self.RS = np.random.RandomState(seed=self.seed)
 
     def __call__(self):
+        """
+        Generate a wind field.
+
+        This method generates a wind field by sampling a random field
+        and then applying a mean profile to it.
+        """
         noise_shape = self.noise_shape
         central_part = self.central_part
         new_part = self.new_part
@@ -157,8 +158,6 @@ class GenerateWindTurbulence:
 ############################################################################
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
     normalize = False
     friction_velocity = 0.45
     reference_height = 100.0
@@ -180,32 +179,60 @@ if __name__ == "__main__":
         wind_turbulence()
     wind_field = wind_turbulence.total_wind
 
-    if normalize == True:
+    if normalize:
         sd = np.sqrt(np.mean(wind_field**2))
         wind_field = wind_field / sd
         wind_field *= 4.26  # rescale to match Mann model
 
-    JCSS_law = (
-        lambda z, z_0, delta, u_ast: u_ast
-        / 0.41
-        * (
-            np.log(z / z_0 + 1.0)
-            + 5.57 * z / delta
-            - 1.87 * (z / delta) ** 2
-            - 1.33 * (z / delta) ** 3
-            + 0.25 * (z / delta) ** 4
+    def JCSS_law(z, z_0, delta, u_ast):
+        """
+        Calculate wind speed profile using JCSS (Joint Committee on Structural Safety) law.
+
+        Parameters
+        ----------
+        z: height above ground
+        z_0: roughness height
+        delta: boundary layer height
+        u_ast: friction velocity
+
+        Returns
+        -------
+        Wind speed at height z
+        """
+        return (
+            u_ast
+            / 0.41
+            * (
+                np.log(z / z_0 + 1.0)
+                + 5.57 * z / delta
+                - 1.87 * (z / delta) ** 2
+                - 1.33 * (z / delta) ** 3
+                + 0.25 * (z / delta) ** 4
+            )
         )
-    )
-    log_law = lambda z, z_0, u_ast: u_ast * np.log(z / z_0 + 1.0) / 0.41
+
+    def log_law(z, z_0, u_ast):
+        """
+        Calculate wind speed profile using logarithmic law.
+
+        Parameters
+        ----------
+        z: height above ground
+        z_0: roughness height
+        u_ast: friction velocity
+
+        Returns
+        -------
+        Wind speed at height z
+        """
+        return u_ast * np.log(z / z_0 + 1.0) / 0.41
 
     z = np.linspace(0.0, grid_dimensions[2], 2 ** (grid_levels[2]) + 1)
     # mean_profile_z = JCSS_law(z, roughness_height, 10.0, friction_velocity)
     mean_profile_z = log_law(z, roughness_height, friction_velocity)
 
     mean_profile = np.zeros_like(wind_field)
-    mean_profile[..., 0] = np.tile(
-        mean_profile_z.T, (mean_profile.shape[0], mean_profile.shape[1], 1)
-    )
+    mean_profile[..., 0] = np.tile(mean_profile_z.T, (mean_profile.shape[0], mean_profile.shape[1], 1))
 
     print(mean_profile)
     # wind_field = mean_profile

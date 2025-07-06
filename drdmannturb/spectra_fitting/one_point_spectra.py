@@ -1,6 +1,9 @@
-"""Implements the one point spectra."""
+"""Implements several "integrators" for the spectral tensor.
 
-from typing import Optional
+Several physical quantities of interest in turbulence are computed as integrals of the spectral tensor,
+namely the spectral/spatial coherence functions and the one-point spectra functions. This module implements
+several integrators for these quantities.
+"""
 
 # these imports are only needed for obtaining the exponential approximation of the Mann eddy lifetime function.
 import numpy as np
@@ -8,9 +11,14 @@ import torch
 import torch.nn as nn
 from sklearn.linear_model import LinearRegression
 
-from ..common import Mann_linear_exponential_approx, MannEddyLifetime, VKEnergySpectrum
-from ..enums import EddyLifetimeType, PowerSpectraType
-from ..nn_modules import CustomNet, TauNet
+from ..common import (
+    LearnableEnergySpectrum,
+    Mann_linear_exponential_approx,
+    MannEddyLifetime,
+    VKLike_EnergySpectrum,
+)
+from ..enums import EddyLifetimeType
+from ..nn_modules import TauNet
 from ..parameters import NNParameters, PhysicalParameters
 
 
@@ -25,9 +33,10 @@ class OnePointSpectra(nn.Module):
         self,
         type_eddy_lifetime: EddyLifetimeType,
         physical_params: PhysicalParameters,
-        type_power_spectra: PowerSpectraType = PowerSpectraType.RDT,
-        nn_parameters: Optional[NNParameters] = None,
+        use_parametrizable_spectrum: bool = False,
+        nn_parameters: NNParameters | None = None,
         learn_nu: bool = False,
+        use_coherence: bool = False,
     ):
         r"""Initialize the one point spectra calculator.
 
@@ -57,8 +66,6 @@ class OnePointSpectra(nn.Module):
             Type of eddy lifetime function :math:`\tau` to use.
         physical_params : PhysicalParameters,
             Object specifying physical parameters of the problem.
-        type_power_spectra : PowerSpectraType, optional
-            Type of power spectra function to use, by default PowerSpectraType.RDT, the only one currently implemented.
         nn_parameters : NNParameters, optional
             Dataclass containing neural network initialization if a neural network is used to approximate the eddy
             lifetime function, by default None.
@@ -73,58 +80,76 @@ class OnePointSpectra(nn.Module):
         """
         super().__init__()
 
+        assert physical_params.L > 0, "Length scale L must be positive."
+        assert physical_params.Gamma > 0, "Characteristic time scale Gamma must be positive."
+        assert physical_params.sigma > 0, "Spectrum amplitude sigma must be positive."
+
         if type_eddy_lifetime == EddyLifetimeType.TAUNET:
             assert nn_parameters is not None, "TauNet EddyLifetimeType requires NNParameters!"
             self.tauNet = TauNet(
                 nn_parameters.nlayers,
                 nn_parameters.hidden_layer_size,
                 learn_nu=learn_nu,
-                k_inf_asymptote=physical_params.k_inf_asymptote,
-            )
-
-        elif type_eddy_lifetime == EddyLifetimeType.CUSTOMMLP:
-            assert nn_parameters is not None, "Custom MLP EddyLifetimeType requires NNParameters!"
-            self.tauNet = CustomNet(
-                nn_parameters.nlayers,
-                nn_parameters.hidden_layer_sizes,
-                nn_parameters.activations,
-                learn_nu=learn_nu,
-                k_inf_asymptote=physical_params.k_inf_asymptote,
             )
 
         elif type_eddy_lifetime == EddyLifetimeType.MANN_APPROX:
             self.init_mann_linear_approx = False
 
         self.type_EddyLifetime = type_eddy_lifetime
-        self.type_PowerSpectra = type_power_spectra
+        self.use_parametrizable_spectrum = use_parametrizable_spectrum
+        self.use_coherence = use_coherence
 
         ####
         # OPS grid
         # k2 grid
         p1, p2, N = -3, 3, 100
-        grid_zero = torch.tensor([0], dtype=torch.float64)
-        grid_plus = torch.logspace(p1, p2, N, dtype=torch.float64)
+        grid_zero = torch.tensor([0])
+        grid_plus = torch.logspace(p1, p2, N)
         grid_minus = -torch.flip(grid_plus, dims=[0])
         self.ops_grid_k2 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
 
         # k3 grid
         p1, p2, N = -3, 3, 100
-        grid_zero = torch.tensor([0], dtype=torch.float64)
-        grid_plus = torch.logspace(p1, p2, N, dtype=torch.float64)
+        grid_zero = torch.tensor([0])
+        grid_plus = torch.logspace(p1, p2, N)
         grid_minus = -torch.flip(grid_plus, dims=[0])
         self.ops_grid_k3 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
 
         self.ops_meshgrid23 = torch.meshgrid(self.ops_grid_k2, self.ops_grid_k3, indexing="ij")
 
-        assert physical_params.L > 0, "Length scale L must be positive."
-        assert physical_params.Gamma > 0, "Characteristic time scale Gamma must be positive."
-        assert physical_params.sigma > 0, "Spectrum amplitude sigma must be positive."
+        ####
+        # Separate coherence grid (finer resolution for better accuracy)
+        if use_coherence:
+            p1, p2, N_coh = -4, 4, 120
+            grid_zero_coh = torch.tensor([0])
+            grid_plus_coh = torch.logspace(p1, p2, N_coh)
+            grid_minus_coh = -torch.flip(grid_plus_coh, dims=[0])
+            self.coh_grid_k2 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach() / physical_params.L
+            self.coh_grid_k3 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach() / physical_params.L
 
-        self.logLengthScale = nn.Parameter(torch.tensor(np.log10(physical_params.L), dtype=torch.float64))
-        self.logTimeScale = nn.Parameter(torch.tensor(np.log10(physical_params.Gamma), dtype=torch.float64))
-        self.logMagnitude = nn.Parameter(torch.tensor(np.log10(physical_params.sigma), dtype=torch.float64))
+            self.coh_meshgrid23 = torch.meshgrid(self.coh_grid_k2, self.coh_grid_k3, indexing="ij")
 
-    def set_scales(self, LengthScale: np.float64, TimeScale: np.float64, Magnitude: np.float64):
+        self.logLengthScale = nn.Parameter(torch.tensor(np.log10(physical_params.L)))
+        self.logTimeScale = nn.Parameter(torch.tensor(np.log10(physical_params.Gamma)))
+        self.logMagnitude = nn.Parameter(torch.tensor(np.log10(physical_params.sigma)))
+
+        if physical_params.use_learnable_spectrum:
+            self.p_low = nn.Parameter(torch.tensor(physical_params.p_low))
+            self.q_high = nn.Parameter(torch.tensor(physical_params.q_high))
+
+        self.use_learnable_spectrum = physical_params.use_learnable_spectrum
+
+        self.LengthScale_scalar = physical_params.L
+        self.TimeScale_scalar = physical_params.Gamma
+        self.Magnitude_scalar = physical_params.sigma
+
+        self.use_parametrizable_spectrum = physical_params.use_parametrizable_spectrum
+        if self.use_parametrizable_spectrum:
+            self.alpha_low = physical_params.alpha_low
+            self.alpha_high = physical_params.alpha_high
+            self.transition_slope = physical_params.transition_slope
+
+    def set_scales(self, LengthScale: float, TimeScale: float, Magnitude: float):
         """Set scalar values for values used in non-dimensionalization.
 
         Parameters
@@ -148,6 +173,10 @@ class OnePointSpectra(nn.Module):
                 - LengthScale
                 - TimeScale
                 - SpectrumAmplitude
+
+        Additionally, if use_learnable_spectrum is True, the next two parameters are
+            - p_low
+            - q_high
 
         Returns
         -------
@@ -181,58 +210,222 @@ class OnePointSpectra(nn.Module):
         torch.Tensor
             Network output
         """
-        # print(f"\n[DEBUG OPS.forward] Input k1_input shape: {k1_input.shape}")
-        # print(f"[DEBUG OPS.forward] k1_input range: [{k1_input.min().item():.3e}, {k1_input.max().item():.3e}]")
-
         self.exp_scales()
-        # print(f"[DEBUG OPS.forward] Scales: L={self.LengthScale}, Gamma={self.TimeScale}, sigma={self.Magnitude}")
+
+        # Get dtype from input
+        input_dtype = k1_input.dtype
+
+        # Use input dtype for grid creation (if not already created)
+        if not hasattr(self, "ops_grid_k2"):
+            p1, p2, N = -3, 3, 100
+            grid_zero = torch.tensor([0], dtype=input_dtype)
+            grid_plus = torch.logspace(p1, p2, N, dtype=input_dtype)
+            grid_minus = -torch.flip(grid_plus, dims=[0])
+            self.ops_grid_k2 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
+
+            # k3 grid
+            p1, p2, N = -3, 3, 100
+            grid_zero = torch.tensor([0], dtype=input_dtype)
+            grid_plus = torch.logspace(p1, p2, N, dtype=input_dtype)
+            grid_minus = -torch.flip(grid_plus, dims=[0])
+            self.ops_grid_k3 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
+
+            self.ops_meshgrid23 = torch.meshgrid(self.ops_grid_k2, self.ops_grid_k3, indexing="ij")
 
         self.k = torch.stack(torch.meshgrid(k1_input, self.ops_grid_k2, self.ops_grid_k3, indexing="ij"), dim=-1)
         self.k123 = self.k[..., 0], self.k[..., 1], self.k[..., 2]
         self.beta = self.EddyLifetime()
-        # print(f"[DEBUG OPS.forward] beta range: [{self.beta.min().item():.3e}, {self.beta.max().item():.3e}]")
-        # print(f"[DEBUG OPS.forward] Any NaN in beta? {torch.isnan(self.beta).any().item()}")
 
         self.k0 = self.k.clone()
         self.k0[..., 2] = self.k[..., 2] + self.beta * self.k[..., 0]
         k0L = self.LengthScale * self.k0.norm(dim=-1)
-        # print(f"[DEBUG OPS.forward] k0L range: [{k0L.min().item():.3e}, {k0L.max().item():.3e}]")
 
-        self.E0 = self.Magnitude * self.LengthScale ** (5.0 / 3.0) * VKEnergySpectrum(k0L)
-        # print(f"[DEBUG OPS.forward] E0 range: [{self.E0.min().item():.3e}, {self.E0.max().item():.3e}]")
-        # print(f"[DEBUG OPS.forward] Any NaN in E0? {torch.isnan(self.E0).any().item()}")
+        # Choose energy spectrum based on parameters
+        if self.use_learnable_spectrum:
+            energy_spectrum = LearnableEnergySpectrum(k0L, self.p_low, self.q_high)
+        else:
+            energy_spectrum = VKLike_EnergySpectrum(k0L)
+
+        self.E0 = self.Magnitude * self.LengthScale ** (5.0 / 3.0) * energy_spectrum
 
         self.Phi = self.PowerSpectra()
-        # print(f"[DEBUG OPS.forward] Number of Phi components: {len(self.Phi)}")
-        # for i, phi in enumerate(self.Phi):
-        #     print(f"[DEBUG OPS.forward] Phi[{i}] range: [{phi.min().item():.3e}, {phi.max().item():.3e}], "
-        #           f"NaN? {torch.isnan(phi).any().item()}")
 
         kF = torch.stack([k1_input * self.quad23(Phi) for Phi in self.Phi])
-        # print(f"[DEBUG OPS.forward] Final kF shape: {kF.shape}")
-        # print(f"[DEBUG OPS.forward] Final kF range: [{kF.min().item():.3e}, {kF.max().item():.3e}]")
-        # print(f"[DEBUG OPS.forward] Any NaN in kF? {torch.isnan(kF).any().item()}")
 
         return kF
 
     def SpectralCoherence(
         self,
         k1_input: torch.Tensor,
+        spatial_separations: torch.Tensor,
     ) -> torch.Tensor:
-        r"""Evaluate spectral coherence.
+        r"""Evaluate spectral auto-coherence.
+
+        Computes auto-coherence C_{ii}(r,f) = |S_{ii}(r,f)|²/|S_{ii}(0,f)|²
+        where S_{ii}(r,f) = ∬ Φ_{ii}(f,k₂,k₃)e^{i·k₂·Δy} dk₂dk₃
 
         Parameters
         ----------
         k1_input : torch.Tensor
-            Discrete :math:`k_1` wavevector domain.
+            Discrete k₁ wavevector domain (frequencies).
+        spatial_separations : torch.Tensor
+            Spatial separation values (Δy) in cross-stream direction.
 
         Returns
         -------
         torch.Tensor
-            Spectral coherence.
+            Auto-coherence values for u, v, w components.
+            Shape: (3, n_separations, n_frequencies)
         """
-        self.k = torch.stack(torch.meshgrid(k1_input, self.ops_grid_k2, self.ops_grid_k3, indexing="ij"), dim=-1)
-        pass
+        if not hasattr(self, "coh_grid_k2") or not hasattr(self, "coh_grid_k3"):
+            self.exp_scales()  # Get current length scale
+
+            # Original grid size but with proper physics-based bounds
+            p1, p2, N_coh = -4, 4, 120  # Original size
+
+            grid_zero_coh = torch.tensor([0], dtype=torch.float64)
+            grid_plus_coh = torch.logspace(p1, p2, N_coh, dtype=torch.float64)
+            grid_minus_coh = -torch.flip(grid_plus_coh, dims=[0])
+
+            # Scale the grid by 1/L to get proper physical units
+            scale_factor = 1.0 / self.LengthScale
+
+            self.coh_grid_k2 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach() * scale_factor
+            self.coh_grid_k3 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach() * scale_factor
+
+            # self.coh_grid_k2 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach()
+            # self.coh_grid_k3 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach()
+
+        # Create coherence-specific k-space grid
+        coh_k = torch.stack(torch.meshgrid(k1_input, self.coh_grid_k2, self.coh_grid_k3, indexing="ij"), dim=-1)
+
+        # Calculate eddy lifetime on coherence grid
+        beta_coh = self.EddyLifetime(coh_k)
+
+        # Set up distorted k-space for coherence calculation
+        coh_k0 = coh_k.clone()
+        coh_k0[..., 2] = coh_k[..., 2] + beta_coh * coh_k[..., 0]
+        k0L_coh = self.LengthScale * coh_k0.norm(dim=-1)
+
+        # Energy spectrum on coherence grid
+        if self.use_learnable_spectrum:
+            energy_spectrum_coh = LearnableEnergySpectrum(
+                k0L_coh,
+                self.p_low,
+                self.q_high,
+            )
+        else:
+            energy_spectrum_coh = VKLike_EnergySpectrum(k0L_coh)
+
+        E0_coh = self.Magnitude * self.LengthScale ** (5.0 / 3.0) * energy_spectrum_coh
+
+        # Calculate power spectra on coherence grid
+        Phi11_coh, Phi22_coh, Phi33_coh, Phi13_coh, Phi23_coh, Phi12_coh = self._PowerSpectra_coherence(
+            coh_k,
+            beta_coh,
+            E0_coh,
+        )
+
+        # Extract k2 grid for phase calculation
+        k2_grid = coh_k[..., 1]  # Shape: (n_freq, n_k2, n_k3)
+
+        # Compute auto-spectra at zero separation (r=0)
+        S11_0 = self._quad23_coherence(Phi11_coh, coh_k)  # S_uu(r=0)
+        S22_0 = self._quad23_coherence(Phi22_coh, coh_k)  # S_vv(r=0)
+        S33_0 = self._quad23_coherence(Phi33_coh, coh_k)  # S_ww(r=0)
+
+        # Initialize coherence arrays
+        n_seps = len(spatial_separations)
+        n_freqs = len(k1_input)
+
+        coherence_u = torch.zeros(n_seps, n_freqs)  # Auto-coherence of u
+        coherence_v = torch.zeros(n_seps, n_freqs)  # Auto-coherence of v
+        coherence_w = torch.zeros(n_seps, n_freqs)  # Auto-coherence of w
+
+        for i, r in enumerate(spatial_separations):
+            # Complex exponential phase factor: exp(i * k2 * r)
+            phase = 1j * k2_grid * (r)
+            exp_phase = torch.exp(phase)
+
+            # Auto-power spectra with spatial separation
+            S11_r = self._quad23_coherence(Phi11_coh * exp_phase, coh_k)  # S_uu(r)
+            S22_r = self._quad23_coherence(Phi22_coh * exp_phase, coh_k)  # S_vv(r)
+            S33_r = self._quad23_coherence(Phi33_coh * exp_phase, coh_k)  # S_ww(r)
+
+            # Auto-coherence: |S_ii(r)|² / |S_ii(0)|²
+            coherence_u[i, :] = torch.abs(S11_r) ** 2 / torch.abs(S11_0) ** 2  # C_11
+            coherence_v[i, :] = torch.abs(S22_r) ** 2 / torch.abs(S22_0) ** 2  # C_22
+            coherence_w[i, :] = torch.abs(S33_r) ** 2 / torch.abs(S33_0) ** 2  # C_33
+
+        return torch.stack([coherence_u, coherence_v, coherence_w])
+
+    def _PowerSpectra_coherence(self, k_coh: torch.Tensor, beta_coh: torch.Tensor, E0_coh: torch.Tensor):
+        """Power spectra calculation on coherence grid (copy of PowerSpectra but with coherence grid)."""
+        k1, k2, k3 = k_coh[..., 0], k_coh[..., 1], k_coh[..., 2]
+
+        k30 = k3 + beta_coh * k1
+        kk0 = k1**2 + k2**2 + k30**2
+        kk = k1**2 + k2**2 + k3**2
+        s = k1**2 + k2**2
+
+        C1 = beta_coh * k1**2 * (kk0 - 2 * k30**2 + beta_coh * k1 * k30) / (kk * s)
+        C2 = k2 * kk0 / torch.sqrt(s**3) * torch.atan2(beta_coh * k1 * torch.sqrt(s), kk0 - k30 * k1 * beta_coh)
+
+        zeta1 = C1 - k2 / k1 * C2
+        zeta2 = C1 * k2 / k1 + C2
+        E0_coh /= 4 * torch.pi
+
+        Phi11 = E0_coh / (kk0**2) * (kk0 - k1**2 - 2 * k1 * k30 * zeta1 + (k1**2 + k2**2) * zeta1**2)
+        Phi22 = E0_coh / (kk0**2) * (kk0 - k2**2 - 2 * k2 * k30 * zeta2 + (k1**2 + k2**2) * zeta2**2)
+        Phi33 = E0_coh / (kk**2) * (k1**2 + k2**2)
+        Phi13 = E0_coh / (kk * kk0) * (-k1 * k30 + (k1**2 + k2**2) * zeta1)
+        Phi12 = E0_coh / (kk0**2) * (-k1 * k2 - k1 * k30 * zeta2 - k2 * k30 * zeta1 + (k1**2 + k2**2) * zeta1 * zeta2)
+        Phi23 = E0_coh / (kk * kk0) * (-k2 * k30 + (k1**2 + k2**2) * zeta2)
+
+        # TODO: Remove this... recall bug with ``self.curves``
+        # Regularization
+        epsilon = 1e-32
+        Phi11 = torch.where(Phi11 < epsilon, epsilon, Phi11)
+        Phi22 = torch.where(Phi22 < epsilon, epsilon, Phi22)
+        Phi33 = torch.where(Phi33 < epsilon, epsilon, Phi33)
+        Phi13 = torch.where(torch.abs(Phi13) < epsilon, epsilon * torch.sign(Phi13), Phi13)
+        Phi12 = torch.where(Phi12 < epsilon, epsilon, Phi12)
+        Phi23 = torch.where(Phi23 < epsilon, epsilon, Phi23)
+
+        return Phi11, Phi22, Phi33, Phi13, Phi23, Phi12
+
+    def _quad23_coherence(self, f: torch.Tensor, k_coh: torch.Tensor) -> torch.Tensor:
+        """Integration routine for coherence calculation using coherence grid."""
+        # Integration in k3
+        quad = torch.trapz(f, x=k_coh[..., 2], dim=-1)
+
+        # Integration in k2
+        quad = torch.trapz(quad, x=k_coh[..., 0, 1], dim=-1)
+        return quad
+
+    @torch.jit.export
+    def quad23_complex(self, f: torch.Tensor) -> torch.Tensor:
+        r"""Approximate integral of complex discretized f over frequency domain.
+
+        This computes an approximation of the integral of complex f in the dimensions
+        defined by k₂ and k₃ using the trapezoidal rule.
+
+        Parameters
+        ----------
+        f : torch.Tensor
+            Complex function evaluation (tensor) to integrate over the frequency domain.
+
+        Returns
+        -------
+        torch.Tensor
+            Evaluated complex double integral.
+        """
+        # NOTE: Integration in k3
+        quad = torch.trapz(f, x=self.k[..., 2], dim=-1)
+
+        # NOTE: Integration in k2
+        quad = torch.trapz(quad, x=self.k[..., 0, 1], dim=-1)
+        return quad
 
     def init_mann_approximation(self):
         r"""Initialize Mann eddy lifetime function approximation.
@@ -267,7 +460,7 @@ class OnePointSpectra(nn.Module):
         self.init_mann_linear_approx = True
 
     @torch.jit.export
-    def EddyLifetime(self, k: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def EddyLifetime(self, k: torch.Tensor | None = None) -> torch.Tensor:
         r"""Evaluate eddy lifetime function :math:`\tau` constructed during object initialization.
 
         This may be the Mann model or a DRD neural network that learns :math:`\tau`.
@@ -308,10 +501,7 @@ class OnePointSpectra(nn.Module):
             tau = Mann_linear_exponential_approx(kL, self.tau_approx_coeff_, self.tau_approx_intercept_)
         elif self.type_EddyLifetime == EddyLifetimeType.TWOTHIRD:
             tau = kL ** (-2 / 3)
-        elif self.type_EddyLifetime in [
-            EddyLifetimeType.TAUNET,
-            EddyLifetimeType.CUSTOMMLP,
-        ]:
+        elif self.type_EddyLifetime == EddyLifetimeType.TAUNET:
             tau0 = self.InitialGuess_EddyLifetime()
             tau = tau0 + self.tauNet(k * self.LengthScale)
         else:

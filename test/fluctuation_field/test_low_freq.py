@@ -1,6 +1,4 @@
-"""
-TODO: Move to /test/
-"""
+"""Tests for low frequency fluctuation field generation."""
 
 import numpy as np
 import pytest
@@ -19,7 +17,10 @@ DEFAULT_ZI = 500.0
 
 
 def create_base_config(l1_factor=6, l2_factor=6, exp1=8, exp2=8):
-    """Helper to create a default config, ensuring values >= 5*L_2d"""
+    """Create a default configuration.
+
+    Helper to create a default config, ensuring values >= 5*L_2d.
+    """
     return {
         "sigma2": SIGMA2_TEST,
         "L_2d": L_2D_TEST,
@@ -74,10 +75,7 @@ def expected_buffer_sizes(user_l1, user_l2, user_n1, user_n2, l_2d):
     ],
 )
 def test_grid_calculation(l1_factor, l2_factor, exp1, exp2):
-    """
-    Tests that the computational grid (_calculate_buffer_sizes) is calculated
-    correctly based on user input and minimum size requirements.
-    """
+    """Test that the computational grid is calculated correctly."""
     config = create_base_config(l1_factor, l2_factor, exp1, exp2)
     gen = LowFreqGenerator(config)
 

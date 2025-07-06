@@ -1,6 +1,4 @@
-"""
-Common utilities and Plotly integration for visualizing generated wind field.
-"""
+"""Common utilities and Plotly integration for visualizing generated wind field."""
 
 import numpy as np
 import plotly.graph_objects as go
@@ -10,8 +8,7 @@ from .cmap_util import FIELD_COLORSCALE
 
 
 def create_grid(spacing: tuple[float, float, float], shape: tuple[int, int, int]) -> np.ndarray:
-    """Creates a 3D grid (meshgrid) from given spacing between grid points and desired shape (which should match the
-    shape of the generated wind field, for example).
+    """Create a 3D grid (meshgrid) from given spacing between grid points and desired shape.
 
     Parameters
     ----------
@@ -38,7 +35,7 @@ def create_grid(spacing: tuple[float, float, float], shape: tuple[int, int, int]
 def format_wind_field(
     wind_field: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    r"""Creates a copy of the given wind-field that has a C-layout; this is a wrapper around np.copy.
+    r"""Create a copy of the given wind-field that has a C-layout; this is a wrapper around np.copy.
 
     Parameters
     ----------
@@ -60,8 +57,9 @@ def plot_velocity_components(
     surface_count=25,
     reshape=True,
 ) -> go.Figure:
-    """Plots x, y, z components of given wind field over provided spacing. Note that the same spacing is used for all 3
-    velocity components.
+    """Plot x, y, z components of given wind field over provided spacing.
+
+    Note that the same spacing is used for all 3 velocity components.
 
     Parameters
     ----------
@@ -172,8 +170,9 @@ def plot_velocity_magnitude(
     reshape=True,
     transparent=False,
 ) -> go.Figure:
-    """Produces a 3D plot of the wind velocity magnitude in a specified domain. This returns a Plotly figure for use of
-    downstream visualization.
+    """Produce a 3D plot of the wind velocity magnitude in a specified domain.
+
+    This returns a Plotly figure for use of downstream visualization.
 
     Parameters
     ----------

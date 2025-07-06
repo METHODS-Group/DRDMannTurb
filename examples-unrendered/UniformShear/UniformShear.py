@@ -1,3 +1,5 @@
+"""Generates a uniform shear wind field."""
+
 import pickle
 from pathlib import Path
 from time import time
@@ -5,18 +7,25 @@ from time import time
 import numpy as np
 from pyevtk.hl import imageToVTK
 
+import drdmannturb.fluctuation_generation.gaussian_random_fields as grf
 from drdmannturb.fluctuation_generation.covariance_kernels import (
     MannCovariance,
     VonKarmanCovariance,
 )
-from drdmannturb.fluctuation_generation.gaussian_random_fields import *
 from drdmannturb.fluctuation_generation.nn_covariance import NNCovariance
-from drdmannturb.spectra_fitting.calibration import CalibrationProblem, OnePointSpectra
+from drdmannturb.spectra_fitting.calibration import CalibrationProblem
 
 resdir = Path(__file__).parent / "data"
 
 
 class GenerateWind:
+    """
+    Generate a uniform shear wind field.
+
+    This class generates a uniform shear wind field by sampling a
+    random field and then applying a mean profile to it.
+    """
+
     def __init__(
         self,
         friction_velocity,
@@ -53,10 +62,8 @@ class GenerateWind:
         time_buffer = 3 * Gamma * L
         spatial_margin = 1 * L
 
-        try:
-            grid_levels = [grid_levels[i].GetInt() for i in range(3)]
-        except:
-            pass
+        grid_levels = [int(grid_levels[i]) for i in range(3)]
+
         Nx = 2 ** grid_levels[0] + 1
         Ny = 2 ** grid_levels[1] + 1
         Nz = 2 ** grid_levels[2] + 1
@@ -64,22 +71,15 @@ class GenerateWind:
         hy = grid_dimensions[1] / Ny
         hz = grid_dimensions[2] / Nz
 
-        n_buffer = ceil(time_buffer / hx)
-        n_marginy = ceil(spatial_margin / hy)
-        n_marginz = ceil(spatial_margin / hz)
+        n_buffer = int(np.ceil(time_buffer / hx))
+        n_marginy = int(np.ceil(spatial_margin / hy))
+        n_marginz = int(np.ceil(spatial_margin / hz))
 
         wind_shape = [0] + [Ny] + [Nz] + [3]
         if blend_num > 0:
-            noise_shape = (
-                [Nx + 2 * n_buffer + (blend_num - 1)]
-                + [Ny + 2 * n_marginy]
-                + [Nz + 2 * n_marginz]
-                + [3]
-            )
+            noise_shape = [Nx + 2 * n_buffer + (blend_num - 1)] + [Ny + 2 * n_marginy] + [Nz + 2 * n_marginz] + [3]
         else:
-            noise_shape = (
-                [Nx + 2 * n_buffer] + [Ny + 2 * n_marginy] + [Nz + 2 * n_marginz] + [3]
-            )
+            noise_shape = [Nx + 2 * n_buffer] + [Ny + 2 * n_marginy] + [Nz + 2 * n_marginz] + [3]
         new_part_shape = [Nx] + [Ny + 2 * n_marginy] + [Nz + 2 * n_marginz] + [3]
 
         central_part = [
@@ -111,7 +111,7 @@ class GenerateWind:
         print(model)
         if model == "VK":
             self.Covariance = VonKarmanCovariance(ndim=3, length_scale=L, E0=E0)
-            self.RF = VectorGaussianRandomField(
+            self.RF = grf.VectorGaussianRandomField(
                 **kwargs,
                 ndim=3,
                 grid_level=grid_levels,
@@ -122,7 +122,7 @@ class GenerateWind:
             )
         elif model == "Mann":
             self.Covariance = MannCovariance(ndim=3, length_scale=L, E0=E0, Gamma=Gamma)
-            self.RF = VectorGaussianRandomField(
+            self.RF = grf.VectorGaussianRandomField(
                 **kwargs,
                 ndim=3,
                 grid_level=grid_levels,
@@ -134,7 +134,7 @@ class GenerateWind:
         elif model == "FPDE_RDT":
             self.Covariance = None
             kwargs = {"correlation_length": L, "E0": E0}
-            self.RF = VectorGaussianRandomField(
+            self.RF = grf.VectorGaussianRandomField(
                 **kwargs,
                 ndim=3,
                 grid_level=grid_levels,
@@ -152,7 +152,7 @@ class GenerateWind:
                 OnePointSpectra=pb.OPS,
                 h_ref=reference_height,
             )
-            self.RF = VectorGaussianRandomField(
+            self.RF = grf.VectorGaussianRandomField(
                 **kwargs,
                 ndim=3,
                 grid_level=grid_levels,
@@ -166,6 +166,12 @@ class GenerateWind:
         # self.RS = np.random.RandomState(seed=self.seed)
 
     def __call__(self):
+        """
+        Generate a uniform shear wind field.
+
+        This method generates a uniform shear wind field by sampling a
+        random field and then applying a mean profile to it.
+        """
         noise_shape = self.noise_shape
         central_part = self.central_part
         new_part = self.new_part
@@ -201,8 +207,6 @@ class GenerateWind:
 ############################################################################
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
     normalize = False
     friction_velocity = 0.46
     reference_height = 100.0
@@ -223,13 +227,15 @@ if __name__ == "__main__":
         model="NN",
         path_to_parameters=path_to_parameters,
     )
-    # wind = GenerateWind(friction_velocity, reference_height, grid_dimensions, grid_levels, seed, model='NN', path_to_parameters=path_to_parameters)
-    # wind = GenerateWind(friction_velocity, reference_height, grid_dimensions, grid_levels, seed, model='Mann', path_to_parameters=path_to_parameters)
+    # wind = GenerateWind(friction_velocity, reference_height, grid_dimensions, grid_levels,
+    # seed, model='NN', path_to_parameters=path_to_parameters)
+    # wind = GenerateWind(friction_velocity, reference_height, grid_dimensions, grid_levels,
+    # seed, model='Mann', path_to_parameters=path_to_parameters)
     for _ in range(4):
         wind()
     wind_field = wind.total_wind
 
-    if normalize == True:
+    if normalize:
         # h = np.array(grid_dimensions/wind_field.shape[0:-1])
         # h = np.array(1/wind_field.shape[0],1/wind_field.shape[1],1/wind_field.shape[2])
         sd = np.sqrt(np.mean(wind_field**2))
@@ -243,27 +249,62 @@ if __name__ == "__main__":
     # # plt.imshow(total_wind[:,0,:,0])
     # # plt.show()
 
-    JCSS_law = (
-        lambda z, z_0, delta, u_ast: u_ast
-        / 0.41
-        * (
-            np.log(z / z_0 + 1.0)
-            + 5.57 * z / delta
-            - 1.87 * (z / delta) ** 2
-            - 1.33 * (z / delta) ** 3
-            + 0.25 * (z / delta) ** 4
+    def JCSS_law(z, z_0, delta, u_ast):
+        """Calculate wind speed using JCSS law.
+
+        Parameters
+        ----------
+        z : float or array-like
+            Height above ground
+        z_0 : float
+            Roughness height
+        delta : float
+            Boundary layer thickness
+        u_ast : float
+            Friction velocity
+
+        Returns
+        -------
+        float or array-like
+            Wind speed at height z
+        """
+        return (
+            u_ast
+            / 0.41
+            * (
+                np.log(z / z_0 + 1.0)
+                + 5.57 * z / delta
+                - 1.87 * (z / delta) ** 2
+                - 1.33 * (z / delta) ** 3
+                + 0.25 * (z / delta) ** 4
+            )
         )
-    )
-    log_law = lambda z, z_0, u_ast: u_ast * np.log(z / z_0 + 1.0) / 0.41
+
+    def log_law(z, z_0, u_ast):
+        """Calculate wind speed using logarithmic law.
+
+        Parameters
+        ----------
+        z : float or array-like
+            Height above ground
+        z_0 : float
+            Roughness height
+        u_ast : float
+            Friction velocity
+
+        Returns
+        -------
+        float or array-like
+            Wind speed at height z
+        """
+        return u_ast * np.log(z / z_0 + 1.0) / 0.41
 
     z = np.linspace(0.0, grid_dimensions[2], 2 ** (grid_levels[2]) + 1)
     # mean_profile_z = JCSS_law(z, roughness_height, 10.0, friction_velocity)
     mean_profile_z = log_law(z, roughness_height, friction_velocity)
 
     mean_profile = np.zeros_like(wind_field)
-    mean_profile[..., 0] = np.tile(
-        mean_profile_z.T, (mean_profile.shape[0], mean_profile.shape[1], 1)
-    )
+    mean_profile[..., 0] = np.tile(mean_profile_z.T, (mean_profile.shape[0], mean_profile.shape[1], 1))
 
     # wind_field = mean_profile
     wind_field += mean_profile

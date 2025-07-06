@@ -74,9 +74,7 @@ pb = CalibrationProblem(
     ),
     prob_params=ProblemParameters(nepochs=25, wolfe_iter_count=20),
     loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1.0e-5),
-    phys_params=PhysicalParameters(
-        L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1
-    ),
+    phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1),
     logging_directory="runs/synthetic_fit_deep_arch",
     device=device,
 )

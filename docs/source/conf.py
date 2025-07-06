@@ -1,5 +1,5 @@
+# noqa
 import plotly.io as pio
-import sphinx_gallery
 
 pio.renderers.default = "sphinx_gallery"
 
@@ -79,7 +79,7 @@ nbsphinx_requirejs_path = ""  # for mermaid js to work
 # ]
 
 templates_path = ["_templates"]
-exclude_patterns = []
+exclude_patterns: list[str] = []
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -87,4 +87,4 @@ exclude_patterns = []
 html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
 
-html_sidebars = {"**": []}
+html_sidebars: dict[str, list[str]] = {"**": []}

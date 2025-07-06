@@ -3,7 +3,7 @@
 API Reference
 =============
 
-This is the main reference for the forward-facing interface. 
+This is the main reference for the forward-facing interface.
 
 .. toctree::
    :maxdepth: 2
@@ -15,8 +15,7 @@ This is the main reference for the forward-facing interface.
 
     <hr>
 
-.. toctree:: 
-    :maxdepth: 1 
+.. toctree::
+    :maxdepth: 1
 
     windgeneration
-
