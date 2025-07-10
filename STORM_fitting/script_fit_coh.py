@@ -76,12 +76,6 @@ pb = drdmt.CalibrationProblem(
         domain=domain,
         Uref=21.0,
         zref=zref,
-        use_parametrizable_spectrum=False,
-        alpha_low=11.0 / 9.0,  # NOTE: Taken from eye-balling the plot
-        alpha_high=-5.0 / 3.0,
-        transition_slope=1.0,
-        # NOTE: Fij follows k^-5
-        # k_inf_asymptote=k_inf_asymptote,
     ),
     logging_directory="runs/custom_data",
     device="cpu",
