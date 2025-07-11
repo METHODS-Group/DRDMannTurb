@@ -1037,16 +1037,13 @@ class CalibrationProblem:
             else:
                 model_coherence = [None, None, None]
 
-            # Frequency shift factors to align model with data (adjust these as needed)
-            freq_shift_factors = [10.0, 20.0, 15.0]  # Multiply model frequencies by these factors
-
             # Plot for each selected spatial separation
             for row in range(4):  # 4 spatial separations
                 sep_value = self.coherence_plot_separations[row]
 
                 # Plot each component (u, v, w)
-                for col, (coh_data, model_coh, label, color, shift_factor) in enumerate(
-                    zip(coherence_data, model_coherence, coherence_labels, colors, freq_shift_factors)
+                for col, (coh_data, model_coh, label, color) in enumerate(
+                    zip(coherence_data, model_coherence, coherence_labels, colors)
                 ):
                     ax = self.ax_coherence[row, col]
 
@@ -1065,10 +1062,7 @@ class CalibrationProblem:
                     if model_coh is not None:
                         model_coh_cpu = model_coh[row, :].cpu().detach().numpy()
 
-                        # Shift model frequencies
-                        shifted_frequencies = self.coherence_frequencies * shift_factor
-
-                        ax.plot(shifted_frequencies, model_coh_cpu, "-", color=color, linewidth=2, label="Model")
+                        ax.plot(self.coherence_frequencies, model_coh_cpu, "-", color=color, linewidth=2, label="Model")
 
                     # Match the eddy lifetime plot style
                     ax.legend()
