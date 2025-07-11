@@ -19,7 +19,7 @@ from ..common import (
 )
 from ..enums import EddyLifetimeType
 from ..nn_modules import TauNet
-from ..parameters import NNParameters, PhysicalParameters
+from ..parameters import IntegrationParameters, NNParameters, PhysicalParameters
 
 
 class OnePointSpectra(nn.Module):
@@ -39,6 +39,7 @@ class OnePointSpectra(nn.Module):
         use_learnable_spectrum: bool = False,
         p_exponent: float = 4.0,
         q_exponent: float = 17.0 / 6.0,
+        integration_params: IntegrationParameters | None = None,
     ):
         r"""Initialize the one point spectra calculator.
 
@@ -98,17 +99,20 @@ class OnePointSpectra(nn.Module):
 
         self.use_learnable_spectrum = use_learnable_spectrum
 
+        if integration_params is None:
+            integration_params = IntegrationParameters()
+
         ####
         # OPS grid
         # k2 grid
-        p1, p2, N = -3, 3, 100
+        p1, p2, N = integration_params.ops_log_min, integration_params.ops_log_max, integration_params.ops_num_points
         grid_zero = torch.tensor([0])
         grid_plus = torch.logspace(p1, p2, N)
         grid_minus = -torch.flip(grid_plus, dims=[0])
         self.ops_grid_k2 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
 
         # k3 grid
-        p1, p2, N = -3, 3, 100
+        p1, p2, N = integration_params.ops_log_min, integration_params.ops_log_max, integration_params.ops_num_points
         grid_zero = torch.tensor([0])
         grid_plus = torch.logspace(p1, p2, N)
         grid_minus = -torch.flip(grid_plus, dims=[0])
@@ -119,7 +123,8 @@ class OnePointSpectra(nn.Module):
         ####
         # Separate coherence grid (finer resolution for better accuracy)
         if use_coherence:
-            p1, p2, N_coh = -3, 3, 100
+            p1, p2 = integration_params.coh_log_min, integration_params.coh_log_max
+            N_coh = integration_params.coh_num_points
             grid_zero_coh = torch.tensor([0])
             grid_plus_coh = torch.logspace(p1, p2, N_coh)
             grid_minus_coh = -torch.flip(grid_plus_coh, dims=[0])

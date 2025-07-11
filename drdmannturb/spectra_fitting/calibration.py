@@ -511,9 +511,8 @@ class CalibrationProblem:
         with torch.no_grad():
             # Add this: Convert frequency to wavenumber using U_ref (assume it's in self.phys_params or pass it)
             U_ref = self.phys_params.Uref
-            coherence_k1 = (
-                2 * torch.pi * torch.tensor(self.coherence_frequencies, dtype=torch.get_default_dtype())
-            ) / U_ref
+            factor = self.phys_params.wavenumber_conversion_factor  # New: Configurable factor (e.g., 2*pi or 1.0)
+            coherence_k1 = (factor * torch.tensor(self.coherence_frequencies, dtype=torch.get_default_dtype())) / U_ref
 
             # Filter out zero frequency if present
             coherence_k1 = torch.clamp(coherence_k1, min=1e-6)  # Improved from your if-check to handle all zeros
