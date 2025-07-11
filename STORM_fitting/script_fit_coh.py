@@ -8,7 +8,6 @@ import torch.nn as nn
 
 import drdmannturb as drdmt
 
-torch.set_default_dtype(torch.float64)
 # Build dataset
 domain = torch.logspace(-1, 3, 40)
 
@@ -27,7 +26,7 @@ Uref = 21
 
 spectra_file = Path("data_cleaned/log_downsampled_6component_spectra.dat")
 coherence_file = Path("data_cleaned/coherence_data.dat")
-CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=","))
+CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=","), dtype=torch.get_default_dtype())
 
 # Form the one point spectra data.
 #
@@ -36,7 +35,7 @@ CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter="
 
 # TODO: Double check that the order is correct here.
 k1_domain = 2 * torch.pi * CustomData[:, 0] / Uref
-ops_data = torch.zeros([len(k1_domain), 3, 3], dtype=torch.float64)
+ops_data = torch.zeros([len(k1_domain), 3, 3])
 ops_data[:, 0, 0] = CustomData[:, 1]
 ops_data[:, 1, 1] = CustomData[:, 2]
 ops_data[:, 2, 2] = CustomData[:, 3]
@@ -62,8 +61,8 @@ pb = drdmt.CalibrationProblem(
         learning_rate=0.1,
         num_components=6,
         use_learnable_spectrum=True,
-        p_exponent=4.0,
-        q_exponent=17.0 / 6.0,
+        p_exponent=5.0,
+        q_exponent=3.0,
     ),
     loss_params=drdmt.LossParameters(
         alpha_pen1=1.5,
@@ -72,8 +71,8 @@ pb = drdmt.CalibrationProblem(
         gamma_coherence=0.5,
     ),
     phys_params=drdmt.PhysicalParameters(
-        L=500.0,
-        Gamma=13.0,
+        L=6.0,
+        Gamma=3.0,
         sigma=0.25,
         domain=domain,
         Uref=21.0,

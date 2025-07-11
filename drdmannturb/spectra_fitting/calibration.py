@@ -322,7 +322,9 @@ class CalibrationProblem:
 
             # Set up coherence calculation for the same 4 spatial separations used in plotting
             print("Setting up coherence calculation for calibration...")
-            self.coherence_separations_tensor = torch.tensor(self.coherence_plot_separations, dtype=torch.float64)
+            self.coherence_separations_tensor = torch.tensor(
+                self.coherence_plot_separations, dtype=torch.get_default_dtype()
+            )
             print(
                 f"Using {len(self.coherence_plot_separations)} "
                 "spatial separations: {self.coherence_plot_separations}"
@@ -507,12 +509,14 @@ class CalibrationProblem:
     def _compute_model_coherence(self) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Compute model coherence for the selected spatial separations."""
         with torch.no_grad():
-            # Use coherence frequencies directly as k1 (assuming they're in the right units)
-            coherence_k1 = torch.tensor(self.coherence_frequencies, dtype=torch.float64)
+            # Add this: Convert frequency to wavenumber using U_ref (assume it's in self.phys_params or pass it)
+            U_ref = self.phys_params.Uref
+            coherence_k1 = (
+                2 * torch.pi * torch.tensor(self.coherence_frequencies, dtype=torch.get_default_dtype())
+            ) / U_ref
 
             # Filter out zero frequency if present
-            if coherence_k1[0] == 0:
-                coherence_k1[0] = 1e-6  # Replace zero with small positive value
+            coherence_k1 = torch.clamp(coherence_k1, min=1e-6)  # Improved from your if-check to handle all zeros
 
             model_coherence = self.OPS.SpectralCoherence(coherence_k1, self.coherence_separations_tensor)
             # model_coherence shape: (3, n_selected_separations, n_frequencies)
@@ -879,7 +883,7 @@ class CalibrationProblem:
             self.fig_tau = None
             self.ax_tau = None
             if plot_tau:
-                k_gd = torch.logspace(-3, 3, 50, dtype=torch.float64)
+                k_gd = torch.logspace(-3, 3, 50)
                 # k_gd = torch.logspace(-3, 3, 50)
                 k_1 = torch.stack([k_gd, 0 * k_gd, 0 * k_gd], dim=-1)
                 k_2 = torch.stack([0 * k_gd, k_gd, 0 * k_gd], dim=-1)
@@ -955,7 +959,7 @@ class CalibrationProblem:
 
         if plot_tau and self.fig_tau is not None:  # Check if tau plot exists
             # Recalculate tau values based on potentially updated OPS parameters
-            k_gd = torch.logspace(-3, 3, 50)  # dtype=torch.float64) # Ensure k_gd is defined
+            k_gd = torch.logspace(-3, 3, 50)
             k_1 = torch.stack([k_gd, 0 * k_gd, 0 * k_gd], dim=-1)
             k_2 = torch.stack([0 * k_gd, k_gd, 0 * k_gd], dim=-1)
             k_3 = torch.stack([0 * k_gd, 0 * k_gd, k_gd], dim=-1)

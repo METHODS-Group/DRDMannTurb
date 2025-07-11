@@ -132,9 +132,9 @@ class OnePointSpectra(nn.Module):
         assert physical_params.Gamma > 0, "Characteristic time scale Gamma must be positive."
         assert physical_params.sigma > 0, "Spectrum amplitude sigma must be positive."
 
-        self.logLengthScale = nn.Parameter(torch.tensor(np.log10(physical_params.L), dtype=torch.float64))
-        self.logTimeScale = nn.Parameter(torch.tensor(np.log10(physical_params.Gamma), dtype=torch.float64))
-        self.logMagnitude = nn.Parameter(torch.tensor(np.log10(physical_params.sigma), dtype=torch.float64))
+        self.logLengthScale = nn.Parameter(torch.tensor(np.log10(physical_params.L), dtype=torch.get_default_dtype()))
+        self.logTimeScale = nn.Parameter(torch.tensor(np.log10(physical_params.Gamma), dtype=torch.get_default_dtype()))
+        self.logMagnitude = nn.Parameter(torch.tensor(np.log10(physical_params.sigma), dtype=torch.get_default_dtype()))
 
         if use_learnable_spectrum:
             self.p_exponent = nn.Parameter(torch.tensor(p_exponent))
@@ -155,11 +155,11 @@ class OnePointSpectra(nn.Module):
 
         Parameters
         ----------
-        LengthScale : np.float64
+        LengthScale : float
             Length scale.
-        TimeScale : np.float64
+        TimeScale : float
             Time scale.
-        Magnitude : np.float64
+        Magnitude : float
             Spectrum amplitude magnitude.
         """
         self.LengthScale_scalar = LengthScale
@@ -278,8 +278,8 @@ class OnePointSpectra(nn.Module):
         # Create coherence grids on-demand if they don't exist
         if not hasattr(self, "coh_grid_k2") or not hasattr(self, "coh_grid_k3"):
             p1, p2, N_coh = -3, 3, 100
-            grid_zero_coh = torch.tensor([0], dtype=torch.float64)
-            grid_plus_coh = torch.logspace(p1, p2, N_coh, dtype=torch.float64)
+            grid_zero_coh = torch.tensor([0], dtype=torch.get_default_dtype())
+            grid_plus_coh = torch.logspace(p1, p2, N_coh)
             grid_minus_coh = -torch.flip(grid_plus_coh, dims=[0])
             self.coh_grid_k2 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach()
             self.coh_grid_k3 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach()

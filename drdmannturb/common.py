@@ -108,7 +108,7 @@ def MannEddyLifetime(kL: torch.Tensor | np.ndarray) -> torch.Tensor:
     """
     x = kL.cpu().detach().numpy() if torch.is_tensor(kL) else kL
     y = x ** (-2 / 3) / np.sqrt(hyp2f1(1 / 3, 17 / 6, 4 / 3, -(x ** (-2))))
-    y = torch.tensor(y, dtype=torch.float64) if torch.is_tensor(kL) else y
+    y = torch.tensor(y, dtype=torch.get_default_dtype()) if torch.is_tensor(kL) else y
 
     return y
 
