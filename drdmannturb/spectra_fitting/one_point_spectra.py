@@ -12,9 +12,9 @@ import torch.nn as nn
 from sklearn.linear_model import LinearRegression
 
 from ..common import (
+    Learnable_EnergySpectrum,
     Mann_linear_exponential_approx,
     MannEddyLifetime,
-    ParametrizableEnergySpectrum,
     VKLike_EnergySpectrum,
 )
 from ..enums import EddyLifetimeType
@@ -33,10 +33,12 @@ class OnePointSpectra(nn.Module):
         self,
         type_eddy_lifetime: EddyLifetimeType,
         physical_params: PhysicalParameters,
-        use_parametrizable_spectrum: bool = False,
         nn_parameters: NNParameters | None = None,
         learn_nu: bool = False,
         use_coherence: bool = False,
+        use_learnable_spectrum: bool = False,
+        p_exponent: float = 4.0,
+        q_exponent: float = 17.0 / 6.0,
     ):
         r"""Initialize the one point spectra calculator.
 
@@ -92,8 +94,9 @@ class OnePointSpectra(nn.Module):
             self.init_mann_linear_approx = False
 
         self.type_EddyLifetime = type_eddy_lifetime
-        self.use_parametrizable_spectrum = use_parametrizable_spectrum
         self.use_coherence = use_coherence
+
+        self.use_learnable_spectrum = use_learnable_spectrum
 
         ####
         # OPS grid
@@ -132,6 +135,10 @@ class OnePointSpectra(nn.Module):
         self.logLengthScale = nn.Parameter(torch.tensor(np.log10(physical_params.L), dtype=torch.float64))
         self.logTimeScale = nn.Parameter(torch.tensor(np.log10(physical_params.Gamma), dtype=torch.float64))
         self.logMagnitude = nn.Parameter(torch.tensor(np.log10(physical_params.sigma), dtype=torch.float64))
+
+        if use_learnable_spectrum:
+            self.p_exponent = nn.Parameter(torch.tensor(p_exponent))
+            self.q_exponent = nn.Parameter(torch.tensor(q_exponent))
 
         self.LengthScale_scalar = physical_params.L
         self.TimeScale_scalar = physical_params.Gamma
@@ -231,8 +238,8 @@ class OnePointSpectra(nn.Module):
         k0L = self.LengthScale * self.k0.norm(dim=-1)
 
         # Choose energy spectrum based on parameters
-        if self.use_parametrizable_spectrum:
-            energy_spectrum = ParametrizableEnergySpectrum(k0L, self.alpha_low, self.alpha_high, self.transition_slope)
+        if self.use_learnable_spectrum:
+            energy_spectrum = Learnable_EnergySpectrum(k0L, self.p_exponent, self.q_exponent)
         else:
             # energy_spectrum = VKEnergySpectrum(k0L)
             energy_spectrum = VKLike_EnergySpectrum(k0L)
@@ -291,14 +298,15 @@ class OnePointSpectra(nn.Module):
         k0L_coh = self.LengthScale * coh_k0.norm(dim=-1)
 
         # Energy spectrum on coherence grid
-        if self.use_parametrizable_spectrum:
-            energy_spectrum_coh = ParametrizableEnergySpectrum(
+        if self.use_learnable_spectrum:
+            print("[DEBUG] Using learnable energy spectrum")
+            energy_spectrum_coh = Learnable_EnergySpectrum(
                 k0L_coh,
-                self.alpha_low,
-                self.alpha_high,
-                self.transition_slope,
+                self.p_exponent,
+                self.q_exponent,
             )
         else:
+            print("[DEBUG] Using VKLike energy spectrum")
             energy_spectrum_coh = VKLike_EnergySpectrum(k0L_coh)
 
         E0_coh = self.Magnitude * self.LengthScale ** (5.0 / 3.0) * energy_spectrum_coh

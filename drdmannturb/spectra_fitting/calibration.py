@@ -2,15 +2,14 @@
 
 import os
 import pickle
+import time
 from collections.abc import Iterable
-from functools import partial
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
-from tqdm import tqdm
 
 from ..common import MannEddyLifetime
 from ..enums import EddyLifetimeType
@@ -22,8 +21,6 @@ from ..parameters import (
 )
 from .loss_functions import LossAggregator
 from .one_point_spectra import OnePointSpectra
-
-tqdm = partial(tqdm, position=0, leave=True)
 
 
 class CalibrationProblem:
@@ -113,9 +110,11 @@ class CalibrationProblem:
         self.OPS = OnePointSpectra(
             type_eddy_lifetime=self.prob_params.eddy_lifetime,
             physical_params=self.phys_params,
-            use_parametrizable_spectrum=self.phys_params.use_parametrizable_spectrum,
             nn_parameters=self.nn_params,
             learn_nu=self.prob_params.learn_nu,
+            use_learnable_spectrum=self.prob_params.use_learnable_spectrum,
+            p_exponent=self.prob_params.p_exponent,
+            q_exponent=self.prob_params.q_exponent,
         )
 
         if self.prob_params.eddy_lifetime == EddyLifetimeType.MANN_APPROX:
@@ -125,10 +124,6 @@ class CalibrationProblem:
             self.initialize_parameters_with_noise()
 
         self.log_dimensional_scales()
-
-        self.vdim = 3
-
-        self.epoch_model_sizes = torch.empty((prob_params.nepochs,))
 
         self.output_directory = output_directory
         self.logging_directory = logging_directory
@@ -178,79 +173,33 @@ class CalibrationProblem:
     def parameters(self, param_vec: np.ndarray | torch.Tensor) -> None:
         """Setter method for loading in model parameters from a given vector.
 
-        .. note:: The first 3 parameters of self.parameters() are exactly
-
-            #.  LengthScale
-
-            #.  TimeScale
-
-            #.  Spectrum Amplitude
-
-
-        Parameters
-        ----------
-        param_vec : Union[np.ndarray, torch.tensor]
-            One-dimensional vector of model parameters.
-
         Raises
         ------
         ValueError
-            "Parameter vector must contain at least 3 dimensionless scale quantities (L, Gamma, sigma) as well as
-            network parameters, if using one of TAUNET, CUSTOMMLP."
-        ValueError
-            "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the
-            same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported
-            against the currently constructed architecture if this mismatch occurs."
-        ValueError
-            "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the
-            same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported
-            against the currently constructed architecture if this mismatch occurs."
+            "Parameter vector must match the total number of parameters in the model."
         """
-        if len(param_vec) < 3:
-            raise ValueError(
-                "Parameter vector must contain at least 3 dimensionless scale quantities (L, Gamma, sigma) as well as"
-                "network parameters, if using one of TAUNET, CUSTOMMLP."
-            )
-
-        if len(param_vec) != len(list(self.parameters)):
-            raise ValueError(
-                "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as"
-                "the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being"
-                "imported against the currently constructed architecture if this mismatch occurs."
-            )
-
-        if self.OPS.type_EddyLifetime == EddyLifetimeType.TAUNET and len(param_vec[3:]) != self.num_trainable_params():
-            raise ValueError(
-                "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as"
-                "the same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being"
-                "imported against the currently constructed architecture if this mismatch occurs."
-            )
+        current_num_params = len(list(self.parameters))
 
         if not torch.is_tensor(param_vec):
-            param_vec = torch.tensor(param_vec)  # TODO: this should also properly load on GPU, issue #28
+            param_vec = torch.tensor(param_vec)
+
+        if len(param_vec) != current_num_params:
+            raise ValueError(
+                f"Parameter vector length {len(param_vec)} does not match model's parameter count "
+                f"{current_num_params}. This could be due to additional learnable parameters like "
+                "p_low/q_high when use_learnable_spectrum is True."
+            )
 
         vector_to_parameters(param_vec, self.OPS.parameters())
 
     def log_dimensional_scales(self) -> None:
-        """Set the quantities for non-dimensionalization in log-space.
-
-        .. note:: The first 3 parameters of self.parameters() are exactly
-
-            #.  LengthScale
-
-            #.  TimeScale
-
-            #.  Spectrum Amplitude
-        """
+        """Set the quantities for non-dimensionalization in log-space."""
         if self.phys_params.L > 0 and self.phys_params.Gamma > 0 and self.phys_params.sigma > 0:
             parameters = self.parameters
-            parameters[:3] = [
-                np.log(self.phys_params.L),
-                np.log(self.phys_params.Gamma),
-                np.log(self.phys_params.sigma),
-            ]
-
-            self.parameters = parameters[: len(self.parameters)]
+            parameters[0] = np.log(self.phys_params.L)
+            parameters[1] = np.log(self.phys_params.Gamma)
+            parameters[2] = np.log(self.phys_params.sigma)
+            self.parameters = parameters
         else:
             raise ValueError("All dimension scaling constants must be positive.")
 
@@ -361,7 +310,7 @@ class CalibrationProblem:
         OptimizerClass = optimizer_class
         lr = self.prob_params.learning_rate
         tol = self.prob_params.tol
-        nepochs = self.prob_params.nepochs
+        max_epochs = self.prob_params.nepochs
 
         self.plot_loss_optim = False
         self.curves = list(range(0, self.prob_params.num_components))
@@ -432,12 +381,7 @@ class CalibrationProblem:
 
         # Compute initial model coherence if coherence data is available
         if self.has_coherence_data:
-            print("Computing initial model coherence...")
             self.model_coherence_u, self.model_coherence_v, self.model_coherence_w = self._compute_model_coherence()
-            print("Model coherence shapes:")
-            print(f"\tu = {self.model_coherence_u.shape}")
-            print(f"\tv = {self.model_coherence_v.shape}")
-            print(f"\tw = {self.model_coherence_w.shape}")
 
         y = self.OPS(data_k1_arr)
 
@@ -456,12 +400,12 @@ class CalibrationProblem:
                 lr=lr,
                 line_search_fn="strong_wolfe",
                 max_iter=self.prob_params.wolfe_iter_count,
-                history_size=nepochs,
+                history_size=max_epochs,
             )
         else:
             optimizer = OptimizerClass(self.OPS.parameters(), lr=lr)
 
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=nepochs)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max_epochs)
 
         self.e_count: int = 0
 
@@ -516,9 +460,23 @@ class CalibrationProblem:
 
             return self.loss
 
-        for _ in tqdm(range(1, nepochs + 1)):
+        for epoch in range(1, max_epochs + 1):
+            # Print the current parameters
+            epoch_start_time = time.time()
+            print(f"Epoch {epoch} of {max_epochs}")
+            print(f"Current loss: {self.loss.item()}")
+
             optimizer.step(closure)
             scheduler.step()
+
+            epoch_end_time = time.time()
+            print(f"Epoch {epoch} took {epoch_end_time - epoch_start_time} seconds")
+
+            print(f"\tCurrent L: {self.OPS.LengthScale.item()}")
+            print(f"\tCurrent Gamma: {self.OPS.TimeScale.item()}")
+            print(f"\tCurrent sigma: {self.OPS.Magnitude.item()}")
+            print(f"\tCurrent p: {self.OPS.p_exponent.item()}")
+            print(f"\tCurrent q: {self.OPS.q_exponent.item()}")
 
             if not (torch.isfinite(self.loss)):
                 raise RuntimeError("Loss is not a finite value, check initialization and learning hyperparameters.")
@@ -539,6 +497,10 @@ class CalibrationProblem:
             "Γ": np.exp(self.parameters[1]),
             "σ": np.exp(self.parameters[2]),
         }
+
+        if self.prob_params.use_learnable_spectrum:
+            self.calibrated_params["p"] = self.parameters[3]
+            self.calibrated_params["q"] = self.parameters[4]
 
         return self.calibrated_params
 

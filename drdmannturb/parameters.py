@@ -66,6 +66,10 @@ class ProblemParameters:
 
     learn_nu: bool = False
 
+    use_learnable_spectrum: bool = False
+    p_exponent: float = 4.0  # Defaults to Von Karman values
+    q_exponent: float = 17.0 / 6.0  # Defaults to Von Karman values
+
 
 @dataclass
 class PhysicalParameters:

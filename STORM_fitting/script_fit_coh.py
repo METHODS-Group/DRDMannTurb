@@ -9,7 +9,6 @@ import torch.nn as nn
 import drdmannturb as drdmt
 
 torch.set_default_dtype(torch.float64)
-
 # Build dataset
 domain = torch.logspace(-1, 3, 40)
 
@@ -41,7 +40,7 @@ ops_data = torch.zeros([len(k1_domain), 3, 3], dtype=torch.float64)
 ops_data[:, 0, 0] = CustomData[:, 1]
 ops_data[:, 1, 1] = CustomData[:, 2]
 ops_data[:, 2, 2] = CustomData[:, 3]
-ops_data[:, 0, 2] = CustomData[:, 4]
+ops_data[:, 0, 2] = -1 * CustomData[:, 4]
 ops_data[:, 1, 2] = CustomData[:, 5]
 ops_data[:, 0, 1] = CustomData[:, 5]
 
@@ -62,6 +61,9 @@ pb = drdmt.CalibrationProblem(
         learn_nu=False,
         learning_rate=0.1,
         num_components=6,
+        use_learnable_spectrum=True,
+        p_exponent=4.0,
+        q_exponent=17.0 / 6.0,
     ),
     loss_params=drdmt.LossParameters(
         alpha_pen1=1.5,

@@ -3,7 +3,13 @@
 Specifically, the Mann eddy lifetime function and the von Karman energy spectrum.
 """
 
-__all__ = ["VKEnergySpectrum", "VKLike_EnergySpectrum", "MannEddyLifetime", "Mann_linear_exponential_approx"]
+__all__ = [
+    "VKEnergySpectrum",
+    "VKLike_EnergySpectrum",
+    "MannEddyLifetime",
+    "Mann_linear_exponential_approx",
+    "Learnable_EnergySpectrum",
+]
 
 import io
 import pickle
@@ -66,48 +72,13 @@ def VKLike_EnergySpectrum(kL: torch.Tensor) -> torch.Tensor:
 
 
 @torch.jit.script
-def ParametrizableEnergySpectrum(
-    kL: torch.Tensor, alpha_low: float, alpha_high: float, transition_slope: float = 17.0 / 3.0
-) -> torch.Tensor:
-    r"""Evaluate a parameterizable energy spectrum with controllable asymptotic slopes.
-
-    The energy spectrum has the form:
+def Learnable_EnergySpectrum(kL: torch.Tensor, p: torch.Tensor, q: torch.Tensor) -> torch.Tensor:
+    r"""Parametrizable energy spectrum with learnable exponents, p and q.
 
     .. math::
-        E(kL) = \frac{(kL)^{\alpha_{low}}}{\left(1+(kL)^2\right)^{(\alpha_{low} + \alpha_{high} + transition\_slope)/2}}
-
-    This generalizes the von Karman spectrum to allow control over:
-    - Low wavenumber asymptote: E(k) ~ k^{alpha_low} as k → 0
-    - High wavenumber asymptote: E(k) ~ k^{alpha_high} as k → ∞
-    - Transition behavior controlled by transition_slope parameter
-
-    Parameters
-    ----------
-    kL : torch.Tensor
-        Scaled wave number domain.
-    alpha_low : float
-        Low wavenumber asymptotic slope. Traditional von Karman uses 4.
-    alpha_high : float
-        High wavenumber asymptotic slope. Traditional von Karman uses -5/3.
-    transition_slope : float, optional
-        Controls the sharpness of transition between asymptotes, by default 17/3.
-
-    Returns
-    -------
-    torch.Tensor
-        Result of the evaluation
-
-    Notes
-    -----
-    For the traditional von Karman spectrum, use alpha_low=4, alpha_high=-5/3, transition_slope=17/3.
-
-    Examples of asymptotic behavior:
-    - alpha_low=4, alpha_high=-5/3: Traditional Kolmogorov-like spectrum
-    - alpha_low=2, alpha_high=-3: Steeper spectrum
-    - alpha_low=1, alpha_high=-1: Linear low-k, less steep high-k
+        \widetilde{E}(\boldsymbol{k}) = \left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3}.
     """
-    exponent = (alpha_low + abs(alpha_high) + transition_slope) / 2.0
-    return kL**alpha_low / (1.0 + kL**2) ** exponent
+    return (kL**p) / ((1.0 + kL**2) ** q)
 
 
 def MannEddyLifetime(kL: torch.Tensor | np.ndarray) -> torch.Tensor:
