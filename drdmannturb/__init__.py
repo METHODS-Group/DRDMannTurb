@@ -38,6 +38,7 @@ from .fluctuation_generation import (
 from .interpolation import extract_x_spectra, interp_spectra, interpolate
 from .nn_modules import Rational, TauNet
 from .parameters import (
+    IntegrationParameters,
     LossParameters,
     NNParameters,
     PhysicalParameters,
@@ -91,6 +92,7 @@ __all__ = [
     "SimpleNN",
     "TauNet",
     # Parameters
+    "IntegrationParameters",
     "LossParameters",
     "NNParameters",
     "PhysicalParameters",

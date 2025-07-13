@@ -15,6 +15,9 @@ domain = torch.logspace(-1, 3, 40)
 #       heights that we were given, so this is height[30]
 zref = 148.56202535609793
 
+L = 70
+Gamma = 3.7
+sigma = 0.04
 Uref = 21
 
 spectra_file = Path("data_cleaned/log_downsampled_6component_spectra.dat")
@@ -27,9 +30,6 @@ CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter="
 #   f, F11(f), F22(f), F33(f), F12(f), F13(f)
 
 # TODO: Double check that the order is correct here.
-
-
-# TODO: Double check nonphysical slopes, and double check that this matches the domain for the OPS data in the end
 k1_domain = 2 * torch.pi * CustomData[:, 0] / Uref
 ops_data = torch.zeros([len(k1_domain), 3, 3])
 ops_data[:, 0, 0] = CustomData[:, 1]
@@ -54,7 +54,7 @@ pb = drdmt.CalibrationProblem(
     ),
     prob_params=drdmt.ProblemParameters(
         tol=1e-9,
-        nepochs=50,
+        nepochs=5,
         learn_nu=True,
         learning_rate=0.3,
         num_components=6,
@@ -69,7 +69,7 @@ pb = drdmt.CalibrationProblem(
         gamma_coherence=1.25,
     ),
     phys_params=drdmt.PhysicalParameters(
-        L=100.0,
+        L=6.0,
         Gamma=3.0,
         sigma=0.25,
         domain=domain,
@@ -92,7 +92,7 @@ pb = drdmt.CalibrationProblem(
 optimal_params = pb.calibrate(
     data=data_dict,
     coherence_data_file=coherence_file,
-    # optimizer_class=torch.optim.Adam,
+    optimizer_class=torch.optim.Adam,
 )
 
 pb.plot()

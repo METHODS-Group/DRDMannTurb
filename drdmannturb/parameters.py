@@ -9,7 +9,7 @@ import torch.nn as nn
 
 from .enums import EddyLifetimeType
 
-__all__ = ["ProblemParameters", "PhysicalParameters", "NNParameters", "LossParameters"]
+__all__ = ["IntegrationParameters", "ProblemParameters", "PhysicalParameters", "NNParameters", "LossParameters"]
 
 
 @dataclass
@@ -122,7 +122,8 @@ class PhysicalParameters:
     transition_slope: float = 17.0 / 3.0  # Transition parameter (von Karman default)
     use_parametrizable_spectrum: bool = False  # Whether to use parametrizable spectrum
 
-    wavenumber_conversion_factor: float = 2 * torch.pi  # New: Factor for k1 = factor * f / U (default radians)
+    wavenumber_conversion_factor: float = 1 / (2 * torch.pi)  # New: Factor for k1 = factor * f / U (default radians)
+    wavenumber_scale_factor: float = 1.0  # Scale factor for k = scale * f / U in coherence (e.g., 2π or 1)
 
     domain: torch.Tensor = torch.logspace(-1, 2, 20)
 
@@ -289,4 +290,4 @@ class IntegrationParameters:
     ops_num_points: int = 100
     coh_log_min: float = -3.0
     coh_log_max: float = 3.0
-    coh_num_points: int = 300
+    coh_num_points: int = 100

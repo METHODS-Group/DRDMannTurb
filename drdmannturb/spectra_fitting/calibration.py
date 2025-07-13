@@ -14,6 +14,7 @@ from torch.nn.utils import parameters_to_vector, vector_to_parameters
 from ..common import MannEddyLifetime
 from ..enums import EddyLifetimeType
 from ..parameters import (
+    IntegrationParameters,
     LossParameters,
     NNParameters,
     PhysicalParameters,
@@ -57,6 +58,7 @@ class CalibrationProblem:
         prob_params: ProblemParameters,
         loss_params: LossParameters,
         phys_params: PhysicalParameters,
+        integration_params: IntegrationParameters,
         device: str = "cpu",
         logging_directory: str | None = None,
         output_directory: Path | str = Path().resolve() / "results",
@@ -112,6 +114,7 @@ class CalibrationProblem:
             physical_params=self.phys_params,
             nn_parameters=self.nn_params,
             learn_nu=self.prob_params.learn_nu,
+            integration_params=integration_params,
             use_learnable_spectrum=self.prob_params.use_learnable_spectrum,
             p_exponent=self.prob_params.p_exponent,
             q_exponent=self.prob_params.q_exponent,
@@ -405,7 +408,13 @@ class CalibrationProblem:
                 history_size=max_epochs,
             )
         else:
-            optimizer = OptimizerClass(self.OPS.parameters(), lr=lr)
+            optimizer = torch.optim.Adam(
+                self.OPS.parameters(),
+                lr=lr,
+                betas=(0.9, 0.999),
+                eps=1e-8,
+                weight_decay=1e-5,
+            )
 
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max_epochs)
 
@@ -512,16 +521,30 @@ class CalibrationProblem:
             # Add this: Convert frequency to wavenumber using U_ref (assume it's in self.phys_params or pass it)
             U_ref = self.phys_params.Uref
             factor = self.phys_params.wavenumber_conversion_factor  # New: Configurable factor (e.g., 2*pi or 1.0)
-            coherence_k1 = (factor * torch.tensor(self.coherence_frequencies, dtype=torch.get_default_dtype())) / U_ref
 
-            # Filter out zero frequency if present
-            coherence_k1 = torch.clamp(coherence_k1, min=1e-6)  # Improved from your if-check to handle all zeros
+            # Identify non-zero frequencies to avoid NaN issues at f=0
+            min_freq = 1e-6  # Adjust this threshold if needed based on your frequency resolution
+            nonzero_mask = torch.tensor(self.coherence_frequencies) > min_freq
+            coherence_freq_nonzero = self.coherence_frequencies[nonzero_mask]
+
+            coherence_k1 = (factor * torch.tensor(coherence_freq_nonzero, dtype=torch.get_default_dtype())) / U_ref
+
+            # No need for additional clamp here since we're excluding very small f
 
             model_coherence = self.OPS.SpectralCoherence(coherence_k1, self.coherence_separations_tensor)
-            # model_coherence shape: (3, n_selected_separations, n_frequencies)
-            coh_u = model_coherence[0, :, :]  # Shape: (4, 221)
-            coh_v = model_coherence[1, :, :]  # Shape: (4, 221)
-            coh_w = model_coherence[2, :, :]  # Shape: (4, 221)
+            # model_coherence shape: (3, n_selected_separations, n_frequencies_nonzero)
+
+            # Create full-size tensors and fill with computed values, setting excluded (low freq) to 1.0
+            n_components = 3  # u, v, w
+            n_seps = len(self.coherence_separations_tensor)
+            n_freqs_full = len(self.coherence_frequencies)
+
+            full_model = torch.ones((n_components, n_seps, n_freqs_full), dtype=torch.get_default_dtype())
+            full_model[:, :, nonzero_mask] = model_coherence
+
+            coh_u = full_model[0, :, :]  # Shape: (n_seps, n_freqs_full)
+            coh_v = full_model[1, :, :]
+            coh_w = full_model[2, :, :]
 
         return coh_u, coh_v, coh_w
 
