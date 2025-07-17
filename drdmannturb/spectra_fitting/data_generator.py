@@ -9,6 +9,7 @@ set of parameters.
 from pathlib import Path
 
 import numpy as np
+import polars as pl
 import torch
 
 
@@ -85,16 +86,8 @@ def generate_kaimal_spectra(k1: torch.Tensor, zref: float, ustar: float) -> torc
     }
 
 
-# TODO: Custom data generator should be deprecated in favor of requiring the user to
-#       the correct data format(s) themselves.
-#
-#       We will split this file into data/generators.py and data/cleaners.py,
-#       where generators is self-explanatory and cleaners will provide a variety of routines
-#       for cleaning data and performing "generic computations" on the data.
-#
-#       This API/interface was just impossible to understand and use.
-class CustomDataFormatter:
-    """Custom data formatter.
+class CustomDataLoader:
+    """Custom data loader.
 
     Given a one point spectra data file (CSV) formatted as:
 
@@ -102,28 +95,81 @@ class CustomDataFormatter:
 
         f, F11(f), F22(f), F33(f), F13(f), F23(f), F12(f)
 
-    TODO: Add in functionalities for loading spectral coherence data.
     TODO: This should also accept NetCDF and other formats.
+
+    TODO: Use polars to load the data.
+
+    TODO: Probably some nice thing can be done with "subsetting" the data frame
+    and downsampling and all that.
     """
 
-    data_file: Path | str
-    k1_domain: torch.Tensor
-    CustomData: torch.Tensor
+    # Data file paths
+    ops_data_file: Path | str
+    coherence_data_file: Path | str | None
+
+    # Data storage
+    ops_data_df: pl.DataFrame
+    coh_data_df: pl.DataFrame | None
+
+    ops_components_ct: int
 
     def __init__(
         self,
-        data_file: Path | str,
+        ops_data_file: Path | str,
+        coherence_data_file: Path | str | None = None,
+        ops_components_ct: int = 4,
     ):
-        _data_file = Path(data_file)
+        self.ops_data_file = Path(ops_data_file)
+        self.coherence_data_file = Path(coherence_data_file) if coherence_data_file else None
+
+        self.ops_components_ct = ops_components_ct
+
+        # Load the OPS data
+        self._load_ops_data()
+
+    def _load_ops_data(self) -> None:
+        """Load the OPS data.
+
+        1. Check the ops data file exists, etc
+        2. Check the ops components are present
+        3. Fill the ops_data_df
+        """
+        # Check the provided data file exists
+        _data_file = Path(self.ops_data_file)
         if not _data_file.exists():
             raise FileNotFoundError(f'Provided data file path "{_data_file}" does not exist.')
 
-        # Check that the file is a CSV
-        if _data_file.suffix not in [".csv", ".dat"]:
-            raise ValueError(f'Provided data file path "{_data_file}" is not a CSV file.')
+        # Load the data
+        self.ops_data_df = pl.read_csv(self.ops_data_file)
 
-    def _load_data(self) -> np.ndarray:
-        pass
+        # Check which of uu, vv, ww, uw, vw, and uv are present
+        if "uu" not in self.ops_data_df.columns:
+            raise ValueError("uu must be present in the ops_data_df")
+        if "vv" not in self.ops_data_df.columns:
+            raise ValueError("vv must be present in the ops_data_df")
+        if "ww" not in self.ops_data_df.columns:
+            raise ValueError("ww must be present in the ops_data_df")
+
+        if (self.ops_components_ct > 3) and ("uw" not in self.ops_data_df.columns):
+            raise ValueError("uw must be present in the ops_data_df")
+        if (self.ops_components_ct == 6) and ("vw" not in self.ops_data_df.columns):
+            raise ValueError("vw must be present in the ops_data_df")
+        if (self.ops_components_ct == 6) and ("uv" not in self.ops_data_df.columns):
+            raise ValueError("uv must be present in the ops_data_df")
+
+
+
+
+
+        ops_data = torch.zeros([len(self.ops_k1_domain), 3, 3])
+
+        ops_data[:, 0, 0] = data_df["uu"].to_numpy()
+        ops_data[:, 1, 1] = data_df["vv"].to_numpy()
+        ops_data[:, 2, 2] = data_df["ww"].to_numpy()
+        ops_data[:, 0, 2] = -1 * data_df["uw"].to_numpy()
+        ops_data[:, 1, 2] = data_df["vw"].to_numpy()
+        ops_data[:, 0, 1] = data_df["uv"].to_numpy()
+
 
     def format_data(self) -> dict[str, torch.Tensor]:
         r"""Provide a correctly formatted data dictionary based on provided data file."""
@@ -133,7 +179,7 @@ class CustomDataFormatter:
         DataValues[:, 1, 1] = self.CustomData[:, 2]  # vv
         DataValues[:, 2, 2] = self.CustomData[:, 3]  # ww
         # NOTE: is always negative
-        DataValues[:, 0, 2] = -self.CustomData[:, 4]  # uw
+        DataValues[:, 0, 2] = -1 * self.CustomData[:, 4]  # uw
         # TODO: Can be negative, skipping for now
         DataValues[:, 1, 2] = self.CustomData[:, 5]  # vw
         # TODO: Can be negative, skipping for now

@@ -30,7 +30,7 @@ CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter="
 #   f, F11(f), F22(f), F33(f), F12(f), F13(f)
 
 # TODO: Double check that the order is correct here.
-k1_domain = 2 * torch.pi * CustomData[:, 0] / Uref
+k1_domain = CustomData[:, 0]
 ops_data = torch.zeros([len(k1_domain), 3, 3])
 ops_data[:, 0, 0] = CustomData[:, 1]
 ops_data[:, 1, 1] = CustomData[:, 2]
@@ -44,6 +44,13 @@ data_dict = {
     "ops": ops_data,
     "coherence": None,
 }
+
+CustomDataFormatter = drdmt.CustomDataLoader(
+    ops_data_file = spectra_file,
+    coherence_data_file = coherence_file,
+    skip_header = 1,
+    delimiter = ","
+)
 
 # Define Calibration Problem
 pb = drdmt.CalibrationProblem(
@@ -91,7 +98,6 @@ pb = drdmt.CalibrationProblem(
 
 optimal_params = pb.calibrate(
     data=data_dict,
-    coherence_data_file=coherence_file,
     optimizer_class=torch.optim.Adam,
 )
 

@@ -46,7 +46,7 @@ from .parameters import (
 )
 from .spectra_fitting import (
     CalibrationProblem,
-    CustomDataFormatter,
+    CustomDataLoader,
     LossAggregator,
     OnePointSpectra,
     generate_kaimal_spectra,
@@ -99,7 +99,7 @@ __all__ = [
     "ProblemParameters",
     # Spectra Fitting
     "CalibrationProblem",
-    "CustomDataFormatter",
+    "CustomDataLoader",
     "generate_kaimal_spectra",
     "generate_von_karman_spectra",
     "LossAggregator",

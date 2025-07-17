@@ -318,6 +318,9 @@ class CalibrationProblem:
         self.plot_loss_optim = False
         self.curves = list(range(0, self.prob_params.num_components))
 
+        # [0, 1, 2, 3]
+        # [0, 1, 2, 3, 4, 5]
+
         if coherence_data_file is not None:
             print(f"Loading coherence data from {coherence_data_file}")
             self.load_coherence_data(coherence_data_file)

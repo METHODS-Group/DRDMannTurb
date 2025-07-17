@@ -55,7 +55,7 @@ pb = drdmt.CalibrationProblem(
     prob_params=drdmt.ProblemParameters(
         tol=1e-9,
         nepochs=50,
-        learn_nu=True,
+        learn_nu=False,
         learning_rate=0.3,
         num_components=6,
         use_learnable_spectrum=True,
@@ -92,7 +92,7 @@ pb = drdmt.CalibrationProblem(
 optimal_params = pb.calibrate(
     data=data_dict,
     coherence_data_file=coherence_file,
-    # optimizer_class=torch.optim.Adam,
+    optimizer_class=torch.optim.Adam,
 )
 
 pb.plot()
