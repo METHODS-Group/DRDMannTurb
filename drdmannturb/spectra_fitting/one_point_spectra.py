@@ -153,12 +153,6 @@ class OnePointSpectra(nn.Module):
         self.TimeScale_scalar = physical_params.Gamma
         self.Magnitude_scalar = physical_params.sigma
 
-        self.use_parametrizable_spectrum = physical_params.use_parametrizable_spectrum
-        if self.use_parametrizable_spectrum:
-            self.alpha_low = physical_params.alpha_low
-            self.alpha_high = physical_params.alpha_high
-            self.transition_slope = physical_params.transition_slope
-
     def set_scales(self, LengthScale: float, TimeScale: float, Magnitude: float):
         """Set scalar values for values used in non-dimensionalization.
 
@@ -287,6 +281,7 @@ class OnePointSpectra(nn.Module):
             Auto-coherence values for u, v, w components.
             Shape: (3, n_separations, n_frequencies)
         """
+        self.exp_scales()
         if not hasattr(self, "coh_grid_k2") or not hasattr(self, "coh_grid_k3"):
             p1, p2, N_coh = -3, 3, 100
             grid_zero_coh = torch.tensor([0], dtype=torch.get_default_dtype())

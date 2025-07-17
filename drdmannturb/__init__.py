@@ -35,7 +35,6 @@ from .fluctuation_generation import (
     plot_velocity_components,
     plot_velocity_magnitude,
 )
-from .interpolation import extract_x_spectra, interp_spectra, interpolate
 from .nn_modules import Rational, TauNet
 from .parameters import (
     IntegrationParameters,

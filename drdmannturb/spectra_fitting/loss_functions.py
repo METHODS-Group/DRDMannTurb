@@ -250,12 +250,6 @@ class LossAggregator:
         torch.Tensor
             Regularization loss of neural network model.
         """
-        if theta_NN is None:  # TODO: Is this needed?
-            raise ValueError(
-                "Regularization loss requires a neural network model to be used. Set the regularization hyperparameter\
-                (beta_reg) to 0 if using a non-neural network model."
-            )
-
         reg_loss = self.params.beta_reg * theta_NN.square().mean()
 
         self.writer.add_scalar("Regularization", reg_loss, epoch)
