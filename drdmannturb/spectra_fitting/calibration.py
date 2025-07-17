@@ -439,7 +439,7 @@ class CalibrationProblem:
         print(f"Initial loss: {self.loss.item()}")
         print("=" * 40)
 
-        def closure():
+        def closure() -> torch.Tensor:
             """Closure function for the optimizer.
 
             This function is called by the optimizer to compute the loss and perform a step.
@@ -469,10 +469,20 @@ class CalibrationProblem:
                 coherence_data=coherence_data,
             )
 
+            # Track component losses if available (modify LossAggregator to return these)
+            if hasattr(self.LossAggregator, "last_component_losses"):
+                if not hasattr(self, "loss_history"):
+                    self.loss_history: dict[str, list[float]] = {"ops": [], "coherence": [], "total": []}
+
+                self.loss_history["ops"].append(self.LossAggregator.last_component_losses.get("ops", 0))
+                self.loss_history["coherence"].append(self.LossAggregator.last_component_losses.get("coherence", 0))
+                self.loss_history["total"].append(self.loss.item())
+
             self.loss.backward()
             self.e_count += 1
 
             return self.loss
+
 
         for epoch in range(1, max_epochs + 1):
             # Print the current parameters
@@ -498,6 +508,26 @@ class CalibrationProblem:
             if self.loss.item() < tol:
                 print(f"Spectra Fitting Concluded with loss below tolerance. Final loss: {self.loss.item()}")
                 break
+
+            # Check if we should adjust learning rate
+            if epoch % 50 == 0:  # Check every 50 epochs
+                lr_decision = self.LossAggregator.should_adjust_learning_rate(epoch)
+
+                if lr_decision["adjust"]:
+                    current_lr = optimizer.param_groups[0]["lr"]
+                    new_lr = current_lr * lr_decision.get("factor", 0.5)
+
+                    # Log the decision
+                    print(f"Epoch {epoch}: Adjusting LR due to {lr_decision['reason']}")
+                    print(f"  Current LR: {current_lr:.2e} → New LR: {new_lr:.2e}")
+
+                    # Update learning rate
+                    for param_group in optimizer.param_groups:
+                        param_group["lr"] = new_lr
+
+                    # Log loss diagnostics
+                    loss_info = self.LossAggregator.get_current_loss_info()
+                    print(f"  MSE/Coherence ratio: {loss_info.get('mse_coherence_ratio', 0):.2f}")
 
         print("=" * 40)
         print(f"Spectra fitting concluded with final loss: {self.loss.item()}")
@@ -589,8 +619,6 @@ class CalibrationProblem:
 
                 #.  ``TAUNET``
 
-                #.  ``CUSTOMMLP``
-
         Returns
         -------
         int
@@ -599,10 +627,10 @@ class CalibrationProblem:
         Raises
         ------
         ValueError
-            If the OPS was not initialized to one of TAUNET, CUSTOMMLP
+            If the OPS was not initialized to one of TAUNET
         """
         if self.OPS.type_EddyLifetime != EddyLifetimeType.TAUNET:
-            raise ValueError("Not using trainable model for approximation, must be TAUNET, CUSTOMMLP.")
+            raise ValueError("Not using trainable model for approximation, must be TAUNET.")
 
         return sum(p.numel() for p in self.OPS.tauNet.parameters())
 
@@ -1219,3 +1247,49 @@ class CalibrationProblem:
         print(f"Selected separations for plotting: {self.coherence_plot_separations}")
 
         return True
+
+    def get_three_phase_scheduler(self, optimizer, nepochs):
+        """Three-phase learning for OPS + coherence."""
+
+        def lr_lambda(epoch):
+            base_lr = 1.0
+
+            # Phase 1 (0-30%)
+            if epoch < nepochs * 0.3:
+                return base_lr * 2.0
+
+            # Phase 2 (30-70%)
+            elif epoch < nepochs * 0.7:
+                progress = (epoch - nepochs * 0.3) / (nepochs * 0.4)
+                return base_lr * (2.0 - progress)
+
+            # Phase 3 (70-100%)
+            else:
+                return base_lr * 0.1
+
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
+        return scheduler
+
+    def get_adaptive_multi_scheduler(self, optimizer, nepochs):
+        """Adaptive scheduler that responds to objective balance."""
+        if not hasattr(self, "loss_history"):
+            self.loss_history = {"ops": [], "coherence": [], "total": []}
+
+        def adjust_lr_based_on_objectives(epoch):
+            if len(self.loss_history["total"]) < 10:
+                return 1.0
+
+            recent_ops_trend = np.mean(self.loss_history["ops"][-5:])
+            recent_coh_trend = np.mean(self.loss_history["coherence"][-5:])
+
+            ratio = recent_ops_trend / (recent_coh_trend + 1e-8)
+
+            if ratio > 10:
+                return 0.5
+            elif ratio < 0.1:
+                return 0.5
+            else:  # Balanced - standard decay
+                return 0.95 ** (epoch - 10)
+
+        # This would need custom implementation in training loop
+        return torch.optim.lr_scheduler.LambdaLR(optimizer, adjust_lr_based_on_objectives)

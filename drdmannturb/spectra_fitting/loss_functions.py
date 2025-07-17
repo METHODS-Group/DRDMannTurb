@@ -7,7 +7,7 @@ from ..parameters import LossParameters
 
 
 class LossAggregator:
-    """Aggregator for all loss function terms."""
+    """Aggregator for all loss function terms with component tracking."""
 
     def __init__(
         self,
@@ -82,6 +82,29 @@ class LossAggregator:
                     epoch,
                 )
             return 0.0
+
+        self.component_losses: dict[str, list[float]] = {
+            "mse": [],
+            "coherence": [],
+            "pen1": [],
+            "pen2": [],
+            "regularization": [],
+            "total": [],
+        }
+
+        self.running_averages: dict[str, float] = {
+            "mse": 0.0,
+            "coherence": 0.0,
+            "pen1": 0.0,
+            "pen2": 0.0,
+            "regularization": 0.0,
+        }
+
+        self.auto_balance = getattr(params, "auto_balance_losses", False)
+        self.balance_freq = 10
+        self.loss_scales: dict[str, float] = {}
+
+        self.ema_decay = 0.9
 
         self.loss_func = (
             lambda y, theta_NN, epoch, **kwargs: t_alphapen1(y, theta_NN, epoch, **kwargs)
@@ -331,6 +354,37 @@ class LossAggregator:
 
         return coherence_loss
 
+    def compute_loss_scales(self, epoch, mse_loss, coherence_loss):
+        """Compute scaling factors to balance losses."""
+        # Initialize loss_scales if it doesn't exist
+        if not hasattr(self, "loss_scales") or not self.loss_scales:
+            self.loss_scales = {}
+
+        # Initialize on first call or recompute every balance_freq epochs
+        if epoch % self.balance_freq == 0 or "mse" not in self.loss_scales:
+            # Use exponential moving average of loss magnitudes
+            beta = 0.9
+
+            if "mse" not in self.loss_scales:
+                # First initialization
+                self.loss_scales["mse"] = mse_loss.item()
+                self.loss_scales["coherence"] = (
+                    coherence_loss.item() if (coherence_loss is not None and coherence_loss != 0) else 1.0
+                )
+            else:
+                # Update existing values
+                self.loss_scales["mse"] = beta * self.loss_scales["mse"] + (1 - beta) * mse_loss.item()
+                if coherence_loss is not None and coherence_loss != 0:
+                    self.loss_scales["coherence"] = (
+                        beta * self.loss_scales["coherence"] + (1 - beta) * coherence_loss.item()
+                    )
+
+        # Return scaling factors (inverse of magnitude)
+        mse_scale = 1.0 / max(self.loss_scales.get("mse", 1.0), 1e-8)
+        coh_scale = 1.0 / max(self.loss_scales.get("coherence", 1.0), 1e-8)
+
+        return mse_scale, coh_scale
+
     def eval(
         self,
         y: torch.Tensor,
@@ -338,34 +392,198 @@ class LossAggregator:
         theta_NN: torch.Tensor | None,
         epoch: int,
         coherence_data: dict | None = None,
+        **kwargs,
     ) -> torch.Tensor:
-        """Evaluate the full loss term at a given epoch.
+        """Evaluate with component tracking for scheduling."""
+        # Compute individual loss components
+        mse_loss = self.MSE_term(y, y_data, epoch)
 
-        This method sequentially evaluates each term in the loss and returns the sum total loss.
+        # Coherence loss
+        coherence_loss = torch.tensor(0.0, device=y.device)
+        if coherence_data and self.params.gamma_coherence > 0:
+            coherence_loss = self.CoherenceLoss(
+                coherence_data["model_u"],
+                coherence_data["model_v"],
+                coherence_data["model_w"],
+                coherence_data["data_u"],
+                coherence_data["data_v"],
+                coherence_data["data_w"],
+                epoch,
+            )
 
-        Parameters
-        ----------
-        y : torch.Tensor
-            Model spectra output on k1space in constructor.
-        y_data : torch.Tensor
-            True spectra data on k1space in constructor.
-        theta_NN : Optional[torch.Tensor]
-            Neural network parameters, used in the regularization loss term if activated. Can be set to None if no
-            neural network is used.
-        epoch : int
-            Epoch number, used for the TensorBoard loss writer.
+        # Penalty terms
+        pen1_loss = torch.tensor(0.0, device=y.device)
+        if self.params.alpha_pen1 > 0:
+            pen1_loss = self.Pen1stOrder(y, epoch)
 
-        Returns
-        -------
-        torch.Tensor
-            Evaluated total loss, as a weighted sum of all terms with non-zero hyperparameters.
-        """
-        kwargs = {}
-        if coherence_data is not None:
-            kwargs["coherence_data"] = coherence_data
+        pen2_loss = torch.tensor(0.0, device=y.device)
+        if self.params.alpha_pen2 > 0:
+            pen2_loss = self.Pen2ndOrder(y, epoch)
 
-        total_loss = self.MSE_term(y, y_data, epoch) + self.loss_func(y, theta_NN, epoch, **kwargs)
+        # Regularization term
+        reg_loss = torch.tensor(0.0, device=y.device)
+        if self.params.beta_reg > 0 and theta_NN is not None:
+            reg_loss = self.Regularization(theta_NN, epoch)
 
-        self.writer.add_scalar("Total Loss", total_loss, epoch)
+        # Store component losses for tracking
+        self.component_losses["mse"].append(mse_loss.item())
+        self.component_losses["coherence"].append(coherence_loss.item())
+        self.component_losses["pen1"].append(pen1_loss.item())
+        self.component_losses["pen2"].append(pen2_loss.item())
+        self.component_losses["regularization"].append(reg_loss.item())
+
+        # Update running averages
+        self.update_running_averages(
+            mse_loss.item(), coherence_loss.item(), pen1_loss.item(), pen2_loss.item(), reg_loss.item()
+        )
+
+        # Compute total loss
+        total_loss = mse_loss + coherence_loss + pen1_loss + pen2_loss + reg_loss
+
+        # Store total loss
+        self.component_losses["total"].append(total_loss.item())
+
+        # Log component ratios for scheduling insights
+        self.log_component_ratios(epoch)
 
         return total_loss
+
+    def update_running_averages(self, mse_val, coh_val, pen1_val, pen2_val, reg_val):
+        """Update exponential moving averages."""
+        if len(self.component_losses["mse"]) == 1:
+            # First epoch - initialize
+            self.running_averages["mse"] = mse_val
+            self.running_averages["coherence"] = coh_val
+            self.running_averages["pen1"] = pen1_val
+            self.running_averages["pen2"] = pen2_val
+            self.running_averages["regularization"] = reg_val
+        else:
+            # Update with EMA
+            self.running_averages["mse"] = (
+                self.ema_decay * self.running_averages["mse"] + (1 - self.ema_decay) * mse_val
+            )
+            self.running_averages["coherence"] = (
+                self.ema_decay * self.running_averages["coherence"] + (1 - self.ema_decay) * coh_val
+            )
+            self.running_averages["pen1"] = (
+                self.ema_decay * self.running_averages["pen1"] + (1 - self.ema_decay) * pen1_val
+            )
+            self.running_averages["pen2"] = (
+                self.ema_decay * self.running_averages["pen2"] + (1 - self.ema_decay) * pen2_val
+            )
+            self.running_averages["regularization"] = (
+                self.ema_decay * self.running_averages["regularization"] + (1 - self.ema_decay) * reg_val
+            )
+
+    def log_component_ratios(self, epoch: int):
+        """Log component ratios for scheduling insights."""
+        if epoch > 0:
+            total_avg = sum(self.running_averages.values())
+            if total_avg > 0:
+                # Log relative contributions
+                self.writer.add_scalar("Component_Ratios/MSE", self.running_averages["mse"] / total_avg, epoch)
+                self.writer.add_scalar(
+                    "Component_Ratios/Coherence", self.running_averages["coherence"] / total_avg, epoch
+                )
+                self.writer.add_scalar(
+                    "Component_Ratios/Penalties",
+                    (self.running_averages["pen1"] + self.running_averages["pen2"]) / total_avg,
+                    epoch,
+                )
+                self.writer.add_scalar(
+                    "Component_Ratios/Regularization", self.running_averages["regularization"] / total_avg, epoch
+                )
+
+    def get_loss_diagnostics(self, window: int = 50) -> dict[str, float | str]:
+        """Get loss diagnostics for scheduling decisions."""
+        if len(self.component_losses["total"]) < window:
+            return {}
+
+        recent_losses = {key: values[-window:] for key, values in self.component_losses.items()}
+
+        # Calculate metrics
+        diagnostics: dict[str, float | str] = {}
+
+        # Loss magnitudes
+        for key, values in recent_losses.items():
+            if values:
+                mean_val = sum(values) / len(values)
+                diagnostics[f"{key}_mean"] = mean_val
+                diagnostics[f"{key}_std"] = (sum((x - mean_val) ** 2 for x in values) / len(values)) ** 0.5
+
+        # Component dominance (which loss is largest)
+        component_means = {
+            k: v
+            for k, v in diagnostics.items()
+            if k.endswith("_mean") and k != "total_mean" and isinstance(v, (int, float))
+        }
+
+        if component_means:
+            dominant_component = max(component_means.items(), key=lambda x: x[1])
+            diagnostics["dominant_component"] = dominant_component[0].replace("_mean", "")
+            diagnostics["dominance_ratio"] = dominant_component[1] / max(min(component_means.values()), 1e-8)
+
+        # Convergence indicators
+        if len(recent_losses["total"]) >= 2:
+            recent_half = recent_losses["total"][window // 2 :]
+            early_half = recent_losses["total"][: window // 2]
+
+            diagnostics["improvement_ratio"] = (
+                sum(early_half) / len(early_half) - sum(recent_half) / len(recent_half)
+            ) / max(sum(early_half) / len(early_half), 1e-8)
+
+            total_std = diagnostics.get("total_std", 0.0)
+            if isinstance(total_std, (int, float)):
+                diagnostics["stability"] = 1.0 / (1.0 + total_std)
+
+        return diagnostics
+
+    def should_adjust_learning_rate(self, epoch: int, window: int = 50) -> dict:
+        """Determine if learning rate should be adjusted based on loss behavior."""
+        if epoch < window:
+            return {"adjust": False, "reason": "insufficient_data"}
+
+        diagnostics = self.get_loss_diagnostics(window)
+
+        if not diagnostics:
+            return {"adjust": False, "reason": "no_diagnostics"}
+
+        # Check for stagnation
+        improvement_ratio = diagnostics.get("improvement_ratio", 0)
+        assert isinstance(improvement_ratio, float), "Improvement ratio must be a float"
+        if improvement_ratio < 0.01:
+            return {"adjust": True, "reason": "stagnation", "suggestion": "reduce_lr", "factor": 0.5}
+
+        # Check for instability
+        stability = diagnostics.get("stability", 1.0)
+        assert isinstance(stability, float), "Stability must be a float"
+        if stability < 0.3:
+            return {"adjust": True, "reason": "instability", "suggestion": "reduce_lr", "factor": 0.3}
+
+        # Check for dominance imbalance
+        dominance_ratio = diagnostics.get("dominance_ratio", 1.0)
+        assert isinstance(dominance_ratio, float), "Dominance ratio must be a float"
+        if dominance_ratio > 100:
+            return {
+                "adjust": True,
+                "reason": "component_dominance",
+                "dominant": diagnostics.get("dominant_component", "unknown"),
+                "suggestion": "reduce_lr_or_rebalance",
+                "factor": 0.7,
+            }
+
+        return {"adjust": False, "reason": "healthy_training"}
+
+    def get_current_loss_info(self) -> dict:
+        """Get current loss information for logging."""
+        if not self.component_losses["total"]:
+            return {}
+
+        return {
+            "mse_current": self.component_losses["mse"][-1],
+            "coherence_current": self.component_losses["coherence"][-1],
+            "total_current": self.component_losses["total"][-1],
+            "mse_avg": self.running_averages["mse"],
+            "coherence_avg": self.running_averages["coherence"],
+            "mse_coherence_ratio": self.running_averages["mse"] / max(self.running_averages["coherence"], 1e-8),
+        }

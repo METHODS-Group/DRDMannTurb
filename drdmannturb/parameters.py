@@ -121,11 +121,16 @@ class PhysicalParameters:
     alpha_high: float = -5.0 / 3.0  # High k asymptote (von Karman default)
     transition_slope: float = 17.0 / 3.0  # Transition parameter (von Karman default)
     use_parametrizable_spectrum: bool = False  # Whether to use parametrizable spectrum
-
     wavenumber_conversion_factor: float = 1 / (2 * torch.pi)  # New: Factor for k1 = factor * f / U (default radians)
     wavenumber_scale_factor: float = 1.0  # Scale factor for k = scale * f / U in coherence (e.g., 2π or 1)
 
+
     domain: torch.Tensor = torch.logspace(-1, 2, 20)
+
+    def __post_init__(self):
+        """Post-initialization validations."""
+        if self.use_learnable_spectrum and self.use_parametrizable_spectrum:
+            raise ValueError("Cannot use both learnable and parametrizable energy spectrum.")
 
 
 @dataclass
@@ -156,6 +161,9 @@ class LossParameters:
     beta_reg: float = 0.0
 
     gamma_coherence: float = 0.0
+
+    auto_balance_losses: bool = False
+    balance_freq: int = 10
 
 
 @dataclass

@@ -78,7 +78,7 @@ def Learnable_EnergySpectrum(kL: torch.Tensor, p: torch.Tensor, q: torch.Tensor)
     .. math::
         \widetilde{E}(\boldsymbol{k}) = \left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3}.
     """
-    return (kL**p) / ((1.0 + kL**2) ** q)
+    return (kL ** p) / ((1.0 + kL**2) ** q)
 
 
 def MannEddyLifetime(kL: torch.Tensor | np.ndarray) -> torch.Tensor:

@@ -83,6 +83,10 @@ class OnePointSpectra(nn.Module):
         """
         super().__init__()
 
+        assert physical_params.L > 0, "Length scale L must be positive."
+        assert physical_params.Gamma > 0, "Characteristic time scale Gamma must be positive."
+        assert physical_params.sigma > 0, "Spectrum amplitude sigma must be positive."
+
         if type_eddy_lifetime == EddyLifetimeType.TAUNET:
             assert nn_parameters is not None, "TauNet EddyLifetimeType requires NNParameters!"
             self.tauNet = TauNet(
@@ -128,14 +132,14 @@ class OnePointSpectra(nn.Module):
             grid_zero_coh = torch.tensor([0])
             grid_plus_coh = torch.logspace(p1, p2, N_coh)
             grid_minus_coh = -torch.flip(grid_plus_coh, dims=[0])
-            self.coh_grid_k2 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach()
-            self.coh_grid_k3 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach()
+            self.coh_grid_k2 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach() / physical_params.L
+            self.coh_grid_k3 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach() / physical_params.L
 
             self.coh_meshgrid23 = torch.meshgrid(self.coh_grid_k2, self.coh_grid_k3, indexing="ij")
 
-        assert physical_params.L > 0, "Length scale L must be positive."
-        assert physical_params.Gamma > 0, "Characteristic time scale Gamma must be positive."
-        assert physical_params.sigma > 0, "Spectrum amplitude sigma must be positive."
+        self.logLengthScale = nn.Parameter(torch.tensor(np.log10(physical_params.L)))
+        self.logTimeScale = nn.Parameter(torch.tensor(np.log10(physical_params.Gamma)))
+        self.logMagnitude = nn.Parameter(torch.tensor(np.log10(physical_params.sigma)))
 
         self.logLengthScale = nn.Parameter(torch.tensor(np.log10(physical_params.L), dtype=torch.get_default_dtype()))
         self.logTimeScale = nn.Parameter(torch.tensor(np.log10(physical_params.Gamma), dtype=torch.get_default_dtype()))
@@ -179,6 +183,10 @@ class OnePointSpectra(nn.Module):
                 - LengthScale
                 - TimeScale
                 - SpectrumAmplitude
+
+        Additionally, if use_learnable_spectrum is True, the next two parameters are
+            - p_low
+            - q_high
 
         Returns
         -------
@@ -246,7 +254,6 @@ class OnePointSpectra(nn.Module):
         if self.use_learnable_spectrum:
             energy_spectrum = Learnable_EnergySpectrum(k0L, self.p_exponent, self.q_exponent)
         else:
-            # energy_spectrum = VKEnergySpectrum(k0L)
             energy_spectrum = VKLike_EnergySpectrum(k0L)
 
         self.E0 = self.Magnitude * self.LengthScale ** (5.0 / 3.0) * energy_spectrum
@@ -280,16 +287,20 @@ class OnePointSpectra(nn.Module):
             Auto-coherence values for u, v, w components.
             Shape: (3, n_separations, n_frequencies)
         """
-        # Create coherence grids on-demand if they don't exist
         if not hasattr(self, "coh_grid_k2") or not hasattr(self, "coh_grid_k3"):
             p1, p2, N_coh = -3, 3, 100
             grid_zero_coh = torch.tensor([0], dtype=torch.get_default_dtype())
             grid_plus_coh = torch.logspace(p1, p2, N_coh)
             grid_minus_coh = -torch.flip(grid_plus_coh, dims=[0])
-            self.coh_grid_k2 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach()
-            self.coh_grid_k3 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach()
 
-        self.exp_scales()
+            # Scale the grid by 1/L to get proper physical units
+            scale_factor = 1.0 / self.LengthScale
+
+            self.coh_grid_k2 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach() * scale_factor
+            self.coh_grid_k3 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach() * scale_factor
+
+            # self.coh_grid_k2 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach()
+            # self.coh_grid_k3 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach()
 
         # Create coherence-specific k-space grid
         coh_k = torch.stack(torch.meshgrid(k1_input, self.coh_grid_k2, self.coh_grid_k3, indexing="ij"), dim=-1)
@@ -341,7 +352,7 @@ class OnePointSpectra(nn.Module):
 
         for i, r in enumerate(spatial_separations):
             # Complex exponential phase factor: exp(i * k2 * r)
-            phase = 1j * k2_grid * r
+            phase = 1j * k2_grid * (r)
             exp_phase = torch.exp(phase)
 
             # Auto-power spectra with spatial separation
@@ -381,7 +392,7 @@ class OnePointSpectra(nn.Module):
 
         # TODO: Remove this... recall bug with ``self.curves``
         # Regularization
-        epsilon = 1e-12
+        epsilon = 1e-32
         Phi11 = torch.where(Phi11 < epsilon, epsilon, Phi11)
         Phi22 = torch.where(Phi22 < epsilon, epsilon, Phi22)
         Phi33 = torch.where(Phi33 < epsilon, epsilon, Phi33)
