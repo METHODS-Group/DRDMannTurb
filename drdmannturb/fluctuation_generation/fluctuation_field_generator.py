@@ -1,15 +1,17 @@
 """Wind generation functionality forward facing API."""
 
 import pickle
+from collections.abc import Callable
 from math import ceil
 from os import PathLike
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Union
 
 import numpy as np
 import torch
 
 from ..common import CPU_Unpickler
+from ..parameters import IntegrationParameters
 from ..spectra_fitting import CalibrationProblem
 from .covariance_kernels import MannCovariance, VonKarmanCovariance
 from .gaussian_random_fields import VectorGaussianRandomField
@@ -74,13 +76,13 @@ class FluctuationFieldGenerator:
         grid_dimensions: np.ndarray,
         grid_levels: np.ndarray,
         model: str,
-        length_scale: Optional[float] = None,
-        time_scale: Optional[float] = None,
-        energy_spectrum_scale: Optional[float] = None,
-        path_to_parameters: Optional[Union[str, PathLike]] = None,
-        seed: Optional[int] = None,
+        length_scale: float | None = None,
+        time_scale: float | None = None,
+        energy_spectrum_scale: float | None = None,
+        path_to_parameters: str | PathLike | None = None,
+        seed: int | None = None,
         blend_num: int = 10,
-        config_2d_model: Optional[dict] = None,
+        config_2d_model: dict | None = None,
     ):
         r"""Initialize the fluctuation field generator.
 
@@ -137,6 +139,7 @@ class FluctuationFieldGenerator:
             pb = CalibrationProblem(
                 nn_params=nn_params,
                 prob_params=prob_params,
+                integration_params=IntegrationParameters(),
                 loss_params=loss_params,
                 phys_params=phys_params,
                 device=device,
@@ -247,7 +250,7 @@ class FluctuationFieldGenerator:
 
         self.RF.reseed(self.seed)
 
-        self.low_freq_gen: Optional[LowFreqGenerator] = None
+        self.low_freq_gen: LowFreqGenerator | None = None
         if config_2d_model is not None:
             self.low_freq_gen = LowFreqGenerator(config_2d_model)
 
@@ -288,7 +291,7 @@ class FluctuationFieldGenerator:
         uref: float,
         z0: float,
         windprofiletype: str,
-        plexp: Optional[float] = None,
+        plexp: float | None = None,
     ) -> np.ndarray:
         r"""Normalize an individual block of wind under the given profile and physical parameters.
 
@@ -371,7 +374,7 @@ class FluctuationFieldGenerator:
         uref: float,
         z0: float,
         windprofiletype: str,
-        plexp: Optional[float] = None,
+        plexp: float | None = None,
     ) -> np.ndarray:
         r"""Generate the full fluctuation field block by block.
 
@@ -500,7 +503,7 @@ class FluctuationFieldGenerator:
 
         return self.total_fluctuation
 
-    def save_to_vtk(self, filepath: Union[str, Path] = "./") -> None:
+    def save_to_vtk(self, filepath: str | Path = "./") -> None:
         """Save generated fluctuation field in VTK format to specified filepath.
 
         Parameters
@@ -521,7 +524,7 @@ class FluctuationFieldGenerator:
 
         imageToVTK(filepath, cellData=cellData, spacing=spacing)
 
-    def evaluate_divergence(self, spacing: Union[tuple, np.ndarray], field: Optional[np.ndarray] = None) -> np.ndarray:
+    def evaluate_divergence(self, spacing: tuple | np.ndarray, field: np.ndarray | None = None) -> np.ndarray:
         r"""Evaluate the point-wise divergence of a generated fluctuation vector field.
 
         Evaluates the point-wise divergence of a generated fluctuation vector (!) field on a given grid. The

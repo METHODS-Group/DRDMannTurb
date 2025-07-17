@@ -12,14 +12,14 @@ import torch.nn as nn
 from sklearn.linear_model import LinearRegression
 
 from ..common import (
-    LearnableEnergySpectrum,
+    Learnable_EnergySpectrum,
     Mann_linear_exponential_approx,
     MannEddyLifetime,
     VKLike_EnergySpectrum,
 )
 from ..enums import EddyLifetimeType
 from ..nn_modules import TauNet
-from ..parameters import NNParameters, PhysicalParameters
+from ..parameters import IntegrationParameters, NNParameters, PhysicalParameters
 
 
 class OnePointSpectra(nn.Module):
@@ -33,10 +33,13 @@ class OnePointSpectra(nn.Module):
         self,
         type_eddy_lifetime: EddyLifetimeType,
         physical_params: PhysicalParameters,
-        use_parametrizable_spectrum: bool = False,
         nn_parameters: NNParameters | None = None,
         learn_nu: bool = False,
         use_coherence: bool = False,
+        use_learnable_spectrum: bool = False,
+        p_exponent: float = 4.0,
+        q_exponent: float = 17.0 / 6.0,
+        integration_params: IntegrationParameters | None = None,
     ):
         r"""Initialize the one point spectra calculator.
 
@@ -96,20 +99,24 @@ class OnePointSpectra(nn.Module):
             self.init_mann_linear_approx = False
 
         self.type_EddyLifetime = type_eddy_lifetime
-        self.use_parametrizable_spectrum = use_parametrizable_spectrum
         self.use_coherence = use_coherence
+
+        self.use_learnable_spectrum = use_learnable_spectrum
+
+        if integration_params is None:
+            integration_params = IntegrationParameters()
 
         ####
         # OPS grid
         # k2 grid
-        p1, p2, N = -3, 3, 100
+        p1, p2, N = integration_params.ops_log_min, integration_params.ops_log_max, integration_params.ops_num_points
         grid_zero = torch.tensor([0])
         grid_plus = torch.logspace(p1, p2, N)
         grid_minus = -torch.flip(grid_plus, dims=[0])
         self.ops_grid_k2 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
 
         # k3 grid
-        p1, p2, N = -3, 3, 100
+        p1, p2, N = integration_params.ops_log_min, integration_params.ops_log_max, integration_params.ops_num_points
         grid_zero = torch.tensor([0])
         grid_plus = torch.logspace(p1, p2, N)
         grid_minus = -torch.flip(grid_plus, dims=[0])
@@ -120,7 +127,8 @@ class OnePointSpectra(nn.Module):
         ####
         # Separate coherence grid (finer resolution for better accuracy)
         if use_coherence:
-            p1, p2, N_coh = -4, 4, 120
+            p1, p2 = integration_params.coh_log_min, integration_params.coh_log_max
+            N_coh = integration_params.coh_num_points
             grid_zero_coh = torch.tensor([0])
             grid_plus_coh = torch.logspace(p1, p2, N_coh)
             grid_minus_coh = -torch.flip(grid_plus_coh, dims=[0])
@@ -133,11 +141,13 @@ class OnePointSpectra(nn.Module):
         self.logTimeScale = nn.Parameter(torch.tensor(np.log10(physical_params.Gamma)))
         self.logMagnitude = nn.Parameter(torch.tensor(np.log10(physical_params.sigma)))
 
-        if physical_params.use_learnable_spectrum:
-            self.p_low = nn.Parameter(torch.tensor(physical_params.p_low))
-            self.q_high = nn.Parameter(torch.tensor(physical_params.q_high))
+        self.logLengthScale = nn.Parameter(torch.tensor(np.log10(physical_params.L), dtype=torch.get_default_dtype()))
+        self.logTimeScale = nn.Parameter(torch.tensor(np.log10(physical_params.Gamma), dtype=torch.get_default_dtype()))
+        self.logMagnitude = nn.Parameter(torch.tensor(np.log10(physical_params.sigma), dtype=torch.get_default_dtype()))
 
-        self.use_learnable_spectrum = physical_params.use_learnable_spectrum
+        if use_learnable_spectrum:
+            self.p_exponent = nn.Parameter(torch.tensor(p_exponent))
+            self.q_exponent = nn.Parameter(torch.tensor(q_exponent))
 
         self.LengthScale_scalar = physical_params.L
         self.TimeScale_scalar = physical_params.Gamma
@@ -154,11 +164,11 @@ class OnePointSpectra(nn.Module):
 
         Parameters
         ----------
-        LengthScale : np.float64
+        LengthScale : float
             Length scale.
-        TimeScale : np.float64
+        TimeScale : float
             Time scale.
-        Magnitude : np.float64
+        Magnitude : float
             Spectrum amplitude magnitude.
         """
         self.LengthScale_scalar = LengthScale
@@ -242,7 +252,7 @@ class OnePointSpectra(nn.Module):
 
         # Choose energy spectrum based on parameters
         if self.use_learnable_spectrum:
-            energy_spectrum = LearnableEnergySpectrum(k0L, self.p_low, self.q_high)
+            energy_spectrum = Learnable_EnergySpectrum(k0L, self.p_exponent, self.q_exponent)
         else:
             energy_spectrum = VKLike_EnergySpectrum(k0L)
 
@@ -278,13 +288,9 @@ class OnePointSpectra(nn.Module):
             Shape: (3, n_separations, n_frequencies)
         """
         if not hasattr(self, "coh_grid_k2") or not hasattr(self, "coh_grid_k3"):
-            self.exp_scales()  # Get current length scale
-
-            # Original grid size but with proper physics-based bounds
-            p1, p2, N_coh = -4, 4, 120  # Original size
-
-            grid_zero_coh = torch.tensor([0], dtype=torch.float64)
-            grid_plus_coh = torch.logspace(p1, p2, N_coh, dtype=torch.float64)
+            p1, p2, N_coh = -3, 3, 100
+            grid_zero_coh = torch.tensor([0], dtype=torch.get_default_dtype())
+            grid_plus_coh = torch.logspace(p1, p2, N_coh)
             grid_minus_coh = -torch.flip(grid_plus_coh, dims=[0])
 
             # Scale the grid by 1/L to get proper physical units
@@ -309,12 +315,14 @@ class OnePointSpectra(nn.Module):
 
         # Energy spectrum on coherence grid
         if self.use_learnable_spectrum:
-            energy_spectrum_coh = LearnableEnergySpectrum(
+            print("[DEBUG] Using learnable energy spectrum")
+            energy_spectrum_coh = Learnable_EnergySpectrum(
                 k0L_coh,
-                self.p_low,
-                self.q_high,
+                self.p_exponent,
+                self.q_exponent,
             )
         else:
+            print("[DEBUG] Using VKLike energy spectrum")
             energy_spectrum_coh = VKLike_EnergySpectrum(k0L_coh)
 
         E0_coh = self.Magnitude * self.LengthScale ** (5.0 / 3.0) * energy_spectrum_coh

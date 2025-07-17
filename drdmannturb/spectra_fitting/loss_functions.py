@@ -141,6 +141,13 @@ class LossAggregator:
 
         self.writer.add_scalar("MSE Loss", mse_loss, epoch)
 
+        if mse_loss.isnan():
+            print("MSE loss is NaN")
+            print(f"model: {model}")
+            print(f"target: {target}")
+            print(f"mse_loss: {mse_loss}")
+            raise ValueError("MSE loss is NaN")
+
         return mse_loss
 
     def Pen2ndOrder(self, y: torch.Tensor, epoch: int) -> torch.Tensor:
@@ -172,6 +179,14 @@ class LossAggregator:
         pen2ndorder_loss = self.params.alpha_pen2 * torch.mean(torch.relu(d2logy).square()) / self.zref**2
 
         self.writer.add_scalar("2nd Order Penalty", pen2ndorder_loss, epoch)
+
+        if pen2ndorder_loss.isnan():
+            print("2nd order penalty loss is NaN")
+            print(f"y: {y}")
+            print(f"logy: {logy}")
+            print(f"d2logy: {d2logy}")
+            print(f"pen2ndorder_loss: {pen2ndorder_loss}")
+            raise ValueError("2nd order penalty loss is NaN")
 
         return pen2ndorder_loss
 
@@ -206,6 +221,14 @@ class LossAggregator:
         pen1storder_loss = self.params.alpha_pen1 * torch.mean(torch.relu(d1logy).square()) / self.zref
         self.writer.add_scalar("1st Order Penalty", pen1storder_loss, epoch)
 
+        if pen1storder_loss.isnan():
+            print("1st order penalty loss is NaN")
+            print(f"y: {y}")
+            print(f"logy: {logy}")
+            print(f"d1logy: {d1logy}")
+            print(f"pen1storder_loss: {pen1storder_loss}")
+            raise ValueError("1st order penalty loss is NaN")
+
         return pen1storder_loss
 
     def Regularization(self, theta_NN: torch.Tensor, epoch: int) -> torch.Tensor:
@@ -236,6 +259,12 @@ class LossAggregator:
         reg_loss = self.params.beta_reg * theta_NN.square().mean()
 
         self.writer.add_scalar("Regularization", reg_loss, epoch)
+
+        if reg_loss.isnan():
+            print("Regularization loss is NaN")
+            print(f"theta_NN: {theta_NN}")
+            print(f"reg_loss: {reg_loss}")
+            raise ValueError("Regularization loss is NaN")
 
         return reg_loss
 
@@ -313,6 +342,15 @@ class LossAggregator:
         self.writer.add_scalar("Coherence Loss/U-component", mse_u, epoch)
         self.writer.add_scalar("Coherence Loss/V-component", mse_v, epoch)
         self.writer.add_scalar("Coherence Loss/W-component", mse_w, epoch)
+
+        if coherence_loss.isnan():
+            print("Coherence loss is NaN")
+            print(f"model_coherence_u: {model_coherence_u}")
+            print(f"model_coherence_v: {model_coherence_v}")
+            print(f"model_coherence_w: {model_coherence_w}")
+            print(f"data_coherence_u: {data_coherence_u}")
+            print(f"data_coherence_v: {data_coherence_v}")
+            raise ValueError("Coherence loss is NaN")
 
         return coherence_loss
 

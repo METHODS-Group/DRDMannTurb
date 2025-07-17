@@ -3,7 +3,13 @@
 Specifically, the Mann eddy lifetime function and the von Karman energy spectrum.
 """
 
-__all__ = ["VKEnergySpectrum", "VKLike_EnergySpectrum", "MannEddyLifetime", "Mann_linear_exponential_approx"]
+__all__ = [
+    "VKEnergySpectrum",
+    "VKLike_EnergySpectrum",
+    "MannEddyLifetime",
+    "Mann_linear_exponential_approx",
+    "Learnable_EnergySpectrum",
+]
 
 import io
 import pickle
@@ -66,34 +72,13 @@ def VKLike_EnergySpectrum(kL: torch.Tensor) -> torch.Tensor:
 
 
 @torch.jit.script
-def LearnableEnergySpectrum(kL: torch.Tensor, p: torch.Tensor, q: torch.Tensor) -> torch.Tensor:
-    r"""
-    Evaluate the learnable energy spectrum, with adjustable low- and high-k slopes.
-
-    The energy spectrum has the form:
+def Learnable_EnergySpectrum(kL: torch.Tensor, p: torch.Tensor, q: torch.Tensor) -> torch.Tensor:
+    r"""Parametrizable energy spectrum with learnable exponents, p and q.
 
     .. math::
-        E(k) = C \frac{(kL)^{2p}}{(1 + (kL)^2)^q}
-
-    where C and L are learned parameters elsewhere in the model. p and q are learnable parameters which control
-    the low- and high-k slopes respectively. For a traditional von Karman spectrum, we have p=2 and q=17/6, which
-    we use to initialize the learnable parameters.
-
-    Parameters
-    ----------
-    kL : torch.Tensor
-        Scaled wave number.
-    p : torch.Tensor
-        Learnable parameter controlling the low-k slope.
-    q : torch.Tensor
-        Learnable parameter controlling the high-k slope.
-
-    Returns
-    -------
-    torch.Tensor
-        Result of the evaluation.
+        \widetilde{E}(\boldsymbol{k}) = \left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3}.
     """
-    return (kL ** (2.0 * p)) / ((1.0 + kL**2) ** q)
+    return (kL ** p) / ((1.0 + kL**2) ** q)
 
 
 def MannEddyLifetime(kL: torch.Tensor | np.ndarray) -> torch.Tensor:
@@ -123,7 +108,7 @@ def MannEddyLifetime(kL: torch.Tensor | np.ndarray) -> torch.Tensor:
     """
     x = kL.cpu().detach().numpy() if torch.is_tensor(kL) else kL
     y = x ** (-2 / 3) / np.sqrt(hyp2f1(1 / 3, 17 / 6, 4 / 3, -(x ** (-2))))
-    y = torch.tensor(y, dtype=torch.float64) if torch.is_tensor(kL) else y
+    y = torch.tensor(y, dtype=torch.get_default_dtype()) if torch.is_tensor(kL) else y
 
     return y
 

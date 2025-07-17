@@ -38,6 +38,7 @@ from .fluctuation_generation import (
 from .interpolation import extract_x_spectra, interp_spectra, interpolate
 from .nn_modules import Rational, TauNet
 from .parameters import (
+    IntegrationParameters,
     LossParameters,
     NNParameters,
     PhysicalParameters,
@@ -45,7 +46,7 @@ from .parameters import (
 )
 from .spectra_fitting import (
     CalibrationProblem,
-    CustomDataFormatter,
+    CustomDataLoader,
     LossAggregator,
     OnePointSpectra,
     generate_kaimal_spectra,
@@ -91,13 +92,14 @@ __all__ = [
     "SimpleNN",
     "TauNet",
     # Parameters
+    "IntegrationParameters",
     "LossParameters",
     "NNParameters",
     "PhysicalParameters",
     "ProblemParameters",
     # Spectra Fitting
     "CalibrationProblem",
-    "CustomDataFormatter",
+    "CustomDataLoader",
     "generate_kaimal_spectra",
     "generate_von_karman_spectra",
     "LossAggregator",

@@ -2,19 +2,19 @@
 
 import os
 import pickle
+import time
 from collections.abc import Iterable
-from functools import partial
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
-from tqdm import tqdm
 
 from ..common import MannEddyLifetime
 from ..enums import EddyLifetimeType
 from ..parameters import (
+    IntegrationParameters,
     LossParameters,
     NNParameters,
     PhysicalParameters,
@@ -22,8 +22,6 @@ from ..parameters import (
 )
 from .loss_functions import LossAggregator
 from .one_point_spectra import OnePointSpectra
-
-tqdm = partial(tqdm, position=0, leave=True)
 
 
 class CalibrationProblem:
@@ -60,6 +58,7 @@ class CalibrationProblem:
         prob_params: ProblemParameters,
         loss_params: LossParameters,
         phys_params: PhysicalParameters,
+        integration_params: IntegrationParameters,
         device: str = "cpu",
         logging_directory: str | None = None,
         output_directory: Path | str = Path().resolve() / "results",
@@ -113,9 +112,12 @@ class CalibrationProblem:
         self.OPS = OnePointSpectra(
             type_eddy_lifetime=self.prob_params.eddy_lifetime,
             physical_params=self.phys_params,
-            use_parametrizable_spectrum=self.phys_params.use_parametrizable_spectrum,
             nn_parameters=self.nn_params,
             learn_nu=self.prob_params.learn_nu,
+            integration_params=integration_params,
+            use_learnable_spectrum=self.prob_params.use_learnable_spectrum,
+            p_exponent=self.prob_params.p_exponent,
+            q_exponent=self.prob_params.q_exponent,
         )
 
         if self.prob_params.eddy_lifetime == EddyLifetimeType.MANN_APPROX:
@@ -125,10 +127,6 @@ class CalibrationProblem:
             self.initialize_parameters_with_noise()
 
         self.log_dimensional_scales()
-
-        self.vdim = 3
-
-        self.epoch_model_sizes = torch.empty((prob_params.nepochs,))
 
         self.output_directory = output_directory
         self.logging_directory = logging_directory
@@ -178,93 +176,33 @@ class CalibrationProblem:
     def parameters(self, param_vec: np.ndarray | torch.Tensor) -> None:
         """Setter method for loading in model parameters from a given vector.
 
-        .. note:: The first 3 parameters of self.parameters() are exactly
-
-            #.  LengthScale
-
-            #.  TimeScale
-
-            #.  Spectrum Amplitude
-
-
-        Parameters
-        ----------
-        param_vec : Union[np.ndarray, torch.tensor]
-            One-dimensional vector of model parameters.
-
         Raises
         ------
         ValueError
-            "Parameter vector must contain at least 3 dimensionless scale quantities (L, Gamma, sigma) as well as
-            network parameters, if using one of TAUNET, CUSTOMMLP."
-        ValueError
-            "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the
-            same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported
-            against the currently constructed architecture if this mismatch occurs."
-        ValueError
-            "Parameter vector must contain values for 3 dimensionless scale quantities (L, Gamma, sigma) as well as the
-            same number of network parameters, if using one of TAUNET, CUSTOMMLP. Check the architecture being imported
-            against the currently constructed architecture if this mismatch occurs."
+            "Parameter vector must match the total number of parameters in the model."
         """
-        # Determine number of required physical parameters
-        required_params_num = 3 if not self.phys_params.use_learnable_spectrum else 5
-
-        # Determine total expected parameters
-        if self.OPS.type_EddyLifetime == EddyLifetimeType.TAUNET:
-            expected_total_params = required_params_num + self.num_trainable_params()
-        else:
-            expected_total_params = required_params_num
-
-        if len(param_vec) < required_params_num:
-            raise ValueError(
-                f"Parameter vector must contain at least {required_params_num} dimensionless scale quantities "
-                f"(L, Gamma, sigma{'[, p_low, q_high]' if self.phys_params.use_learnable_spectrum else ''}) "
-                f"as well as network parameters, if using one of TAUNET, CUSTOMMLP."
-            )
-
-        if len(param_vec) != expected_total_params:
-            raise ValueError(
-                f"Parameter vector must contain values for {required_params_num} "
-                f"dimensionless scale quantities "
-                f"(L, Gamma, sigma"
-                f"{'[, p_low, q_high]' if self.phys_params.use_learnable_spectrum else ''}) "
-                f"as well as "
-                f"{self.num_trainable_params() if self.OPS.type_EddyLifetime == EddyLifetimeType.TAUNET else 0} "
-                f"network parameters. Expected {expected_total_params} total parameters, "
-                f"got {len(param_vec)}. "
-                f"Check the architecture being imported against the currently constructed "
-                f"architecture if this mismatch occurs."
-            )
+        current_num_params = len(list(self.parameters))
 
         if not torch.is_tensor(param_vec):
-            param_vec = torch.tensor(param_vec)  # TODO: this should also properly load on GPU, issue #28
+            param_vec = torch.tensor(param_vec)
+
+        if len(param_vec) != current_num_params:
+            raise ValueError(
+                f"Parameter vector length {len(param_vec)} does not match model's parameter count "
+                f"{current_num_params}. This could be due to additional learnable parameters like "
+                "p_low/q_high when use_learnable_spectrum is True."
+            )
 
         vector_to_parameters(param_vec, self.OPS.parameters())
 
     def log_dimensional_scales(self) -> None:
-        """Set the quantities for non-dimensionalization in log-space.
-
-        .. note:: The first 3 parameters of self.parameters() are exactly
-
-            #.  LengthScale
-
-            #.  TimeScale
-
-            #.  Spectrum Amplitude
-        """
+        """Set the quantities for non-dimensionalization in log-space."""
         if self.phys_params.L > 0 and self.phys_params.Gamma > 0 and self.phys_params.sigma > 0:
             parameters = self.parameters
-            parameters[:3] = [
-                np.log(self.phys_params.L),
-                np.log(self.phys_params.Gamma),
-                np.log(self.phys_params.sigma),
-            ]
-
-            if self.phys_params.use_learnable_spectrum:
-                parameters[3] = self.phys_params.p_low
-                parameters[4] = self.phys_params.q_high
-
-            self.parameters = parameters[: len(self.parameters)]
+            parameters[0] = np.log(self.phys_params.L)
+            parameters[1] = np.log(self.phys_params.Gamma)
+            parameters[2] = np.log(self.phys_params.sigma)
+            self.parameters = parameters
         else:
             raise ValueError("All dimension scaling constants must be positive.")
 
@@ -375,10 +313,13 @@ class CalibrationProblem:
         OptimizerClass = optimizer_class
         lr = self.prob_params.learning_rate
         tol = self.prob_params.tol
-        nepochs = self.prob_params.nepochs
+        max_epochs = self.prob_params.nepochs
 
         self.plot_loss_optim = False
         self.curves = list(range(0, self.prob_params.num_components))
+
+        # [0, 1, 2, 3]
+        # [0, 1, 2, 3, 4, 5]
 
         if coherence_data_file is not None:
             print(f"Loading coherence data from {coherence_data_file}")
@@ -387,7 +328,9 @@ class CalibrationProblem:
 
             # Set up coherence calculation for the same 4 spatial separations used in plotting
             print("Setting up coherence calculation for calibration...")
-            self.coherence_separations_tensor = torch.tensor(self.coherence_plot_separations, dtype=torch.float64)
+            self.coherence_separations_tensor = torch.tensor(
+                self.coherence_plot_separations, dtype=torch.get_default_dtype()
+            )
             print(
                 f"Using {len(self.coherence_plot_separations)} "
                 "spatial separations: {self.coherence_plot_separations}"
@@ -446,12 +389,7 @@ class CalibrationProblem:
 
         # Compute initial model coherence if coherence data is available
         if self.has_coherence_data:
-            print("Computing initial model coherence...")
             self.model_coherence_u, self.model_coherence_v, self.model_coherence_w = self._compute_model_coherence()
-            print("Model coherence shapes:")
-            print(f"\tu = {self.model_coherence_u.shape}")
-            print(f"\tv = {self.model_coherence_v.shape}")
-            print(f"\tw = {self.model_coherence_w.shape}")
 
         y = self.OPS(data_k1_arr)
 
@@ -470,12 +408,18 @@ class CalibrationProblem:
                 lr=lr,
                 line_search_fn="strong_wolfe",
                 max_iter=self.prob_params.wolfe_iter_count,
-                history_size=nepochs,
+                history_size=max_epochs,
             )
         else:
-            optimizer = OptimizerClass(self.OPS.parameters(), lr=lr)
+            optimizer = torch.optim.Adam(
+                self.OPS.parameters(),
+                lr=lr,
+                betas=(0.9, 0.999),
+                eps=1e-8,
+                weight_decay=1e-5,
+            )
 
-        scheduler = self.get_three_phase_scheduler(optimizer, nepochs)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max_epochs)
 
         self.e_count: int = 0
 
@@ -539,21 +483,24 @@ class CalibrationProblem:
 
             return self.loss
 
-        # Training loop with progress tracking
-        for epoch in tqdm(range(1, nepochs + 1)):
+
+        for epoch in range(1, max_epochs + 1):
+            # Print the current parameters
+            epoch_start_time = time.time()
+            print(f"Epoch {epoch} of {max_epochs}")
+            print(f"Current loss: {self.loss.item()}")
+
             optimizer.step(closure)
             scheduler.step()
 
-            # Progress reporting every 10%
-            if epoch % (nepochs // 10) == 0:
-                current_lr = optimizer.param_groups[0]["lr"]
-                print(f"Epoch {epoch}: LR = {current_lr:.2e}, Total Loss = {self.loss.item():.2e}")
+            epoch_end_time = time.time()
+            print(f"Epoch {epoch} took {epoch_end_time - epoch_start_time} seconds")
 
-                # Report objective balance if tracking
-                if hasattr(self, "loss_history") and len(self.loss_history["total"]) > 0:
-                    recent_ops = self.loss_history["ops"][-1] if self.loss_history["ops"] else 0
-                    recent_coh = self.loss_history["coherence"][-1] if self.loss_history["coherence"] else 0
-                    print(f"  OPS Loss: {recent_ops:.2e}, Coherence Loss: {recent_coh:.2e}")
+            print(f"\tCurrent L: {self.OPS.LengthScale.item()}")
+            print(f"\tCurrent Gamma: {self.OPS.TimeScale.item()}")
+            print(f"\tCurrent sigma: {self.OPS.Magnitude.item()}")
+            print(f"\tCurrent p: {self.OPS.p_exponent.item()}")
+            print(f"\tCurrent q: {self.OPS.q_exponent.item()}")
 
             if not (torch.isfinite(self.loss)):
                 raise RuntimeError("Loss is not a finite value, check initialization and learning hyperparameters.")
@@ -595,27 +542,42 @@ class CalibrationProblem:
             "σ": np.exp(self.parameters[2]),
         }
 
-        if self.phys_params.use_learnable_spectrum:
-            self.calibrated_params["p_low"] = self.parameters[3].item()
-            self.calibrated_params["q_high"] = self.parameters[4].item()
+        if self.prob_params.use_learnable_spectrum:
+            self.calibrated_params["p"] = self.parameters[3]
+            self.calibrated_params["q"] = self.parameters[4]
 
         return self.calibrated_params
 
     def _compute_model_coherence(self) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Compute model coherence for the selected spatial separations."""
         with torch.no_grad():
-            # Use coherence frequencies directly as k1 (assuming they're in the right units)
-            coherence_k1 = torch.tensor(self.coherence_frequencies, dtype=torch.float64)
+            # Add this: Convert frequency to wavenumber using U_ref (assume it's in self.phys_params or pass it)
+            U_ref = self.phys_params.Uref
+            factor = self.phys_params.wavenumber_conversion_factor  # New: Configurable factor (e.g., 2*pi or 1.0)
 
-            # Filter out zero frequency if present
-            if coherence_k1[0] == 0:
-                coherence_k1[0] = 1e-6  # Replace zero with small positive value
+            # Identify non-zero frequencies to avoid NaN issues at f=0
+            min_freq = 1e-6  # Adjust this threshold if needed based on your frequency resolution
+            nonzero_mask = torch.tensor(self.coherence_frequencies) > min_freq
+            coherence_freq_nonzero = self.coherence_frequencies[nonzero_mask]
+
+            coherence_k1 = (factor * torch.tensor(coherence_freq_nonzero, dtype=torch.get_default_dtype())) / U_ref
+
+            # No need for additional clamp here since we're excluding very small f
 
             model_coherence = self.OPS.SpectralCoherence(coherence_k1, self.coherence_separations_tensor)
-            # model_coherence shape: (3, n_selected_separations, n_frequencies)
-            coh_u = model_coherence[0, :, :]  # Shape: (4, 221)
-            coh_v = model_coherence[1, :, :]  # Shape: (4, 221)
-            coh_w = model_coherence[2, :, :]  # Shape: (4, 221)
+            # model_coherence shape: (3, n_selected_separations, n_frequencies_nonzero)
+
+            # Create full-size tensors and fill with computed values, setting excluded (low freq) to 1.0
+            n_components = 3  # u, v, w
+            n_seps = len(self.coherence_separations_tensor)
+            n_freqs_full = len(self.coherence_frequencies)
+
+            full_model = torch.ones((n_components, n_seps, n_freqs_full), dtype=torch.get_default_dtype())
+            full_model[:, :, nonzero_mask] = model_coherence
+
+            coh_u = full_model[0, :, :]  # Shape: (n_seps, n_freqs_full)
+            coh_v = full_model[1, :, :]
+            coh_w = full_model[2, :, :]
 
         return coh_u, coh_v, coh_w
 
@@ -974,7 +936,7 @@ class CalibrationProblem:
             self.fig_tau = None
             self.ax_tau = None
             if plot_tau:
-                k_gd = torch.logspace(-3, 3, 50, dtype=torch.float64)
+                k_gd = torch.logspace(-3, 3, 50)
                 # k_gd = torch.logspace(-3, 3, 50)
                 k_1 = torch.stack([k_gd, 0 * k_gd, 0 * k_gd], dim=-1)
                 k_2 = torch.stack([0 * k_gd, k_gd, 0 * k_gd], dim=-1)
@@ -1050,7 +1012,7 @@ class CalibrationProblem:
 
         if plot_tau and self.fig_tau is not None:  # Check if tau plot exists
             # Recalculate tau values based on potentially updated OPS parameters
-            k_gd = torch.logspace(-3, 3, 50)  # dtype=torch.float64) # Ensure k_gd is defined
+            k_gd = torch.logspace(-3, 3, 50)
             k_1 = torch.stack([k_gd, 0 * k_gd, 0 * k_gd], dim=-1)
             k_2 = torch.stack([0 * k_gd, k_gd, 0 * k_gd], dim=-1)
             k_3 = torch.stack([0 * k_gd, 0 * k_gd, k_gd], dim=-1)

@@ -9,7 +9,7 @@ import torch.nn as nn
 
 from .enums import EddyLifetimeType
 
-__all__ = ["ProblemParameters", "PhysicalParameters", "NNParameters", "LossParameters"]
+__all__ = ["IntegrationParameters", "ProblemParameters", "PhysicalParameters", "NNParameters", "LossParameters"]
 
 
 @dataclass
@@ -66,6 +66,10 @@ class ProblemParameters:
 
     learn_nu: bool = False
 
+    use_learnable_spectrum: bool = False
+    p_exponent: float = 4.0  # Defaults to Von Karman values
+    q_exponent: float = 17.0 / 6.0  # Defaults to Von Karman values
+
 
 @dataclass
 class PhysicalParameters:
@@ -97,6 +101,8 @@ class PhysicalParameters:
         Transition slope parameter for energy spectrum, by default 17.0/3.0 (von Karman)
     use_parametrizable_spectrum : bool, optional
         Whether to use the parametrizable energy spectrum, by default False
+    wavenumber_conversion_factor : float
+        Factor for k1 = factor * f / U (default radians)
     """
 
     L: float
@@ -115,11 +121,9 @@ class PhysicalParameters:
     alpha_high: float = -5.0 / 3.0  # High k asymptote (von Karman default)
     transition_slope: float = 17.0 / 3.0  # Transition parameter (von Karman default)
     use_parametrizable_spectrum: bool = False  # Whether to use parametrizable spectrum
+    wavenumber_conversion_factor: float = 1 / (2 * torch.pi)  # New: Factor for k1 = factor * f / U (default radians)
+    wavenumber_scale_factor: float = 1.0  # Scale factor for k = scale * f / U in coherence (e.g., 2π or 1)
 
-    # Learnable energy spectrum parameters
-    p_low: float = 2.0  # Low-k exponent
-    q_high: float = 17.0 / 6.0  # High-k exponent
-    use_learnable_spectrum: bool = False  # Whether to use learnable spectrum
 
     domain: torch.Tensor = torch.logspace(-1, 2, 20)
 
@@ -270,3 +274,28 @@ class LowFreqParameters:
     psi_degs: float = 43.0
 
     c: float | None = None
+
+
+@dataclass
+class IntegrationParameters:
+    """Parameters for integration grids in spectra calculations.
+
+    This dataclass defines the parameters for creating log-spaced grids
+    used in one-point spectra and coherence integrations.
+
+    Attributes
+    ----------
+        ops_log_min: Minimum exponent for OPS grid (default -3).
+        ops_log_max: Maximum exponent for OPS grid (default 3).
+        ops_num_points: Number of points per side for OPS grid (default 100).
+        coh_log_min: Minimum exponent for coherence grid (default -3).
+        coh_log_max: Maximum exponent for coherence grid (default 3).
+        coh_num_points: Number of points per side for coherence grid (default 100).
+    """
+
+    ops_log_min: float = -3.0
+    ops_log_max: float = 3.0
+    ops_num_points: int = 100
+    coh_log_min: float = -3.0
+    coh_log_max: float = 3.0
+    coh_num_points: int = 100
