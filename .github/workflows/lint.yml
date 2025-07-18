@@ -34,7 +34,3 @@ jobs:
         with:
           src: "./drdmannturb"
           args: "format"
-
-      # - name: Run Mypy
-      #   run: |
-      #     mypy ./drdmannturb --ignore-missing-imports
