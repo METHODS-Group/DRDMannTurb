@@ -29,6 +29,14 @@ CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter="
 # TODO: Double check that the order is correct here.
 
 
+data_loader = drdmt.CustomDataLoader(
+    ops_data_file=spectra_file,
+    coherence_data_file=coherence_file,
+)
+
+data_dict = data_loader.format_data()
+
+
 # TODO: Double check nonphysical slopes, and double check that this matches the domain for the OPS data in the end
 k1_domain = 2 * torch.pi * CustomData[:, 0] / Uref
 ops_data = torch.zeros([len(k1_domain), 3, 3])

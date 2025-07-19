@@ -23,18 +23,17 @@ is learned for the rational function for :math:`\tau` given by
 # working directory and dataset path, and choose to use CUDA if it is available.
 from pathlib import Path
 
-import numpy as np
 import torch
 import torch.nn as nn
 
-from drdmannturb.enums import DataType
 from drdmannturb.parameters import (
+    IntegrationParameters,
     LossParameters,
     NNParameters,
     PhysicalParameters,
     ProblemParameters,
 )
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+from drdmannturb.spectra_fitting import CalibrationProblem
 
 path = Path().resolve()
 
@@ -96,6 +95,7 @@ pb = CalibrationProblem(
         Uref=Uref,
         zref=zref,
     ),
+    integration_params=IntegrationParameters(),
     logging_directory="runs/custom_data",
     device=device,
 )
@@ -108,16 +108,19 @@ pb = CalibrationProblem(
 # non-dimensionalized by the reference velocity. The different spectra are provided in the order ``uu, vv, ww, uw``
 # where the last is the u-w cospectra (the convention for 3D velocity vector components being u, v, w for x, y, z).
 # The ``k1_data_points`` key word argument is needed here to define the domain over which the spectra are defined.
-CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=","))
-f = CustomData[:, 0]
-k1_data_pts = 2 * torch.pi * f / Uref
-Data = OnePointSpectraDataGenerator(
-    zref=zref,
-    data_points=k1_data_pts,
-    data_type=DataType.CUSTOM,
-    spectra_file=spectra_file,
-    k1_data_points=k1_data_pts.data.cpu().numpy(),
-).Data
+
+raise NotImplementedError("Not updated yet")
+
+# CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=","))
+# f = CustomData[:, 0]
+# k1_data_pts = 2 * torch.pi * f / Uref
+# Data = OnePointSpectraDataGenerator(
+#     zref=zref,
+#     data_points=k1_data_pts,
+#     data_type=DataType.CUSTOM,
+#     spectra_file=spectra_file,
+#     k1_data_points=k1_data_pts.data.cpu().numpy(),
+# ).Data
 
 
 ##############################################################################
@@ -127,7 +130,9 @@ Data = OnePointSpectraDataGenerator(
 # which we just constructed and performs a typical training loop. The resulting
 # fit for :math:`\nu` is close to :math:`\nu \approx - 1/3`, which can be improved
 # with further training.
-optimal_parameters = pb.calibrate(data=Data)
+
+
+# optimal_parameters = pb.calibrate(data=Data)
 
 pb.print_calibrated_params()
 

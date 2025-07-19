@@ -152,14 +152,18 @@ class CustomDataLoader:
             raise FileNotFoundError(f'Provided data file path "{self.ops_data_file}" does not exist.')
 
         # Load the data
-        self.ops_data_df = pl.read_csv(self.ops_data_file).sort("f")
+        self.ops_data_df = pl.read_csv(self.ops_data_file)
 
         # Check that the required columns are present
         required_cols = ["f", "uu", "vv", "ww"]
         for col in required_cols:
             if col not in self.ops_data_df.columns:
-                raise ValueError(f"{col} must be present in the ops_data_df")
+                raise ValueError(f"A(n) {col} column must be present in the ops_data_df")
 
+        # Sort the data by frequency
+        self.ops_data_df = self.ops_data_df.sort("f")
+
+        # Cast the data to the correct dtype
         self.ops_data_df = self.ops_data_df.with_columns(
             pl.col("f").cast(self.dtype).alias("f"),
             pl.col("uu").cast(self.dtype).alias("uu"),
