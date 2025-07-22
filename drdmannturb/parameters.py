@@ -21,11 +21,6 @@ class ProblemParameters:
 
     Args
     ----
-    num_components : int
-        Number of components to fit, either 3, 4, or 6. By default, 4.
-        - If 3, assumes that 11, 22, and 33 are provided in that order.
-        - If 4, assumes that 11, 22, 33, and 13 are provided in that order.
-        - If 6, assumes that 11, 22, 33, 13, 12, and 23 are provided in that order.
     learning_rate : float
         Initial earning rate for optimizer.
     tol : float
@@ -33,15 +28,6 @@ class ProblemParameters:
         epochs allowed)
     nepochs : int
         Number of epochs to train for
-    init_with_noise : bool
-        Whether or not to initialize learnable parameters with random noise; by default, neural network
-        parameters are initialized with the Kaiming initialization while physical parameters are initialized
-        with 0.
-    noise_magnitude : float
-        Magnitude of aforementioned noise contribution
-    data_type : DataType
-        Type of spectra data used. These can be generated from the Kaimal spectra, provided raw as CUSTOM data,
-        interpolated, filtered with AUTO, or use the Von Karman model.
     eddy_lifetime : EddyLifetimeType
         Type of model to use for eddy lifetime function. This determines whether a neural network is to be used
         to learn to approximate the function, or if a known model, such as the Mann eddy lifetime is to be used.
@@ -51,14 +37,9 @@ class ProblemParameters:
         If true, learns also the exponent :math:`\nu`, by default True
     """
 
-    num_components: int = 4
-
     learning_rate: float = 1e-1
     tol: float = 1e-3
     nepochs: int = 10
-
-    init_with_noise: bool = False
-    noise_magnitude: float = 1e-3
 
     eddy_lifetime: EddyLifetimeType = EddyLifetimeType.TAUNET
 
@@ -133,10 +114,6 @@ class LossParameters:
     This class provides a convenient method of storing and passing around
     the loss function term coefficients; this also offers default values, which result in the loss function
     consisting purely of an MSE loss.
-
-    .. note::
-        Using the regularization term :math:`\beta` requires a neural network-based approximation to the eddy
-        lifetime function.
 
     Args
     ----

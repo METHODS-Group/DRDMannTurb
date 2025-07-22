@@ -30,11 +30,8 @@ data_loader = drdmt.CustomDataLoader(
     ops_data_file=spectra_file,
     coherence_data_file=coherence_file,
 )
-
 data_dict = data_loader.format_data()
 
-
-# TODO: Double check nonphysical slopes, and double check that this matches the domain for the OPS data in the end
 k1_domain = CustomData[:, 0]
 ops_data = torch.zeros([len(k1_domain), 3, 3])
 ops_data[:, 0, 0] = CustomData[:, 1]

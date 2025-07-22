@@ -9,7 +9,6 @@ et al. in 2021.
 
 from .common import (
     CPU_Unpickler,
-    Mann_linear_exponential_approx,
     MannEddyLifetime,
     VKEnergySpectrum,
     plot_loss_logs,
@@ -55,7 +54,6 @@ from .spectra_fitting import (
 __all__ = [
     # Common
     "CPU_Unpickler",
-    "Mann_linear_exponential_approx",
     "MannEddyLifetime",
     "VKEnergySpectrum",
     "plot_loss_logs",

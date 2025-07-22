@@ -83,7 +83,7 @@ class CalibrationProblem:
             problem setting; note that the ``PhysicalParameters`` constructor requires three positional
             arguments.
         logging_directory: Optional[str], optional
-            TODO: Add docs for this
+            The directory to write output to; by default ``"./results"``
         output_directory : Union[Path, str], optional
             The directory to write output to; by default ``"./results"``
         """
@@ -91,9 +91,6 @@ class CalibrationProblem:
 
         self.nn_params = nn_params
         self.prob_params = prob_params
-        if self.prob_params.num_components not in [3, 4, 6]:
-            raise ValueError(f"Invalid number of components: {self.prob_params.num_components}; must be 3, 4, or 6")
-
         self.loss_params = loss_params
         self.phys_params = phys_params
 
@@ -115,9 +112,6 @@ class CalibrationProblem:
             q_exponent=self.prob_params.q_exponent,
         )
 
-        if self.prob_params.eddy_lifetime == EddyLifetimeType.MANN_APPROX:
-            self.OPS.set_scales(self.phys_params.L, self.phys_params.Gamma, self.phys_params.sigma)
-
         self.output_directory = output_directory
         self.logging_directory = logging_directory
 
@@ -137,80 +131,27 @@ class CalibrationProblem:
 
     def calibrate(
         self,
-        # data: tuple[list[tuple[Any, float]], torch.Tensor],
-        data: dict[str, torch.Tensor],
-        coherence_data_file: Path | str | None = None,
-        tb_comment: str = "",
         optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
     ) -> dict[str, float]:
-        r"""Train the model on the provided data.
-
-        Calibration method, which handles the main training loop and some
-        data pre-processing. Currently the only supported optimizer is Torch's ``LBFGS``
-        and the learning rate scheduler uses cosine annealing. Parameters for these
-        components of the training process are set in ``LossParameters`` and ``ProblemParameters``
-        during initialization.
-
-        See the ``.print_calibrated_params()`` method to receive a pretty-printed output of the calibrated
-        physical parameters.
-
-        Parameters
-        ----------
-        data : tuple[Iterable[float], torch.Tensor]
-            Tuple of data points and values, respectively, to be used in calibration.
-        tb_comment : str
-           Filename comment used by tensorboard; useful for distinguishing between architectures and hyperparameters.
-           Refer to tensorboard documentation for examples of use. By default, the empty string, which results in
-           default tensorboard filenames.
-        optimizer_class : torch.optim.Optimizer, optional
-           Choice of Torch optimizer, by default torch.optim.LBFGS
-
-        Returns
-        -------
-        Dict[str, float]
-            Physical parameters for the problem, in normal space (not in log-space, as represented internally).
-            Presented as a dictionary in the order
-            ``{L : length scale, Gamma : time scale, sigma : spectrum amplitude}``.
-
-        Raises
-        ------
-        RuntimeError
-            Thrown in the case that the current loss is not finite.
-        """
-        # Save provided data dictionary to object for later use in plotting, etc
-        self.data = data
-
-
+        r"""Train the model on the provided data."""
         OptimizerClass = optimizer_class
         lr = self.prob_params.learning_rate
         tol = self.prob_params.tol
         max_epochs = self.prob_params.nepochs
 
-        self.plot_loss_optim = False
-        self.curves = list(range(0, self.prob_params.num_components))
+        data = self.data_load.format_data()
 
-        # self.LossAggregator = LossAggregator(
-        #     params=self.loss_params,
-        #     k1space=data["k1"],
-        #     zref=self.phys_params.zref,
-        #     tb_log_dir=self.logging_directory,
-        #     tb_comment=tb_comment,
-        # )
+
+        # Plot the OPS data to check that things are correct!
+
+
+
+
+
+
+
 
         ## TODO: Prep dataframe columns into tensors for training...
-
-
-        # Compute initial model coherence if coherence data is available
-        if self.has_coherence_data:
-            self.model_coherence_u, self.model_coherence_v, self.model_coherence_w = self._compute_model_coherence()
-
-        # y = self.OPS(data["k1"])
-
-        y_data = torch.zeros_like(y)
-        # y_data[:_num_components, ...] = self.kF_data_vals.view(
-        #     _num_components,
-        #     self.kF_data_vals.shape[0] // _num_components,
-        # )
 
         ########################################
         # Optimizer and Scheduler Initialization
@@ -282,15 +223,6 @@ class CalibrationProblem:
                 coherence_data=coherence_data,
             )
 
-            # Track component losses if available (modify LossAggregator to return these)
-            if hasattr(self.LossAggregator, "last_component_losses"):
-                if not hasattr(self, "loss_history"):
-                    self.loss_history: dict[str, list[float]] = {"ops": [], "coherence": [], "total": []}
-
-                self.loss_history["ops"].append(self.LossAggregator.last_component_losses.get("ops", 0))
-                self.loss_history["coherence"].append(self.LossAggregator.last_component_losses.get("coherence", 0))
-                self.loss_history["total"].append(self.loss.item())
-
             self.loss.backward()
             self.e_count += 1
 
@@ -321,25 +253,6 @@ class CalibrationProblem:
                 print(f"Spectra Fitting Concluded with loss below tolerance. Final loss: {self.loss.item()}")
                 break
 
-            # Check if we should adjust learning rate
-            if epoch % 50 == 0:  # Check every 50 epochs
-                lr_decision = self.LossAggregator.should_adjust_learning_rate(epoch)
-
-                if lr_decision["adjust"]:
-                    current_lr = optimizer.param_groups[0]["lr"]
-                    new_lr = current_lr * lr_decision.get("factor", 0.5)
-
-                    # Log the decision
-                    print(f"Epoch {epoch}: Adjusting LR due to {lr_decision['reason']}")
-                    print(f"  Current LR: {current_lr:.2e} → New LR: {new_lr:.2e}")
-
-                    # Update learning rate
-                    for param_group in optimizer.param_groups:
-                        param_group["lr"] = new_lr
-
-                    # Log loss diagnostics
-                    loss_info = self.LossAggregator.get_current_loss_info()
-                    print(f"  MSE/Coherence ratio: {loss_info.get('mse_coherence_ratio', 0):.2f}")
 
         print("=" * 40)
         print(f"Spectra fitting concluded with final loss: {self.loss.item()}")

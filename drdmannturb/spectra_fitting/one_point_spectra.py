@@ -9,11 +9,9 @@ several integrators for these quantities.
 import numpy as np
 import torch
 import torch.nn as nn
-from sklearn.linear_model import LinearRegression
 
 from ..common import (
     Learnable_EnergySpectrum,
-    Mann_linear_exponential_approx,
     MannEddyLifetime,
     VKLike_EnergySpectrum,
 )
@@ -310,14 +308,12 @@ class OnePointSpectra(nn.Module):
 
         # Energy spectrum on coherence grid
         if self.use_learnable_spectrum:
-            print("[DEBUG] Using learnable energy spectrum")
             energy_spectrum_coh = Learnable_EnergySpectrum(
                 k0L_coh,
                 self.p_exponent,
                 self.q_exponent,
             )
         else:
-            print("[DEBUG] Using VKLike energy spectrum")
             energy_spectrum_coh = VKLike_EnergySpectrum(k0L_coh)
 
         E0_coh = self.Magnitude * self.LengthScale ** (5.0 / 3.0) * energy_spectrum_coh
@@ -430,38 +426,6 @@ class OnePointSpectra(nn.Module):
         quad = torch.trapz(quad, x=self.k[..., 0, 1], dim=-1)
         return quad
 
-    def init_mann_approximation(self):
-        r"""Initialize Mann eddy lifetime function approximation.
-
-        This is done by performing a linear regression in log-log space on a given wave space and the true output of
-
-        .. math::
-           \frac{x^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-x^{-2}\right)}}
-
-        This operation is performed once on the CPU.
-        """
-        kL_temp = np.logspace(-3, 3, 50)
-
-        kL_temp = kL_temp.reshape(-1, 1)
-        tau_true = np.log(self.TimeScale_scalar * MannEddyLifetime(self.LengthScale_scalar * kL_temp))
-
-        kL_temp_log = np.log(kL_temp)
-
-        regressor = LinearRegression()
-        # fits in log-log space since tau is nearly linear in log-log
-        regressor.fit(kL_temp_log, tau_true)
-
-        print("=" * 40)
-
-        print(f"Mann Linear Approximation R2 Score in log-log space: {regressor.score(kL_temp_log, tau_true)}")
-
-        print("=" * 40)
-
-        self.tau_approx_coeff_ = torch.tensor(regressor.coef_.flatten())
-        self.tau_approx_intercept_ = torch.tensor(regressor.intercept_)
-
-        self.init_mann_linear_approx = True
-
     @torch.jit.export
     def EddyLifetime(self, k: torch.Tensor | None = None) -> torch.Tensor:
         r"""Evaluate eddy lifetime function :math:`\tau` constructed during object initialization.
@@ -500,8 +464,6 @@ class OnePointSpectra(nn.Module):
             tau = torch.ones_like(kL)
         elif self.type_EddyLifetime == EddyLifetimeType.MANN:  # uses numpy - can not be backpropagated, also CPU only.
             tau = MannEddyLifetime(kL)
-        elif self.type_EddyLifetime == EddyLifetimeType.MANN_APPROX:
-            tau = Mann_linear_exponential_approx(kL, self.tau_approx_coeff_, self.tau_approx_intercept_)
         elif self.type_EddyLifetime == EddyLifetimeType.TWOTHIRD:
             tau = kL ** (-2 / 3)
         elif self.type_EddyLifetime == EddyLifetimeType.TAUNET:

@@ -7,7 +7,6 @@ __all__ = [
     "VKEnergySpectrum",
     "VKLike_EnergySpectrum",
     "MannEddyLifetime",
-    "Mann_linear_exponential_approx",
     "Learnable_EnergySpectrum",
 ]
 
@@ -111,45 +110,6 @@ def MannEddyLifetime(kL: torch.Tensor | np.ndarray) -> torch.Tensor:
     y = torch.tensor(y, dtype=torch.get_default_dtype()) if torch.is_tensor(kL) else y
 
     return y
-
-
-def Mann_linear_exponential_approx(
-    kL: torch.Tensor, coefficient: torch.Tensor, intercept: torch.Tensor
-) -> torch.Tensor:
-    r"""Evaluate the linear exponential approximation to the Mann eddy lifetime function.
-
-    We have here a surrogate for the term involving the hypergeometric function
-
-    .. math::
-        \frac{x^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-x^{-2}\right)}}
-
-    via an exponential function, which is a reasonable approximation since the resulting :math:`\tau` is nearly linear
-    on a log-log plot. The resulting approximation is the function
-
-    .. math::
-        \exp \left( \alpha kL + \beta \right)
-
-    where :math:`\alpha, \beta` are obtained from a linear regression on the hypergeometric function on the domain of
-    interest. In particular, using this function requires that a linear regression has already been performed on the
-    basis of the above function depending on the hypergeometric function, which is an operation performed once on the
-    CPU. The rest of this subroutine is on the GPU and unlike the full hypergeometric approximation, will not incur
-    any slow-down of the rest of the spectra fitting.
-
-    Parameters
-    ----------
-    kL : torch.Tensor
-        Non-dimensional wave number.
-    coefficient : torch.Tensor
-        The linear coefficient :math:`\alpha` obtained from the linear regression.
-    intercept : torch.Tensor
-        The intercept term :math:`\beta` from the linear regression.
-
-    Returns
-    -------
-    torch.Tensor
-        Exponential approximation to the Mann eddy lifetime function output.
-    """
-    return torch.exp(coefficient * torch.log(kL) + intercept)
 
 
 class CPU_Unpickler(pickle.Unpickler):
