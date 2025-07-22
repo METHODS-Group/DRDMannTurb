@@ -155,17 +155,17 @@ class CustomDataLoader:
         self.ops_data_df = pl.read_csv(self.ops_data_file)
 
         # Check that the required columns are present
-        required_cols = ["f", "uu", "vv", "ww"]
+        required_cols = ["freq", "uu", "vv", "ww"]
         for col in required_cols:
             if col not in self.ops_data_df.columns:
                 raise ValueError(f"A(n) {col} column must be present in the ops_data_df")
 
         # Sort the data by frequency
-        self.ops_data_df = self.ops_data_df.sort("f")
+        self.ops_data_df = self.ops_data_df.sort("freq")
 
         # Cast the data to the correct dtype
         self.ops_data_df = self.ops_data_df.with_columns(
-            pl.col("f").cast(self.dtype).alias("f"),
+            pl.col("freq").cast(self.dtype).alias("freq"),
             pl.col("uu").cast(self.dtype).alias("uu"),
             pl.col("vv").cast(self.dtype).alias("vv"),
             pl.col("ww").cast(self.dtype).alias("ww"),
