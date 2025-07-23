@@ -21,11 +21,7 @@ from ..parameters import IntegrationParameters, NNParameters, PhysicalParameters
 
 
 class OnePointSpectra(nn.Module):
-    """One point spectra calculations.
-
-    This includes set-up of eddy lifetime function approximation with DRD models, or several classical eddy lifetime
-    functions.
-    """
+    """One point spectra calculations."""
 
     def __init__(
         self,
@@ -39,46 +35,7 @@ class OnePointSpectra(nn.Module):
         q_exponent: float = 17.0 / 6.0,
         integration_params: IntegrationParameters | None = None,
     ):
-        r"""Initialize the one point spectra calculator.
-
-        This requires the type of eddy lifetime function to use, the
-        power spectra type (currently only the von Karman spectra is implemented), the neural network parameters to use
-        if a DRD model is selected, and whether or not to learn :math:`\nu` in
-
-        .. math::
-            \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}
-            {\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k}).
-
-        Here,
-
-        .. math::
-            \boldsymbol{a}(\boldsymbol{k}):=\operatorname{abs}(\boldsymbol{k})+
-            \mathrm{NN}(\operatorname{abs}(\boldsymbol{k}))
-
-        if a neural network is used to learn the eddy lifetime function. For a discussion of the details and training,
-        refer to the original DRD paper by Keith et al.
-
-        Non-neural network eddy lifetime functions are provided as well, specifically the Mann model. The default power
-        spectra used is due to von Karman.
-
-        Parameters
-        ----------
-        type_eddy_lifetime : EddyLifetimeType, optional
-            Type of eddy lifetime function :math:`\tau` to use.
-        physical_params : PhysicalParameters,
-            Object specifying physical parameters of the problem.
-        nn_parameters : NNParameters, optional
-            Dataclass containing neural network initialization if a neural network is used to approximate the eddy
-            lifetime function, by default None.
-        learn_nu : bool, optional
-            Whether or not to learn :math:`\nu`, by default False.
-
-        Raises
-        ------
-        ValueError
-            "Selected neural network-based eddy lifetime function approximation but did not specify neural network
-            parameters. Pass a constructed NNParameters object."
-        """
+        r"""Initialize the one point spectra calculator."""
         super().__init__()
 
         assert physical_params.L > 0, "Length scale L must be positive."
@@ -134,10 +91,6 @@ class OnePointSpectra(nn.Module):
             self.coh_grid_k3 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach() / physical_params.L
 
             self.coh_meshgrid23 = torch.meshgrid(self.coh_grid_k2, self.coh_grid_k3, indexing="ij")
-
-        self.logLengthScale = nn.Parameter(torch.tensor(np.log10(physical_params.L)))
-        self.logTimeScale = nn.Parameter(torch.tensor(np.log10(physical_params.Gamma)))
-        self.logMagnitude = nn.Parameter(torch.tensor(np.log10(physical_params.sigma)))
 
         self.logLengthScale = nn.Parameter(torch.tensor(np.log10(physical_params.L), dtype=torch.get_default_dtype()))
         self.logTimeScale = nn.Parameter(torch.tensor(np.log10(physical_params.Gamma), dtype=torch.get_default_dtype()))

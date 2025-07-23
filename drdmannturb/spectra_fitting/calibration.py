@@ -1,11 +1,8 @@
 """Provides the CalibrationProblem class, which manages the spectra curve fits."""
 
-import os
-import pickle
 import time
 from pathlib import Path
 
-import numpy as np
 import torch
 from torch.nn.utils import parameters_to_vector
 
@@ -18,6 +15,7 @@ from ..parameters import (
     ProblemParameters,
 )
 from .data_generator import CustomDataLoader
+from .loss_functions import LossAggregator
 from .one_point_spectra import OnePointSpectra
 
 
@@ -57,49 +55,17 @@ class CalibrationProblem:
         phys_params: PhysicalParameters,
         integration_params: IntegrationParameters,
         data_loader: CustomDataLoader,
-        device: str = "cpu",
         logging_directory: str | None = None,
         output_directory: Path | str = Path().resolve() / "results",
+        device: str = "cpu",
     ):
-        r"""Initialize a ``CalibrationProblem`` instance, defining the model calibration and physical setting.
-
-        As depicted in the UML diagram, this requires 4 dataclasses.
-
-        Parameters
-        ----------
-        device: str,
-            One of the strings ``"cpu", "cuda", "mps"`` indicating the torch device to use
-        nn_params : NNParameters
-            A ``NNParameters`` (for Neural Network) dataclass instance, which defines values of interest
-            eg. size and depth. By default, calls constructor using default values.
-        prob_params : ProblemParameters
-            A ``ProblemParameters`` dataclass instance, which is used to determine the conditional branching
-            and computations required, among other things. By default, calls constructor using default values
-        loss_params : LossParameters
-            A ``LossParameters`` dataclass instance, which defines the loss function terms and related coefficients.
-            By default, calls constructor using the default values.
-        phys_params : PhysicalParameters
-            A ``PhysicalParameters`` dataclass instance, which defines the physical constants governing the
-            problem setting; note that the ``PhysicalParameters`` constructor requires three positional
-            arguments.
-        logging_directory: Optional[str], optional
-            The directory to write output to; by default ``"./results"``
-        output_directory : Union[Path, str], optional
-            The directory to write output to; by default ``"./results"``
-        """
-        self.init_device(device)
-
+        r"""Initialize a ``CalibrationProblem`` instance, defining the model calibration and physical setting."""
         self.nn_params = nn_params
         self.prob_params = prob_params
         self.loss_params = loss_params
         self.phys_params = phys_params
 
-        # stringify the activation functions used; for manual bash only
-        self.activfuncstr = str(nn_params.activations)
-
-        self.input_size = nn_params.input_size
-        self.hidden_layer_size = nn_params.hidden_layer_size
-        self.hidden_layer_sizes = nn_params.hidden_layer_sizes
+        self.data_loader = data_loader
 
         self.OPS = OnePointSpectra(
             type_eddy_lifetime=self.prob_params.eddy_lifetime,
@@ -107,6 +73,7 @@ class CalibrationProblem:
             nn_parameters=self.nn_params,
             learn_nu=self.prob_params.learn_nu,
             integration_params=integration_params,
+            # The following are only used if the user wants to learn the VK energy spectrum exponents
             use_learnable_spectrum=self.prob_params.use_learnable_spectrum,
             p_exponent=self.prob_params.p_exponent,
             q_exponent=self.prob_params.q_exponent,
@@ -114,20 +81,6 @@ class CalibrationProblem:
 
         self.output_directory = output_directory
         self.logging_directory = logging_directory
-
-    # TODO: propagate device setting through this method
-    def init_device(self, device: str):
-        """Initialize the device (CPU or GPU) on which computation is performed.
-
-        Parameters
-        ----------
-        device : str
-            string following PyTorch conventions -- "cuda" or "cpu"
-        """
-        self.device = torch.device(device)
-        if device == "cuda" and torch.cuda.is_available():
-            torch.set_default_tensor_type("torch.cuda.FloatTensor")
-        # self.OPS.to(self.device)
 
     def calibrate(
         self,
@@ -139,23 +92,54 @@ class CalibrationProblem:
         tol = self.prob_params.tol
         max_epochs = self.prob_params.nepochs
 
-        data = self.data_load.format_data()
+        # Load the data
+        print("Loading data...")
+        data = self.data_loader.format_data()
 
+        # OPS data reconstruction
+        ops_data = data["ops"]
 
-        # Plot the OPS data to check that things are correct!
+        ops_k_domain_tensor = torch.Tensor(ops_data["freq"])
 
+        ops_uu_true_tensor = torch.Tensor(ops_data["uu"])
+        ops_vv_true_tensor = torch.Tensor(ops_data["vv"])
+        ops_ww_true_tensor = torch.Tensor(ops_data["ww"])
 
+        # TODO: This does NOT currently handle cases where the user has not provided all the cross-spectra data
+        ops_uw_true_tensor = torch.Tensor(ops_data["uw"])
+        ops_vw_true_tensor = torch.Tensor(ops_data["vw"])
+        ops_uv_true_tensor = torch.Tensor(ops_data["uv"])
 
+        OPS_true = torch.stack([
+            ops_uu_true_tensor,
+            ops_vv_true_tensor,
+            ops_ww_true_tensor,
+            ops_uw_true_tensor,
+            ops_vw_true_tensor,
+            ops_uv_true_tensor,
+        ])
 
+        # TODO: Handle the coherence data...
+        coh_data = data["coherence"]
+        del data # TODO: Is this useful, even?
 
+        ## TODO: Review the coherence data... something is weird with the meshgrid flattening idea
+        #        but that SHOULD work...
 
+        # Initialize the LossAggregator
+        # TODO: Can't this just go into the constructor?
+        self.LossAggregator = LossAggregator(
+            params = self.loss_params,
+            ops_k_domain = ops_k_domain_tensor,
+            tb_log_dir = self.logging_directory,
+        )
 
-
-        ## TODO: Prep dataframe columns into tensors for training...
+        OPS_model = self.OPS(ops_k_domain_tensor)
 
         ########################################
         # Optimizer and Scheduler Initialization
         ########################################
+        # TODO: Clean up how the optimizer is taken in...
         if OptimizerClass == torch.optim.LBFGS:
             optimizer = OptimizerClass(
                 self.OPS.parameters(),
@@ -184,10 +168,8 @@ class CalibrationProblem:
             self.gen_theta_NN = lambda: 0.0
 
         theta_NN = self.gen_theta_NN()
-        # print("\n[DEBUG calibrate] About to calculate initial loss...")
-        # print(f"[DEBUG calibrate] self.curves: {self.curves}")
 
-        self.loss = self.LossAggregator.eval(y[self.curves], y_data[self.curves], theta_NN, 0)
+        self.loss = self.LossAggregator.eval(OPS_model, OPS_true, theta_NN, 0)
 
         print("=" * 40)
         print(f"Initial loss: {self.loss.item()}")
@@ -200,27 +182,13 @@ class CalibrationProblem:
             It is not exposed and should not be otherwise called by the user.
             """
             optimizer.zero_grad()
-            y = self.OPS(data_k1_arr)
-
-            coherence_data: dict | None = None
-            if self.has_coherence_data:
-                model_coh_u, model_coh_v, model_coh_w = self._compute_model_coherence()
-
-                coherence_data = {
-                    "model_u": model_coh_u,
-                    "model_v": model_coh_v,
-                    "model_w": model_coh_w,
-                    "data_u": self.coherence_data_u_selected,
-                    "data_v": self.coherence_data_v_selected,
-                    "data_w": self.coherence_data_w_selected,
-                }
+            OPS_model = self.OPS(ops_k_domain_tensor)
 
             self.loss = self.LossAggregator.eval(
-                y[self.curves],
-                y_data[self.curves],
+                OPS_model,
+                OPS_true,
                 self.gen_theta_NN(),
                 self.e_count,
-                coherence_data=coherence_data,
             )
 
             self.loss.backward()
@@ -261,17 +229,20 @@ class CalibrationProblem:
             print(f"Learned nu value: {self.OPS.tauNet.Ra.nu}")
 
         # physical parameters are stored as natural logarithms internally
-        self.calibrated_params = {
-            "L": np.exp(self.parameters[0]),
-            "Γ": np.exp(self.parameters[1]),
-            "σ": np.exp(self.parameters[2]),
-        }
 
-        if self.prob_params.use_learnable_spectrum:
-            self.calibrated_params["p"] = self.parameters[3]
-            self.calibrated_params["q"] = self.parameters[4]
+        # TODO: Need to add some method to grab the length scale, time scale, and magnitude from OPS
+        # self.calibrated_params = {
+        #     "L": np.exp(self.parameters[0]),
+        #     "Γ": np.exp(self.parameters[1]),
+        #     "σ": np.exp(self.parameters[2]),
+        # }
 
-        return self.calibrated_params
+        # if self.prob_params.use_learnable_spectrum:
+            # self.calibrated_params["p"] = self.parameters[3]
+            # self.calibrated_params["q"] = self.parameters[4]
+
+        return
+        # return self.calibrated_params
 
     # ------------------------------------------------
     ### Post-treatment and Export
@@ -351,30 +322,78 @@ class CalibrationProblem:
         ValueError
             No output_directory provided during object initialization and no save_dir provided for this method call.
         """
-        if save_dir is None and self.output_directory is None:
-            raise ValueError(
-                "Must provide directory to save output to. Both save_dir and self.output_directory are None"
+        raise NotImplementedError("Not implemented")
+
+    def plot(self,):
+        """Plot the model value against the provided data."""
+        import matplotlib.pyplot as plt
+
+        # Get data
+        data = self.data_loader.format_data()
+
+        ops_data = data["ops"]
+        ops_k_domain = ops_data["freq"]
+        ops_k_domain_tensor = torch.Tensor(ops_data["freq"])
+
+        ops_true = [
+            ops_data["uu"],
+            ops_data["vv"],
+            ops_data["ww"],
+            ops_data["uw"],
+            ops_data["vw"],
+            ops_data["uv"],
+        ]
+
+        # Get model OPS
+        ops_model = ops_k_domain_tensor * self.OPS(ops_k_domain_tensor)
+        ops_model = ops_model.cpu().detach().numpy()
+
+        with plt.style.context("bmh"):
+            plt.rcParams.update({"font.size": 10})
+
+            fig_spectra, ax_spectra = plt.subplots(
+                nrows = 2,
+                ncols = 3,
+                num="Spectra Calibration",
+                clear=True,
+                figsize=[15,8],
+                sharex=True,
             )
 
-        if save_dir is None:
-            save_dir = self.output_directory
+            ax_spectra_flat = ax_spectra.flatten()
 
-        if isinstance(save_dir, Path):
-            if not save_dir.is_dir():
-                raise ValueError("Provided save_dir is not actually a directory")
+            lines_SP_model = [None] * 6
+            lines_SP_true = [None] * 6
 
-            save_dir = str(save_dir)
+            for i in range(6):
+                ax = ax_spectra_flat[i]
 
-        filename = save_dir + "/" + str(self.prob_params.eddy_lifetime) + ".pkl"
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-        with open(filename, "wb+") as file:
-            pickle.dump(
-                [
-                    self.nn_params,
-                    self.prob_params,
-                    self.loss_params,
-                    self.phys_params,
-                    self.parameters,
-                ],
-                file,
-            )
+                lines_SP_model[i] = ax.plot(
+                    ops_k_domain,
+                    ops_model[i],
+                    label="Model",
+                )
+
+                lines_SP_true[i] = ax.plot(
+                    ops_k_domain,
+                    ops_true[i],
+                    label="Data",
+                )
+
+                title = rf"OPS component {i+1}"
+                ax.set_title(title)
+                ax.set_xscale("log")
+                ax.set_yscale("log")
+
+                ax.set_xlabel(r"$k_1$")
+                ax.set_ylabel(r"$k_1 F_{ij}(k_1)$")
+                ax.grid(which="both",)
+
+            # TODO: Redo eddy lifetime plot
+
+
+
+
+
+        # OPS plot first...
+        plt.show()

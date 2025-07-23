@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import numpy as np
 import torch
 import torch.nn as nn
 
@@ -20,40 +19,17 @@ Gamma = 3.7
 sigma = 0.04
 Uref = 21
 
-spectra_file = Path("data_cleaned/log_downsampled_6component_spectra.dat")
-coherence_file = Path("data_cleaned/coherence_data.dat")
-CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=","), dtype=torch.get_default_dtype())
+spectra_file = Path("data_cleaned/STORM_downsampled_one_point_spectra.csv")
+coherence_file = Path("data_cleaned/STORM_FULL_FIDELITY_coherence_data.csv")
 
-# Form the one point spectra data.
-#
-# Note that the file was written out in a CSV with the following format:
-#   f, F11(f), F22(f), F33(f), F12(f), F13(f)
-
-# TODO: Double check that the order is correct here.
-k1_domain = CustomData[:, 0]
-ops_data = torch.zeros([len(k1_domain), 3, 3])
-ops_data[:, 0, 0] = CustomData[:, 1]
-ops_data[:, 1, 1] = CustomData[:, 2]
-ops_data[:, 2, 2] = CustomData[:, 3]
-ops_data[:, 0, 2] = -1 * CustomData[:, 4]
-ops_data[:, 1, 2] = CustomData[:, 5]
-ops_data[:, 0, 1] = CustomData[:, 5]
-
-data_dict = {
-    "k1": k1_domain,
-    "ops": ops_data,
-    "coherence": None,
-}
-
-CustomDataFormatter = drdmt.CustomDataLoader(
+data_loader = drdmt.CustomDataLoader(
     ops_data_file = spectra_file,
-    coherence_data_file = coherence_file,
-    skip_header = 1,
-    delimiter = ","
+    coherence_data_file = coherence_file
 )
 
 # Define Calibration Problem
 pb = drdmt.CalibrationProblem(
+    data_loader=data_loader,
     nn_params=drdmt.NNParameters(
         nlayers=5,
         hidden_layer_sizes=[15, 20, 20, 20, 15],
@@ -61,10 +37,9 @@ pb = drdmt.CalibrationProblem(
     ),
     prob_params=drdmt.ProblemParameters(
         tol=1e-9,
-        nepochs=5,
-        learn_nu=True,
+        nepochs=20,
+        learn_nu=False,
         learning_rate=0.3,
-        num_components=6,
         use_learnable_spectrum=True,
         p_exponent=5.0,
         q_exponent=3.0,
@@ -79,10 +54,10 @@ pb = drdmt.CalibrationProblem(
         L=6.0,
         Gamma=3.0,
         sigma=0.25,
-        domain=domain,
         Uref=21.0,
         zref=zref,
-        wavenumber_conversion_factor=1 / (torch.pi),
+        ustar=1.0,
+        domain=domain,
     ),
     integration_params=drdmt.IntegrationParameters(
         ops_log_min=-3.0,
@@ -97,7 +72,6 @@ pb = drdmt.CalibrationProblem(
 )
 
 optimal_params = pb.calibrate(
-    data=data_dict,
     optimizer_class=torch.optim.Adam,
 )
 

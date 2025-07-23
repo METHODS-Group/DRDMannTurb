@@ -92,7 +92,7 @@ def generate_kaimal_spectra(k1: torch.Tensor, zref: float, ustar: float) -> torc
 class CustomDataLoader:
     """Custom data loader.
 
-    This class is used to load one-point spectra data from a CSV file.
+    This class is used to load one-point spectra and coherence data from a CSV file.
 
     The CSV file should be formatted as:
 
@@ -100,14 +100,18 @@ class CustomDataLoader:
 
         f, F11(f), F22(f), F33(f), F13(f), F23(f), F12(f)
 
-    where 'f' is the frequency, and F_ij(f) is the *frequency-weighted* one-point spectra. From now on, we will write
+    where 'f' is the frequency, and F_ij(f) is the *frequency-weighted* one-point spectra. This class must be
+    able to find these quantities as
 
     .. code-block:: text
 
-        f, uu, vv, ww, uw, vw, uv
+        freq, uu, vv, ww, uw, vw, uv
 
-    uu, vv, ww (the auto-spectra components) are required. uw, vw, uv are optional. Any missing cross-spectra components
-    are set to NaN and ignored during training.
+    Here, uu, vv, ww (the auto-spectra components) are required. uw, vw, uv are optional. Any missing cross-spectra
+    components are set to NaN and ignored during training.
+
+
+    TODO: Write about the coherence data format.
     """
 
     # dtype to load the data as
@@ -127,6 +131,21 @@ class CustomDataLoader:
         coherence_data_file: Path | str | None = None,
         dtype: pl.DataType = pl.Float64,
     ):
+        """Construct a CustomDataLoader instance.
+
+        Primarily, this class is used to load one-point spectra data and coherence data from files
+        and put them into a format that the CalibrationProblem class expects. The data is stored
+        in a polars dataframe and then placed into a dictionary of DataFrames.
+
+        Parameters
+        ----------
+        ops_data_file : Path | str
+            Path to the one-point spectra data file.
+        coherence_data_file : Path | str | None, optional
+            Path to the coherence data file. If None, no coherence data will be loaded.
+        dtype : pl.DataType, optional
+            Data type to load the data in as.
+        """
         # Set dtype
         self.dtype = dtype
 
@@ -178,14 +197,22 @@ class CustomDataLoader:
                 self.ops_data_df = self.ops_data_df.with_columns(pl.col(col).cast(self.dtype))
 
     def _load_coherence_data(self) -> None:
-        """Load the coherence data."""
+        """Load the coherence data.
+
+        Must be able to find the following columns:
+        - r
+        - freq
+        - coh_u
+        - coh_v
+        - coh_w
+        """
         # Check the provided data file exists
         assert self.coherence_data_file is not None, "Tried to load coherence data with no file?"
 
         if not self.coherence_data_file.exists():
             raise FileNotFoundError(f'Provided data file path "{self.coherence_data_file}" does not exist.')
 
-        self.coh_data_df = pl.read_csv(self.coherence_data_file).sort("f")
+        self.coh_data_df = pl.read_csv(self.coherence_data_file).sort("freq")
 
     def format_data(self) -> dict[str, pl.DataFrame | None]:
         """Format the data into a dictionary of tensors."""

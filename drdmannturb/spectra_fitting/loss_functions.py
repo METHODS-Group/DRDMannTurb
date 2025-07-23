@@ -12,37 +12,18 @@ class LossAggregator:
     def __init__(
         self,
         params: LossParameters,
-        k1space: torch.Tensor,
-        zref: float,
+        ops_k_domain: torch.Tensor,
         tb_log_dir: str | None = None,
         tb_comment: str = "",
     ):
         r"""Initialize aggregator for given loss function parameters.
 
-        The loss function for spectra fitting is determined by the following minimization problem:
-
-        .. math::
-            \min _{\boldsymbol{\theta}}\left\{\operatorname{MSE}[\boldsymbol{\theta}]+
-            \alpha \operatorname{Pen}[\boldsymbol{\theta}]+
-            \beta \operatorname{Reg}\left[\boldsymbol{\theta}_{\mathrm{NN}}\right]\right\}
-
-        where the loss terms are defined in the class's methods. In the following, :math:`L` is the number of data
-        points :math:`f_j \in \mathcal{D}`. The data :math:`J_i (f_j)` is evaluated using the Kaimal spectra. Note that
-        the norm :math:`||\cdot||_{\mathcal{D}}` is defined as
-
-        .. math::
-            \|g\|_{\mathcal{D}}^2:=\int_{\mathcal{D}}|g(f)|^2 \mathrm{~d}(\log f).
-
-        Additionally, writes results per epoch to TensorBoard.
-
         Parameters
         ----------
         params : LossParameters
             Dataclass with parameters that determine the loss function
-        k1space : torch.Tensor
+        ops_k_domain : torch.Tensor
             The spectra space for k1, this is assumed to be in logspace.
-        zref : float
-            Reference velocity, needed for computing penalty derivatives wrt ``k1 z``.
         tb_log_dir : Optional[str]
             Logging directory for the TensorBoard logger. Conventions are those of TensorBoard, which by default result
             in the creation of a ``runs`` subdirectory where the script is being run if this parameter is left as None.
@@ -54,11 +35,10 @@ class LossAggregator:
         self.writer = SummaryWriter(log_dir=tb_log_dir, comment=tb_comment)
         self.params = params
 
-        self.zref = zref
-        self.k1space = k1space
-        self.logk1 = torch.log(self.k1space)
-        self.h1 = torch.diff(self.logk1)
-        self.h2 = torch.diff(0.5 * (self.logk1[:-1] + self.logk1[1:]))
+        # h1 and h2 are used for the 1st and 2nd order penalty terms
+        log_ops_k1 = torch.log(ops_k_domain)
+        self.h1 = torch.diff(log_ops_k1)
+        self.h2 = torch.diff(0.5 * (log_ops_k1[:-1] + log_ops_k1[1:]))
 
         def t_alphapen1(y, theta_NN, epoch, **kwargs):
             return self.Pen1stOrder(y, epoch) if self.params.alpha_pen1 else 0.0
@@ -82,29 +62,6 @@ class LossAggregator:
                     epoch,
                 )
             return 0.0
-
-        self.component_losses: dict[str, list[float]] = {
-            "mse": [],
-            "coherence": [],
-            "pen1": [],
-            "pen2": [],
-            "regularization": [],
-            "total": [],
-        }
-
-        self.running_averages: dict[str, float] = {
-            "mse": 0.0,
-            "coherence": 0.0,
-            "pen1": 0.0,
-            "pen2": 0.0,
-            "regularization": 0.0,
-        }
-
-        self.auto_balance = getattr(params, "auto_balance_losses", False)
-        self.balance_freq = 10
-        self.loss_scales: dict[str, float] = {}
-
-        self.ema_decay = 0.9
 
         self.loss_func = (
             lambda y, theta_NN, epoch, **kwargs: t_alphapen1(y, theta_NN, epoch, **kwargs)
@@ -176,7 +133,7 @@ class LossAggregator:
         logy = torch.log(torch.abs(y))
         d2logy = torch.diff(torch.diff(logy, dim=-1) / self.h1, dim=-1) / self.h2
 
-        pen2ndorder_loss = self.params.alpha_pen2 * torch.mean(torch.relu(d2logy).square()) / self.zref**2
+        pen2ndorder_loss = self.params.alpha_pen2 * torch.mean(torch.relu(d2logy).square())
 
         self.writer.add_scalar("2nd Order Penalty", pen2ndorder_loss, epoch)
 
@@ -218,7 +175,7 @@ class LossAggregator:
         logy = torch.log(torch.abs(y))
         d1logy = torch.diff(logy, dim=-1) / self.h1
 
-        pen1storder_loss = self.params.alpha_pen1 * torch.mean(torch.relu(d1logy).square()) / self.zref
+        pen1storder_loss = self.params.alpha_pen1 * torch.mean(torch.relu(d1logy).square())
         self.writer.add_scalar("1st Order Penalty", pen1storder_loss, epoch)
 
         if pen1storder_loss.isnan():
@@ -385,25 +342,13 @@ class LossAggregator:
         y_data: torch.Tensor,
         theta_NN: torch.Tensor | None,
         epoch: int,
-        coherence_data: dict | None = None,
         **kwargs,
     ) -> torch.Tensor:
         """Evaluate with component tracking for scheduling."""
         # Compute individual loss components
         mse_loss = self.MSE_term(y, y_data, epoch)
 
-        # Coherence loss
-        coherence_loss = torch.tensor(0.0, device=y.device)
-        if coherence_data and self.params.gamma_coherence > 0:
-            coherence_loss = self.CoherenceLoss(
-                coherence_data["model_u"],
-                coherence_data["model_v"],
-                coherence_data["model_w"],
-                coherence_data["data_u"],
-                coherence_data["data_v"],
-                coherence_data["data_w"],
-                epoch,
-            )
+        # TODO: Add coherence loss back in...
 
         # Penalty terms
         pen1_loss = torch.tensor(0.0, device=y.device)
@@ -420,6 +365,6 @@ class LossAggregator:
             reg_loss = self.Regularization(theta_NN, epoch)
 
         # Compute total loss
-        total_loss = mse_loss + coherence_loss + pen1_loss + pen2_loss + reg_loss
+        total_loss = mse_loss + pen1_loss + pen2_loss + reg_loss
 
         return total_loss

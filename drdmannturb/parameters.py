@@ -95,15 +95,6 @@ class PhysicalParameters:
 
     ustar: float = 1.0
 
-    k_inf_asymptote: float = -2.0 / 3.0
-
-    # Energy spectrum asymptotic slope parameters
-    alpha_low: float = 4.0  # Low k asymptote (von Karman default)
-    alpha_high: float = -5.0 / 3.0  # High k asymptote (von Karman default)
-    transition_slope: float = 17.0 / 3.0  # Transition parameter (von Karman default)
-    wavenumber_conversion_factor: float = 1 / (2 * torch.pi)  # Factor for k1 = factor * f / U (default radians)
-    wavenumber_scale_factor: float = 1.0  # Scale factor for k = scale * f / U in coherence (e.g., 2π or 1)
-
     domain: torch.Tensor = torch.logspace(-1, 2, 20)
 
 
