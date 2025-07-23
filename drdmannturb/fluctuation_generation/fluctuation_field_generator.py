@@ -1,5 +1,6 @@
 """Wind generation functionality forward facing API."""
 
+import io
 import pickle
 from collections.abc import Callable
 from math import ceil
@@ -10,13 +11,26 @@ from typing import Union
 import numpy as np
 import torch
 
-from ..common import CPU_Unpickler
 from ..parameters import IntegrationParameters
 from ..spectra_fitting import CalibrationProblem
 from .covariance_kernels import MannCovariance, VonKarmanCovariance
 from .gaussian_random_fields import VectorGaussianRandomField
 from .low_frequency.fluctuation_field_generator import LowFreqGenerator
 from .nn_covariance import NNCovariance
+
+
+class CPU_Unpickler(pickle.Unpickler):
+    """Unpickle a PyTorch tensor from a file on the CPU.
+
+    Utility for loading tensors onto CPU; credit: https://github.com/pytorch/pytorch/issues/16797#issuecomment-633423219
+    """
+
+    def find_class(self, module, name):
+        """Find the class to unpickle."""
+        if module == "torch.storage" and name == "_load_from_bytes":
+            return lambda b: torch.load(io.BytesIO(b), map_location="cpu")
+        else:
+            return super().find_class(module, name)
 
 
 class FluctuationFieldGenerator:

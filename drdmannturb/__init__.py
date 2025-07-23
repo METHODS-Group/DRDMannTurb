@@ -8,8 +8,6 @@ et al. in 2021.
 """
 
 from .common import (
-    CPU_Unpickler,
-    MannEddyLifetime,
     plot_loss_logs,
 )
 from .enums import EddyLifetimeType
@@ -52,8 +50,6 @@ from .spectra_fitting import (
 
 __all__ = [
     # Common
-    "CPU_Unpickler",
-    "MannEddyLifetime",
     "plot_loss_logs",
     # Enums
     "EddyLifetimeType",

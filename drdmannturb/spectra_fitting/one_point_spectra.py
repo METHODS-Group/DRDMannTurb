@@ -9,11 +9,43 @@ several integrators for these quantities.
 import numpy as np
 import torch
 import torch.nn as nn
+from scipy.special import hyp2f1
 
-from ..common import MannEddyLifetime
 from ..enums import EddyLifetimeType
 from ..nn_modules import TauNet
 from ..parameters import IntegrationParameters, NNParameters, PhysicalParameters
+
+
+def MannEddyLifetime(kL: torch.Tensor | np.ndarray) -> torch.Tensor:
+    r"""Evaluate the full Mann eddy lifetime function.
+
+    The full Mann eddy lifetime function has the form
+
+    .. math::
+        \tau^{\mathrm{IEC}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1/3, 17/6; 4/3 ;-(kL)^{-2}\right)}}
+
+    This function can execute with input data that are either in Torch or numpy. However,
+
+    .. warning::
+        This function depends on SciPy for evaluating the hypergeometric function, meaning a GPU tensor will be returned
+        to the CPU for a single evaluation and then converted back to a GPU tensor. This incurs a substantial loss of
+        performance.
+
+    Parameters
+    ----------
+    kL : Union[torch.Tensor, np.ndarray]
+        Scaled wave number
+
+    Returns
+    -------
+    torch.Tensor
+        Evaluated Mann eddy lifetime function.
+    """
+    x = kL.cpu().detach().numpy() if torch.is_tensor(kL) else kL
+    y = x ** (-2 / 3) / np.sqrt(hyp2f1(1 / 3, 17 / 6, 4 / 3, -(x ** (-2))))
+    y = torch.tensor(y, dtype=torch.get_default_dtype()) if torch.is_tensor(kL) else y
+
+    return y
 
 
 @torch.jit.script
@@ -43,6 +75,7 @@ def VKEnergySpectrum(kL: torch.Tensor) -> torch.Tensor:
 
     return kL**4 / (1.0 + kL**2) ** (17.0 / 6.0)
 
+
 @torch.jit.script
 def VKLike_EnergySpectrum(kL: torch.Tensor) -> torch.Tensor:
     r"""Evaluate Von Karman energy spectrum without scaling.
@@ -70,7 +103,7 @@ def Learnable_EnergySpectrum(kL: torch.Tensor, p: torch.Tensor, q: torch.Tensor)
     .. math::
         \widetilde{E}(\boldsymbol{k}) = \left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3}.
     """
-    return (kL ** p) / ((1.0 + kL**2) ** q)
+    return (kL**p) / ((1.0 + kL**2) ** q)
 
 
 class OnePointSpectra(nn.Module):
@@ -235,8 +268,8 @@ class OnePointSpectra(nn.Module):
 
         # Choose energy spectrum based on parameters
         if self.use_learnable_spectrum:
-            p = self._positive(self._raw_p)   # 0.3 ≤ p ≤ 6
-            q = self._positive(self._raw_q)   # 0.3 ≤ q ≤ 6
+            p = self._positive(self._raw_p)  # 0.3 ≤ p ≤ 6
+            q = self._positive(self._raw_q)  # 0.3 ≤ q ≤ 6
             energy_spectrum = Learnable_EnergySpectrum(k0L, p, q)
         else:
             energy_spectrum = VKLike_EnergySpectrum(k0L)

@@ -3,65 +3,11 @@
 Specifically, the Mann eddy lifetime function and the von Karman energy spectrum.
 """
 
-__all__ = [
-    "MannEddyLifetime",
-]
-
-import io
-import pickle
 from dataclasses import astuple
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
-import torch
-from scipy.special import hyp2f1
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
-
-
-def MannEddyLifetime(kL: torch.Tensor | np.ndarray) -> torch.Tensor:
-    r"""Evaluate the full Mann eddy lifetime function.
-
-    The full Mann eddy lifetime function has the form
-
-    .. math::
-        \tau^{\mathrm{IEC}}(k)=\frac{(k L)^{-\frac{2}{3}}}{\sqrt{{ }_2 F_1\left(1/3, 17/6; 4/3 ;-(kL)^{-2}\right)}}
-
-    This function can execute with input data that are either in Torch or numpy. However,
-
-    .. warning::
-        This function depends on SciPy for evaluating the hypergeometric function, meaning a GPU tensor will be returned
-        to the CPU for a single evaluation and then converted back to a GPU tensor. This incurs a substantial loss of
-        performance.
-
-    Parameters
-    ----------
-    kL : Union[torch.Tensor, np.ndarray]
-        Scaled wave number
-
-    Returns
-    -------
-    torch.Tensor
-        Evaluated Mann eddy lifetime function.
-    """
-    x = kL.cpu().detach().numpy() if torch.is_tensor(kL) else kL
-    y = x ** (-2 / 3) / np.sqrt(hyp2f1(1 / 3, 17 / 6, 4 / 3, -(x ** (-2))))
-    y = torch.tensor(y, dtype=torch.get_default_dtype()) if torch.is_tensor(kL) else y
-
-    return y
-
-
-class CPU_Unpickler(pickle.Unpickler):
-    """Unpickle a PyTorch tensor from a file on the CPU.
-
-    Utility for loading tensors onto CPU; credit: https://github.com/pytorch/pytorch/issues/16797#issuecomment-633423219
-    """
-
-    def find_class(self, module, name):
-        if module == "torch.storage" and name == "_load_from_bytes":
-            return lambda b: torch.load(io.BytesIO(b), map_location="cpu")
-        else:
-            return super().find_class(module, name)
 
 
 def plot_loss_logs(log_file: str | Path):
