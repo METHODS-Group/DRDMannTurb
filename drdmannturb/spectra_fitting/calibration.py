@@ -82,39 +82,6 @@ class CalibrationProblem:
         self.output_directory = output_directory
         self.logging_directory = logging_directory
 
-    def initial_guess(self, ops_k_domain_tensor: torch.Tensor, ops_uu_true_tensor: torch.Tensor):
-
-        with torch.no_grad():
-            phys_guess = PhysicalParameters(
-                L=self.phys_params.L,
-                Gamma=self.phys_params.Gamma,
-                sigma=self.phys_params.sigma,
-                Uref=self.phys_params.Uref,
-                zref = self.phys_params.zref,
-                ustar = self.phys_params.ustar,
-                domain = self.phys_params.domain,
-            )
-
-            tmp_model = OnePointSpectra(
-                type_eddy_lifetime=self.prob_params.eddy_lifetime,
-                physical_params=phys_guess,
-                nn_parameters=self.nn_params,
-                learn_nu=self.prob_params.learn_nu,
-                integration_params=IntegrationParameters(),
-                use_learnable_spectrum=self.prob_params.use_learnable_spectrum,
-                p_exponent=self.prob_params.p_exponent,
-                q_exponent=self.prob_params.q_exponent,
-            )
-
-            model_uu = tmp_model(ops_k_domain_tensor)[0]
-            band = slice(0, 5)
-            data_med = torch.median(ops_uu_true_tensor[band])
-            model_med = torch.median(model_uu[band])
-
-            sigma0 = (data_med / model_med).item()
-
-            return sigma0
-
     def calibrate(
         self,
         optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
@@ -125,7 +92,6 @@ class CalibrationProblem:
         OptimizerClass = optimizer_class
         lr = self.prob_params.learning_rate
         tol = self.prob_params.tol
-        max_epochs = self.prob_params.nepochs
 
         # Load the data
         print("Loading data...")
@@ -170,9 +136,6 @@ class CalibrationProblem:
             ops_k_domain=ops_k_domain_tensor,
             tb_log_dir=self.logging_directory,
         )
-
-        sigma0 = self.initial_guess(ops_k_domain_tensor, ops_uu_true_tensor)
-        print(f"Initial guess for sigma: {sigma0}")
 
         OPS_model = self.OPS(ops_k_domain_tensor)
 
@@ -242,7 +205,7 @@ class CalibrationProblem:
             self.loss.backward()
             self.e_count += 1
 
-            for n,p in self.OPS.named_parameters():
+            for n, p in self.OPS.named_parameters():
                 if p.grad is not None:
                     print(f"{n}: {p.grad.norm().item():.3f}")
 
@@ -254,9 +217,11 @@ class CalibrationProblem:
             print(f"Epoch {epoch} of {max_epochs}")
             print(f"Current loss: {self.loss.item()}")
 
-            print(f"[epoch {epoch}] logL={self.OPS.logLengthScale.item():+.3f}, "
-                  f"logG={self.OPS.logTimeScale.item():+.3f}, "
-                  f"logS={self.OPS.logMagnitude.item():+.3f}")
+            print(
+                f"[epoch {epoch}] logL={self.OPS.logLengthScale.item():+.3f}, "
+                f"logG={self.OPS.logTimeScale.item():+.3f}, "
+                f"logS={self.OPS.logMagnitude.item():+.3f}"
+            )
 
             optimizer.step(closure)
             scheduler.step()
@@ -279,7 +244,6 @@ class CalibrationProblem:
             if self.loss.item() < tol:
                 print(f"Spectra Fitting Concluded with loss below tolerance. Final loss: {self.loss.item()}")
                 break
-
 
         print("=" * 40)
         print(f"Spectra fitting concluded with final loss: {self.loss.item()}")
