@@ -110,18 +110,20 @@ class CalibrationProblem:
         ops_vw_true_tensor = torch.Tensor(ops_data["vw"])
         ops_uv_true_tensor = torch.Tensor(ops_data["uv"])
 
-        OPS_true = torch.stack([
-            ops_uu_true_tensor,
-            ops_vv_true_tensor,
-            ops_ww_true_tensor,
-            ops_uw_true_tensor,
-            ops_vw_true_tensor,
-            ops_uv_true_tensor,
-        ])
+        OPS_true = torch.stack(
+            [
+                ops_uu_true_tensor,
+                ops_vv_true_tensor,
+                ops_ww_true_tensor,
+                ops_uw_true_tensor,
+                ops_vw_true_tensor,
+                ops_uv_true_tensor,
+            ]
+        )
 
         # TODO: Handle the coherence data...
-        coh_data = data["coherence"]
-        del data # TODO: Is this useful, even?
+        # coh_data = data["coherence"]
+        del data  # TODO: Is this useful, even?
 
         ## TODO: Review the coherence data... something is weird with the meshgrid flattening idea
         #        but that SHOULD work...
@@ -129,9 +131,9 @@ class CalibrationProblem:
         # Initialize the LossAggregator
         # TODO: Can't this just go into the constructor?
         self.LossAggregator = LossAggregator(
-            params = self.loss_params,
-            ops_k_domain = ops_k_domain_tensor,
-            tb_log_dir = self.logging_directory,
+            params=self.loss_params,
+            ops_k_domain=ops_k_domain_tensor,
+            tb_log_dir=self.logging_directory,
         )
 
         OPS_model = self.OPS(ops_k_domain_tensor)
@@ -221,7 +223,6 @@ class CalibrationProblem:
                 print(f"Spectra Fitting Concluded with loss below tolerance. Final loss: {self.loss.item()}")
                 break
 
-
         print("=" * 40)
         print(f"Spectra fitting concluded with final loss: {self.loss.item()}")
 
@@ -238,8 +239,8 @@ class CalibrationProblem:
         # }
 
         # if self.prob_params.use_learnable_spectrum:
-            # self.calibrated_params["p"] = self.parameters[3]
-            # self.calibrated_params["q"] = self.parameters[4]
+        # self.calibrated_params["p"] = self.parameters[3]
+        # self.calibrated_params["q"] = self.parameters[4]
 
         return
         # return self.calibrated_params
@@ -324,9 +325,14 @@ class CalibrationProblem:
         """
         raise NotImplementedError("Not implemented")
 
-    def plot(self,):
+    def plot(
+        self,
+    ):
         """Plot the model value against the provided data."""
         import matplotlib.pyplot as plt
+
+        clr = ["royalblue", "crimson", "forestgreen", "mediumorchid", "orange", "purple"]
+        spectra_labels = ["11", "22", "33", "12", "23", "13"]
 
         # Get data
         data = self.data_loader.format_data()
@@ -352,11 +358,11 @@ class CalibrationProblem:
             plt.rcParams.update({"font.size": 10})
 
             fig_spectra, ax_spectra = plt.subplots(
-                nrows = 2,
-                ncols = 3,
+                nrows=2,
+                ncols=3,
                 num="Spectra Calibration",
                 clear=True,
-                figsize=[15,8],
+                figsize=[15, 8],
                 sharex=True,
             )
 
@@ -368,32 +374,41 @@ class CalibrationProblem:
             for i in range(6):
                 ax = ax_spectra_flat[i]
 
+                # Flip the sign of the uw cross-spectra
+                sign = -1 if i == 3 else 1
+
+                # Plot model values
                 lines_SP_model[i] = ax.plot(
                     ops_k_domain,
-                    ops_model[i],
+                    sign * ops_model[i],
+                    "--",
+                    color=clr[i],
                     label="Model",
                 )
 
+                # Plot data
                 lines_SP_true[i] = ax.plot(
                     ops_k_domain,
                     ops_true[i],
+                    "o",
+                    markersize=3,
+                    color=clr[i],
                     label="Data",
+                    alpha=0.6,
                 )
 
-                title = rf"OPS component {i+1}"
+                title = rf"k_1 F_{spectra_labels[i]}"
                 ax.set_title(title)
                 ax.set_xscale("log")
                 ax.set_yscale("log")
 
                 ax.set_xlabel(r"$k_1$")
                 ax.set_ylabel(r"$k_1 F_{ij}(k_1)$")
-                ax.grid(which="both",)
+                ax.grid(
+                    which="both",
+                )
 
             # TODO: Redo eddy lifetime plot
-
-
-
-
 
         # OPS plot first...
         plt.show()

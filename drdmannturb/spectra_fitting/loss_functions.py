@@ -94,8 +94,12 @@ class LossAggregator:
         torch.Tensor
             Evaluated MSE loss term.
         """
-        mse_loss = torch.mean(torch.log(torch.abs(model / target)).square())
+        diff = torch.log(torch.abs(model / target))
+        mse_loss_per_component = torch.mean(diff.square(), dim=-1)
 
+        print(f"MSE loss per component: {mse_loss_per_component}")
+
+        mse_loss = torch.mean(mse_loss_per_component)
         self.writer.add_scalar("MSE Loss", mse_loss, epoch)
 
         if mse_loss.isnan():

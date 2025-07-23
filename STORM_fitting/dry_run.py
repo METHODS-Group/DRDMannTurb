@@ -22,10 +22,7 @@ Uref = 21
 spectra_file = Path("data_cleaned/STORM_downsampled_one_point_spectra.csv")
 coherence_file = Path("data_cleaned/STORM_FULL_FIDELITY_coherence_data.csv")
 
-data_loader = drdmt.CustomDataLoader(
-    ops_data_file = spectra_file,
-    coherence_data_file = coherence_file
-)
+data_loader = drdmt.CustomDataLoader(ops_data_file=spectra_file, coherence_data_file=coherence_file)
 
 # Define Calibration Problem
 pb = drdmt.CalibrationProblem(
@@ -39,7 +36,7 @@ pb = drdmt.CalibrationProblem(
         tol=1e-9,
         nepochs=20,
         learn_nu=False,
-        learning_rate=0.3,
+        learning_rate=1.0,
         use_learnable_spectrum=True,
         p_exponent=5.0,
         q_exponent=3.0,
