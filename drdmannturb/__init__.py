@@ -7,9 +7,6 @@ of Jacob Mann in 1994 and 1998 as well as in the deep-learning enhancement devel
 et al. in 2021.
 """
 
-from .common import (
-    plot_loss_logs,
-)
 from .enums import EddyLifetimeType
 from .fluctuation_generation import (
     Covariance,
@@ -49,8 +46,6 @@ from .spectra_fitting import (
 )
 
 __all__ = [
-    # Common
-    "plot_loss_logs",
     # Enums
     "EddyLifetimeType",
     # Fluctuation Generation
