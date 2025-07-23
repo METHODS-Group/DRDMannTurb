@@ -4,10 +4,7 @@ Specifically, the Mann eddy lifetime function and the von Karman energy spectrum
 """
 
 __all__ = [
-    "VKEnergySpectrum",
-    "VKLike_EnergySpectrum",
     "MannEddyLifetime",
-    "Learnable_EnergySpectrum",
 ]
 
 import io
@@ -20,64 +17,6 @@ import numpy as np
 import torch
 from scipy.special import hyp2f1
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
-
-
-@torch.jit.script
-def VKEnergySpectrum(kL: torch.Tensor) -> torch.Tensor:
-    r"""Evaluate Von Karman energy spectrum without scaling.
-
-    .. math::
-        \widetilde{E}(\boldsymbol{k}) = \left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3}.
-
-    Parameters
-    ----------
-    kL : torch.Tensor
-        Scaled wave number domain.
-
-    Returns
-    -------
-    torch.Tensor
-        Result of the evaluation
-    """
-    # TODO: is this a bug here? since we introduce extra factors of L
-    # NOTE: Originally, this is
-    #      k^(-5/3) (kL / (1 + (kL)^2)^(1/2))^(17/3)
-    #    = k^(-5/3) (kL)^(17/3) / (1 + (kL)^2)^(17/6))
-    # .    -- EXTRA FACTORS OF L INTRODUCED HERE
-    # .  = k^(12/3) / (1 + (kL)^2)^(17/6))
-    # .  = k^4 / (1 + (kL)^2)^(17/6))
-
-    return kL**4 / (1.0 + kL**2) ** (17.0 / 6.0)
-
-
-@torch.jit.script
-def VKLike_EnergySpectrum(kL: torch.Tensor) -> torch.Tensor:
-    r"""Evaluate Von Karman energy spectrum without scaling.
-
-    .. math::
-        \widetilde{E}(\boldsymbol{k}) = \left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3}.
-
-    Parameters
-    ----------
-    kL : torch.Tensor
-        Scaled wave number domain.
-
-    Returns
-    -------
-    torch.Tensor
-        Result of the evaluation
-    """
-    return kL ** (-5.0 / 3.0) * (kL / torch.sqrt(1.0 + kL**2)) ** (17.0 / 3.0)
-
-
-@torch.jit.script
-def Learnable_EnergySpectrum(kL: torch.Tensor, p: torch.Tensor, q: torch.Tensor) -> torch.Tensor:
-    r"""Parametrizable energy spectrum with learnable exponents, p and q.
-
-    .. math::
-        \widetilde{E}(\boldsymbol{k}) = \left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3}.
-    """
-    return (kL ** p) / ((1.0 + kL**2) ** q)
 
 
 def MannEddyLifetime(kL: torch.Tensor | np.ndarray) -> torch.Tensor:

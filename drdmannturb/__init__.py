@@ -10,7 +10,6 @@ et al. in 2021.
 from .common import (
     CPU_Unpickler,
     MannEddyLifetime,
-    VKEnergySpectrum,
     plot_loss_logs,
 )
 from .enums import EddyLifetimeType
@@ -55,7 +54,6 @@ __all__ = [
     # Common
     "CPU_Unpickler",
     "MannEddyLifetime",
-    "VKEnergySpectrum",
     "plot_loss_logs",
     # Enums
     "EddyLifetimeType",

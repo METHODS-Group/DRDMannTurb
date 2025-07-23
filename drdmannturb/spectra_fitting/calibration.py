@@ -82,9 +82,44 @@ class CalibrationProblem:
         self.output_directory = output_directory
         self.logging_directory = logging_directory
 
+    def initial_guess(self, ops_k_domain_tensor: torch.Tensor, ops_uu_true_tensor: torch.Tensor):
+
+        with torch.no_grad():
+            phys_guess = PhysicalParameters(
+                L=self.phys_params.L,
+                Gamma=self.phys_params.Gamma,
+                sigma=self.phys_params.sigma,
+                Uref=self.phys_params.Uref,
+                zref = self.phys_params.zref,
+                ustar = self.phys_params.ustar,
+                domain = self.phys_params.domain,
+            )
+
+            tmp_model = OnePointSpectra(
+                type_eddy_lifetime=self.prob_params.eddy_lifetime,
+                physical_params=phys_guess,
+                nn_parameters=self.nn_params,
+                learn_nu=self.prob_params.learn_nu,
+                integration_params=IntegrationParameters(),
+                use_learnable_spectrum=self.prob_params.use_learnable_spectrum,
+                p_exponent=self.prob_params.p_exponent,
+                q_exponent=self.prob_params.q_exponent,
+            )
+
+            model_uu = tmp_model(ops_k_domain_tensor)[0]
+            band = slice(0, 5)
+            data_med = torch.median(ops_uu_true_tensor[band])
+            model_med = torch.median(model_uu[band])
+
+            sigma0 = (data_med / model_med).item()
+
+            return sigma0
+
     def calibrate(
         self,
         optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
+        max_epochs: int = 100,
+        fix_params: list[str] = [],
     ) -> dict[str, float]:
         r"""Train the model on the provided data."""
         OptimizerClass = optimizer_class
@@ -136,6 +171,9 @@ class CalibrationProblem:
             tb_log_dir=self.logging_directory,
         )
 
+        sigma0 = self.initial_guess(ops_k_domain_tensor, ops_uu_true_tensor)
+        print(f"Initial guess for sigma: {sigma0}")
+
         OPS_model = self.OPS(ops_k_domain_tensor)
 
         ########################################
@@ -177,6 +215,14 @@ class CalibrationProblem:
         print(f"Initial loss: {self.loss.item()}")
         print("=" * 40)
 
+        adict = {
+            "logLengthScale": self.OPS.logLengthScale,
+            "logTimeScale": self.OPS.logTimeScale,
+            "logMagnitude": self.OPS.logMagnitude,
+        }
+        for n in fix_params:
+            adict[n].requires_grad = False
+
         def closure() -> torch.Tensor:
             """Closure function for the optimizer.
 
@@ -196,6 +242,10 @@ class CalibrationProblem:
             self.loss.backward()
             self.e_count += 1
 
+            for n,p in self.OPS.named_parameters():
+                if p.grad is not None:
+                    print(f"{n}: {p.grad.norm().item():.3f}")
+
             return self.loss
 
         for epoch in range(1, max_epochs + 1):
@@ -203,6 +253,10 @@ class CalibrationProblem:
             epoch_start_time = time.time()
             print(f"Epoch {epoch} of {max_epochs}")
             print(f"Current loss: {self.loss.item()}")
+
+            print(f"[epoch {epoch}] logL={self.OPS.logLengthScale.item():+.3f}, "
+                  f"logG={self.OPS.logTimeScale.item():+.3f}, "
+                  f"logS={self.OPS.logMagnitude.item():+.3f}")
 
             optimizer.step(closure)
             scheduler.step()
@@ -213,8 +267,11 @@ class CalibrationProblem:
             print(f"\tCurrent L: {self.OPS.LengthScale.item()}")
             print(f"\tCurrent Gamma: {self.OPS.TimeScale.item()}")
             print(f"\tCurrent sigma: {self.OPS.Magnitude.item()}")
-            print(f"\tCurrent p: {self.OPS.p_exponent.item()}")
-            print(f"\tCurrent q: {self.OPS.q_exponent.item()}")
+            if self.prob_params.use_learnable_spectrum:
+                p = self.OPS._positive(self.OPS._raw_p)
+                q = self.OPS._positive(self.OPS._raw_q)
+                print(f"\tCurrent p: {p.item()}")
+                print(f"\tCurrent q: {q.item()}")
 
             if not (torch.isfinite(self.loss)):
                 raise RuntimeError("Loss is not a finite value, check initialization and learning hyperparameters.")
@@ -222,6 +279,7 @@ class CalibrationProblem:
             if self.loss.item() < tol:
                 print(f"Spectra Fitting Concluded with loss below tolerance. Final loss: {self.loss.item()}")
                 break
+
 
         print("=" * 40)
         print(f"Spectra fitting concluded with final loss: {self.loss.item()}")
@@ -333,6 +391,7 @@ class CalibrationProblem:
 
         clr = ["royalblue", "crimson", "forestgreen", "mediumorchid", "orange", "purple"]
         spectra_labels = ["11", "22", "33", "12", "23", "13"]
+        spectra_names = ["uu", "vv", "ww", "uw", "vw", "uv"]
 
         # Get data
         data = self.data_loader.format_data()
@@ -351,7 +410,7 @@ class CalibrationProblem:
         ]
 
         # Get model OPS
-        ops_model = ops_k_domain_tensor * self.OPS(ops_k_domain_tensor)
+        ops_model = self.OPS(ops_k_domain_tensor)
         ops_model = ops_model.cpu().detach().numpy()
 
         with plt.style.context("bmh"):
@@ -397,16 +456,21 @@ class CalibrationProblem:
                     alpha=0.6,
                 )
 
-                title = rf"k_1 F_{spectra_labels[i]}"
-                ax.set_title(title)
+                prefix = "auto-" if i < 3 else "cross-"
+                ax.set_title(f"{prefix}spectra {spectra_names[i]}")
                 ax.set_xscale("log")
                 ax.set_yscale("log")
 
                 ax.set_xlabel(r"$k_1$")
-                ax.set_ylabel(r"$k_1 F_{ij}(k_1)$")
+                ax.set_ylabel(rf"$k_1 F_{{{spectra_labels[i]}}}(k_1)$")
                 ax.grid(
                     which="both",
                 )
+
+            fig_spectra.suptitle(f"Calibrated {self.OPS.type_EddyLifetime.value} model against data")
+            fig_spectra.tight_layout(rect=[0, 0.03, 1, 0.95])
+            fig_spectra.canvas.draw()
+            fig_spectra.canvas.flush_events()
 
             # TODO: Redo eddy lifetime plot
 

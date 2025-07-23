@@ -34,34 +34,33 @@ pb = drdmt.CalibrationProblem(
     ),
     prob_params=drdmt.ProblemParameters(
         tol=1e-9,
-        nepochs=20,
         learn_nu=False,
-        learning_rate=1.0,
+        learning_rate=0.05,
         use_learnable_spectrum=False,
         p_exponent=5.0,
         q_exponent=3.0,
     ),
     loss_params=drdmt.LossParameters(
-        alpha_pen1=1.0,
-        alpha_pen2=1.0,
+        alpha_pen1=0.0,
+        alpha_pen2=0.0,
         beta_reg=1e-2,
         gamma_coherence=1.25,
     ),
     phys_params=drdmt.PhysicalParameters(
-        L=6.0,
+        L=1.0,
         Gamma=3.0,
-        sigma=0.25,
+        sigma=1600.0,
         Uref=21.0,
         zref=zref,
         ustar=1.0,
         domain=domain,
     ),
     integration_params=drdmt.IntegrationParameters(
-        ops_log_min=-3.0,
-        ops_log_max=3.0,
-        ops_num_points=100,
-        coh_log_min=-3.0,
-        coh_log_max=3.0,
+        ops_log_min=-4.0,
+        ops_log_max=5.0,
+        ops_num_points=150,  # TODO:TODO:
+        coh_log_min=-4.0,
+        coh_log_max=5.0,
         coh_num_points=300,
     ),
     logging_directory="runs/custom_data",
@@ -70,6 +69,8 @@ pb = drdmt.CalibrationProblem(
 
 optimal_params = pb.calibrate(
     optimizer_class=torch.optim.Adam,
+    max_epochs=20,
+    fix_params=[],
 )
 
 pb.plot()

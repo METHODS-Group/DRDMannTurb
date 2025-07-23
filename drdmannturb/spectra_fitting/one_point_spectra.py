@@ -10,14 +10,67 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from ..common import (
-    Learnable_EnergySpectrum,
-    MannEddyLifetime,
-    VKLike_EnergySpectrum,
-)
+from ..common import MannEddyLifetime
 from ..enums import EddyLifetimeType
 from ..nn_modules import TauNet
 from ..parameters import IntegrationParameters, NNParameters, PhysicalParameters
+
+
+@torch.jit.script
+def VKEnergySpectrum(kL: torch.Tensor) -> torch.Tensor:
+    r"""Evaluate Von Karman energy spectrum without scaling.
+
+    .. math::
+        \widetilde{E}(\boldsymbol{k}) = \left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3}.
+
+    Parameters
+    ----------
+    kL : torch.Tensor
+        Scaled wave number domain.
+
+    Returns
+    -------
+    torch.Tensor
+        Result of the evaluation
+    """
+    # TODO: is this a bug here? since we introduce extra factors of L
+    # NOTE: Originally, this is
+    #      k^(-5/3) (kL / (1 + (kL)^2)^(1/2))^(17/3)
+    #    = k^(-5/3) (kL)^(17/3) / (1 + (kL)^2)^(17/6))
+    # .    -- EXTRA FACTORS OF L INTRODUCED HERE
+    # .  = k^(12/3) / (1 + (kL)^2)^(17/6))
+    # .  = k^4 / (1 + (kL)^2)^(17/6))
+
+    return kL**4 / (1.0 + kL**2) ** (17.0 / 6.0)
+
+@torch.jit.script
+def VKLike_EnergySpectrum(kL: torch.Tensor) -> torch.Tensor:
+    r"""Evaluate Von Karman energy spectrum without scaling.
+
+    .. math::
+        \widetilde{E}(\boldsymbol{k}) = \left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3}.
+
+    Parameters
+    ----------
+    kL : torch.Tensor
+        Scaled wave number domain.
+
+    Returns
+    -------
+    torch.Tensor
+        Result of the evaluation
+    """
+    return kL ** (-5.0 / 3.0) * (kL / torch.sqrt(1.0 + kL**2)) ** (17.0 / 3.0)
+
+
+@torch.jit.script
+def Learnable_EnergySpectrum(kL: torch.Tensor, p: torch.Tensor, q: torch.Tensor) -> torch.Tensor:
+    r"""Parametrizable energy spectrum with learnable exponents, p and q.
+
+    .. math::
+        \widetilde{E}(\boldsymbol{k}) = \left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3}.
+    """
+    return (kL ** p) / ((1.0 + kL**2) ** q)
 
 
 class OnePointSpectra(nn.Module):
@@ -97,8 +150,9 @@ class OnePointSpectra(nn.Module):
         self.logMagnitude = nn.Parameter(torch.tensor(np.log10(physical_params.sigma), dtype=torch.get_default_dtype()))
 
         if use_learnable_spectrum:
-            self.p_exponent = nn.Parameter(torch.tensor(p_exponent))
-            self.q_exponent = nn.Parameter(torch.tensor(q_exponent))
+            # raw (unconstrained) tensors
+            self._raw_p = nn.Parameter(torch.tensor(np.log(np.exp(p_exponent) - 1.0)))
+            self._raw_q = nn.Parameter(torch.tensor(np.log(np.exp(q_exponent) - 1.0)))
 
         self.LengthScale_scalar = physical_params.L
         self.TimeScale_scalar = physical_params.Gamma
@@ -120,6 +174,10 @@ class OnePointSpectra(nn.Module):
         self.TimeScale_scalar = TimeScale
         self.Magnitude_scalar = Magnitude
 
+        if self.use_learnable_spectrum:
+            self.p_exponent = self._positive(self._raw_p)  # 0.3 ≤ p ≤ 6
+            self.q_exponent = self._positive(self._raw_q)  # 0.3 ≤ q ≤ 6
+
     def exp_scales(self) -> tuple[float, float, float]:
         """Exponentiate the length, time, and spectrum amplitude scales.
 
@@ -138,9 +196,9 @@ class OnePointSpectra(nn.Module):
         tuple[float, float, float]
            Scalar values for each of the length, time, and magnitude scales, in that order.
         """
-        self.LengthScale = torch.exp(self.logLengthScale)  # NOTE: this is L
-        self.TimeScale = torch.exp(self.logTimeScale)  # NOTE: this is gamma
-        self.Magnitude = torch.exp(self.logMagnitude)  # NOTE: this is sigma
+        self.LengthScale = torch.pow(10, self.logLengthScale)  # NOTE: this is L
+        self.TimeScale = torch.pow(10, self.logTimeScale)  # NOTE: this is gamma
+        self.Magnitude = torch.pow(10, self.logMagnitude)  # NOTE: this is sigma
         return self.LengthScale.item(), self.TimeScale.item(), self.Magnitude.item()
 
     def forward(self, k1_input: torch.Tensor) -> torch.Tensor:
@@ -167,26 +225,6 @@ class OnePointSpectra(nn.Module):
         """
         self.exp_scales()
 
-        # Get dtype from input
-        input_dtype = k1_input.dtype
-
-        # Use input dtype for grid creation (if not already created)
-        if not hasattr(self, "ops_grid_k2"):
-            p1, p2, N = -3, 3, 100
-            grid_zero = torch.tensor([0], dtype=input_dtype)
-            grid_plus = torch.logspace(p1, p2, N, dtype=input_dtype)
-            grid_minus = -torch.flip(grid_plus, dims=[0])
-            self.ops_grid_k2 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
-
-            # k3 grid
-            p1, p2, N = -3, 3, 100
-            grid_zero = torch.tensor([0], dtype=input_dtype)
-            grid_plus = torch.logspace(p1, p2, N, dtype=input_dtype)
-            grid_minus = -torch.flip(grid_plus, dims=[0])
-            self.ops_grid_k3 = torch.cat((grid_minus, grid_zero, grid_plus)).detach()
-
-            self.ops_meshgrid23 = torch.meshgrid(self.ops_grid_k2, self.ops_grid_k3, indexing="ij")
-
         self.k = torch.stack(torch.meshgrid(k1_input, self.ops_grid_k2, self.ops_grid_k3, indexing="ij"), dim=-1)
         self.k123 = self.k[..., 0], self.k[..., 1], self.k[..., 2]
         self.beta = self.EddyLifetime()
@@ -197,7 +235,9 @@ class OnePointSpectra(nn.Module):
 
         # Choose energy spectrum based on parameters
         if self.use_learnable_spectrum:
-            energy_spectrum = Learnable_EnergySpectrum(k0L, self.p_exponent, self.q_exponent)
+            p = self._positive(self._raw_p)   # 0.3 ≤ p ≤ 6
+            q = self._positive(self._raw_q)   # 0.3 ≤ q ≤ 6
+            energy_spectrum = Learnable_EnergySpectrum(k0L, p, q)
         else:
             energy_spectrum = VKLike_EnergySpectrum(k0L)
 
@@ -579,3 +619,7 @@ class OnePointSpectra(nn.Module):
             ]
         ) / (1.0 / 3.0 * (Phi11 + Phi22 + Phi33))
         return div
+
+    def _positive(self, raw, lower=0.3, upper=6.0):
+        # softplus keeps it >0; clamp keeps it inside a safe range
+        return torch.clamp(torch.nn.functional.softplus(raw), min=lower, max=upper)
