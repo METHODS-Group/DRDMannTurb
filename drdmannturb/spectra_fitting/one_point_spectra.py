@@ -481,15 +481,8 @@ class OnePointSpectra(nn.Module):
 
         kL = self.LengthScale * k.norm(dim=-1)
 
-        if (
-            hasattr(self, "init_mann_linear_approx") and self.init_mann_linear_approx is False
-        ):  # Mann approximation chosen but not initialized
-            self.init_mann_approximation()
-
         if self.type_EddyLifetime == EddyLifetimeType.CONST:
             tau = torch.ones_like(kL)
-        elif self.type_EddyLifetime == EddyLifetimeType.MANN:  # uses numpy - can not be backpropagated, also CPU only.
-            tau = MannEddyLifetime(kL)
         elif self.type_EddyLifetime == EddyLifetimeType.TWOTHIRD:
             tau = kL ** (-2 / 3)
         elif self.type_EddyLifetime == EddyLifetimeType.TAUNET:
