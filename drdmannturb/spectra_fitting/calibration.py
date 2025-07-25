@@ -6,77 +6,37 @@ from pathlib import Path
 import torch
 from torch.nn.utils import parameters_to_vector
 
-from ..enums import EddyLifetimeType
 from ..parameters import (
     IntegrationParameters,
     LossParameters,
-    NNParameters,
-    PhysicalParameters,
-    ProblemParameters,
 )
+from . import spectral_tensor_models as stm
 from .data_generator import CustomDataLoader
 from .loss_functions import LossAggregator
 from .one_point_spectra import OnePointSpectra
 
 
 class CalibrationProblem:
-    r"""
-    .. _calibration-problem-reference:
-
-    Defines the model calibration problem and manages the spectra curve fits.
-
-    Class which manages the spectra fitting and eddy lifetime function learning based on the deep rapid distortion model
-    developed in `Keith, Khristenko, Wohlmuth (2021) <https://arxiv.org/pdf/2107.11046.pdf>`_.
-
-    This class manages the operator regression task which characterizes the best fitting candidate
-    in a family of nonlocal covariance kernels that are parametrized by a neural network.
-
-    This class can also be used independently of neural networks via the ``EddyLifetimeType`` used for classical spectra
-    fitting tasks, for instance, using the ``EddyLifetimeType.MANN`` results in a fit that completely relies on the Mann
-    eddy lifetime function. If a neural network model is used, Torch's ``LBFGS`` optimizer is used with cosine annealing
-    for learning rate scheduling. Parameters for these components of the training process are set in ``LossParameters``
-    and ``ProblemParameters`` during initialization.
-
-    After instantiating ``CalibrationProblem``, wherein the problem and eddy lifetime function substitution
-    type are indicated, the user will need to generate the OPS data using ``OnePointSpectraDataGenerator``,
-    after which the model can be fit with ``CalibrationProblem.calibrate``.
-
-    After training, this class can be used in conjunction with the fluctuation generation utilities in this package to
-    generate realistic turbulence fields based on the learned spectra and eddy lifetimes.
-    """  # noqa: D400
-
-    data: dict[str, torch.Tensor]  # TODO: This typing may change in the future
+    r"""Defines the model calibration problem and manages the spectra curve fits."""
 
     def __init__(
         self,
-        nn_params: NNParameters,
-        prob_params: ProblemParameters,
-        loss_params: LossParameters,
-        phys_params: PhysicalParameters,
-        integration_params: IntegrationParameters,
         data_loader: CustomDataLoader,
+        model: stm.SpectralTensorModel,
+        loss_params: LossParameters,
+        integration_params: IntegrationParameters,
         logging_directory: str | None = None,
         output_directory: Path | str = Path().resolve() / "results",
         device: str = "cpu",
     ):
         r"""Initialize a ``CalibrationProblem`` instance, defining the model calibration and physical setting."""
-        self.nn_params = nn_params
-        self.prob_params = prob_params
         self.loss_params = loss_params
-        self.phys_params = phys_params
 
         self.data_loader = data_loader
 
         self.OPS = OnePointSpectra(
-            type_eddy_lifetime=self.prob_params.eddy_lifetime,
-            physical_params=self.phys_params,
-            nn_parameters=self.nn_params,
-            learn_nu=self.prob_params.learn_nu,
+            spectral_tensor_model=model,
             integration_params=integration_params,
-            # The following are only used if the user wants to learn the VK energy spectrum exponents
-            use_learnable_spectrum=self.prob_params.use_learnable_spectrum,
-            p_exponent=self.prob_params.p_exponent,
-            q_exponent=self.prob_params.q_exponent,
         )
 
         self.output_directory = output_directory
@@ -84,16 +44,13 @@ class CalibrationProblem:
 
     def calibrate(
         self,
-        optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
+        optimizer_class: type[torch.optim.Optimizer] = torch.optim.LBFGS,
+        lr: float = 1.0,
+        optimizer_kwargs: dict = {},
         max_epochs: int = 100,
-        fix_params: list[str] = [],
-    ) -> dict[str, float]:
+        tol: float = 1e-9,
+    ) -> None:
         r"""Train the model on the provided data."""
-        OptimizerClass = optimizer_class
-        lr = self.prob_params.learning_rate
-        tol = self.prob_params.tol
-
-        # Load the data
         print("Loading data...")
         data = self.data_loader.format_data()
 
@@ -142,49 +99,27 @@ class CalibrationProblem:
         ########################################
         # Optimizer and Scheduler Initialization
         ########################################
-        # TODO: Clean up how the optimizer is taken in...
-        if OptimizerClass == torch.optim.LBFGS:
-            optimizer = OptimizerClass(
-                self.OPS.parameters(),
-                lr=lr,
-                line_search_fn="strong_wolfe",
-                max_iter=self.prob_params.wolfe_iter_count,
-                history_size=max_epochs,
-            )
-        else:
-            optimizer = torch.optim.Adam(
-                self.OPS.parameters(),
-                lr=lr,
-                betas=(0.9, 0.999),
-                eps=1e-8,
-                weight_decay=1e-5,
-            )
+        optimizer = optimizer_class(
+            self.OPS.parameters(),
+            lr=lr,
+            **optimizer_kwargs,
+        )
 
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max_epochs)
 
         self.e_count: int = 0
 
-        if self.OPS.type_EddyLifetime == EddyLifetimeType.TAUNET:
-            # NOTE: Old code used tauNet.NN.parameters() since the NN wasn't "built-in" to the tauNet
-            self.gen_theta_NN = lambda: parameters_to_vector(self.OPS.tauNet.parameters())
-        else:
-            self.gen_theta_NN = lambda: 0.0
+        # TODO: This is a nasty block of code...
+        def gen_theta_NN() -> torch.Tensor:
+            if hasattr(self.OPS.spectral_tensor_model.eddy_lifetime_model, "tauNet"):
+                return parameters_to_vector(self.OPS.spectral_tensor_model.eddy_lifetime_model.tauNet.parameters())
+            return torch.tensor(0.0)
 
-        theta_NN = self.gen_theta_NN()
-
-        self.loss = self.LossAggregator.eval(OPS_model, OPS_true, theta_NN, 0)
+        self.loss = self.LossAggregator.eval(OPS_model, OPS_true, gen_theta_NN(), 0)
 
         print("=" * 40)
         print(f"Initial loss: {self.loss.item()}")
         print("=" * 40)
-
-        adict = {
-            "logLengthScale": self.OPS.logLengthScale,
-            "logTimeScale": self.OPS.logTimeScale,
-            "logMagnitude": self.OPS.logMagnitude,
-        }
-        for n in fix_params:
-            adict[n].requires_grad = False
 
         def closure() -> torch.Tensor:
             """Closure function for the optimizer.
@@ -198,7 +133,7 @@ class CalibrationProblem:
             self.loss = self.LossAggregator.eval(
                 OPS_model,
                 OPS_true,
-                self.gen_theta_NN(),
+                gen_theta_NN(),
                 self.e_count,
             )
 
@@ -211,32 +146,41 @@ class CalibrationProblem:
 
             return self.loss
 
+        close_optims = [torch.optim.LBFGS]
+
         for epoch in range(1, max_epochs + 1):
             # Print the current parameters
             epoch_start_time = time.time()
             print(f"Epoch {epoch} of {max_epochs}")
             print(f"Current loss: {self.loss.item()}")
 
-            print(
-                f"[epoch {epoch}] logL={self.OPS.logLengthScale.item():+.3f}, "
-                f"logG={self.OPS.logTimeScale.item():+.3f}, "
-                f"logS={self.OPS.logMagnitude.item():+.3f}"
-            )
+            if any(isinstance(optimizer, oc) for oc in close_optims):
+                optimizer.step(closure)
+            else:
+                optimizer.zero_grad()
+                OPS_model = self.OPS(ops_k_domain_tensor)
+                self.loss = self.LossAggregator.eval(OPS_model, OPS_true, gen_theta_NN(), self.e_count)
+                optimizer.step()
+                self.e_count += 1
 
-            optimizer.step(closure)
             scheduler.step()
 
             epoch_end_time = time.time()
             print(f"Epoch {epoch} took {epoch_end_time - epoch_start_time} seconds")
 
-            print(f"\tCurrent L: {self.OPS.LengthScale.item()}")
-            print(f"\tCurrent Gamma: {self.OPS.TimeScale.item()}")
-            print(f"\tCurrent sigma: {self.OPS.Magnitude.item()}")
-            if self.prob_params.use_learnable_spectrum:
-                p = self.OPS._positive(self.OPS._raw_p)
-                q = self.OPS._positive(self.OPS._raw_q)
-                print(f"\tCurrent p: {p.item()}")
-                print(f"\tCurrent q: {q.item()}")
+            print(f"\tCurrent L: {torch.exp(self.OPS.spectral_tensor_model.log_L).item():.3f}")
+            print(f"\tCurrent Gamma: {torch.exp(self.OPS.spectral_tensor_model.log_gamma).item():.3f}")
+            print(f"\tCurrent sigma: {torch.exp(self.OPS.spectral_tensor_model.log_sigma).item():.3f}")
+
+            if isinstance(self.OPS.spectral_tensor_model.energy_spectrum_model, stm.Learnable_ESM):
+                p = self.OPS.spectral_tensor_model.energy_spectrum_model._positive(
+                    self.OPS.spectral_tensor_model.energy_spectrum_model._raw_p
+                )
+                q = self.OPS.spectral_tensor_model.energy_spectrum_model._positive(
+                    self.OPS.spectral_tensor_model.energy_spectrum_model._raw_q
+                )
+                print(f"\tCurrent p: {p.item():.3f}")
+                print(f"\tCurrent q: {q.item():.3f}")
 
             if not (torch.isfinite(self.loss)):
                 raise RuntimeError("Loss is not a finite value, check initialization and learning hyperparameters.")
@@ -248,24 +192,7 @@ class CalibrationProblem:
         print("=" * 40)
         print(f"Spectra fitting concluded with final loss: {self.loss.item()}")
 
-        if self.prob_params.learn_nu and hasattr(self.OPS, "tauNet"):
-            print(f"Learned nu value: {self.OPS.tauNet.Ra.nu}")
-
-        # physical parameters are stored as natural logarithms internally
-
-        # TODO: Need to add some method to grab the length scale, time scale, and magnitude from OPS
-        # self.calibrated_params = {
-        #     "L": np.exp(self.parameters[0]),
-        #     "Γ": np.exp(self.parameters[1]),
-        #     "σ": np.exp(self.parameters[2]),
-        # }
-
-        # if self.prob_params.use_learnable_spectrum:
-        # self.calibrated_params["p"] = self.parameters[3]
-        # self.calibrated_params["q"] = self.parameters[4]
-
         return
-        # return self.calibrated_params
 
     # ------------------------------------------------
     ### Post-treatment and Export
@@ -289,10 +216,7 @@ class CalibrationProblem:
         ValueError
             If the OPS was not initialized to one of TAUNET
         """
-        if self.OPS.type_EddyLifetime != EddyLifetimeType.TAUNET:
-            raise ValueError("Not using trainable model for approximation, must be TAUNET.")
-
-        return sum(p.numel() for p in self.OPS.tauNet.parameters())
+        return sum(p.numel() for p in self.OPS.parameters())
 
     def eval_trainable_norm(self, ord: float | str | None = "fro"):
         """Evaluate the magnitude (or other norm) of the trainable parameters in the model.
@@ -312,38 +236,15 @@ class CalibrationProblem:
             If the OPS was not initialized to one of ``TAUNET``, ``CUSTOMMLP``.
 
         """
-        if self.OPS.type_EddyLifetime != EddyLifetimeType.TAUNET:
-            raise ValueError("Not using trainable model for approximation, must be TAUNET, CUSTOMMLP.")
-
-        return torch.norm(torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord)
+        return torch.norm(torch.nn.utils.parameters_to_vector(self.OPS.parameters()), ord)
 
     def save_model(self, save_dir: str | Path | None = None):
         """Pickle and write the trained model to a file.
-
-        Saves model with current weights, model configuration, and training histories to file.
-        The written filename is of the form ``save_dir/<EddyLifetimeType>_<DataType>.pkl``
-
-        This routine stores
-
-            #.  ``NNParameters``
-
-            #.  ``ProblemParameters``
-
-            #.  ``PhysicalParameters``
-
-            #.  ``LossParameters``
-
-            #.  Optimized Parameters (``self.parameters`` field)
 
         Parameters
         ----------
         save_dir : Optional[Union[str, Path]], optional
             Directory to save to, by default None; defaults to provided output_dir field for object.
-
-        Raises
-        ------
-        ValueError
-            No output_directory provided during object initialization and no save_dir provided for this method call.
         """
         raise NotImplementedError("Not implemented")
 
@@ -431,8 +332,8 @@ class CalibrationProblem:
                     which="both",
                 )
 
-            fig_spectra.suptitle(f"Calibrated {self.OPS.type_EddyLifetime.value} model against data")
-            fig_spectra.tight_layout(rect=[0, 0.03, 1, 0.95])
+            fig_spectra.suptitle("Calibrated model against data")
+            fig_spectra.tight_layout(rect=(0.0, 0.03, 1.0, 0.95))
             fig_spectra.canvas.draw()
             fig_spectra.canvas.flush_events()
 

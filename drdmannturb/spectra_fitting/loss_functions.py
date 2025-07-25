@@ -309,42 +309,11 @@ class LossAggregator:
 
         return coherence_loss
 
-    def compute_loss_scales(self, epoch, mse_loss, coherence_loss):
-        """Compute scaling factors to balance losses."""
-        # Initialize loss_scales if it doesn't exist
-        if not hasattr(self, "loss_scales") or not self.loss_scales:
-            self.loss_scales = {}
-
-        # Initialize on first call or recompute every balance_freq epochs
-        if epoch % self.balance_freq == 0 or "mse" not in self.loss_scales:
-            # Use exponential moving average of loss magnitudes
-            beta = 0.9
-
-            if "mse" not in self.loss_scales:
-                # First initialization
-                self.loss_scales["mse"] = mse_loss.item()
-                self.loss_scales["coherence"] = (
-                    coherence_loss.item() if (coherence_loss is not None and coherence_loss != 0) else 1.0
-                )
-            else:
-                # Update existing values
-                self.loss_scales["mse"] = beta * self.loss_scales["mse"] + (1 - beta) * mse_loss.item()
-                if coherence_loss is not None and coherence_loss != 0:
-                    self.loss_scales["coherence"] = (
-                        beta * self.loss_scales["coherence"] + (1 - beta) * coherence_loss.item()
-                    )
-
-        # Return scaling factors (inverse of magnitude)
-        mse_scale = 1.0 / max(self.loss_scales.get("mse", 1.0), 1e-8)
-        coh_scale = 1.0 / max(self.loss_scales.get("coherence", 1.0), 1e-8)
-
-        return mse_scale, coh_scale
-
     def eval(
         self,
         y: torch.Tensor,
         y_data: torch.Tensor,
-        theta_NN: torch.Tensor | None,
+        theta_NN: torch.Tensor,
         epoch: int,
         **kwargs,
     ) -> torch.Tensor:
@@ -365,7 +334,7 @@ class LossAggregator:
 
         # Regularization term
         reg_loss = torch.tensor(0.0, device=y.device)
-        if self.params.beta_reg > 0 and theta_NN is not None:
+        if self.params.beta_reg > 0:
             reg_loss = self.Regularization(theta_NN, epoch)
 
         # Compute total loss

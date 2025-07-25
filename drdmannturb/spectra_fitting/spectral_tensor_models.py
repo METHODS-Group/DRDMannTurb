@@ -1,5 +1,7 @@
 """Physical models composing the DRD models."""
 
+from pathlib import Path
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -15,16 +17,10 @@ from ..nn_modules import TauNet
 class EddyLifetimeModel(nn.Module):
     """Base class for eddy lifetime models."""
 
-    length_scale: float
-    time_scale: float
-
-    def __init__(self, length_scale: float, time_scale: float):
+    def __init__(self):
         super().__init__()
 
-        self.length_scale = length_scale
-        self.time_scale = time_scale
-
-    def forward(self, k: torch.Tensor) -> torch.Tensor:
+    def forward(self, k: torch.Tensor, L: torch.Tensor, gamma: torch.Tensor) -> torch.Tensor:
         """Compute eddy lifetime tau(k)."""
         raise NotImplementedError("Subclasses must implement the forward pass.")
 
@@ -32,28 +28,24 @@ class EddyLifetimeModel(nn.Module):
 class TauNet_ELT(EddyLifetimeModel):
     """The DRD eddy lifetime model."""
 
-    length_scale: float
-    time_scale: float
     tauNet: TauNet
 
-    def __init__(
-        self,
-        length_scale: float,
-        time_scale: float,
-        taunet: TauNet,
-    ):
-        super().__init__(length_scale, time_scale)
+    def __init__(self, taunet: TauNet):
+        super().__init__()
         self.tauNet = taunet
 
-    def forward(self, k: torch.Tensor) -> torch.Tensor:
+    def forward(self, k: torch.Tensor, L: torch.Tensor, gamma: torch.Tensor) -> torch.Tensor:
         """Evaluate the DRD eddy lifetime model."""
         # NOTE: TauNet takes in the entire k grid, unlike the other models.
-        kL = self.length_scale * k
+        kL = L * k
+        # TODO: Sophisticate this? This was formerly the output of the
+        #       initial guess, which was set to constant 0.0
+        #       Otherwise, what's the point of having this at all?
         tau0 = 0.0
 
         tau = tau0 + self.tauNet(kL)
 
-        return self.time_scale * tau
+        return gamma * tau
 
 
 class Mann_ELT(EddyLifetimeModel):
@@ -62,45 +54,36 @@ class Mann_ELT(EddyLifetimeModel):
     TODO: Warning that this is not differentiable and is CPU only.
     """
 
-    length_scale: float
-    time_scale: float
-
-    def forward(self, k: torch.Tensor) -> torch.Tensor:
+    def forward(self, k: torch.Tensor, L: torch.Tensor, gamma: torch.Tensor) -> torch.Tensor:
         """Evaluate the Mann eddy lifetime model."""
-        kL = self.length_scale * k.norm(dim=-1).cpu().detach().numpy()
+        kL = L * k.norm(dim=-1).cpu().detach().numpy()
         y = kL ** (-2.0 / 3.0) / np.sqrt(hyp2f1(1 / 3, 17 / 6, 4 / 3, -(kL ** (-2))))
         tau = torch.tensor(y, dtype=torch.get_default_dtype(), device=k.device)
 
-        return self.time_scale * tau
+        return gamma * tau
 
 
 class TwoThirds_ELT(EddyLifetimeModel):
     """The two-thirds eddy lifetime model."""
 
-    length_scale: float
-    time_scale: float
-
-    def forward(self, k: torch.Tensor) -> torch.Tensor:
+    def forward(self, k: torch.Tensor, L: torch.Tensor, gamma: torch.Tensor) -> torch.Tensor:
         """Evaluate the two-thirds eddy lifetime model."""
-        kL = self.length_scale * k.norm(dim=-1)
-        tau = self.time_scale * kL ** (-2.0 / 3.0)
+        kL = L * k.norm(dim=-1)
+        tau = kL ** (-2.0 / 3.0)
 
-        return tau
+        return gamma * tau
 
 
 class Constant_ELT(EddyLifetimeModel):
     """The constant eddy lifetime model."""
 
-    length_scale: float
-    time_scale: float
-
-    def forward(self, k: torch.Tensor) -> torch.Tensor:
+    def forward(self, k: torch.Tensor, L: torch.Tensor, gamma: torch.Tensor) -> torch.Tensor:
         """Evaluate the eddy lifetime model."""
-        kL = self.length_scale * k.norm(dim=-1)
+        kL = L * k.norm(dim=-1)
 
-        tau = self.time_scale * torch.ones_like(kL)
+        tau = torch.ones_like(kL)
 
-        return tau
+        return gamma * tau
 
 
 ###############################################################################
@@ -111,7 +94,7 @@ class Constant_ELT(EddyLifetimeModel):
 class EnergySpectrumModel(nn.Module):
     """Base class for energy spectrum models."""
 
-    def forward(self, k: torch.Tensor, L: float) -> torch.Tensor:
+    def forward(self, k: torch.Tensor, L: torch.Tensor) -> torch.Tensor:
         """Evaluate the energy spectrum model."""
         raise NotImplementedError("Subclasses must implement the forward pass.")
 
@@ -122,7 +105,7 @@ class VonKarman_ESM(EnergySpectrumModel):
     Note that this only includes scaling by the parameter L.
     """
 
-    def forward(self, k: torch.Tensor, L: float) -> torch.Tensor:
+    def forward(self, k: torch.Tensor, L: torch.Tensor) -> torch.Tensor:
         """Evaluate the Von Karman energy spectrum."""
         # Compute k = |k|
         k_norm = k.norm(dim=-1)
@@ -141,7 +124,11 @@ class Learnable_ESM(EnergySpectrumModel):
     learnable parameters which greatly increase the expressivity of the model.
     """
 
-    def __init__(self, p_init: float = 4.0, q_init: float = 17.0 / 6.0):
+    def __init__(
+        self,
+        p_init: float = 4.0,
+        q_init: float = 17.0 / 6.0,
+    ):
         super().__init__()
 
         self._raw_p = nn.Parameter(torch.tensor(np.log(np.exp(p_init) - 1.0)))
@@ -150,13 +137,17 @@ class Learnable_ESM(EnergySpectrumModel):
     def _positive(self, raw: torch.Tensor) -> torch.Tensor:
         return torch.nn.functional.softplus(raw)
 
-    def forward(self, k: torch.Tensor, L: float) -> torch.Tensor:
+    def forward(self, k: torch.Tensor, L: torch.Tensor) -> torch.Tensor:
         """Evaluate the learnable energy spectrum model."""
         k_norm = k.norm(dim=-1)
         kL = L * k_norm
         p = self._positive(self._raw_p)
         q = self._positive(self._raw_q)
-        return (kL**p) / ((1.0 + kL**2) ** (q))
+
+        # TODO: Add some replacement for -5/3 here
+        # E = (k_norm ** (-5.0/3.0)) *(kL**p) / ((1.0 + kL**2) ** (q))
+        E = (kL**p) / ((1.0 + kL**2) ** (q))
+        return E
 
 
 ###############################################################################
@@ -167,25 +158,51 @@ class Learnable_ESM(EnergySpectrumModel):
 class SpectralTensorModel(nn.Module):
     """Base class for spectral tensor models."""
 
+    eddy_lifetime_model: EddyLifetimeModel
+    energy_spectrum_model: EnergySpectrumModel
+
+    log_L: nn.Parameter
+    log_gamma: nn.Parameter
+    log_sigma: nn.Parameter
+
     def __init__(
         self,
         eddy_lifetime_model: EddyLifetimeModel,
         energy_spectrum_model: EnergySpectrumModel,
-        sigma: float,
-        L: float,
-        gamma: float,
+        L_init: float,
+        gamma_init: float,
+        sigma_init: float,
     ):
         super().__init__()
         self.eddy_lifetime_model = eddy_lifetime_model
         self.energy_spectrum_model = energy_spectrum_model
 
-        self.sigma = sigma
-        self.L = L
-        self.gamma = gamma
+        # Check that initial values are positive
+        if L_init <= 0.0:
+            raise ValueError("L_init must be positive.")
+        if gamma_init <= 0.0:
+            raise ValueError("gamma_init must be positive.")
+        if sigma_init <= 0.0:
+            raise ValueError("sigma_init must be positive.")
+
+        # Learnable scaling parameters
+        # NOTE: These are stored as log-transformed values to cleanly ensure positivity
+        self.log_sigma = nn.Parameter(torch.tensor(np.log(sigma_init)))
+        self.log_L = nn.Parameter(torch.tensor(np.log(L_init)))
+        self.log_gamma = nn.Parameter(torch.tensor(np.log(gamma_init)))
 
     def forward(self, k: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Evaluate the spectral tensor model."""
         raise NotImplementedError("Subclasses must implement the forward pass.")
+
+    def save_model(self, save_dir: str | Path):
+        """Save the model to a directory."""
+        raise NotImplementedError("Not yet implemented.")
+
+    @classmethod
+    def load_model(cls, load_file: str | Path):
+        """Load the model from a file."""
+        raise NotImplementedError("Not yet implemented.")
 
 
 class RDT_SpectralTensor(SpectralTensorModel):
@@ -193,16 +210,21 @@ class RDT_SpectralTensor(SpectralTensorModel):
 
     def forward(self, k: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Evaluate the RDT spectral tensor model."""
+        # Calculate the scaling parameters
+        L = torch.exp(self.log_L)
+        gamma = torch.exp(self.log_gamma)
+        sigma = torch.exp(self.log_sigma)
+
         # NOTE: The following was previously in OnePointSpectra.forward()
-        beta = self.eddy_lifetime_model(k)
+        beta = self.eddy_lifetime_model(k, L, gamma)
 
         k0 = k.clone()
-        k0[..., 2] = k[..., 2] + beta * k[..., 2]
+        k0[..., 2] = k[..., 2] + beta * k[..., 0]
 
         # Calculate energy spectrum for "Phi_VK"
-        energy_spectrum = self.energy_spectrum_model(k0, self.L)
+        energy_spectrum = self.energy_spectrum_model(k0, L)
 
-        E0 = self.sigma * self.L ** (5.0 / 3.0) * energy_spectrum
+        E0 = sigma * L ** (5.0 / 3.0) * energy_spectrum
 
         # Split k into components
         k1, k2, k3 = k[..., 0], k[..., 1], k[..., 2]

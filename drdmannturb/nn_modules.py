@@ -25,6 +25,9 @@ class Rational(nn.Module):
             \mathrm{NN}(\operatorname{abs}(\boldsymbol{k})).
     """
 
+    fg_learn_nu: bool
+    nu: torch.Tensor | nn.Parameter
+
     def __init__(self, learn_nu: bool = True, nu_init: float = -1.0 / 3.0) -> None:
         """
         Initialize the rational kernel.
@@ -40,9 +43,9 @@ class Rational(nn.Module):
         super().__init__()
         self.fg_learn_nu = learn_nu
 
-        self.nu = nu_init
+        self.nu = torch.tensor(nu_init)
         if self.fg_learn_nu:
-            self.nu = nn.Parameter(torch.tensor(float(nu_init)))
+            self.nu = nn.Parameter(self.nu)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -142,8 +145,6 @@ class TauNet(nn.Module):
                 if not isinstance(act, nn.Module):
                     raise ValueError("activations must be a list of nn.Module's")
             self.activations = activations
-        else:
-            raise ValueError("activations must be None, nn.Module, or list of nn.Module's")
 
         # Build MLP layers - includes input, hidden, and output layers
         layers = [nn.Linear(3, hidden_layer_sizes[0], bias=False)]  # Input layer
@@ -161,7 +162,7 @@ class TauNet(nn.Module):
         self.Ra = Rational(learn_nu=learn_nu, nu_init=nu_init)
 
         # Initialize with small noise to prevent zero initialization
-        noise_magnitude = 1.0e-9
+        noise_magnitude = 1.0e-8
         with torch.no_grad():
             for param in self.parameters():
                 param.add_(torch.randn(param.size()) * noise_magnitude)
