@@ -1,9 +1,6 @@
-"""Generate one-point spectra data.
+"""Data generation and formatting for the model calibration module.
 
-This module contains the ``OnePointSpectraDataGenerator`` class, which generates one-point spectra data for a given
-set of parameters.
-
-.. note:: This module does NOT contain any examples which provide generated spectral coherence data.
+.. note:: This does NOT contain any examples which provide generated spectral coherence data.
 """
 
 from pathlib import Path
@@ -13,7 +10,7 @@ import polars as pl
 import torch
 
 
-def generate_von_karman_spectra(k1: torch.Tensor, L: float = 0.59, C: float = 3.2) -> torch.Tensor:
+def generate_von_karman_spectra(k1: torch.Tensor, L: float = 0.59, C: float = 3.2) -> dict[str, pl.DataFrame | None]:
     """Generate von Karman spectra data.
 
     .. note:: This is already frequency-weighted. DRD models assume that the provided data
@@ -28,8 +25,6 @@ def generate_von_karman_spectra(k1: torch.Tensor, L: float = 0.59, C: float = 3.
     C : float, optional
         Constant, by default 3.2
     """
-    raise NotImplementedError("Does not implemented the updated formats")
-
     # Vectorized computation
     k1_squared = k1**2
     L_inv_squared = L ** (-2)
@@ -45,13 +40,34 @@ def generate_von_karman_spectra(k1: torch.Tensor, L: float = 0.59, C: float = 3.
 
     ops_values = ops_values * k1.unsqueeze(-1).unsqueeze(-1)
 
+    freq = k1.tolist()
+    ops_data = {
+        "freq": freq,
+        "uu": ops_values[:, 0, 0].tolist(),
+        "vv": ops_values[:, 1, 1].tolist(),
+        "ww": ops_values[:, 2, 2].tolist(),
+        "uw": [float("nan")] * len(freq),
+        "vw": [float("nan")] * len(freq),
+        "uv": [float("nan")] * len(freq),
+    }
+    df = pl.DataFrame(ops_data)
     # TODO: Implement spectral coherence generation
 
-    return {"k1": k1, "ops": ops_values, "coherence": None}
+    return {
+        "ops": df,
+        "coherence": None
+    }
 
 
-def generate_kaimal_spectra(k1: torch.Tensor, zref: float, ustar: float) -> torch.Tensor:
+def generate_kaimal_spectra(
+    k1: torch.Tensor,
+    zref: float,
+    ustar: float,
+    dtype: type[pl.DataType] = pl.Float64,
+) -> dict[str, pl.DataFrame | None]:
     """Generate Kaimal spectra data.
+
+    TODO: Write about the data.
 
     .. note:: This is already frequency-weighted. DRD models assume that the provided data
         is frequency-weighted.
@@ -70,21 +86,32 @@ def generate_kaimal_spectra(k1: torch.Tensor, zref: float, ustar: float) -> torc
     torch.Tensor
         Spectral tensor data
     """
-    raise NotImplementedError("Does not implemented the updated formats")
-    n = 1 / (2 * np.pi) * k1 * zref
+    freq = (k1 * zref) / (2 * np.pi)
 
+    # TODO: No reason to use the tensor here at all
     ops_values = torch.zeros([len(k1), 3, 3], dtype=k1.dtype)
 
-    ops_values[:, 0, 0] = 52.5 * n / (1 + 33 * n) ** (5 / 3)
-    ops_values[:, 1, 1] = 8.5 * n / (1 + 9.5 * n) ** (5 / 3)
-    ops_values[:, 2, 2] = 1.05 * n / (1 + 5.3 * n ** (5 / 3))
-    ops_values[:, 0, 2] = -7 * n / (1 + 9.6 * n) ** (12.0 / 5.0)
+    ops_values[:, 0, 0] = 52.5 * freq / (1 + 33 * freq) ** (5 / 3)
+    ops_values[:, 1, 1] = 8.5 * freq / (1 + 9.5 * freq) ** (5 / 3)
+    ops_values[:, 2, 2] = 1.05 * freq / (1 + 5.3 * freq ** (5 / 3))
+    ops_values[:, 0, 2] = -7 * freq / (1 + 9.6 * freq) ** (12.0 / 5.0)
+
+    freq = freq.tolist()
+    ops_data = {
+        "freq": freq,
+        "uu": ops_values[:, 0, 0].tolist(),
+        "vv": ops_values[:, 1, 1].tolist(),
+        "ww": ops_values[:, 2, 2].tolist(),
+        "uw": ops_values[:, 0, 2].tolist(),
+        "vw": [float("nan")] * len(freq),
+        "uv": [float("nan")] * len(freq),
+    }
+    df = pl.DataFrame(ops_data)
 
     # TODO: Implement spectral coherence generation
 
     return {
-        "k1": k1,
-        "ops": ops_values * torch.tensor(ustar**2, dtype=k1.dtype),
+        "ops": df,
         "coherence": None,
     }
 
@@ -110,12 +137,11 @@ class CustomDataLoader:
     Here, uu, vv, ww (the auto-spectra components) are required. uw, vw, uv are optional. Any missing cross-spectra
     components are set to NaN and ignored during training.
 
-
     TODO: Write about the coherence data format.
     """
 
     # dtype to load the data as
-    dtype: pl.DataType
+    dtype: type[pl.DataType]
 
     # Data file paths
     ops_data_file: Path
@@ -129,7 +155,7 @@ class CustomDataLoader:
         self,
         ops_data_file: Path | str,
         coherence_data_file: Path | str | None = None,
-        dtype: pl.DataType = pl.Float64,
+        dtype: type[pl.DataType] = pl.Float64,
     ):
         """Construct a CustomDataLoader instance.
 
@@ -163,7 +189,19 @@ class CustomDataLoader:
             self.coh_data_df = None
 
     def _load_ops_data(self) -> None:
-        """Load the OPS data into a polars dataframe."""
+        """Load the OPS data into a polars dataframe.
+
+        Must be able to find the following columns:
+        - freq
+        - uu
+        - vv
+        - ww
+        - uw (optional)
+        - vw (optional)
+        - uv (optional)
+
+        If the optional columns are not provided, they are set to NaN.
+        """
         # Check the provided data file exists
         assert self.ops_data_file is not None, "Why isn't there an ops data file?"
 
@@ -194,7 +232,8 @@ class CustomDataLoader:
         optional_cols = ["uw", "vw", "uv"]
         for col in optional_cols:
             if col not in self.ops_data_df.columns:
-                self.ops_data_df = self.ops_data_df.with_columns(pl.col(col).cast(self.dtype))
+                self.ops_data_df = self.ops_data_df.with_columns(pl.lit(float("nan")).alias(col))
+            self.ops_data_df = self.ops_data_df.with_columns(pl.col(col).cast(self.dtype))
 
     def _load_coherence_data(self) -> None:
         """Load the coherence data.

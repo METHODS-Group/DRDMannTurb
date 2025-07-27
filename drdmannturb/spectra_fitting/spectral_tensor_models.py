@@ -187,9 +187,9 @@ class SpectralTensorModel(nn.Module):
 
         # Learnable scaling parameters
         # NOTE: These are stored as log-transformed values to cleanly ensure positivity
-        self.log_sigma = nn.Parameter(torch.tensor(np.log(sigma_init)))
-        self.log_L = nn.Parameter(torch.tensor(np.log(L_init)))
-        self.log_gamma = nn.Parameter(torch.tensor(np.log(gamma_init)))
+        self.log_L = nn.Parameter(torch.tensor(np.log(L_init), dtype=torch.get_default_dtype()))
+        self.log_gamma = nn.Parameter(torch.tensor(np.log(gamma_init), dtype=torch.get_default_dtype()))
+        self.log_sigma = nn.Parameter(torch.tensor(np.log(sigma_init), dtype=torch.get_default_dtype()))
 
     def forward(self, k: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Evaluate the spectral tensor model."""
@@ -250,16 +250,6 @@ class RDT_SpectralTensor(SpectralTensorModel):
 
         Phi12 = E0 / (kk0**2) * (-k1 * k2 - k1 * k30 * zeta2 - k2 * k30 * zeta1 + (k1**2 + k2**2) * zeta1 * zeta2)
         Phi23 = E0 / (kk * kk0) * (-k2 * k30 + (k1**2 + k2**2) * zeta2)
-
-        # TODO: This ought to go!
-        # Clipping to prevent extremely small values
-        epsilon = 1e-32
-        Phi11 = torch.where(Phi11 < epsilon, epsilon, Phi11)
-        Phi22 = torch.where(Phi22 < epsilon, epsilon, Phi22)
-        Phi33 = torch.where(Phi33 < epsilon, epsilon, Phi33)
-        Phi13 = torch.where(torch.abs(Phi13) < epsilon, epsilon * torch.sign(Phi13), Phi13)
-        Phi12 = torch.where(Phi12 < epsilon, epsilon, Phi12)
-        Phi23 = torch.where(Phi23 < epsilon, epsilon, Phi23)
 
         # In order, uu, vv, ww, uw, vw, uv
         return Phi11, Phi22, Phi33, Phi13, Phi23, Phi12

@@ -15,7 +15,10 @@ zref = 148.56202535609793
 spectra_file = Path("data_cleaned/STORM_downsampled_one_point_spectra.csv")
 coherence_file = Path("data_cleaned/STORM_FULL_FIDELITY_coherence_data.csv")
 
-data_loader = drdmt.CustomDataLoader(ops_data_file=spectra_file, coherence_data_file=coherence_file)
+data_loader = drdmt.CustomDataLoader(
+    ops_data_file=spectra_file,
+    coherence_data_file=coherence_file
+)
 
 pb = drdmt.CalibrationProblem(
     data_loader=data_loader,
@@ -56,12 +59,14 @@ pb = drdmt.CalibrationProblem(
 
 pb.calibrate(
     optimizer_class=torch.optim.Adam,
-    lr=1.0,
+    lr=0.05,
     optimizer_kwargs={
         "betas": (0.9, 0.999),
         "eps": 1e-8,
         "weight_decay": 1e-5,
     },
+    max_epochs=20,
+    tol=1e-6,
 )
 
 pb.plot()

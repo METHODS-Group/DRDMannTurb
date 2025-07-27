@@ -16,7 +16,6 @@ class OnePointSpectra(nn.Module):
     """Calculates the one-point spectra of a provided spectral tensor model."""
 
     spectral_tensor_model: SpectralTensorModel
-
     use_coherence: bool
 
     def __init__(
