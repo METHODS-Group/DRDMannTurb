@@ -70,10 +70,17 @@ class CalibrationProblem:
 
         ops_k_domain_tensor = torch.Tensor(ops_data["freq"])
 
+        # Debug: Check ops_k_domain_tensor
+        if torch.isnan(ops_k_domain_tensor).any():
+            print(f"NaN in ops_k_domain_tensor: min={ops_k_domain_tensor.min().item()}, max={ops_k_domain_tensor.max().item()}, mean={ops_k_domain_tensor.mean().item()}")
+            print(f"ops_k_domain_tensor: {ops_k_domain_tensor}")
+            print(f"ops_data['freq']: {ops_data['freq']}")
+
         ops_uu_true_tensor = torch.Tensor(ops_data["uu"])
         ops_vv_true_tensor = torch.Tensor(ops_data["vv"])
         ops_ww_true_tensor = torch.Tensor(ops_data["ww"])
 
+        # Build the OPS_true tensor
         OPS_true = torch.stack([
             ops_uu_true_tensor,
             ops_vv_true_tensor,
@@ -83,10 +90,11 @@ class CalibrationProblem:
         if OPS_true.isnan().any():
             raise ValueError("OPS data contained NaN values; please remove these from the data.")
 
+        # Build the curves list, which is used to index the model evaluation respecting the order
+        # of the returned OPS components.
         curves = [0, 1, 2]
 
         ops_uw_true_tensor = torch.Tensor(ops_data["uw"])
-
         if not ops_uw_true_tensor.isnan().any():
             print("Adding uw data to OPS_true")
             OPS_true = torch.cat([OPS_true, ops_uw_true_tensor.unsqueeze(0)], dim=0)
@@ -138,7 +146,9 @@ class CalibrationProblem:
 
         self.e_count: int = 0
 
-        # TODO: This is a nasty block of code...
+        #######################################
+        # Helper functions
+        #######################################
         def gen_theta_NN() -> torch.Tensor:
             """Obtain any neural network parameters."""
             if hasattr(self.OPS.spectral_tensor_model.eddy_lifetime_model, "tauNet"):
@@ -153,6 +163,16 @@ class CalibrationProblem:
             """
             with torch.autograd.set_detect_anomaly(True):
                 optimizer.zero_grad()
+
+                # Debug: Check model parameters
+                for name, param in self.OPS.named_parameters():
+                    if torch.isnan(param).any():
+                        print(f"NaN in parameter {name}: {param}")
+
+                # Debug: Check input tensor
+                if torch.isnan(ops_k_domain_tensor).any():
+                    print(f"NaN in ops_k_domain_tensor in closure: {ops_k_domain_tensor}")
+
                 OPS_model = self.OPS(ops_k_domain_tensor)
 
                 self.loss = self.LossAggregator.eval(
@@ -171,6 +191,9 @@ class CalibrationProblem:
         # Set up real-time plotting
         self._setup_realtime_plotting(ops_data["freq"], OPS_true, curves)
 
+        ###########################################################################################
+        # Main optimization loop
+        ###########################################################################################
         for epoch in range(1, max_epochs + 1):
             # Print the current parameters
             epoch_start_time = time.time()
@@ -228,6 +251,10 @@ class CalibrationProblem:
                 self._update_realtime_plot(epoch)
                 plt.pause(0.1)  # Small pause to allow plot to update
 
+        ###########################################################################################
+        # Post-optimization
+        ###########################################################################################
+
         plt.ioff()  # Turn off interactive mode
         plt.show()
 
@@ -235,7 +262,6 @@ class CalibrationProblem:
         print(f"Spectra fitting concluded with final loss: {self.loss.item()}")
 
         return
-
 
     def _plot_fit_progress(self,
         axes,
@@ -350,13 +376,18 @@ class CalibrationProblem:
             if self._lines_data[i] is not None:
                 self._lines_data[i][0].remove()
 
-            # Flip the sign of the uw cross-spectra (same as existing plot)
-            sign = -1 if curve_idx == 3 else 1
+            # Get data and model values
+            model_vals = OPS_model[i].cpu().detach().numpy()
+            data_vals = self._plot_data['OPS_true'][i]
 
-            # Plot model values
+            # Take absolute values for log plotting
+            model_vals_abs = np.abs(model_vals)
+            data_vals_abs = np.abs(data_vals)
+
+            # Plot model values (no sign flipping needed since we're using abs)
             self._lines_model[i] = ax.plot(
                 self._plot_data['ops_k_domain'],
-                sign * OPS_model[i].cpu().detach().numpy(),
+                model_vals_abs,
                 "--",
                 color=self._clr[curve_idx],
                 label="Model",
@@ -365,7 +396,7 @@ class CalibrationProblem:
             # Plot data
             self._lines_data[i] = ax.plot(
                 self._plot_data['ops_k_domain'],
-                self._plot_data['OPS_true'][i],
+                data_vals_abs,
                 "o",
                 markersize=3,
                 color=self._clr[curve_idx],
@@ -388,26 +419,6 @@ class CalibrationProblem:
     # ------------------------------------------------
     ### Post-treatment and Export
     # ------------------------------------------------
-
-    def eval_trainable_norm(self, ord: float | str | None = "fro"):
-        """Evaluate the magnitude (or other norm) of the trainable parameters in the model.
-
-        .. note::
-            The ``EddyLifetimeType`` must be set to one of ``TAUNET`` or ``CUSTOMMLP``, which involve
-            a network surrogate for the eddy lifetime.
-
-        Parameters
-        ----------
-        ord : Optional[Union[float, str]]
-            The order of the norm approximation, follows ``torch.norm`` conventions.
-
-        Raises
-        ------
-        ValueError
-            If the OPS was not initialized to one of ``TAUNET``, ``CUSTOMMLP``.
-
-        """
-        return torch.norm(torch.nn.utils.parameters_to_vector(self.OPS.parameters()), ord)
 
     def save_model(self, save_dir: str | Path | None = None):
         """Pickle and write the trained model to a file.

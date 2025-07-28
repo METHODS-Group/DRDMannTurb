@@ -64,8 +64,29 @@ class Rational(nn.Module):
         a = self.nu - (2.0 / 3.0)
         b = self.nu / 2.0
         out = torch.abs(x)
-        out = (out**a) / ((1 + out**2) ** b)
-        return out
+
+        # Handle numerical instability for very large or very small values
+        # For very large out, use asymptotic behavior
+        large_mask = out > 1e6
+        small_mask = out < 1e-6
+
+        result = torch.zeros_like(out)
+
+        # For normal range
+        normal_mask = ~(large_mask | small_mask)
+        if normal_mask.any():
+            out_normal = out[normal_mask]
+            result[normal_mask] = (out_normal**a) / ((1 + out_normal**2) ** b)
+
+        # For very large values, use asymptotic behavior: out^(a-2b)
+        if large_mask.any():
+            result[large_mask] = out[large_mask]**(a - 2*b)
+
+        # For very small values, use Taylor expansion around 0
+        if small_mask.any():
+            result[small_mask] = out[small_mask]**a
+
+        return result
 
 
 class TauNet(nn.Module):
@@ -198,6 +219,22 @@ class TauNet(nn.Module):
         torch.Tensor
             Output of forward pass of neural network.
         """
+        # Debug: Check input (just summary stats)
+        if torch.isnan(k).any():
+            print(f"NaN in TauNet input k: min={k.min().item()}, max={k.max().item()}, mean={k.mean().item()}")
+
         k_mod = self._mlp_forward(k.abs()).norm(dim=-1)
+
+        # Debug: Check k_mod (just summary stats)
+        if torch.isnan(k_mod).any():
+            print(f"NaN in TauNet k_mod: min={k_mod.min().item()}, max={k_mod.max().item()}, mean={k_mod.mean().item()}")
+            mlp_out = self._mlp_forward(k.abs())
+            print(f"MLP output: min={mlp_out.min().item()}, max={mlp_out.max().item()}, mean={mlp_out.mean().item()}")
+
         tau = self.Ra(k_mod)
+
+        # Debug: Check tau (just summary stats)
+        if torch.isnan(tau).any():
+            print(f"NaN in TauNet tau: min={tau.min().item()}, max={tau.max().item()}, mean={tau.mean().item()}")
+
         return tau

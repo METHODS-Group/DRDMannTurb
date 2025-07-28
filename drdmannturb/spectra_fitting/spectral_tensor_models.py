@@ -111,8 +111,34 @@ class VonKarman_ESM(EnergySpectrumModel):
         k_norm = k.norm(dim=-1)
         kL = k_norm * L
 
+        # Debug: Check inputs (just summary stats)
+        if torch.isnan(k).any():
+            print(f"NaN in VonKarman input k: min={k.min().item()}, max={k.max().item()}, mean={k.mean().item()}")
+        if torch.isnan(k_norm).any():
+            print(f"NaN in VonKarman k_norm: min={k_norm.min().item()}, max={k_norm.max().item()}, mean={k_norm.mean().item()}")
+        if torch.isnan(kL).any():
+            print(f"NaN in VonKarman kL: min={kL.min().item()}, max={kL.max().item()}, mean={kL.mean().item()}")
+        if torch.isnan(L):
+            print(f"NaN in VonKarman L: {L.item()}")
+
+        # Check for zero k_norm
+        zero_count = (k_norm == 0).sum().item()
+        if zero_count > 0:
+            print(f"Zero k_norm in VonKarman: {zero_count} zeros out of {k_norm.numel()}")
+            print(f"k shape: {k.shape}")
+            print(f"k range: {k.min().item()} to {k.max().item()}")
+
         parenthetical_term = kL / ((1.0 + kL**2) ** (0.5))
         E = (k_norm ** (-5.0 / 3.0)) * (parenthetical_term ** (17.0 / 3.0))
+
+        # Debug: Check result (just summary stats)
+        if torch.isnan(E).any():
+            print(f"NaN in VonKarman E: min={E.min().item()}, max={E.max().item()}, mean={E.mean().item()}")
+            print(f"parenthetical_term: min={parenthetical_term.min().item()}, max={parenthetical_term.max().item()},"
+                  f"mean={parenthetical_term.mean().item()}")
+            print(f"k_norm^(-5/3): min={(k_norm ** (-5.0 / 3.0)).min().item()},"
+                  f"max={(k_norm ** (-5.0 / 3.0)).max().item()},"
+                  f"mean={(k_norm ** (-5.0 / 3.0)).mean().item()}")
 
         return E
 
@@ -215,8 +241,17 @@ class RDT_SpectralTensor(SpectralTensorModel):
         gamma = torch.exp(self.log_gamma)
         sigma = torch.exp(self.log_sigma)
 
+        # Debug: Check parameters (just values, not full tensors)
+        if torch.isnan(L) or torch.isnan(gamma) or torch.isnan(sigma):
+            print(f"NaN in parameters: L={L.item()}, gamma={gamma.item()}, sigma={sigma.item()}")
+
         # NOTE: The following was previously in OnePointSpectra.forward()
         beta = self.eddy_lifetime_model(k, L, gamma)
+
+        # Debug: Check beta (just summary stats)
+        if torch.isnan(beta).any():
+            print(f"NaN in beta: min={beta.min().item()}, max={beta.max().item()}, mean={beta.mean().item()}")
+            print(f"beta shape: {beta.shape}")
 
         k0 = k.clone()
         k0[..., 2] = k[..., 2] + beta * k[..., 0]
@@ -224,7 +259,15 @@ class RDT_SpectralTensor(SpectralTensorModel):
         # Calculate energy spectrum for "Phi_VK"
         energy_spectrum = self.energy_spectrum_model(k0, L)
 
+        # Debug: Check energy_spectrum (just summary stats)
+        if torch.isnan(energy_spectrum).any():
+            print(f"NaN in energy_spectrum: min={energy_spectrum.min().item()}, max={energy_spectrum.max().item()}, mean={energy_spectrum.mean().item()}")
+
         E0 = sigma * L ** (5.0 / 3.0) * energy_spectrum
+
+        # Debug: Check E0 (just summary stats)
+        if torch.isnan(E0).any():
+            print(f"NaN in E0: min={E0.min().item()}, max={E0.max().item()}, mean={E0.mean().item()}")
 
         # Split k into components
         k1, k2, k3 = k[..., 0], k[..., 1], k[..., 2]
@@ -235,11 +278,41 @@ class RDT_SpectralTensor(SpectralTensorModel):
         kk = k1**2 + k2**2 + k3**2
         s = k1**2 + k2**2
 
+        # Debug: Check intermediate calculations (just summary stats)
+        if torch.isnan(k30).any():
+            print(f"NaN in k30: min={k30.min().item()}, max={k30.max().item()}, mean={k30.mean().item()}")
+        if torch.isnan(kk0).any():
+            print(f"NaN in kk0: min={kk0.min().item()}, max={kk0.max().item()}, mean={kk0.mean().item()}")
+        if torch.isnan(kk).any():
+            print(f"NaN in kk: min={kk.min().item()}, max={kk.max().item()}, mean={kk.mean().item()}")
+        if torch.isnan(s).any():
+            print(f"NaN in s: min={s.min().item()}, max={s.max().item()}, mean={s.mean().item()}")
+
         C1 = beta * k1**2 * (kk0 - 2 * k30**2 + beta * k1 * k30) / (kk * s)
         C2 = k2 * kk0 / torch.sqrt(s**3) * torch.atan2(beta * k1 * torch.sqrt(s), kk0 - k30 * k1 * beta)
 
+        # Debug: Check C1 and C2 (just summary stats)
+        if torch.isnan(C1).any():
+            print(f"NaN in C1: min={C1.min().item()}, max={C1.max().item()}, mean={C1.mean().item()}")
+            print(f"kk * s: min={(kk * s).min().item()}, max={(kk * s).max().item()}, mean={(kk * s).mean().item()}")
+            print(f"denominator zero: {(kk * s) == 0}.sum().item()")
+            print(f"k1 zero: {(k1 == 0).sum().item()}")
+            print(f"s zero: {(s == 0).sum().item()}")
+        if torch.isnan(C2).any():
+            print(f"NaN in C2: min={C2.min().item()}, max={C2.max().item()}, mean={C2.mean().item()}")
+            print(f"s**3: min={(s**3).min().item()}, max={(s**3).max().item()}, mean={(s**3).mean().item()}")
+            print(f"s zero: {(s == 0).sum().item()}")
+
         zeta1 = C1 - k2 / k1 * C2
         zeta2 = C1 * k2 / k1 + C2
+
+        # Debug: Check zeta1 and zeta2 (just summary stats)
+        if torch.isnan(zeta1).any():
+            print(f"NaN in zeta1: min={zeta1.min().item()}, max={zeta1.max().item()}, mean={zeta1.mean().item()}")
+            print(f"k1 zero: {(k1 == 0).sum().item()}")
+        if torch.isnan(zeta2).any():
+            print(f"NaN in zeta2: min={zeta2.min().item()}, max={zeta2.max().item()}, mean={zeta2.mean().item()}")
+
         E0 /= 4 * torch.pi
 
         # Calculate the spectral tensor components
@@ -250,6 +323,12 @@ class RDT_SpectralTensor(SpectralTensorModel):
 
         Phi12 = E0 / (kk0**2) * (-k1 * k2 - k1 * k30 * zeta2 - k2 * k30 * zeta1 + (k1**2 + k2**2) * zeta1 * zeta2)
         Phi23 = E0 / (kk * kk0) * (-k2 * k30 + (k1**2 + k2**2) * zeta2)
+
+        # Debug: Check final outputs (just summary stats)
+        for i, phi in enumerate([Phi11, Phi22, Phi33, Phi13, Phi23, Phi12]):
+            if torch.isnan(phi).any():
+                print(f"NaN in Phi{i+1}: min={phi.min().item()}, max={phi.max().item()}, mean={phi.mean().item()}")
+                print(f"Phi{i+1} shape: {phi.shape}")
 
         # In order, uu, vv, ww, uw, vw, uv
         return Phi11, Phi22, Phi33, Phi13, Phi23, Phi12

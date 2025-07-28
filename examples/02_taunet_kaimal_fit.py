@@ -141,7 +141,7 @@ pb = CalibrationProblem(
         beta_reg = 1.0e-5,
     ),
     integration_params = drdmt.IntegrationParameters(),
-    logging_directory = "runs/synthetic_fit",
+    logging_directory = "runs/taunet_kaimal_fit",
     output_directory = "outputs",
     device = "cpu",
     # device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -159,7 +159,7 @@ optimal_parameters = pb.calibrate(
     optimizer_kwargs = {
     },
     lr = 1.0,
-    max_epochs = 100,
+    max_epochs = 20,
     tol = 1e-6,
 )
 
