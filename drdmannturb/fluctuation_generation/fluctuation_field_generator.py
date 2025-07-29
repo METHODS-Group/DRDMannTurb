@@ -135,6 +135,8 @@ class FluctuationFieldGenerator:
         ValueError
             If ``model`` doesn't match one of the 3 available models: DRD, VK and Mann.
         """
+        raise NotImplementedError("This does not implement the full API yet.")
+
         # Validate model type and required parameters
         if model not in ["DRD", "VK", "Mann"]:
             raise ValueError("Model must be one of: DRD, VK, Mann")

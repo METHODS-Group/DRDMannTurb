@@ -21,6 +21,8 @@ The following example is also discussed in the `original DRD paper <https://arxi
 # First, we import the packages we need for this example. Additionally, we choose to use
 # CUDA if it is available.
 
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -70,9 +72,9 @@ print(f"Physical Parameters: {L,Gamma,sigma}")
 k1 = torch.logspace(-1, 2, 20, dtype=torch.float64) / zref
 
 kaimal_data = drdmt.spectra_fitting.data_generator.generate_kaimal_spectra(
-    k1 = k1,
-    zref = zref,
-    ustar = ustar,
+    k1=k1,
+    zref=zref,
+    ustar=ustar,
 )
 
 # We assert next that the frequency domain is correctly calculated.
@@ -113,17 +115,13 @@ assert ops_df["uv"].is_nan().all()
 # and ``sigma``. Each of these was defined earlier.
 
 model = stm.RDT_SpectralTensor(
-    eddy_lifetime_model = stm.TauNet_ELT(
-        taunet = drdmt.TauNet(
-            n_layers=2,
-            hidden_layer_sizes=[10, 10],
-            activations=[nn.ReLU(), nn.ReLU()]
-        )
+    eddy_lifetime_model=stm.TauNet_ELT(
+        taunet=drdmt.TauNet(n_layers=2, hidden_layer_sizes=[10, 10], activations=[nn.ReLU(), nn.ReLU()])
     ),
-    energy_spectrum_model = stm.VonKarman_ESM(),
-    L_init = L,
-    gamma_init = Gamma,
-    sigma_init = sigma,
+    energy_spectrum_model=stm.VonKarman_ESM(),
+    L_init=L,
+    gamma_init=Gamma,
+    sigma_init=sigma,
 )
 
 #######################################################################################
@@ -134,16 +132,17 @@ model = stm.RDT_SpectralTensor(
 # process and specify certain numerical parameters for the code.
 
 pb = CalibrationProblem(
-    model = model,
-    data = kaimal_data,
-    loss_params = drdmt.LossParameters(
-        alpha_pen2 = 1.0,
-        beta_reg = 1.0e-5,
+    model=model,
+    data=kaimal_data,
+    fit_coherence=False,  # We don't have coherence data to provide here.
+    loss_params=drdmt.LossParameters(
+        alpha_pen2=1.0,
+        beta_reg=1.0e-5,
     ),
-    integration_params = drdmt.IntegrationParameters(),
-    logging_directory = "runs/taunet_kaimal_fit",
-    output_directory = "outputs",
-    device = "cpu",
+    integration_params=drdmt.IntegrationParameters(),
+    logging_directory="runs/taunet_kaimal_fit",
+    output_directory="outputs",
+    device="cpu",
     # device = "cuda" if torch.cuda.is_available() else "cpu"
 )
 
@@ -154,13 +153,16 @@ pb = CalibrationProblem(
 # Now, to fit our model, we call the ``CalibrationProblem.calibrate`` method
 # and provide several parameters for the optimization process.
 
-optimal_parameters = pb.calibrate(
-    optimizer_class = torch.optim.LBFGS,
-    optimizer_kwargs = {
+pb.calibrate(
+    optimizer_class=torch.optim.LBFGS,
+    optimizer_kwargs={
+        "line_search_fn": "strong_wolfe",
+        "max_iter": 20,
+        "history_size": 20,
     },
-    lr = 1.0,
-    max_epochs = 20,
-    tol = 1e-6,
+    lr=1.0,
+    max_epochs=20,
+    tol=1e-6,
 )
 
 ##############################################################################
@@ -171,7 +173,87 @@ optimal_parameters = pb.calibrate(
 # very simple.
 #
 # The following will plot the fit.
-pb.plot()
+# pb.plot()
+
+# Get the original data and model predictions
+original_data = pb.get_original_data()
+
+# Generate model predictions on the original frequency domain
+with torch.no_grad():
+    k1_original = torch.tensor(original_data["freq"])
+    k1_scaled = k1_original / pb.freq_scale
+    model_prediction = pb.OPS(k1_scaled)
+    model_prediction_unscaled = pb.unscale_prediction(model_prediction)
+
+# Set up the plot with same styling as CalibrationProblem
+with plt.style.context("bmh"):
+    plt.rcParams.update({"font.size": 10})
+
+    fig, axes = plt.subplots(
+        nrows=2,
+        ncols=2,
+        num="Custom Spectra Fit (2x2)",
+        figsize=[12, 8],
+        sharex=True,
+    )
+
+    # Colors and labels matching CalibrationProblem style
+    clr = ["royalblue", "crimson", "forestgreen", "mediumorchid"]
+    spectra_labels = ["11", "22", "33", "13"]
+    spectra_names = ["uu", "vv", "ww", "uw"]
+
+    # Plot each component
+    for i, (component, label, name, color) in enumerate(
+        zip(["uu", "vv", "ww", "uw"], spectra_labels, spectra_names, clr)
+    ):
+        ax = axes.flatten()[i]
+
+        # Get data and model values
+        data_vals = original_data[component]
+        model_vals = model_prediction_unscaled[i].cpu().detach().numpy()
+
+        # Take absolute values for log plotting
+        data_vals_abs = np.abs(data_vals)
+        model_vals_abs = np.abs(model_vals)
+
+        # Convert to numpy if needed
+        if torch.is_tensor(data_vals_abs):
+            data_vals_abs = data_vals_abs.cpu().detach().numpy()
+
+        # Plot data and model
+        ax.plot(
+            original_data["freq"],
+            data_vals_abs,
+            "o",
+            markersize=3,
+            color=color,
+            label="Data",
+            alpha=0.6,
+        )
+
+        ax.plot(
+            original_data["freq"],
+            model_vals_abs,
+            "--",
+            color=color,
+            label="Model",
+        )
+
+        # Set up axes properties
+        ax.set_xscale("log")
+        ax.set_yscale("log")
+        ax.set_xlabel(r"$k_1$")
+        ax.set_ylabel(rf"$k_1 F_{{{label}}}(k_1)$")
+        ax.grid(which="both")
+
+        # Set title
+        prefix = "auto-" if i < 3 else "cross-"
+        ax.set_title(f"{prefix}spectra {name}")
+        ax.legend()
+
+    fig.suptitle("Custom Spectra Fit (2x2 Layout)")
+    fig.tight_layout(rect=(0.0, 0.03, 1.0, 0.95))
+    plt.show()
 
 # TODO: Add a plot of the loss function
 # TODO: Add model saving and loading, show here

@@ -11,7 +11,7 @@ requires-python = ">=3.10"
 license = "BSD-2-Clause"
 authors = [
   {name = "Alexey Izmailov", email = "alizma@brown.edu"},
-  {name = "Matthew Meeker", email = "meeker.matthew@pm.me"},
+  {name = "Matthew Meeker", email = "meeker.matthew@utexas.edu"},
   {name = "Yorgos Deskos"},
   {name = "Brendan Keith"},
 ]
@@ -68,7 +68,6 @@ dev = [
     "ipykernel",
 ]
 
-# Add this section to fix the build error
 [tool.setuptools]
 packages = ["drdmannturb"]
 

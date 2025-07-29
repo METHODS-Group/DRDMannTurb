@@ -52,31 +52,30 @@ class OnePointSpectra(nn.Module):
         ####
         # Coherence grid
         # TODO: Reimplement the coherence branching
-        p1, p2 = integration_params.coh_log_min, integration_params.coh_log_max
-        N_coh = integration_params.coh_num_points
-        grid_zero_coh = torch.tensor([0])
-        grid_plus_coh = torch.logspace(p1, p2, N_coh)
-        grid_minus_coh = -torch.flip(grid_plus_coh, dims=[0])
+        if self.use_coherence:
+            p1, p2 = integration_params.coh_log_min, integration_params.coh_log_max
+            N_coh = integration_params.coh_num_points
+            grid_zero_coh = torch.tensor([0])
+            grid_plus_coh = torch.logspace(p1, p2, N_coh)
+            grid_minus_coh = -torch.flip(grid_plus_coh, dims=[0])
 
-        self.coh_grid_k2 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach()
-        self.coh_grid_k3 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach()
+            self.coh_grid_k2 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach()
+            self.coh_grid_k3 = torch.cat((grid_minus_coh, grid_zero_coh, grid_plus_coh)).detach()
 
-        self.coh_meshgrid23 = torch.meshgrid(self.coh_grid_k2, self.coh_grid_k3, indexing="ij")
+            self.coh_meshgrid23 = torch.meshgrid(self.coh_grid_k2, self.coh_grid_k3, indexing="ij")
 
     def forward(self, k1_input: torch.Tensor) -> torch.Tensor:
         """Evaluate the frequency-weighted one-point spectra."""
         # Debug: Check k1_input
         if torch.isnan(k1_input).any():
-            print(f"NaN in k1_input: min={k1_input.min().item()}, max={k1_input.max().item()}, mean={k1_input.mean().item()}")
-            print(f"k1_input shape: {k1_input.shape}")
-            print(f"k1_input: {k1_input}")
+            print(f"NaN in k1_input: min={k1_input.min():.2g}, max={k1_input.max():.2g}, mean={k1_input.mean():.2g}")
+            print(f"k1_input shape: {tuple(k1_input.shape)}")
 
         # Debug: Check grid components
         if torch.isnan(self.ops_grid_k2).any():
-            print(f"NaN in ops_grid_k2: min={self.ops_grid_k2.min().item()}, max={self.ops_grid_k2.max().item()}, mean={self.ops_grid_k2.mean().item()}")
+            print(f"NaN in ops_grid_k2: min={self.ops_grid_k2.min():.2g}, max={self.ops_grid_k2.max():.2g}")
         if torch.isnan(self.ops_grid_k3).any():
-            print(f"NaN in ops_grid_k3: min={self.ops_grid_k3.min().item()}, max={self.ops_grid_k3.max().item()}, mean={self.ops_grid_k3.mean().item()}")
-
+            print(f"NaN in ops_grid_k3: min={self.ops_grid_k3.min():.2g}, max={self.ops_grid_k3.max():.2g}")
         k = torch.stack(torch.meshgrid(k1_input, self.ops_grid_k2, self.ops_grid_k3, indexing="ij"), dim=-1)
 
         # Debug: Check k after construction
@@ -103,7 +102,7 @@ class OnePointSpectra(nn.Module):
 
     @torch.jit.export
     def quad23(self, f: torch.Tensor) -> torch.Tensor:
-        """Evaluate the 23-point quadrature."""
+        """Evaluate the quadrature for OPS."""
         # Integration over k3
         quad = torch.trapz(f, x=self.ops_grid_k3, dim=-1)
         # Integration over k2, fix k3 = 0 since slices are identical in meshgrid
@@ -117,7 +116,52 @@ class OnePointSpectra(nn.Module):
         spatial_separations: torch.Tensor,
     ) -> torch.Tensor:
         """Evaluate the spectral coherence in the cross-stream direction."""
-        raise NotImplementedError("Not yet implemented.")
+        if not self.use_coherence:
+            raise ValueError("Coherence calculation requires use_coherence=True")
+
+        coh_k = torch.stack(torch.meshgrid(k1_input, self.coh_grid_k2, self.coh_grid_k3, indexing="ij"), dim=-1)
+        phi_arr = self.spectral_tensor_model(coh_k)
+
+        Phi11_coh = phi_arr[0]
+        Phi22_coh = phi_arr[1]
+        Phi33_coh = phi_arr[2]
+
+        k2_grid = coh_k[..., 1]
+
+        S11_0 = self._quad23_coherence(Phi11_coh)
+        S22_0 = self._quad23_coherence(Phi22_coh)
+        S33_0 = self._quad23_coherence(Phi33_coh)
+
+        n_seps = len(spatial_separations)
+        n_freqs = len(k1_input)
+
+        coh_u = torch.zeros(n_seps, n_freqs, device=k1_input.device, dtype=k1_input.dtype)
+        coh_v = torch.zeros(n_seps, n_freqs, device=k1_input.device, dtype=k1_input.dtype)
+        coh_w = torch.zeros(n_seps, n_freqs, device=k1_input.device, dtype=k1_input.dtype)
+
+        for i, r in enumerate(spatial_separations):
+            phase = 1j * k2_grid * r
+            exp_phase = torch.exp(phase)
+
+            S11_r = self._quad23_coherence(Phi11_coh * exp_phase)
+            S22_r = self._quad23_coherence(Phi22_coh * exp_phase)
+            S33_r = self._quad23_coherence(Phi33_coh * exp_phase)
+
+            coh_u[i, :] = torch.abs(S11_r) ** 2 / torch.abs(S11_0) ** 2
+            coh_v[i, :] = torch.abs(S22_r) ** 2 / torch.abs(S22_0) ** 2
+            coh_w[i, :] = torch.abs(S33_r) ** 2 / torch.abs(S33_0) ** 2
+
+        return torch.stack([coh_u, coh_v, coh_w], dim=-1)
+
+    @torch.jit.export
+    def _quad23_coherence(self, f: torch.Tensor) -> torch.Tensor:
+        """Evaluate the quadrature for coherence."""
+        # Integration over k3
+        quad = torch.trapz(f, x=self.coh_grid_k3, dim=-1)
+        # Integration over k2, fix k3 = 0 since slices are identical in meshgrid
+        quad = torch.trapz(quad, x=self.coh_grid_k2, dim=-1)
+
+        return quad
 
     @torch.jit.export
     def get_div(self, Phi: torch.Tensor) -> torch.Tensor:

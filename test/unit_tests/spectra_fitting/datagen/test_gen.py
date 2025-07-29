@@ -28,12 +28,12 @@ fp = Path(__file__).parent
 
 #     assert np.allclose(kaimal_mann_spectra_new, kaimal_mann_spectra_true)
 
+
 def test_kaimal_data():
     """Test the Polars DataFrame generation for the Kaimal spectra."""
     k1_domain = torch.logspace(-1, 2, 20)
 
     data_dict_double = generate_kaimal_spectra(k1_domain, zref=1, ustar=1, dtype=pl.Float64)
-    data_dict_single = generate_kaimal_spectra(k1_domain, zref=1, ustar=1, dtype=pl.Float32)
 
     assert isinstance(data_dict_double, dict)
     assert "ops" in data_dict_double and "coherence" in data_dict_double

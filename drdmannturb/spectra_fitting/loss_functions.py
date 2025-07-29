@@ -1,7 +1,7 @@
 """Implements the loss function in an extensible and configurable manner without directly exposing the calculation."""
 
 import torch
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.writer import SummaryWriter
 
 from ..parameters import LossParameters
 

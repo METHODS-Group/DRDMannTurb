@@ -115,7 +115,7 @@ class VonKarman_ESM(EnergySpectrumModel):
         if torch.isnan(k).any():
             print(f"NaN in VonKarman input k: min={k.min().item()}, max={k.max().item()}, mean={k.mean().item()}")
         if torch.isnan(k_norm).any():
-            print(f"NaN in VonKarman k_norm: min={k_norm.min().item()}, max={k_norm.max().item()}, mean={k_norm.mean().item()}")
+            print(f"NaN in k_norm: min={k_norm.min():.2g}, max={k_norm.max():.2g}, mean={k_norm.mean():.2g}")
         if torch.isnan(kL).any():
             print(f"NaN in VonKarman kL: min={kL.min().item()}, max={kL.max().item()}, mean={kL.mean().item()}")
         if torch.isnan(L):
@@ -134,11 +134,15 @@ class VonKarman_ESM(EnergySpectrumModel):
         # Debug: Check result (just summary stats)
         if torch.isnan(E).any():
             print(f"NaN in VonKarman E: min={E.min().item()}, max={E.max().item()}, mean={E.mean().item()}")
-            print(f"parenthetical_term: min={parenthetical_term.min().item()}, max={parenthetical_term.max().item()},"
-                  f"mean={parenthetical_term.mean().item()}")
-            print(f"k_norm^(-5/3): min={(k_norm ** (-5.0 / 3.0)).min().item()},"
-                  f"max={(k_norm ** (-5.0 / 3.0)).max().item()},"
-                  f"mean={(k_norm ** (-5.0 / 3.0)).mean().item()}")
+            print(
+                f"parenthetical_term: min={parenthetical_term.min().item()}, max={parenthetical_term.max().item()},"
+                f"mean={parenthetical_term.mean().item()}"
+            )
+            print(
+                f"k_norm^(-5/3): min={(k_norm ** (-5.0 / 3.0)).min().item()},"
+                f"max={(k_norm ** (-5.0 / 3.0)).max().item()},"
+                f"mean={(k_norm ** (-5.0 / 3.0)).mean().item()}"
+            )
 
         return E
 
@@ -261,7 +265,7 @@ class RDT_SpectralTensor(SpectralTensorModel):
 
         # Debug: Check energy_spectrum (just summary stats)
         if torch.isnan(energy_spectrum).any():
-            print(f"NaN in energy_spectrum: min={energy_spectrum.min().item()}, max={energy_spectrum.max().item()}, mean={energy_spectrum.mean().item()}")
+            print(f"NaN in energy_spectrum: min={energy_spectrum.min():.2g}, max={energy_spectrum.max():.2g}")
 
         E0 = sigma * L ** (5.0 / 3.0) * energy_spectrum
 
@@ -271,6 +275,11 @@ class RDT_SpectralTensor(SpectralTensorModel):
 
         # Split k into components
         k1, k2, k3 = k[..., 0], k[..., 1], k[..., 2]
+
+        # Debug: Check k1, k2, k3 (just summary stats)
+        print(f"k1 range: {k1.min().item():.3e} to {k1.max().item():.3e}")
+        print(f"k2 range: {k2.min().item():.3e} to {k2.max().item():.3e}")
+        print(f"k3 range: {k3.min().item():.3e} to {k3.max().item():.3e}")
 
         # Calculate
         k30 = k3 + beta * k1
@@ -287,6 +296,16 @@ class RDT_SpectralTensor(SpectralTensorModel):
             print(f"NaN in kk: min={kk.min().item()}, max={kk.max().item()}, mean={kk.mean().item()}")
         if torch.isnan(s).any():
             print(f"NaN in s: min={s.min().item()}, max={s.max().item()}, mean={s.mean().item()}")
+
+        # Debug: Check s (just summary stats)
+        print(f"s range: {s.min().item():.3e} to {s.max().item():.3e}")
+        print(f"s zero count: {(s == 0).sum().item()}")
+
+        # Debug: Check kk and kk0 (just summary stats)
+        print(f"kk range: {kk.min().item():.3e} to {kk.max().item():.3e}")
+        print(f"kk0 range: {kk0.min().item():.3e} to {kk0.max().item():.3e}")
+        print(f"kk zero count: {(kk == 0).sum().item()}")
+        print(f"kk0 zero count: {(kk0 == 0).sum().item()}")
 
         C1 = beta * k1**2 * (kk0 - 2 * k30**2 + beta * k1 * k30) / (kk * s)
         C2 = k2 * kk0 / torch.sqrt(s**3) * torch.atan2(beta * k1 * torch.sqrt(s), kk0 - k30 * k1 * beta)
