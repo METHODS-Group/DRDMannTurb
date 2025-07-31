@@ -28,7 +28,7 @@ class Rational(nn.Module):
     fg_learn_nu: bool
     nu: torch.Tensor | nn.Parameter
 
-    def __init__(self, learn_nu: bool = True, nu_init: float = -1.0 / 3.0) -> None:
+    def __init__(self, learn_nu: bool = False, nu_init: float = -1.0 / 3.0) -> None:
         """
         Initialize the rational kernel.
 
@@ -80,11 +80,11 @@ class Rational(nn.Module):
 
         # For very large values, use asymptotic behavior: out^(a-2b)
         if large_mask.any():
-            result[large_mask] = out[large_mask]**(a - 2*b)
+            result[large_mask] = out[large_mask] ** (a - 2 * b)
 
         # For very small values, use Taylor expansion around 0
         if small_mask.any():
-            result[small_mask] = out[small_mask]**a
+            result[small_mask] = out[small_mask] ** a
 
         return result
 
@@ -108,6 +108,13 @@ class TauNet(nn.Module):
         \boldsymbol{a}(\boldsymbol{k}) = \operatorname{abs}(\boldsymbol{k}) +
         \mathrm{NN}(\operatorname{abs}(\boldsymbol{k})).
     """
+
+    n_layers: int
+    hidden_layer_sizes: list[int]
+    activations: list[nn.Module]
+    linears: nn.ModuleList
+    Ra: Rational
+    sign: torch.Tensor
 
     def __init__(
         self,
@@ -227,7 +234,7 @@ class TauNet(nn.Module):
 
         # Debug: Check k_mod (just summary stats)
         if torch.isnan(k_mod).any():
-            print(f"NaN in TauNet k_mod: min={k_mod.min().item()}, max={k_mod.max().item()}, mean={k_mod.mean().item()}")
+            print(f"NaN in k_mod: min={k_mod.min().item()}, max={k_mod.max().item()}, mean={k_mod.mean().item()}")
             mlp_out = self._mlp_forward(k.abs())
             print(f"MLP output: min={mlp_out.min().item()}, max={mlp_out.max().item()}, mean={mlp_out.mean().item()}")
 
