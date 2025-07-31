@@ -22,10 +22,13 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
 ]
 dependencies = [
+    "jax>=0.4.30",
     "matplotlib==3.10.3",
+    "netcdf4",
     "numba>=0.60.0",
     "numpy>=2.0",
     "plotly==5.17.0",
+    "polars>=1.29.0",
     "pyevtk==1.6.0",
     "pyFFTW==0.15.0",
     "scikit_learn>=1.4.0",
@@ -34,9 +37,6 @@ dependencies = [
     "torch==2.7.1", # TODO: check CUDA
     "tqdm==4.67.1",
     "xarray>=2024.7.0",
-    "netcdf4",
-    "jax>=0.4.30",
-    "polars>=1.29.0",
 ]
 
 [project.urls]
@@ -63,6 +63,7 @@ docs = [
 dev = [
     "pytest==8.3.5",
     "pytest-cov",
+    "pytest-group",
     "ruff>=0.4.8",
     "scalene",
     "ipykernel",
