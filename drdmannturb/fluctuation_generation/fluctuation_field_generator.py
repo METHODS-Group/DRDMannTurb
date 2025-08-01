@@ -4,7 +4,6 @@ import io
 import pickle
 from collections.abc import Callable
 from math import ceil
-from os import PathLike
 from pathlib import Path
 from typing import Union
 
@@ -12,7 +11,6 @@ import numpy as np
 import torch
 
 from ..parameters import IntegrationParameters
-from ..spectra_fitting import CalibrationProblem
 from .covariance_kernels import MannCovariance, VonKarmanCovariance
 from .gaussian_random_fields import VectorGaussianRandomField
 from .low_frequency.fluctuation_field_generator import LowFreqGenerator
@@ -93,7 +91,6 @@ class FluctuationFieldGenerator:
         length_scale: float | None = None,
         time_scale: float | None = None,
         energy_spectrum_scale: float | None = None,
-        path_to_parameters: str | PathLike | None = None,
         seed: int | None = None,
         blend_num: int = 10,
         config_2d_model: dict | None = None,
