@@ -4,7 +4,7 @@ Field Generation API
 The field generation module provides tools for generating synthetic turbulent wind fields.
 
 FluctuationFieldGenerator
-------------------------
+-------------------------
 
 Main interface for generating synthetic turbulent fields.
 
@@ -39,7 +39,7 @@ Main interface for generating synthetic turbulent fields.
       field = generator.generate()
 
 Gaussian Random Fields
----------------------
+----------------------
 
 Core algorithms for generating Gaussian random fields.
 
@@ -56,7 +56,7 @@ Core algorithms for generating Gaussian random fields.
    - ``NNCovariance``: Neural network covariance kernel
 
 Sampling Methods
----------------
+----------------
 
 Different sampling strategies for field generation.
 
@@ -71,7 +71,7 @@ Different sampling strategies for field generation.
    - ``vf_fft_parallel``: Parallel vector FFT sampling
 
 Low Frequency Generation
------------------------
+------------------------
 
 Tools for generating low-frequency components.
 
@@ -85,7 +85,7 @@ Tools for generating low-frequency components.
    - ``FluctuationFieldGenerator``: Low-frequency field generator
 
 Plotting Utilities
------------------
+------------------
 
 Visualization tools for generated fields.
 

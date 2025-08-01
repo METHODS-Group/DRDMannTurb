@@ -33,7 +33,7 @@ DRDMannTurb provides several key modules:
    Helper functions for data generation, plotting, and configuration.
 
 Quick Reference
---------------
+---------------
 
 **Main Classes:**
 

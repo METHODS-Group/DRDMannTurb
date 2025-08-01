@@ -4,7 +4,7 @@ Models API
 Neural network models and parameter classes for DRDMannTurb.
 
 Neural Network Modules
----------------------
+----------------------
 
 Neural network architectures for learning eddy lifetime functions.
 

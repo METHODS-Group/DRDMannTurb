@@ -38,7 +38,6 @@ The regularization term is defined as
 .. math::
     \operatorname{Reg}\left[\boldsymbol{\theta}_{\mathrm{NN}}\right]:=\frac{1}{N} \sum_{i=1}^N \theta_{\mathrm{NN}, i}^2.
 
-
 The LossParameters class correspondingly sets the weights of these terms.
 
 .. autoclass:: drdmannturb.LossParameters

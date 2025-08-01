@@ -78,7 +78,7 @@ Handles loading and formatting of spectral data from various sources.
       problem = CalibrationProblem(data=data, ...)
 
 Spectral Tensor Models
----------------------
+----------------------
 
 Base classes and implementations for spectral tensor models.
 
@@ -99,7 +99,7 @@ Base classes and implementations for spectral tensor models.
    - ``RDT_SpectralTensor``: Rapid Distortion Theory spectral tensor
 
 Loss Functions
--------------
+--------------
 
 Loss functions and aggregators for model calibration.
 
@@ -114,7 +114,7 @@ Loss functions and aggregators for model calibration.
    - ``CoherenceLoss``: Loss for spectral coherence fitting
 
 Data Generation
---------------
+---------------
 
 Utilities for generating synthetic spectral data.
 
