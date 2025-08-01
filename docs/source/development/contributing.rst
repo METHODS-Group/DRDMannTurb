@@ -7,6 +7,7 @@ Development Setup
 
 1. Clone the repository
 2. Install with uv: ``uv pip install -e ".[dev]"``
+3. Install ``pre-commit`` and hooks: ``uv run pre-commit install``
 3. Run tests: ``uv run pytest test/``
 4. Run linting: ``uv run ruff check drdmannturb/``
 

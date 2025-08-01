@@ -4,7 +4,7 @@ Utilities API
 Utility functions and tools for DRDMannTurb.
 
 Data Generation
---------------
+---------------
 
 Functions for generating synthetic data for testing and validation.
 
@@ -18,7 +18,7 @@ Functions for generating synthetic data for testing and validation.
    - ``generate_kaimal_spectra()``: Generate Kaimal spectra
 
 Plotting Utilities
------------------
+------------------
 
 Visualization tools for spectra and fields.
 
@@ -33,7 +33,7 @@ Visualization tools for spectra and fields.
    - ``plot_coherence()``: Plot coherence functions
 
 Covariance Utilities
--------------------
+--------------------
 
 Tools for working with covariance kernels.
 
@@ -47,7 +47,7 @@ Tools for working with covariance kernels.
    - ``plot_covariance()``: Visualize covariance structure
 
 Configuration
-------------
+-------------
 
 Configuration and setup utilities.
 
