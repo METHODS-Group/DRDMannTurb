@@ -13,16 +13,10 @@ The first two examples correspond to the experiments presented in `the original 
 
     02_eddy-lifetime_fit.py
 
-    03_eddy-lifetime_fit_3term_loss.py
+    03_custom_noisy_data_fit.py
 
-    04_eddy-lifetime_fit_gelu.py
+    04_mann_linear_regression.py
 
-    05_custom_noisy_data_fit.py
+    05_mann_box_generation_IEC.py
 
-    06_custom_data_interpolate_and_fit.py
-
-    07_mann_linear_regression.py
-
-    08_mann_box_generation_IEC.py
-
-    09_drd_box.py
+    06_drd_box.py

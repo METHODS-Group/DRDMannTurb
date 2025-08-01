@@ -1,4 +1,4 @@
-name: Lint
+name: Precision Tests
 
 on:
   push:
@@ -7,8 +7,12 @@ on:
     branches: [main]
 
 jobs:
-  lint:
+  precision-tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        precision: [float32, float64]
+
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -24,12 +28,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
-      - uses: astral-sh/ruff-action@v3
-        with:
-          src: "./drdmannturb"
-          args: "check --fix --exclude=drdmannturb/examples-unrendered"
+      - name: Install package
+        run: uv pip install -e .
 
-      - uses: astral-sh/ruff-action@v3
-        with:
-          src: "./drdmannturb"
-          args: "format"
+      - name: Install test dependencies
+        run: uv add --dev pytest pytest-cov pytest-group
+
+      - name: Run precision tests (${{ matrix.precision }})
+        run: uv run pytest --group=precision --precision=${{ matrix.precision }} -v
