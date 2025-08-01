@@ -26,30 +26,17 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
-from drdmannturb.parameters import (
-    IntegrationParameters,
-    LossParameters,
-    NNParameters,
-    PhysicalParameters,
-    ProblemParameters,
-)
+import drdmannturb as drdmt
 from drdmannturb.spectra_fitting import CalibrationProblem
-
-path = Path().resolve()
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
-
-if torch.cuda.is_available():
-    torch.set_default_tensor_type("torch.cuda.FloatTensor")
-
-
-spectra_file = path / "./inputs/Spectra.dat" if path.name == "examples" else path / "../data/Spectra.dat"
+from drdmannturb.spectra_fitting import spectral_tensor_models as stm
 
 ##############################################################################
 # Setting Physical Parameters
 # ---------------------------
-# Here, we define our characteristic scales :math:`L, \Gamma, \alpha\epsilon^{2/3}`, the
-# log-scale domain, and the reference height `zref` and velocity `Uref`.
+# Once again, this first block is just setting up several physical parameters we'll need.
+
+path = Path().resolve()
+spectra_file = path / "./inputs/Spectra.dat" if path.name == "examples" else path / "../data/Spectra.dat"
 
 domain = torch.logspace(-1, 3, 40)
 
@@ -59,6 +46,14 @@ sigma = 0.04  # magnitude (σ = αϵ^{2/3})
 
 Uref = 21  # reference velocity
 zref = 1  # reference height
+
+#######################################################################################
+# Construct the ``CustomDataLoader``
+# ------------------------------
+
+data_loader = drdmt.spectra_fitting.data_generator.CustomDataLoader(
+    ops_data_file=spectra_file,
+)
 
 #######################################################################################
 # ``CalibrationProblem`` construction
@@ -83,44 +78,30 @@ zref = 1  # reference height
 #
 # Note that :math:`\nu` is learned here.
 
-pb = CalibrationProblem(
-    nn_params=NNParameters(nlayers=2, hidden_layer_sizes=[10, 10], activations=[nn.ReLU(), nn.ReLU()]),
-    prob_params=ProblemParameters(tol=1e-9, nepochs=5, learn_nu=True),
-    loss_params=LossParameters(alpha_pen2=1.0, beta_reg=1e-5),
-    phys_params=PhysicalParameters(
-        L=L,
-        Gamma=Gamma,
-        sigma=sigma,
-        domain=domain,
-        Uref=Uref,
-        zref=zref,
+model = stm.RDT_SpectralTensor(
+    eddy_lifetime_model=stm.TauNet_ELT(
+        taunet=drdmt.TauNet(
+            n_layers=2,
+            hidden_layer_sizes=[10, 10],
+            activations=[nn.ReLU(), nn.ReLU()],
+            learn_nu=True,  # This makes the rational kernel's :math:`\nu` a learnable parameter.
+        )
     ),
-    integration_params=IntegrationParameters(),
-    logging_directory="runs/custom_data",
-    device=device,
+    energy_spectrum_model=stm.VonKarman_ESM(),
+    L_init=L,
+    gamma_init=Gamma,
+    sigma_init=sigma,
 )
 
 
-##############################################################################
-# Data from File
-# --------------
-# The data are provided in a CSV format with the first column determining the frequency domain, which must be
-# non-dimensionalized by the reference velocity. The different spectra are provided in the order ``uu, vv, ww, uw``
-# where the last is the u-w cospectra (the convention for 3D velocity vector components being u, v, w for x, y, z).
-# The ``k1_data_points`` key word argument is needed here to define the domain over which the spectra are defined.
-
-raise NotImplementedError("Not updated yet")
-
-# CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=","))
-# f = CustomData[:, 0]
-# k1_data_pts = 2 * torch.pi * f / Uref
-# Data = OnePointSpectraDataGenerator(
-#     zref=zref,
-#     data_points=k1_data_pts,
-#     data_type=DataType.CUSTOM,
-#     spectra_file=spectra_file,
-#     k1_data_points=k1_data_pts.data.cpu().numpy(),
-# ).Data
+pb = CalibrationProblem(
+    data_loader=data_loader,
+    model=model,
+    loss_params=drdmt.LossParameters(alpha_pen2=1.0, beta_reg=1e-5),
+    integration_params=drdmt.IntegrationParameters(),
+    logging_directory="runs/custom_data",
+    device="cpu",
+)
 
 
 ##############################################################################
@@ -131,10 +112,17 @@ raise NotImplementedError("Not updated yet")
 # fit for :math:`\nu` is close to :math:`\nu \approx - 1/3`, which can be improved
 # with further training.
 
-
-# optimal_parameters = pb.calibrate(data=Data)
-
-pb.print_calibrated_params()
+pb.calibrate(
+    optimizer_class=torch.optim.LBFGS,
+    optimizer_kwargs={
+        "line_search_fn": "strong_wolfe",
+        "max_iter": 20,
+        "history_size": 20,
+    },
+    lr=1.0,
+    max_epochs=5,
+    tol=1e-6,
+)
 
 ##############################################################################
 # Plotting
@@ -147,10 +135,3 @@ pb.print_calibrated_params()
 # which suggests that a better fit may be obtained from pre-processing the data, which
 # we will explore in the next example.
 pb.plot()
-
-##############################################################################
-# This plots out the loss function terms as specified, each multiplied by the
-# respective coefficient hyperparameter. The training logs can be accessed from the logging directory
-# with Tensorboard utilities, but we also provide a simple internal utility for a single
-# training log plot.
-pb.plot_losses(run_number=0)

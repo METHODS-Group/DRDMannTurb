@@ -63,7 +63,6 @@ docs = [
 dev = [
     "pytest==8.3.5",
     "pytest-cov",
-    "pytest-group",
     "ruff>=0.4.8",
     "scalene",
     "ipykernel",
@@ -125,3 +124,10 @@ target-version = "py310"
 minversion = "7.0"
 pythonpath = ["."]
 testpaths = ["test"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
+    "pytest-xdist>=3.8.0",
+]

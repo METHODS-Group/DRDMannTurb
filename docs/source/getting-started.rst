@@ -3,50 +3,84 @@
 Getting Started
 ===============
 
-`DRDMannTurb` consists of two major components: (1) fitting a Deep Rapid Distortion (DRD) spectral tensor model to one-point spectra from real-world wind observations, and (2) generating divergence-free fluctuation fields from the inferred spectral tensor using a novel and efficient block-wise approach. Additional utilities for data pre-processing, such as interpolation and filtering, as well as 3D visualization tools are provided as part of the package.
-
-Please consider reading `the original DRD paper <https://arxiv.org/pdf/2107.11046.pdf>`_ and the examples. Please also see the UML diagrams for both :doc:`spectra fitting <./uml_drd>` and :doc:`fluctuation field generation <./uml_fluct_gen>` to see how the models are configured.
+``DRDMannTurb`` has two major sub-modules ``spectra_fitting``
+and ``fluctuation_generation``, which are described in the following sections.
+We encourage users to read `the original DRD paper <https://arxiv.org/pdf/2107.11046.pdf>`_
+in addition to the examples.
 
 Spectra Fitting
 ===============
 
-``DRDMannTurb`` performs an operator regression task that characterizes an optimal nonlocal covariance kernel via neural network training. These kernels are part of a family of DRD models that preserve physical fluid flow properties such as mass conservation as well as turbulence statistics up to second order. DRD models are generalizations of `the Mann model <https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/spatial-structure-of-neutral-atmospheric-surfacelayer-turbulence/ACFE1EA8C45763481CBEB193B314E2EB>`_, which admits three parameters: the Kolmogorov constant multiplied by the two-thirds power law for the rate of viscous dissipation, a turbulence length scale, and a non-dimensional time-scale related to the eddy-lifetime function. ``DRDMannTurb`` allows users to easily extend the classical Mann model to a DRD model by using neural networks to approximate the function related to the lifetime of the eddies. These networks have a wide range of customizability in terms of architecture and their training is facilitated via ``PyTorch``.  This leads to a model that can better fit field data without changing the complexity of generating the associated synthetic turbulence wind field.
+The ``spectra_fitting`` sub-module implements an operator regression task: using
+one-point spectra and, optionally, spatial coherence function data, we train a neural network
+to approximate a spectral tensor model -- we call these "Deep Rapid Distortion (DRD) models,"
+since they are based on rapid distortion models and generalize the `Mann model
+<https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/spatial-structure-of-neutral-atmospheric-surfacelayer-turbulence/ACFE1EA8C45763481CBEB193B314E2EB>`_,
+which admits three parameters: the Kolmogorov constant multiplied by the
+two-thirds power law for the rate of viscous dissipation, a turbulence length scale, and a
+non-dimensional time-scale related to the eddy-lifetime function.
+``DRDMannTurb`` aims to enable users to fit DRD models implementing a variety of physics
+while minimizing the complexity of generating synthetic turbulence fields.
 
-The overall workflow consists of a ``OnePointSpectraDataGenerator`` which provides the data over which a DRD model is to be trained. This class also provides pre-processing utilities for interpolation of data to a common wave vector domain and filtering the curves to improve fits with noisy data. Alternatively, data can be generated from the Mann model. This enables the functionality of performing pure Mann model fits to data and for generating fluctuation fields based on the Mann model.
+The primary objects at play in the ``spectra_fitting`` sub-module are ``CalibrationProblem``,
+``CustomDataLoader``, and the ``SpectralTensorModel`` super-class. One begins by constructing
+a ``CustomDataLoader`` and a ``SpectralTensorModel``, both of which are passed to
+a ``CalibrationProblem``. ``CalibrationProblem.calibrate()`` implements the training loop
+and takes several parameters related to the training process as arguments.
 
 Field Generation
 ================
 
-Fluctuation field generation involves one class and is performed in an efficient block-wise manner: rather than generating the field in the whole domain, the field is generated locally on overlapping blocks that partition the domain and are then composed together to form a single turbulence field. Please see the final section of the original DRD paper for a more in-depth discussion. Plotting utilities facilitated by ``Plotly`` are provided.
+The ``fluctuation_generation`` sub-module implements the "Mann method" for generating synthetic
+turbulence fields with a domain-decomposition technique which constructs the field iteratively
+with overlapping blocks which are then stitched together.
 
 Installation
-=============
+============
 
-For users, pre-compiled wheels for the package are available via ``pip install drdmannturb``.
+For users, pre-compiled wheels for the package are available via
+``pip install drdmannturb``.
 
-Alternatively, the following section will guide you through the installation of DRDMannTurb and its dependencies in a fresh environment. The following instructions should work on any operating system (OS) that is supported by `Anaconda <https://docs.conda.io/projects/conda/en/stable/user-guide/getting-started.html>`_, including **Windows**, **macOS**, and **Linux**.
+Alternatively, the rest of this section will guide you through installing
+``DRDMannTurb`` and its dependencies from source. We suggest using
+`uv<https://docs.astral.sh/uv/>`_ to install the package.
 
-#. Clone DRDMannTurb from its `GitHub repository <https://github.com/METHODS-Group/DRDMannTurb>`_.
-   Enter the directory and check out the branch of your choice.
-   The latest development version will be available under the branch ``develop``.
+#.  Clone ``DRDMannTurb`` from its `GitHub repository
+    <https://github.com/METHODS-Group/DRDMannTurb>`_. Enter the directory and check out
+    the branch of your choice.
 
-   .. code-block:: shell
+    .. code-block:: shell
 
-      git clone https://github.com/METHODS-Group/DRDMannTurb.git
-      cd DRDMannTurb
-      git checkout main
+        git clone https://github.com/METHODS-Group/DRDMannTurb.git
+        cd DRDMannTurb
+        git checkout main
 
-#. Create an Anaconda environment called ``drdmannturb_env`` for installing DRDMannTurb.
-   Use the default environment specs in ``env_drdmannturb.yml`` to create it.
-   Then activate the environment:
+#.  Install ``DRDMannTurb`` and its dependencies. We recommend using ``uv`` for
+    faster dependency resolution, but ``pip`` will work as well.
 
-   .. code-block:: shell
+    **Using uv (recommended):**
 
-      conda env create -n drdmannturb_env -f requirements/env_drdmannturb.yml
-      conda activate drdmannturb_env
+    .. code-block:: shell
 
-#. Install the local DRDMannTurb source files as a Python package using ``pip`` in the root directory:
+        # Install uv if you haven't already
+        curl -LsSf https://astral.sh/uv/install.sh | sh
 
-   .. code-block:: shell
+        # Install the package in editable mode with all dependencies
+        uv pip install -e .
 
-      python -m pip install -e ./
+    **Using pip (alternative):**
+
+    .. code-block:: shell
+
+        # Install the package in editable mode
+        pip install -e .
+
+#.  Verify the installation by running the test suite.
+
+    .. code-block:: shell
+
+        # Using uv
+        uv run pytest test/unit_tests/ -v
+
+        # Using pip
+        python -m pytest test/unit_tests/ -v

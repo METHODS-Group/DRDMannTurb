@@ -28,14 +28,9 @@ Examples 8 and 9.
 
 import torch
 
-from drdmannturb import EddyLifetimeType
-from drdmannturb.parameters import (
-    LossParameters,
-    NNParameters,
-    PhysicalParameters,
-    ProblemParameters,
-)
-from drdmannturb.spectra_fitting import CalibrationProblem, OnePointSpectraDataGenerator
+import drdmannturb as drdmt
+from drdmannturb.spectra_fitting import CalibrationProblem
+from drdmannturb.spectra_fitting import spectral_tensor_models as stm
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -43,8 +38,8 @@ if torch.cuda.is_available():
     torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
 #######################################################################################
-# Set up physical parameters and domain. We perform the spectra fitting over the
-# :math:`k_1 z` space :math:`[10^{{-1}}, 10^2]` with 20 points.
+# We'll use the Kaimal spectrum for this example; this first segment sets up a few
+# physical parameters we'll need to specify the problem.
 
 zref = 40  # reference height
 ustar = 1.773  # friction velocity
@@ -54,34 +49,56 @@ L = 0.59 * zref  # length scale
 Gamma = 3.9  # time scale
 sigma = 3.2 * ustar**2.0 / zref ** (2.0 / 3.0)  # magnitude (σ = αϵ^{2/3})
 
-print(f"Physical Parameters: {L,Gamma,sigma}")
-
-k1 = torch.logspace(-1, 2, 20) / zref
-
-##############################################################################
-# ``CalibrationProblem`` Construction
-# -----------------------------------
-# The following cell defines the ``CalibrationProblem`` using default values
-# for the ``NNParameters`` and ``LossParameters`` dataclasses.
-# Notice that ``EddyLifetimeType.MANN`` specifies the Mann model for the eddy lifetime
-# function, :math:`\tau`, meaning no neural network is used in learning :math:`\tau`.
-# Thus, we only learn the parameters :math:`L`, :math:`\Gamma`, and :math:`\sigma`.
-pb = CalibrationProblem(
-    nn_params=NNParameters(),
-    prob_params=ProblemParameters(eddy_lifetime=EddyLifetimeType.MANN, nepochs=2),
-    loss_params=LossParameters(),
-    phys_params=PhysicalParameters(L=L, Gamma=Gamma, sigma=sigma, ustar=ustar, domain=k1),
-    device=device,
-)
+print(f"Physical Parameters: {L, Gamma, sigma}")
 
 ##############################################################################
 # Data Generation
 # ---------------
-# We now collect ``Data = (<data points>, <data values>)`` and specify the
-# reference height (``zref``) to be used during calibration. Note that ``DataType.KAIMAL``
-# is used by default.
+# First, we're going to use the Kaimal spectra data generation function to
+# build a synthetic dataset.
 
-Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
+k1 = torch.logspace(-1, 2, 20) / zref
+
+kaimal_data = drdmt.spectra_fitting.data_generator.generate_kaimal_spectra(
+    k1=k1,
+    zref=zref,
+    ustar=ustar,
+)
+
+
+##############################################################################
+# Model Construction
+# ------------------
+# Models in ``DRDMannTurb`` are constructed via a ``SpectralTensorModel``, which
+# requires an ``EddyLifetimeModel`` and an ``EnergySpectrumModel``.
+#
+# In this example, we use the ``RDT_SpectralTensor`` (Rapid Distortion Theory) with
+# the ``Mann_ELT`` (Mann model eddy lifetime function) and the
+# ``VonKarman_ESM`` (standard von Karman energy spectrum).
+
+model = stm.RDT_SpectralTensor(
+    eddy_lifetime_model=stm.Mann_ELT(),
+    energy_spectrum_model=stm.VonKarman_ESM(),
+    L_init=L,
+    gamma_init=Gamma,
+    sigma_init=sigma,
+)
+
+##############################################################################
+# ``CalibrationProblem`` Construction
+# -----------------------------------
+#
+
+pb = CalibrationProblem(
+    model=model,
+    data=kaimal_data,
+    fit_coherence=False,
+    loss_params=drdmt.LossParameters(),  # Default values are used here.
+    integration_params=drdmt.IntegrationParameters(),
+    logging_directory="runs/mann_elt_fit",
+    output_directory="outputs",
+    device="cpu",
+)
 
 ##############################################################################
 # The model is now fit to the provided spectra given in ``Data``.
@@ -91,10 +108,19 @@ Data = OnePointSpectraDataGenerator(data_points=k1, zref=zref, ustar=ustar).Data
 #
 # Having the necessary components, the model is "calibrated" (fit) to the provided spectra.
 
-optimal_parameters = pb.calibrate(data=Data)
+pb.calibrate(
+    optimizer_class=torch.optim.LBFGS,
+    optimizer_kwargs={
+        "line_search_fn": "strong_wolfe",
+        "max_iter": 20,
+        "history_size": 20,
+    },
+    lr=1.0,
+    max_epochs=20,
+    tol=1e-6,
+)
 
 ##############################################################################
 # We conclude by printing the optimized parameters and generating a plot showing the
 # fit to the Kaimal spectra.
-pb.print_calibrated_params()
 pb.plot()
