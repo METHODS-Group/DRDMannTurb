@@ -100,6 +100,8 @@ class TestPrecisionVerification:
         L, gamma = L.to(device), gamma.to(device)
 
         taunet = TauNet(n_layers=2, hidden_layer_sizes=5)
+        # Move TauNet to correct device and dtype
+        taunet = taunet.to(device=device, dtype=precision_dtype)
         model = TauNet_ELT(taunet)
 
         result = model(k, L, gamma)
@@ -117,6 +119,8 @@ class TestPrecisionVerification:
         L = L.to(device)
 
         model = Learnable_ESM()
+        # Move model to correct device and dtype
+        model = model.to(device=device, dtype=precision_dtype)
 
         result = model(k, L)
         assert result.dtype == precision_dtype
@@ -163,6 +167,7 @@ class TestPrecisionVerification:
 
         # Move to device and convert precision
         k = k.to(device)
+        # TODO: is this not done with eg. just model.to(device=device, dtype=precision_dtype) ?
         model.log_L.data = model.log_L.data.to(device=device, dtype=precision_dtype)
         model.log_gamma.data = model.log_gamma.data.to(device=device, dtype=precision_dtype)
         model.log_sigma.data = model.log_sigma.data.to(device=device, dtype=precision_dtype)

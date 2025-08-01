@@ -124,4 +124,4 @@ target-version = "py310"
 [tool.pytest.ini_options]
 minversion = "7.0"
 pythonpath = ["."]
-testpaths = ["tests"]
+testpaths = ["test"]

@@ -116,6 +116,8 @@ class TestEddyLifetimeModels:
         models = [Mann_ELT(), TwoThirds_ELT(), Constant_ELT()]
 
         for model in models:
+            # Move model to correct device and dtype
+            model = model.to(device=device, dtype=precision_dtype)
             result = model(k, L, gamma)
             assert result.dtype == precision_dtype
             assert result.device == k.device
