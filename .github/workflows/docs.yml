@@ -1,13 +1,11 @@
-name: Lint
+name: Documentation
 
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 jobs:
-  lint:
+  docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,12 +22,16 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
-      - uses: astral-sh/ruff-action@v3
-        with:
-          src: "./drdmannturb"
-          args: "check --fix --exclude=drdmannturb/examples-unrendered"
+      - name: Install package with docs
+        run: uv pip install -e ".[docs]"
 
-      - uses: astral-sh/ruff-action@v3
+      - name: Build documentation
+        run: |
+          cd docs
+          uv run make html
+
+      - name: Upload documentation
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          src: "./drdmannturb"
-          args: "format"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/build/html
