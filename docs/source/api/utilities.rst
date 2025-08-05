@@ -11,6 +11,7 @@ Functions for generating synthetic data for testing and validation.
 .. automodule:: drdmannturb.spectra_fitting.data_generator
    :members:
    :undoc-members:
+   :no-index:
 
    **Functions:**
 
@@ -25,6 +26,7 @@ Visualization tools for spectra and fields.
 .. automodule:: drdmannturb.fluctuation_generation.wind_plot
    :members:
    :undoc-members:
+   :no-index:
 
    **Functions:**
 
@@ -54,6 +56,7 @@ Configuration and setup utilities.
 .. automodule:: drdmannturb.parameters
    :members:
    :undoc-members:
+   :no-index:
 
    **Classes:**
 

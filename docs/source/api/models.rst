@@ -53,6 +53,7 @@ Parameter classes for configuring models and calibration.
 .. automodule:: drdmannturb.parameters
    :members:
    :undoc-members:
+   :no-index:
 
    **Key Classes:**
 

@@ -4,7 +4,7 @@ Spectra Fitting API
 The spectra fitting module provides tools for calibrating spectral tensor models to wind turbulence data.
 
 CalibrationProblem
------------------
+------------------
 
 The main interface for calibrating spectral tensor models to spectral data.
 
