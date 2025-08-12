@@ -1,443 +1,200 @@
 """Provides the CalibrationProblem class, which manages the spectra curve fits."""
 
-import os
-import pickle
 import time
-from collections.abc import Iterable
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import polars as pl
 import torch
-from torch.nn.utils import parameters_to_vector, vector_to_parameters
+from torch.nn.utils import parameters_to_vector
 
-from ..common import MannEddyLifetime
-from ..enums import EddyLifetimeType
 from ..parameters import (
     IntegrationParameters,
     LossParameters,
-    NNParameters,
-    PhysicalParameters,
-    ProblemParameters,
 )
+from . import spectral_tensor_models as stm
+from .data_generator import CustomDataLoader
 from .loss_functions import LossAggregator
 from .one_point_spectra import OnePointSpectra
 
 
 class CalibrationProblem:
-    r"""
-    .. _calibration-problem-reference:
+    r"""Defines the model calibration problem and manages the spectra curve fits."""
 
-    Defines the model calibration problem and manages the spectra curve fits.
-
-    Class which manages the spectra fitting and eddy lifetime function learning based on the deep rapid distortion model
-    developed in `Keith, Khristenko, Wohlmuth (2021) <https://arxiv.org/pdf/2107.11046.pdf>`_.
-
-    This class manages the operator regression task which characterizes the best fitting candidate
-    in a family of nonlocal covariance kernels that are parametrized by a neural network.
-
-    This class can also be used independently of neural networks via the ``EddyLifetimeType`` used for classical spectra
-    fitting tasks, for instance, using the ``EddyLifetimeType.MANN`` results in a fit that completely relies on the Mann
-    eddy lifetime function. If a neural network model is used, Torch's ``LBFGS`` optimizer is used with cosine annealing
-    for learning rate scheduling. Parameters for these components of the training process are set in ``LossParameters``
-    and ``ProblemParameters`` during initialization.
-
-    After instantiating ``CalibrationProblem``, wherein the problem and eddy lifetime function substitution
-    type are indicated, the user will need to generate the OPS data using ``OnePointSpectraDataGenerator``,
-    after which the model can be fit with ``CalibrationProblem.calibrate``.
-
-    After training, this class can be used in conjunction with the fluctuation generation utilities in this package to
-    generate realistic turbulence fields based on the learned spectra and eddy lifetimes.
-    """  # noqa: D400
-
-    data: dict[str, torch.Tensor]  # TODO: This typing may change in the future
+    data: dict[str, pl.DataFrame | None]
 
     def __init__(
         self,
-        nn_params: NNParameters,
-        prob_params: ProblemParameters,
-        loss_params: LossParameters,
-        phys_params: PhysicalParameters,
-        integration_params: IntegrationParameters,
-        device: str = "cpu",
+        model: stm.SpectralTensorModel,
+        loss_params: LossParameters = LossParameters(),
+        integration_params: IntegrationParameters = IntegrationParameters(),
+        data: dict[str, pl.DataFrame | None] | None = None,
+        data_loader: CustomDataLoader | None = None,
+        fit_coherence: bool = False,
         logging_directory: str | None = None,
         output_directory: Path | str = Path().resolve() / "results",
+        device: str = "cpu",
     ):
-        r"""Initialize a ``CalibrationProblem`` instance, defining the model calibration and physical setting.
-
-        As depicted in the UML diagram, this requires 4 dataclasses.
-
-        Parameters
-        ----------
-        device: str,
-            One of the strings ``"cpu", "cuda", "mps"`` indicating the torch device to use
-        nn_params : NNParameters
-            A ``NNParameters`` (for Neural Network) dataclass instance, which defines values of interest
-            eg. size and depth. By default, calls constructor using default values.
-        prob_params : ProblemParameters
-            A ``ProblemParameters`` dataclass instance, which is used to determine the conditional branching
-            and computations required, among other things. By default, calls constructor using default values
-        loss_params : LossParameters
-            A ``LossParameters`` dataclass instance, which defines the loss function terms and related coefficients.
-            By default, calls constructor using the default values.
-        phys_params : PhysicalParameters
-            A ``PhysicalParameters`` dataclass instance, which defines the physical constants governing the
-            problem setting; note that the ``PhysicalParameters`` constructor requires three positional
-            arguments.
-        logging_directory: Optional[str], optional
-            TODO: Add docs for this
-        output_directory : Union[Path, str], optional
-            The directory to write output to; by default ``"./results"``
-        """
-        self.init_device(device)
-
-        self.nn_params = nn_params
-        self.prob_params = prob_params
-        if self.prob_params.num_components not in [3, 4, 6]:
-            raise ValueError(f"Invalid number of components: {self.prob_params.num_components}; must be 3, 4, or 6")
-
+        r"""Initialize a ``CalibrationProblem`` instance, defining the model calibration and physical setting."""
         self.loss_params = loss_params
-        self.phys_params = phys_params
 
-        # stringify the activation functions used; for manual bash only
-        self.activfuncstr = str(nn_params.activations)
-
-        self.input_size = nn_params.input_size
-        self.hidden_layer_size = nn_params.hidden_layer_size
-        self.hidden_layer_sizes = nn_params.hidden_layer_sizes
-
-        self.init_with_noise = prob_params.init_with_noise
-        self.noise_magnitude = prob_params.noise_magnitude
+        if data is None and data_loader is not None:
+            self.data = data_loader.format_data()
+        elif data is not None and data_loader is None:
+            self.data = data
+        else:
+            raise ValueError("Provide exactly one of data or data_loader")
 
         self.OPS = OnePointSpectra(
-            type_eddy_lifetime=self.prob_params.eddy_lifetime,
-            physical_params=self.phys_params,
-            nn_parameters=self.nn_params,
-            learn_nu=self.prob_params.learn_nu,
+            spectral_tensor_model=model,
             integration_params=integration_params,
-            use_learnable_spectrum=self.prob_params.use_learnable_spectrum,
-            p_exponent=self.prob_params.p_exponent,
-            q_exponent=self.prob_params.q_exponent,
+            use_coherence=fit_coherence,
         )
-
-        if self.prob_params.eddy_lifetime == EddyLifetimeType.MANN_APPROX:
-            self.OPS.set_scales(self.phys_params.L, self.phys_params.Gamma, self.phys_params.sigma)
-
-        if self.init_with_noise:
-            self.initialize_parameters_with_noise()
-
-        self.log_dimensional_scales()
 
         self.output_directory = output_directory
         self.logging_directory = logging_directory
 
-    # TODO: propagate device setting through this method
-    def init_device(self, device: str):
-        """Initialize the device (CPU or GPU) on which computation is performed.
-
-        Parameters
-        ----------
-        device : str
-            string following PyTorch conventions -- "cuda" or "cpu"
-        """
-        self.device = torch.device(device)
-        if device == "cuda" and torch.cuda.is_available():
-            torch.set_default_tensor_type("torch.cuda.FloatTensor")
-        # self.OPS.to(self.device)
-
-    # =========================================
-
-    @property
-    def parameters(self) -> np.ndarray:
-        """Returns all parameters of the One Point Spectra surrogate model as a single vector.
-
-        .. note:: The first 3 parameters of self.parameters() are exactly
-            #.  LengthScale
-
-            #.  TimeScale
-
-            #.  Spectrum Amplitude
-
-        Returns
-        -------
-        np.ndarray
-            Single vector containing all model parameters on the CPU, which can be loaded into an object with the same
-            architecture with the parameters setter method. This automatically offloads any model parameters that were
-            on the GPU, if any.
-        """
-        NN_parameters = parameters_to_vector(self.OPS.parameters())
-
-        with torch.no_grad():
-            param_vec = NN_parameters.cpu().numpy() if NN_parameters.is_cuda else NN_parameters.numpy()
-
-        return param_vec
-
-    @parameters.setter
-    def parameters(self, param_vec: np.ndarray | torch.Tensor) -> None:
-        """Setter method for loading in model parameters from a given vector.
-
-        Raises
-        ------
-        ValueError
-            "Parameter vector must match the total number of parameters in the model."
-        """
-        current_num_params = len(list(self.parameters))
-
-        if not torch.is_tensor(param_vec):
-            param_vec = torch.tensor(param_vec)
-
-        if len(param_vec) != current_num_params:
-            raise ValueError(
-                f"Parameter vector length {len(param_vec)} does not match model's parameter count "
-                f"{current_num_params}. This could be due to additional learnable parameters like "
-                "p_low/q_high when use_learnable_spectrum is True."
-            )
-
-        vector_to_parameters(param_vec, self.OPS.parameters())
-
-    def log_dimensional_scales(self) -> None:
-        """Set the quantities for non-dimensionalization in log-space."""
-        if self.phys_params.L > 0 and self.phys_params.Gamma > 0 and self.phys_params.sigma > 0:
-            parameters = self.parameters
-            parameters[0] = np.log(self.phys_params.L)
-            parameters[1] = np.log(self.phys_params.Gamma)
-            parameters[2] = np.log(self.phys_params.sigma)
-            self.parameters = parameters
-        else:
-            raise ValueError("All dimension scaling constants must be positive.")
-
-    def initialize_parameters_with_noise(self):
-        """Introduce additive white noise to the OPS parameters."""
-        noise = torch.tensor(
-            self.noise_magnitude * torch.randn(*self.parameters.shape),
-        )
-        vector_to_parameters(noise.abs(), self.OPS.parameters())
-
-        vector_to_parameters(noise, self.OPS.tauNet.parameters())
-
-        vector_to_parameters(noise.abs(), self.OPS.Corrector.parameters())
-
-    def eval(self, k1: torch.Tensor) -> np.ndarray:
-        r"""Evaluate the calibrated model on :math:`k_1`.
-
-        This can be done after training or after loading trained model
-        parameters from file.
-
-        Parameters
-        ----------
-        k1 : torch.Tensor
-            Tensor of :math:`k_1` data
-
-        Returns
-        -------
-        np.ndarray
-            Evaluation of the model represented in a Numpy array (CPU bound)
-        """
-        res: torch.Tensor
-        with torch.no_grad():
-            res = self.OPS(k1)
-        return res.cpu().numpy()
-
-    def eval_grad(self, k1: torch.Tensor):
-        r"""Evaluate gradient of :math:`k_1` via Autograd.
-
-        Parameters
-        ----------
-        k1 : torch.Tensor
-            Tensor of :math::math:`k_1` data
-
-        Returns
-        -------
-        np.ndarray
-            Numpy array of resultant gradient (CPU bound)
-        """
-        self.OPS.zero_grad()
-        res: torch.Tensor
-        with torch.no_grad():
-            res = self.OPS(k1)
-        res.backward()
-        grad = torch.cat([param.grad.view(-1) for param in self.OPS.parameters()])
-        return grad.cpu().numpy()
-
-    # -----------------------------------------
-
     def calibrate(
         self,
-        # data: tuple[list[tuple[Any, float]], torch.Tensor],
-        data: dict[str, torch.Tensor],
-        coherence_data_file: Path | str | None = None,
-        tb_comment: str = "",
-        optimizer_class: torch.optim.Optimizer = torch.optim.LBFGS,
-    ) -> dict[str, float]:
-        r"""Train the model on the provided data.
+        optimizer_class: type[torch.optim.Optimizer] = torch.optim.LBFGS,
+        lr: float = 1.0,
+        optimizer_kwargs: dict = {},
+        max_epochs: int = 100,
+        tol: float = 1e-9,
+        auto_scale: bool = True,
+        plot_during_calibration: bool = False,
+    ) -> None:
+        r"""Train the model on the provided data."""
+        print("Loading data...")
 
-        Calibration method, which handles the main training loop and some
-        data pre-processing. Currently the only supported optimizer is Torch's ``LBFGS``
-        and the learning rate scheduler uses cosine annealing. Parameters for these
-        components of the training process are set in ``LossParameters`` and ``ProblemParameters``
-        during initialization.
+        # OPS data reconstruction
+        ops_data = self.data["ops"]
+        assert ops_data is not None, "OPS data is required"
 
-        See the ``.print_calibrated_params()`` method to receive a pretty-printed output of the calibrated
-        physical parameters.
+        # Store ALL original data for later use
+        self.ops_k_domain_original = torch.Tensor(ops_data["freq"])
+        self.ops_uu_original = torch.Tensor(ops_data["uu"])
+        self.ops_vv_original = torch.Tensor(ops_data["vv"])
+        self.ops_ww_original = torch.Tensor(ops_data["ww"])
+        self.ops_uw_original = torch.Tensor(ops_data["uw"])
+        self.ops_vw_original = torch.Tensor(ops_data["vw"])
+        self.ops_uv_original = torch.Tensor(ops_data["uv"])
 
-        Parameters
-        ----------
-        data : tuple[Iterable[float], torch.Tensor]
-            Tuple of data points and values, respectively, to be used in calibration.
-        tb_comment : str
-           Filename comment used by tensorboard; useful for distinguishing between architectures and hyperparameters.
-           Refer to tensorboard documentation for examples of use. By default, the empty string, which results in
-           default tensorboard filenames.
-        optimizer_class : torch.optim.Optimizer, optional
-           Choice of Torch optimizer, by default torch.optim.LBFGS
+        # Initialize scaling factors
+        self.freq_scale = 1.0
+        self.spectral_scale = 1.0
 
-        Returns
-        -------
-        Dict[str, float]
-            Physical parameters for the problem, in normal space (not in log-space, as represented internally).
-            Presented as a dictionary in the order
-            ``{L : length scale, Gamma : time scale, sigma : spectrum amplitude}``.
+        if auto_scale:
+            freq_scale = torch.median(self.ops_k_domain_original)
 
-        Raises
-        ------
-        RuntimeError
-            Thrown in the case that the current loss is not finite.
-        """
-        # Save provided data dictionary to object for later use in plotting, etc
-        self.data = data
+            if freq_scale == 0:
+                freq_scale = 1.0
 
-        data_k1_arr = data["k1"]
-        data_ops = data["ops"]
-        # data_coh = data["coherence"]
-
-        OptimizerClass = optimizer_class
-        lr = self.prob_params.learning_rate
-        tol = self.prob_params.tol
-        max_epochs = self.prob_params.nepochs
-
-        self.plot_loss_optim = False
-        self.curves = list(range(0, self.prob_params.num_components))
-
-        # [0, 1, 2, 3]
-        # [0, 1, 2, 3, 4, 5]
-
-        if coherence_data_file is not None:
-            print(f"Loading coherence data from {coherence_data_file}")
-            self.load_coherence_data(coherence_data_file)
-            self.has_coherence_data = True
-
-            # Set up coherence calculation for the same 4 spatial separations used in plotting
-            print("Setting up coherence calculation for calibration...")
-            self.coherence_separations_tensor = torch.tensor(
-                self.coherence_plot_separations, dtype=torch.get_default_dtype()
-            )
-            print(
-                f"Using {len(self.coherence_plot_separations)} "
-                "spatial separations: {self.coherence_plot_separations}"
+            # Compute spectral scaling using ALL components
+            all_spectral_values = torch.cat(
+                [
+                    self.ops_uu_original,
+                    self.ops_vv_original,
+                    self.ops_ww_original,
+                    self.ops_uw_original,
+                    self.ops_vw_original,
+                    self.ops_uv_original,
+                ]
             )
 
-            # Extract coherence data for the selected separations
-            self.coherence_data_u_selected = self.coherence_u[self.coherence_plot_sep_indices, :]
-            self.coherence_data_v_selected = self.coherence_v[self.coherence_plot_sep_indices, :]
-            self.coherence_data_w_selected = self.coherence_w[self.coherence_plot_sep_indices, :]
+            # Filter out NaN values before computing median
+            finite_mask = torch.isfinite(all_spectral_values)
+            if finite_mask.any():
+                spectral_scale = torch.median(torch.abs(all_spectral_values[finite_mask]))
+            else:
+                spectral_scale = 1.0
 
-            # Enable coherence calculation in OPS
-            self.OPS.use_coherence = True
+            if spectral_scale == 0:
+                spectral_scale = 1.0
 
+            self.freq_scale = freq_scale
+            self.spectral_scale = spectral_scale
+
+            print(f"Applied auto-scaling: freq_scale={freq_scale:.3e}, spectral_scale={spectral_scale:.3e}")
+
+        # Use scaled data for training
+        ops_k_domain_tensor = self.ops_k_domain_original / self.freq_scale
+        ops_uu_true_tensor = self.ops_uu_original / self.spectral_scale
+        ops_vv_true_tensor = self.ops_vv_original / self.spectral_scale
+        ops_ww_true_tensor = self.ops_ww_original / self.spectral_scale
+
+        # Build the OPS_true tensor
+        OPS_true = torch.stack(
+            [
+                ops_uu_true_tensor,
+                ops_vv_true_tensor,
+                ops_ww_true_tensor,
+            ]
+        )
+
+        curves = [0, 1, 2]
+
+        # Handle cross-spectra components with scaling
+        ops_uw_true_tensor = self.ops_uw_original / self.spectral_scale
+        if not ops_uw_true_tensor.isnan().any():
+            print("Adding uw data to OPS_true")
+            OPS_true = torch.cat([OPS_true, ops_uw_true_tensor.unsqueeze(0)], dim=0)
+            curves.append(3)
         else:
-            self.has_coherence_data = False
-            self.OPS.use_coherence = False
+            print("No uw data provided, skipping.")
 
+        ops_vw_true_tensor = self.ops_vw_original / self.spectral_scale
+        if not ops_vw_true_tensor.isnan().any():
+            OPS_true = torch.cat([OPS_true, ops_vw_true_tensor.unsqueeze(0)], dim=0)
+            curves.append(4)
+        else:
+            print("No vw data provided, skipping.")
+
+        ops_uv_true_tensor = self.ops_uv_original / self.spectral_scale
+        if not ops_uv_true_tensor.isnan().any():
+            OPS_true = torch.cat([OPS_true, ops_uv_true_tensor.unsqueeze(0)], dim=0)
+            curves.append(5)
+        else:
+            print("No uv data provided, skipping.")
+
+        # TODO: Handle the coherence data...
+        # coh_data = data["coherence"]
+
+        ## TODO: Review the coherence data... something is weird with the meshgrid flattening idea
+        #        but that SHOULD work...
+
+        # Initialize the LossAggregator
+        # TODO: Can't this just go into the constructor?
         self.LossAggregator = LossAggregator(
             params=self.loss_params,
-            k1space=data_k1_arr,
-            zref=self.phys_params.zref,
+            ops_k_domain=ops_k_domain_tensor,
             tb_log_dir=self.logging_directory,
-            tb_comment=tb_comment,
         )
 
-        if self.prob_params.num_components == 3:
-            self.kF_data_vals = torch.cat(
-                (
-                    data_ops[:, 0, 0],  # uu
-                    data_ops[:, 1, 1],  # vv
-                    data_ops[:, 2, 2],  # ww
-                )
-            )
-        elif self.prob_params.num_components == 4:
-            self.kF_data_vals = torch.cat(
-                (
-                    data_ops[:, 0, 0],  # uu
-                    data_ops[:, 1, 1],  # vv
-                    data_ops[:, 2, 2],  # ww
-                    data_ops[:, 0, 2],  # uw
-                )
-            )
-        elif self.prob_params.num_components == 6:
-            self.kF_data_vals = torch.cat(
-                (
-                    data_ops[:, 0, 0],  # uu
-                    data_ops[:, 1, 1],  # vv
-                    data_ops[:, 2, 2],  # ww
-                    data_ops[:, 0, 2],  # uw
-                    data_ops[:, 1, 2],  # vw
-                    data_ops[:, 0, 1],  # uv
-                )
-            )
-
-        _num_components = self.prob_params.num_components
-
-        # Compute initial model coherence if coherence data is available
-        if self.has_coherence_data:
-            self.model_coherence_u, self.model_coherence_v, self.model_coherence_w = self._compute_model_coherence()
-
-        y = self.OPS(data_k1_arr)
-
-        y_data = torch.zeros_like(y)
-        y_data[:_num_components, ...] = self.kF_data_vals.view(
-            _num_components,
-            self.kF_data_vals.shape[0] // _num_components,
-        )
+        OPS_model = self.OPS(ops_k_domain_tensor)
 
         ########################################
         # Optimizer and Scheduler Initialization
         ########################################
-        if OptimizerClass == torch.optim.LBFGS:
-            optimizer = OptimizerClass(
-                self.OPS.parameters(),
-                lr=lr,
-                line_search_fn="strong_wolfe",
-                max_iter=self.prob_params.wolfe_iter_count,
-                history_size=max_epochs,
-            )
-        else:
-            optimizer = torch.optim.Adam(
-                self.OPS.parameters(),
-                lr=lr,
-                betas=(0.9, 0.999),
-                eps=1e-8,
-                weight_decay=1e-5,
-            )
+        optimizer = optimizer_class(
+            self.OPS.parameters(),
+            lr=lr,
+            **optimizer_kwargs,
+        )
 
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max_epochs)
 
         self.e_count: int = 0
 
-        if self.OPS.type_EddyLifetime == EddyLifetimeType.TAUNET:
-            # NOTE: Old code used tauNet.NN.parameters() since the NN wasn't "built-in" to the tauNet
-            self.gen_theta_NN = lambda: parameters_to_vector(self.OPS.tauNet.parameters())
-        else:
-            self.gen_theta_NN = lambda: 0.0
-
-        theta_NN = self.gen_theta_NN()
-        # print("\n[DEBUG calibrate] About to calculate initial loss...")
-        # print(f"[DEBUG calibrate] self.curves: {self.curves}")
-
-        self.loss = self.LossAggregator.eval(y[self.curves], y_data[self.curves], theta_NN, 0)
-
-        print("=" * 40)
-        print(f"Initial loss: {self.loss.item()}")
-        print("=" * 40)
+        #######################################
+        # Helper functions
+        #######################################
+        def gen_theta_NN() -> torch.Tensor:
+            """Obtain any neural network parameters."""
+            if hasattr(self.OPS.spectral_tensor_model.eddy_lifetime_model, "tauNet"):
+                return parameters_to_vector(self.OPS.spectral_tensor_model.eddy_lifetime_model.tauNet.parameters())
+            return torch.tensor(0.0)
 
         def closure() -> torch.Tensor:
             """Closure function for the optimizer.
@@ -445,62 +202,94 @@ class CalibrationProblem:
             This function is called by the optimizer to compute the loss and perform a step.
             It is not exposed and should not be otherwise called by the user.
             """
-            optimizer.zero_grad()
-            y = self.OPS(data_k1_arr)
+            with torch.autograd.set_detect_anomaly(True):
+                optimizer.zero_grad()
 
-            coherence_data: dict | None = None
-            if self.has_coherence_data:
-                model_coh_u, model_coh_v, model_coh_w = self._compute_model_coherence()
+                # Debug: Check model parameters
+                for name, param in self.OPS.named_parameters():
+                    if torch.isnan(param).any():
+                        print(f"NaN in parameter {name}: {param}")
 
-                coherence_data = {
-                    "model_u": model_coh_u,
-                    "model_v": model_coh_v,
-                    "model_w": model_coh_w,
-                    "data_u": self.coherence_data_u_selected,
-                    "data_v": self.coherence_data_v_selected,
-                    "data_w": self.coherence_data_w_selected,
-                }
+                # Debug: Check input tensor
+                if torch.isnan(ops_k_domain_tensor).any():
+                    print(f"NaN in ops_k_domain_tensor in closure: {ops_k_domain_tensor}")
 
-            self.loss = self.LossAggregator.eval(
-                y[self.curves],
-                y_data[self.curves],
-                self.gen_theta_NN(),
-                self.e_count,
-                coherence_data=coherence_data,
-            )
+                OPS_model = self.OPS(ops_k_domain_tensor)
 
-            # Track component losses if available (modify LossAggregator to return these)
-            if hasattr(self.LossAggregator, "last_component_losses"):
-                if not hasattr(self, "loss_history"):
-                    self.loss_history: dict[str, list[float]] = {"ops": [], "coherence": [], "total": []}
+                print("Model output ranges:")
+                for i, name in enumerate(["uu", "vv", "ww", "uw", "vw", "uv"]):
+                    print(f"{name}: {OPS_model[i].min():.3e} to {OPS_model[i].max():.3e}")
 
-                self.loss_history["ops"].append(self.LossAggregator.last_component_losses.get("ops", 0))
-                self.loss_history["coherence"].append(self.LossAggregator.last_component_losses.get("coherence", 0))
-                self.loss_history["total"].append(self.loss.item())
+                if torch.isnan(OPS_model).any():
+                    print(f"NaN in OPS_model in closure: {OPS_model}")
+                    raise ValueError("NaN is OPS_model in closure")
 
-            self.loss.backward()
-            self.e_count += 1
+                self.loss = self.LossAggregator.eval(
+                    OPS_model[curves],
+                    OPS_true,
+                    gen_theta_NN(),
+                    self.e_count,
+                )
+
+                self.loss.backward()
 
             return self.loss
 
+        close_optims = [torch.optim.LBFGS]
 
+        # Set up real-time plotting
+        if plot_during_calibration:
+            self._setup_realtime_plotting(ops_data["freq"], OPS_true, curves)
+
+        ###########################################################################################
+        # Main optimization loop
+        ###########################################################################################
         for epoch in range(1, max_epochs + 1):
             # Print the current parameters
             epoch_start_time = time.time()
             print(f"Epoch {epoch} of {max_epochs}")
-            print(f"Current loss: {self.loss.item()}")
 
-            optimizer.step(closure)
+            if any(isinstance(optimizer, oc) for oc in close_optims):
+                optimizer.step(closure)
+                self.e_count += 1
+
+            else:
+                with torch.autograd.set_detect_anomaly(True):
+                    optimizer.zero_grad()
+                    OPS_model = self.OPS(ops_k_domain_tensor)
+                    self.loss = self.LossAggregator.eval(
+                        OPS_model[curves],
+                        OPS_true,
+                        gen_theta_NN(),
+                        self.e_count,
+                    )
+                    self.loss.backward()
+
+                    optimizer.step()
+
+                    self.e_count += 1
+
+            print("PAST CLOSURE/OPTIMIZER STEP")
+
             scheduler.step()
 
             epoch_end_time = time.time()
             print(f"Epoch {epoch} took {epoch_end_time - epoch_start_time} seconds")
+            print(f"\tCurrent loss: {self.loss.item():.3f}")
 
-            print(f"\tCurrent L: {self.OPS.LengthScale.item()}")
-            print(f"\tCurrent Gamma: {self.OPS.TimeScale.item()}")
-            print(f"\tCurrent sigma: {self.OPS.Magnitude.item()}")
-            print(f"\tCurrent p: {self.OPS.p_exponent.item()}")
-            print(f"\tCurrent q: {self.OPS.q_exponent.item()}")
+            print(f"\tCurrent L: {torch.exp(self.OPS.spectral_tensor_model.log_L).item():.3f}")
+            print(f"\tCurrent Gamma: {torch.exp(self.OPS.spectral_tensor_model.log_gamma).item():.3f}")
+            print(f"\tCurrent sigma: {torch.exp(self.OPS.spectral_tensor_model.log_sigma).item():.3f}\n")
+
+            if isinstance(self.OPS.spectral_tensor_model.energy_spectrum_model, stm.Learnable_ESM):
+                p = self.OPS.spectral_tensor_model.energy_spectrum_model._positive(
+                    self.OPS.spectral_tensor_model.energy_spectrum_model._raw_p
+                )
+                q = self.OPS.spectral_tensor_model.energy_spectrum_model._positive(
+                    self.OPS.spectral_tensor_model.energy_spectrum_model._raw_q
+                )
+                print(f"\tCurrent p: {p.item():.3f}")
+                print(f"\tCurrent q: {q.item():.3f}")
 
             if not (torch.isfinite(self.loss)):
                 raise RuntimeError("Loss is not a finite value, check initialization and learning hyperparameters.")
@@ -509,787 +298,322 @@ class CalibrationProblem:
                 print(f"Spectra Fitting Concluded with loss below tolerance. Final loss: {self.loss.item()}")
                 break
 
-            # Check if we should adjust learning rate
-            if epoch % 50 == 0:  # Check every 50 epochs
-                lr_decision = self.LossAggregator.should_adjust_learning_rate(epoch)
+            # Plot every N epochs (adjust as needed)
+            if plot_during_calibration and (epoch % 5 == 0 or epoch == 1):
+                self._update_realtime_plot(epoch)
+                plt.pause(0.1)  # Small pause to allow plot to update
 
-                if lr_decision["adjust"]:
-                    current_lr = optimizer.param_groups[0]["lr"]
-                    new_lr = current_lr * lr_decision.get("factor", 0.5)
+        ###########################################################################################
+        # Post-optimization
+        ###########################################################################################
 
-                    # Log the decision
-                    print(f"Epoch {epoch}: Adjusting LR due to {lr_decision['reason']}")
-                    print(f"  Current LR: {current_lr:.2e} → New LR: {new_lr:.2e}")
-
-                    # Update learning rate
-                    for param_group in optimizer.param_groups:
-                        param_group["lr"] = new_lr
-
-                    # Log loss diagnostics
-                    loss_info = self.LossAggregator.get_current_loss_info()
-                    print(f"  MSE/Coherence ratio: {loss_info.get('mse_coherence_ratio', 0):.2f}")
+        if plot_during_calibration:
+            plt.ioff()  # Turn off interactive mode
+            plt.show()
 
         print("=" * 40)
         print(f"Spectra fitting concluded with final loss: {self.loss.item()}")
 
-        if self.prob_params.learn_nu and hasattr(self.OPS, "tauNet"):
-            print(f"Learned nu value: {self.OPS.tauNet.Ra.nu}")
+        return
 
-        # physical parameters are stored as natural logarithms internally
-        self.calibrated_params = {
-            "L": np.exp(self.parameters[0]),
-            "Γ": np.exp(self.parameters[1]),
-            "σ": np.exp(self.parameters[2]),
+    def _plot_fit_progress(
+        self,
+        axes,
+        ops_k_domain,
+        OPS_true,
+        curves,
+        epoch,
+    ) -> None:
+        """Plot the fit progress."""
+        with torch.no_grad():
+            OPS_model_full = self.OPS(torch.tensor(ops_k_domain))
+            OPS_model = OPS_model_full[curves]
+
+        for ax in axes:
+            ax.clear()
+
+        component_names = ["uu", "vv", "ww", "uw", "vw", "uv"]
+        colors = ["royalblue", "crimson", "forestgreen", "mediumorchid", "orange", "purple"]
+
+        for i, (curve_idx, ax) in enumerate(zip(curves, axes)):
+            if i < len(curves):
+                ax.plot(
+                    ops_k_domain,
+                    np.abs(OPS_true[i]),
+                    "o",
+                    markersize=3,
+                    color=colors[curve_idx],
+                    alpha=0.6,
+                    label="Data",
+                )
+
+                ax.plot(ops_k_domain, OPS_model[i].abs().detach().numpy(), "--", color=colors[curve_idx], label="Model")
+
+                ax.set_title(f"{component_names[curve_idx]} (Epoch {epoch})")
+                ax.set_xscale("log")
+                ax.set_yscale("log")
+                ax.grid(which="both")
+                ax.legend()
+
+        for i in range(len(curves), len(axes)):
+            axes[i].set_visible(False)
+
+        plt.tight_layout()
+        plt.draw()
+
+    def _setup_realtime_plotting(self, ops_k_domain, OPS_true, curves):
+        """Set up the real-time plotting with original data."""
+        # Store original data for plotting
+        self._plot_data = {
+            "ops_k_domain": self.ops_k_domain_original.tolist(),  # Original frequency domain
+            "OPS_true": torch.stack(
+                [
+                    self.ops_uu_original,
+                    self.ops_vv_original,
+                    self.ops_ww_original,
+                    self.ops_uw_original,
+                    self.ops_vw_original,
+                    self.ops_uv_original,
+                ]
+            ),
+            "curves": curves,
+            "epoch": 0,
         }
 
-        if self.prob_params.use_learnable_spectrum:
-            self.calibrated_params["p"] = self.parameters[3]
-            self.calibrated_params["q"] = self.parameters[4]
+        # Use the same styling as the existing plot method
+        plt.ion()  # Turn on interactive mode
 
-        return self.calibrated_params
+        with plt.style.context("bmh"):
+            plt.rcParams.update({"font.size": 10})
 
-    def _compute_model_coherence(self) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Compute model coherence for the selected spatial separations."""
+            # Create figure with same layout as existing plot
+            self._fig, self._axes = plt.subplots(
+                nrows=2,
+                ncols=3,
+                num="Real-time Spectra Calibration",
+                figsize=[15, 8],
+                sharex=True,
+            )
+
+            self._axes_flat = self._axes.flatten()
+
+            # Use the same colors and labels as existing plot
+            self._clr = ["royalblue", "crimson", "forestgreen", "mediumorchid", "orange", "purple"]
+            self._spectra_labels = ["11", "22", "33", "12", "23", "13"]
+            self._spectra_names = ["uu", "vv", "ww", "uw", "vw", "uv"]
+
+            # Initialize plot lines
+            self._lines_model = [None] * 6
+            self._lines_data = [None] * 6
+
+            # Set up initial plot structure
+            for i in range(6):
+                ax = self._axes_flat[i]
+
+                # Set up axes properties
+                ax.set_xscale("log")
+                ax.set_yscale("log")
+                ax.set_xlabel(r"$k_1$")
+                ax.set_ylabel(rf"$k_1 F_{{{self._spectra_labels[i]}}}(k_1)$")
+                ax.grid(which="both")
+
+                # Hide unused subplots
+                if i >= len(curves):
+                    ax.set_visible(False)
+                else:
+                    prefix = "auto-" if i < 3 else "cross-"
+                    ax.set_title(f"{prefix}spectra {self._spectra_names[i]}")
+
+            self._fig.suptitle("Real-time Spectra Calibration")
+            self._fig.tight_layout(rect=(0.0, 0.03, 1.0, 0.95))
+
+    def _update_realtime_plot(self, epoch):
+        """Update the real-time plot with current model predictions."""
         with torch.no_grad():
-            # Add this: Convert frequency to wavenumber using U_ref (assume it's in self.phys_params or pass it)
-            U_ref = self.phys_params.Uref
-            factor = self.phys_params.wavenumber_conversion_factor  # New: Configurable factor (e.g., 2*pi or 1.0)
+            # Scale input frequency for model
+            ops_k_domain_tensor = torch.tensor(self._plot_data["ops_k_domain"]) / self.freq_scale
+            OPS_model_full = self.OPS(ops_k_domain_tensor)
+            OPS_model = OPS_model_full[self._plot_data["curves"]]
 
-            # Identify non-zero frequencies to avoid NaN issues at f=0
-            min_freq = 1e-6  # Adjust this threshold if needed based on your frequency resolution
-            nonzero_mask = torch.tensor(self.coherence_frequencies) > min_freq
-            coherence_freq_nonzero = self.coherence_frequencies[nonzero_mask]
+            # Unscale the model predictions
+            OPS_model_unscaled = self.unscale_prediction(OPS_model)
 
-            coherence_k1 = (factor * torch.tensor(coherence_freq_nonzero, dtype=torch.get_default_dtype())) / U_ref
+        # Update plots using original data and unscaled predictions
+        for i, curve_idx in enumerate(self._plot_data["curves"]):
+            ax = self._axes_flat[i]
 
-            # No need for additional clamp here since we're excluding very small f
+            # Clear previous lines
+            if self._lines_model[i] is not None:
+                self._lines_model[i][0].remove()
+            if self._lines_data[i] is not None:
+                self._lines_data[i][0].remove()
 
-            model_coherence = self.OPS.SpectralCoherence(coherence_k1, self.coherence_separations_tensor)
-            # model_coherence shape: (3, n_selected_separations, n_frequencies_nonzero)
+            # Use original frequency domain and data
+            model_vals = OPS_model_unscaled[i].cpu().detach().numpy()
+            data_vals = self._plot_data["OPS_true"][curve_idx]  # Original data
 
-            # Create full-size tensors and fill with computed values, setting excluded (low freq) to 1.0
-            n_components = 3  # u, v, w
-            n_seps = len(self.coherence_separations_tensor)
-            n_freqs_full = len(self.coherence_frequencies)
+            # Take absolute values for log plotting
+            model_vals_abs = np.abs(model_vals)
+            data_vals_abs = np.abs(data_vals)
 
-            full_model = torch.ones((n_components, n_seps, n_freqs_full), dtype=torch.get_default_dtype())
-            full_model[:, :, nonzero_mask] = model_coherence
+            # Convert to numpy if it's a torch tensor
+            if torch.is_tensor(data_vals_abs):
+                data_vals_abs = data_vals_abs.cpu().detach().numpy()
 
-            coh_u = full_model[0, :, :]  # Shape: (n_seps, n_freqs_full)
-            coh_v = full_model[1, :, :]
-            coh_w = full_model[2, :, :]
+            # Plot using original frequency domain
+            original_freq = self._plot_data["ops_k_domain"]  # Original units
 
-        return coh_u, coh_v, coh_w
+            self._lines_model[i] = ax.plot(
+                original_freq,
+                model_vals_abs,
+                "--",
+                color=self._clr[curve_idx],
+                label="Model",
+            )
+
+            # Only plot data if it's not all NaN
+            if not np.all(np.isnan(data_vals_abs)):
+                self._lines_data[i] = ax.plot(
+                    original_freq,
+                    data_vals_abs,
+                    "o",
+                    markersize=3,
+                    color=self._clr[curve_idx],
+                    label="Data",
+                    alpha=0.6,
+                )
+
+        # Update the main title with loss info
+        self._fig.suptitle(f"Real-time Spectra Calibration - Epoch {epoch}, Loss: {self.loss.item():.6f}")
+
+        # Redraw
+        self._fig.canvas.draw()
+        self._fig.canvas.flush_events()
 
     # ------------------------------------------------
     ### Post-treatment and Export
     # ------------------------------------------------
 
-    def print_calibrated_params(self):
-        """Print out the optimal calibrated parameters ``L``, ``Gamma``, ``sigma``.
-
-        These parameters are also stored in a fitted
-        ``CalibrationProblem`` object under the ``calibrated_params`` dictionary.
-
-        Raises
-        ------
-        ValueError
-            Must call ``.calibrate()`` method to compute a fit to physical parameters first.
-        """
-        if not hasattr(self, "calibrated_params"):
-            raise ValueError("Must call .calibrate() method to compute a fit to physical parameters first.")
-
-        OKGREEN = "\033[92m"
-        ENDC = "\033[0m"
-
-        print("=" * 40)
-
-        for k, v in self.calibrated_params.items():
-            print(f"{OKGREEN}Optimal calibrated {k} : {v:8.4f} {ENDC}")
-
-        print("=" * 40)
-
-        return
-
-    def num_trainable_params(self) -> int:
-        """Compute the number of trainable network parameters in the underlying model.
-
-            The EddyLifetimeType must be set to one of the following, which involve
-            a network surrogate for the eddy lifetime:
-
-                #.  ``TAUNET``
-
-        Returns
-        -------
-        int
-            The number of trainable network parameters in the underlying model.
-
-        Raises
-        ------
-        ValueError
-            If the OPS was not initialized to one of TAUNET
-        """
-        if self.OPS.type_EddyLifetime != EddyLifetimeType.TAUNET:
-            raise ValueError("Not using trainable model for approximation, must be TAUNET.")
-
-        return sum(p.numel() for p in self.OPS.tauNet.parameters())
-
-    def eval_trainable_norm(self, ord: float | str | None = "fro"):
-        """Evaluate the magnitude (or other norm) of the trainable parameters in the model.
-
-        .. note::
-            The ``EddyLifetimeType`` must be set to one of ``TAUNET`` or ``CUSTOMMLP``, which involve
-            a network surrogate for the eddy lifetime.
-
-        Parameters
-        ----------
-        ord : Optional[Union[float, str]]
-            The order of the norm approximation, follows ``torch.norm`` conventions.
-
-        Raises
-        ------
-        ValueError
-            If the OPS was not initialized to one of ``TAUNET``, ``CUSTOMMLP``.
-
-        """
-        if self.OPS.type_EddyLifetime != EddyLifetimeType.TAUNET:
-            raise ValueError("Not using trainable model for approximation, must be TAUNET, CUSTOMMLP.")
-
-        return torch.norm(torch.nn.utils.parameters_to_vector(self.OPS.tauNet.parameters()), ord)
-
     def save_model(self, save_dir: str | Path | None = None):
         """Pickle and write the trained model to a file.
-
-        Saves model with current weights, model configuration, and training histories to file.
-        The written filename is of the form ``save_dir/<EddyLifetimeType>_<DataType>.pkl``
-
-        This routine stores
-
-            #.  ``NNParameters``
-
-            #.  ``ProblemParameters``
-
-            #.  ``PhysicalParameters``
-
-            #.  ``LossParameters``
-
-            #.  Optimized Parameters (``self.parameters`` field)
 
         Parameters
         ----------
         save_dir : Optional[Union[str, Path]], optional
             Directory to save to, by default None; defaults to provided output_dir field for object.
-
-        Raises
-        ------
-        ValueError
-            No output_directory provided during object initialization and no save_dir provided for this method call.
         """
-        if save_dir is None and self.output_directory is None:
-            raise ValueError(
-                "Must provide directory to save output to. Both save_dir and self.output_directory are None"
-            )
-
-        if save_dir is None:
-            save_dir = self.output_directory
-
-        if isinstance(save_dir, Path):
-            if not save_dir.is_dir():
-                raise ValueError("Provided save_dir is not actually a directory")
-
-            save_dir = str(save_dir)
-
-        filename = save_dir + "/" + str(self.prob_params.eddy_lifetime) + ".pkl"
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-        with open(filename, "wb+") as file:
-            pickle.dump(
-                [
-                    self.nn_params,
-                    self.prob_params,
-                    self.loss_params,
-                    self.phys_params,
-                    self.parameters,
-                ],
-                file,
-            )
+        raise NotImplementedError("Not implemented")
 
     def plot(
         self,
-        OPSData: tuple[Iterable[float], torch.Tensor] | None = None,
-        model_vals: torch.Tensor = None,
-        plot_tau: bool = True,
-        save: bool = False,
-        save_dir: Path | str | None = None,
-        save_filename: str = "",
     ):
-        r"""Visualize the spectra fit and learned eddy lifetime function.
-
-        Plotting method which visualizes the spectra fit on a 2x3 grid and optionally
-        the learned eddy lifetime function on a separate plot if ``plot_tau=True``.
-        By default, this operates on the data used in the fitting,
-        but an alternative :math:`k_1` domain can be provided and the trained model can be re-evaluated.
-
-        Parameters
-        ----------
-        Data : tuple[Iterable[float], torch.Tensor], optional
-            Tuple of data points and corresponding values, by default ``None``
-        model_vals : torch.Tensor, optional
-            Evaluation of the OPS on the data, by default None in which case
-            ``Data`` must provided (since the function will call OPS on the provided
-            ``Data``)
-        plot_tau : bool, optional
-            Indicates whether to plot the learned eddy lifetime function or not,
-            by default ``True``
-        save : bool, optional
-            Whether to save the resulting figure(s), by default ``False``
-        save_dir : Optional[Union[Path, str]], optional
-            Directory to save to, which is created safely if not already present. By default,
-            this is the current working directory.
-        save_filename : str, optional
-            Base filename to save the final figure(s) to. If saving, spectra will be saved as
-            `<save_filename>_spectra.png` and tau (if plotted) as `<save_filename>_tau.png`.
-            Defaults result in `drdmannturb_final_spectra_fit_spectra.png` and `drdmannturb_final_spectra_fit_tau.png`.
-
-        Raises
-        ------
-        ValueError
-            Must either provide ``k1space`` or re-use what was used for model calibration;
-            thrown in the case neither is specified.
-        ValueError
-            Must either provide data points or re-use what was used for model calibration;
-            thrown in the case neither is specified.
-        ValueError
-            Thrown in the case that ``save`` is true but neither the ``save_dir`` or ``output_directory``
-            are provided.
-        """
+        """Plot the model value against the provided data."""
         clr = ["royalblue", "crimson", "forestgreen", "mediumorchid", "orange", "purple"]
-        spectra_labels = ["11", "22", "33", "13", "23", "12"]  # For titles and labels (model order)
+        spectra_labels = ["11", "22", "33", "12", "23", "13"]
+        spectra_names = ["uu", "vv", "ww", "uw", "vw", "uv"]
 
-        # Define which components have data based on num_components
-        # Model order: [F11, F22, F33, F13, F23, F12] (indices 0, 1, 2, 3, 4, 5)
-        # Data order depends on num_components:
-        # 3 components: [F11, F22, F33] -> model indices [0, 1, 2]
-        # 4 components: [F11, F22, F33, F13] -> model indices [0, 1, 2, 3]
-        # 6 components: [F11, F22, F33, F13, F12, F23] -> model indices [0, 1, 2, 3, 5, 4] (reordered)
+        # Get data
+        # data = self.data_loader.format_data()
 
-        if self.prob_params.num_components == 3:
-            data_component_map = {0: 0, 1: 1, 2: 2}  # model_idx: data_idx
-        elif self.prob_params.num_components == 4:
-            data_component_map = {0: 0, 1: 1, 2: 2, 3: 3}  # model_idx: data_idx
-        elif self.prob_params.num_components == 6:
-            data_component_map = {0: 0, 1: 1, 2: 2, 3: 3, 4: 5, 5: 4}  # model_idx: data_idx (F23 and F12 swapped)
-        else:
-            raise ValueError(f"Invalid number of components: {self.prob_params.num_components}")
+        ops_data = self.data["ops"]
+        assert ops_data is not None, "OPS data is required"
 
-        # --- Data Preparation ---
-        if OPSData is not None:
-            DataPoints, DataValues = OPSData
-            k1_data_pts = torch.tensor(DataPoints)[:, 0].squeeze()
+        ops_k_domain = ops_data["freq"]
+        ops_k_domain_tensor = torch.Tensor(ops_data["freq"])
 
-            kF_data_vals: torch.Tensor
+        ops_true = [
+            ops_data["uu"],
+            ops_data["vv"],
+            ops_data["ww"],
+            ops_data["uw"],
+            ops_data["vw"],
+            ops_data["uv"],
+        ]
 
-            if self.prob_params.num_components == 3:
-                kF_data_vals = torch.cat(
-                    [
-                        DataValues[:, 0, 0],  # F11 (uu)
-                        DataValues[:, 1, 1],  # F22 (vv)
-                        DataValues[:, 2, 2],  # F33 (ww)
-                    ]
-                )
-            elif self.prob_params.num_components == 4:
-                kF_data_vals = torch.cat(
-                    [
-                        DataValues[:, 0, 0],  # F11 (uu)
-                        DataValues[:, 1, 1],  # F22 (vv)
-                        DataValues[:, 2, 2],  # F33 (ww)
-                        DataValues[:, 0, 2],  # F13 (uw)
-                    ]
-                )
-            elif self.prob_params.num_components == 6:
-                kF_data_vals = torch.cat(
-                    [
-                        DataValues[:, 0, 0],  # F11 (uu)
-                        DataValues[:, 1, 1],  # F22 (vv)
-                        DataValues[:, 2, 2],  # F33 (ww)
-                        DataValues[:, 0, 2],  # F13 (uw)
-                        DataValues[:, 0, 1],  # F12 (uv)
-                        DataValues[:, 1, 2],  # F23 (vw)
-                    ]
-                )
-
-        else:
-            if self.data is None:
-                raise ValueError("Requires data set to plot against.")
-
-            k1_data_pts = self.data["k1"]
-
-            # Use the same flattening logic as in calibrate() method
-            data_ops = self.data["ops"]
-
-            if self.prob_params.num_components == 3:
-                kF_data_vals = torch.cat(
-                    (
-                        data_ops[:, 0, 0],  # uu
-                        data_ops[:, 1, 1],  # vv
-                        data_ops[:, 2, 2],  # ww
-                    )
-                )
-            elif self.prob_params.num_components == 4:
-                kF_data_vals = torch.cat(
-                    (
-                        data_ops[:, 0, 0],  # uu
-                        data_ops[:, 1, 1],  # vv
-                        data_ops[:, 2, 2],  # ww
-                        data_ops[:, 0, 2],  # uw
-                    )
-                )
-            elif self.prob_params.num_components == 6:
-                kF_data_vals = torch.cat(
-                    (
-                        data_ops[:, 0, 0],  # uu
-                        data_ops[:, 1, 1],  # vv
-                        data_ops[:, 2, 2],  # ww
-                        data_ops[:, 0, 2],  # uw
-                        data_ops[:, 1, 2],  # vw
-                        data_ops[:, 0, 1],  # uv
-                    )
-                )
-
-        # Always get all 6 components from the model
-        kF_model_vals = model_vals if model_vals is not None else self.OPS(k1_data_pts) / self.phys_params.ustar**2.0
-
-        kF_model_vals = kF_model_vals.cpu().detach()
-        kF_data_vals = kF_data_vals.cpu().detach() / self.phys_params.ustar**2  # TODO: Is this being done twice?
-        k1_data_pts = k1_data_pts.cpu().detach()
-
-        _num_components = self.prob_params.num_components
-
-        # Reshape data for the components that were provided
-        s = kF_data_vals.shape[0]  # Total number of data points across provided components
-        num_data_points_per_component = s // _num_components
-        kF_data_vals_reshaped = kF_data_vals.view(_num_components, num_data_points_per_component)
-
-        # --- Plotting Setup ---
-        with plt.style.context("bmh"):
-            plt.rcParams.update({"font.size": 10})  # Slightly larger font
-
-            # --- Spectra Plot (2x3 Grid) - Always 6 plots ---
-            self.fig_spectra, self.ax_spectra = plt.subplots(
-                nrows=2,
-                ncols=3,
-                num="Spectra Calibration",
-                clear=True,
-                figsize=[15, 8],  # Adjusted size for 2x3
-                sharex=True,  # Share x-axis for comparison
-            )
-            self.ax_spectra_flat = self.ax_spectra.flatten()
-            self.lines_SP_model = [None] * 6  # Always 6 components
-            self.lines_SP_data = [None] * 6
-
-            # Plot all 6 components
-            for i in range(6):
-                ax = self.ax_spectra_flat[i]
-                comp_idx = spectra_labels[i]
-                # Flip sign for F13 (uw component) - index 3
-                sign = -1 if i == 3 else 1
-
-                # Always plot model (all 6 components available)
-                (self.lines_SP_model[i],) = ax.plot(
-                    k1_data_pts,
-                    sign * kF_model_vals[i].numpy(),
-                    "--",
-                    color=clr[i],
-                    label=rf"$F_{comp_idx}$ model",
-                )
-
-                # Only plot data if this component was provided
-                if i in data_component_map:
-                    data_idx = data_component_map[i]
-                    (self.lines_SP_data[i],) = ax.plot(
-                        k1_data_pts,
-                        sign * kF_data_vals_reshaped[data_idx].numpy(),
-                        "o",  # Just markers for data
-                        markersize=4,  # Smaller markers
-                        color=clr[i],
-                        label=rf"$F_{comp_idx}$ data",
-                        alpha=0.6,
-                    )
-
-                title = rf"$-F_{ {comp_idx} }$" if i == 3 else rf"$F_{ {comp_idx} }$"
-                ax.set_title(title + " Spectra")
-                ax.legend()
-                ax.set_xscale("log")
-                ax.set_yscale("log")
-                ax.set_ylabel(r"$k_1 F_i /u_*^2$")
-                ax.grid(which="both")
-
-            # Common X label for bottom row
-            for j in range(3):  # Bottom row has 3 subplots
-                self.ax_spectra[1, j].set_xlabel(r"$k_1 z$")
-
-            self.fig_spectra.suptitle("One-point Spectra Fit (All 6 Components)", fontsize=14)
-            self.fig_spectra.tight_layout(rect=[0, 0.03, 1, 0.95])  # Adjust layout for suptitle
-            self.fig_spectra.canvas.draw()
-            self.fig_spectra.canvas.flush_events()
-
-            # --- Eddy Lifetime Plot (Separate Figure if plot_tau is True) ---
-            self.fig_tau = None
-            self.ax_tau = None
-            if plot_tau:
-                k_gd = torch.logspace(-3, 3, 50)
-                # k_gd = torch.logspace(-3, 3, 50)
-                k_1 = torch.stack([k_gd, 0 * k_gd, 0 * k_gd], dim=-1)
-                k_2 = torch.stack([0 * k_gd, k_gd, 0 * k_gd], dim=-1)
-                k_3 = torch.stack([0 * k_gd, 0 * k_gd, k_gd], dim=-1)
-                k_4 = torch.stack([k_gd, k_gd, k_gd], dim=-1) / 3 ** (1 / 2)
-                k_gd_np_scaled = k_gd.cpu().detach().numpy() * self.phys_params.L
-
-                self.fig_tau, self.ax_tau = plt.subplots(
-                    nrows=1,
-                    ncols=1,
-                    num="Eddy Lifetime",
-                    clear=True,
-                    figsize=[7, 5],  # Smaller figure for single plot
-                )
-                self.ax_tau.set_title("Eddy lifetime")
-                self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
-                self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
-                self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
-                self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
-
-                self.tau_ref = (
-                    self.phys_params.Gamma * MannEddyLifetime(self.phys_params.L * k_gd).cpu().detach().numpy()
-                )
-                (self.lines_LT_model1,) = self.ax_tau.plot(
-                    k_gd_np_scaled,
-                    self.tau_model1,
-                    "-",
-                    label=r"$\tau_{model}(k_1)$",
-                )
-                (self.lines_LT_model2,) = self.ax_tau.plot(
-                    k_gd_np_scaled,
-                    self.tau_model2,
-                    "-",
-                    label=r"$\tau_{model}(k_2)$",
-                )
-                (self.lines_LT_model3,) = self.ax_tau.plot(
-                    k_gd_np_scaled,
-                    self.tau_model3,
-                    "-",
-                    label=r"$\tau_{model}(k_3)$",
-                )
-                (self.lines_LT_model4,) = self.ax_tau.plot(
-                    k_gd_np_scaled,
-                    self.tau_model4,
-                    "-",
-                    label=r"$\tau_{model}(k,k,k)$",
-                )
-
-                (self.lines_LT_ref,) = self.ax_tau.plot(
-                    k_gd_np_scaled,
-                    self.tau_ref,
-                    "--",
-                    label=r"$\tau_{ref}=$Mann",
-                )
-
-                self.ax_tau.legend()
-                self.ax_tau.set_xscale("log")
-                self.ax_tau.set_yscale("log")
-                self.ax_tau.set_xlabel(r"$k L$")  # Use kL instead of k1L for general lifetime
-                self.ax_tau.set_ylabel(r"$\tau$")
-                self.ax_tau.grid(which="both")
-                self.fig_tau.tight_layout()
-                self.fig_tau.canvas.draw()
-                self.fig_tau.canvas.flush_events()
-
-        # --- Update Plots (if needed, e.g., in an interactive context) ---
-        # This part assumes the plot might be updated later without full re-plotting
-        for i in range(6):  # Always 6 components
-            curr_model = self.lines_SP_model[i]
-            if curr_model is not None:
-                sign = -1 if i == 3 else 1
-                curr_model.set_ydata(sign * kF_model_vals[i])
-
-        if plot_tau and self.fig_tau is not None:  # Check if tau plot exists
-            # Recalculate tau values based on potentially updated OPS parameters
-            k_gd = torch.logspace(-3, 3, 50)
-            k_1 = torch.stack([k_gd, 0 * k_gd, 0 * k_gd], dim=-1)
-            k_2 = torch.stack([0 * k_gd, k_gd, 0 * k_gd], dim=-1)
-            k_3 = torch.stack([0 * k_gd, 0 * k_gd, k_gd], dim=-1)
-            k_4 = torch.stack([k_gd, k_gd, k_gd], dim=-1) / 3 ** (1 / 2)
-
-            self.tau_model1 = self.OPS.EddyLifetime(k_1).cpu().detach().numpy()
-            self.tau_model2 = self.OPS.EddyLifetime(k_2).cpu().detach().numpy()
-            self.tau_model3 = self.OPS.EddyLifetime(k_3).cpu().detach().numpy()
-            self.tau_model4 = self.OPS.EddyLifetime(k_4).cpu().detach().numpy()
-            # Update lines
-            self.lines_LT_model1.set_ydata(self.tau_model1)
-            self.lines_LT_model2.set_ydata(self.tau_model2)
-            self.lines_LT_model3.set_ydata(self.tau_model3)
-            self.lines_LT_model4.set_ydata(self.tau_model4)
-            # Reference tau might also change if L/Gamma params change, recalculate if needed
-            # self.tau_ref = ...
-            # self.lines_LT_ref.set_ydata(self.tau_ref)
-
-        # --- Saving ---
-        if save:
-            if save_dir is not None:
-                save_dir_path = Path(save_dir)
-            elif self.output_directory is not None:
-                save_dir_path = Path(self.output_directory)
-            else:
-                raise ValueError(
-                    "Plot saving is not possible without specifying the save directory or output_directory "
-                    "for the class."
-                )
-
-            base_filename = save_filename if save_filename else "drdmannturb_final_spectra_fit"
-            spectra_save_path = save_dir_path / (base_filename + "_spectra.png")
-
-            if not save_dir_path.is_dir():
-                os.makedirs(save_dir_path)
-
-            print(f"Saving spectra plot to: {spectra_save_path}")
-            self.fig_spectra.savefig(spectra_save_path, format="png", dpi=150, bbox_inches="tight")
-
-            if plot_tau and self.fig_tau is not None:
-                tau_save_path = save_dir_path / (base_filename + "_tau.png")
-                print(f"Saving tau plot to: {tau_save_path}")
-                self.fig_tau.savefig(tau_save_path, format="png", dpi=150, bbox_inches="tight")
-
-        # Add coherence plotting after spectra plots
-        if hasattr(self, "has_coherence_data") and self.has_coherence_data:
-            self._plot_coherence_data()
-
-        plt.show()  # Show all created figures
-
-    def _plot_coherence_data(self):
-        """
-        Plot coherence data in a 4x3 grid.
-
-        - 4 rows: different spatial separations
-        - 3 columns: coh_u, coh_v, coh_w vs frequency
-        """
-        import matplotlib.pyplot as plt
+        # Get model OPS
+        ops_model = self.OPS(ops_k_domain_tensor)
+        ops_model = ops_model.cpu().detach().numpy()
 
         with plt.style.context("bmh"):
             plt.rcParams.update({"font.size": 10})
 
-            # Create coherence figure
-            self.fig_coherence, self.ax_coherence = plt.subplots(
-                nrows=4, ncols=3, num="Coherence Data", clear=True, figsize=[15, 12], sharex=False, sharey=True
+            fig_spectra, ax_spectra = plt.subplots(
+                nrows=2,
+                ncols=3,
+                num="Spectra Calibration",
+                clear=True,
+                figsize=[15, 8],
+                sharex=True,
             )
 
-            coherence_data = [
-                self.coherence_data_u_selected,
-                self.coherence_data_v_selected,
-                self.coherence_data_w_selected,
-            ]
-            coherence_labels = ["u", "v", "w"]
-            colors = ["royalblue", "crimson", "forestgreen"]
+            ax_spectra_flat = ax_spectra.flatten()
 
-            # Get model coherence if available
-            if hasattr(self, "model_coherence_u"):
-                model_coherence = [self.model_coherence_u, self.model_coherence_v, self.model_coherence_w]
-            else:
-                model_coherence = [None, None, None]
+            lines_SP_model = [None] * 6
+            lines_SP_true = [None] * 6
 
-            # Plot for each selected spatial separation
-            for row in range(4):  # 4 spatial separations
-                sep_value = self.coherence_plot_separations[row]
+            for i in range(6):
+                ax = ax_spectra_flat[i]
 
-                # Plot each component (u, v, w)
-                for col, (coh_data, model_coh, label, color) in enumerate(
-                    zip(coherence_data, model_coherence, coherence_labels, colors)
-                ):
-                    ax = self.ax_coherence[row, col]
+                # Flip the sign of the uw cross-spectra
+                sign = -1 if i == 3 else 1
 
-                    # Plot experimental data
-                    ax.plot(
-                        self.coherence_frequencies,
-                        coh_data[row, :],
-                        "o",
-                        color=color,
-                        markersize=3,
-                        alpha=0.7,
-                        label="Data",
-                    )
+                # Plot model values
+                lines_SP_model[i] = ax.plot(
+                    ops_k_domain,
+                    sign * ops_model[i],
+                    "--",
+                    color=clr[i],
+                    label="Model",
+                )
 
-                    # Plot model prediction with frequency shift
-                    if model_coh is not None:
-                        model_coh_cpu = model_coh[row, :].cpu().detach().numpy()
+                # Plot data
+                lines_SP_true[i] = ax.plot(
+                    ops_k_domain,
+                    ops_true[i],
+                    "o",
+                    markersize=3,
+                    color=clr[i],
+                    label="Data",
+                    alpha=0.6,
+                )
 
-                        ax.plot(self.coherence_frequencies, model_coh_cpu, "-", color=color, linewidth=2, label="Model")
+                prefix = "auto-" if i < 3 else "cross-"
+                ax.set_title(f"{prefix}spectra {spectra_names[i]}")
+                ax.set_xscale("log")
+                ax.set_yscale("log")
 
-                    # Match the eddy lifetime plot style
-                    ax.legend()
-                    ax.set_xscale("log")
-                    ax.set_ylim(0, 1)  # Coherence should be between 0 and 1
-                    ax.grid(which="both")
+                ax.set_xlabel(r"$k_1$")
+                ax.set_ylabel(rf"$k_1 F_{{{spectra_labels[i]}}}(k_1)$")
+                ax.grid(
+                    which="both",
+                )
 
-                    # Labels and titles
-                    if row == 0:  # Top row
-                        ax.set_title(f"Coherence {label.upper()}")
+            fig_spectra.suptitle("Calibrated model against data")
+            fig_spectra.tight_layout(rect=(0.0, 0.03, 1.0, 0.95))
+            fig_spectra.canvas.draw()
+            fig_spectra.canvas.flush_events()
 
-                    if col == 0:  # Left column
-                        ax.set_ylabel(f"r = {sep_value:.1f}")
+            # TODO: Redo eddy lifetime plot
 
-                    if row == 3:  # Bottom row
-                        ax.set_xlabel("Frequency")
+        # OPS plot first...
+        plt.show()
 
-            # Overall formatting
-            self.fig_coherence.suptitle("Coherence Functions vs Frequency", fontsize=14)
-            self.fig_coherence.tight_layout(rect=[0, 0.03, 1, 0.95])
-            self.fig_coherence.canvas.draw()
-            self.fig_coherence.canvas.flush_events()
+    def unscale_prediction(self, scaled_prediction: torch.Tensor) -> torch.Tensor:
+        """Convert scaled model prediction back to original units."""
+        return scaled_prediction * self.spectral_scale
 
-    def plot_losses(self, run_number: int):
-        """Wrap the ``plot_loss_logs`` helper.
+    def unscale_frequency(self, scaled_freq: torch.Tensor) -> torch.Tensor:
+        """Convert scaled frequency back to original units."""
+        return scaled_freq * self.freq_scale
 
-        A wrapper method around the ``plot_loss_logs`` helper, which plots out the loss
-        function terms, multiplied by their associated hyperparameters
-
-        Parameters
-        ----------
-        run_number : int
-            The number of the run in the logging directory to plot out. This is 0-indexed.
-        """
-        from os import listdir, path
-
-        # TODO: This is temporary
-        assert self.logging_directory is not None, "Logging directory not set!"
-
-        log_fpath = listdir(self.logging_directory)[run_number]
-        full_fpath = path.join(self.logging_directory, log_fpath)
-
-        from drdmannturb import plot_loss_logs
-
-        plot_loss_logs(full_fpath)
-
-    def load_coherence_data(self, coherence_data_file: Path | str):
-        """
-        Load coherence data from .dat file and store as class attributes.
-
-        Parameters
-        ----------
-        coherence_data_file : str
-            Path to the coherence data file
-        """
-        import numpy as np
-        import pandas as pd
-
-        # Read the data with header - the file has comments (#) and then a header row
-        df = pd.read_csv(coherence_data_file, sep=r"\s+", comment="#", header=0)
-
-        print(f"Total data points read: {len(df)}")
-        print(f"Column names: {df.columns.tolist()}")
-
-        # Get the actual separation and frequency values
-        sep_mapping = df.groupby("sep_idx")["spatial_sep"].first().sort_index()
-        freq_mapping = df.groupby("freq_idx")["frequency"].first().sort_index()
-
-        unique_seps = sep_mapping.values
-        unique_freqs = freq_mapping.values
-
-        n_seps = len(unique_seps)
-        n_freqs = len(unique_freqs)
-
-        print(f"Expected grid: {n_seps} x {n_freqs} = {n_seps * n_freqs}")
-        print(f"Actual data points: {len(df)}")
-
-        # Check if we have complete data
-        expected_size = n_seps * n_freqs
-        if len(df) != expected_size:
-            print(f"Warning: Expected {expected_size} points but got {len(df)}")
-            print("This could indicate missing data points.")
-
-            # Create a complete grid and fill with NaN where data is missing
-            coh_u = np.full((n_seps, n_freqs), np.nan)
-            coh_v = np.full((n_seps, n_freqs), np.nan)
-            coh_w = np.full((n_seps, n_freqs), np.nan)
-
-            # Fill in the available data
-            for _, row in df.iterrows():
-                i = int(row["sep_idx"])
-                j = int(row["freq_idx"])
-                if i < n_seps and j < n_freqs:
-                    coh_u[i, j] = row["coh_u"]
-                    coh_v[i, j] = row["coh_v"]
-                    coh_w[i, j] = row["coh_w"]
-
-            # Check how many NaN values we have
-            nan_count = np.sum(np.isnan(coh_u))
-            if nan_count > 0:
-                print(f"Warning: {nan_count} missing data points filled with NaN")
-        else:
-            # We have complete data, can reshape normally
-            print("Complete data grid detected")
-            coh_u = df["coh_u"].values.reshape(n_seps, n_freqs)
-            coh_v = df["coh_v"].values.reshape(n_seps, n_freqs)
-            coh_w = df["coh_w"].values.reshape(n_seps, n_freqs)
-
-        # Store as class attributes
-        self.coherence_spatial_seps = unique_seps
-        self.coherence_frequencies = unique_freqs
-        self.coherence_u = coh_u
-        self.coherence_v = coh_v
-        self.coherence_w = coh_w
-        self.coherence_shape = (n_seps, n_freqs)
-
-        # Select 4 spatial separations evenly spaced across the range
-        sep_indices = np.linspace(0, n_seps - 1, 4, dtype=int)
-        self.coherence_plot_sep_indices = sep_indices
-        self.coherence_plot_separations = unique_seps[sep_indices]
-
-        print(f"Loaded coherence data: {self.coherence_shape} grid")
-        print(f"Spatial separations range: [{unique_seps.min():.3f}, {unique_seps.max():.3f}]")
-        print(f"Frequencies range: [{unique_freqs.min():.6f}, {unique_freqs.max():.6f}]")
-        print(f"Selected separations for plotting: {self.coherence_plot_separations}")
-
-        return True
-
-    def get_three_phase_scheduler(self, optimizer, nepochs):
-        """Three-phase learning for OPS + coherence."""
-
-        def lr_lambda(epoch):
-            base_lr = 1.0
-
-            # Phase 1 (0-30%)
-            if epoch < nepochs * 0.3:
-                return base_lr * 2.0
-
-            # Phase 2 (30-70%)
-            elif epoch < nepochs * 0.7:
-                progress = (epoch - nepochs * 0.3) / (nepochs * 0.4)
-                return base_lr * (2.0 - progress)
-
-            # Phase 3 (70-100%)
-            else:
-                return base_lr * 0.1
-
-        scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
-        return scheduler
-
-    def get_adaptive_multi_scheduler(self, optimizer, nepochs):
-        """Adaptive scheduler that responds to objective balance."""
-        if not hasattr(self, "loss_history"):
-            self.loss_history = {"ops": [], "coherence": [], "total": []}
-
-        def adjust_lr_based_on_objectives(epoch):
-            if len(self.loss_history["total"]) < 10:
-                return 1.0
-
-            recent_ops_trend = np.mean(self.loss_history["ops"][-5:])
-            recent_coh_trend = np.mean(self.loss_history["coherence"][-5:])
-
-            ratio = recent_ops_trend / (recent_coh_trend + 1e-8)
-
-            if ratio > 10:
-                return 0.5
-            elif ratio < 0.1:
-                return 0.5
-            else:  # Balanced - standard decay
-                return 0.95 ** (epoch - 10)
-
-        # This would need custom implementation in training loop
-        return torch.optim.lr_scheduler.LambdaLR(optimizer, adjust_lr_based_on_objectives)
+    def get_original_data(self) -> dict:
+        """Get the original unscaled data."""
+        return {
+            "freq": self.ops_k_domain_original,
+            "uu": self.ops_uu_original,
+            "vv": self.ops_vv_original,
+            "ww": self.ops_ww_original,
+            "uw": self.ops_uw_original,
+            "vw": self.ops_vw_original,
+            "uv": self.ops_uv_original,
+        }

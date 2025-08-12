@@ -5,26 +5,6 @@ Dataclass Primitives
 
 ``DRDMannTurb`` operates with four fundamental data classes that configure the DRD model to be used, physical parameters of the scenario, training data generation, and loss functions. Please refer to :doc:`this UML diagram <./uml_drd>` to see how these are composed to inform the :py:class:`CalibrationProblem` and :py:class:`OnePointSpectraDataGenerator` classes.
 
-Neural Network Parameters
--------------------------
-
-.. autoclass:: drdmannturb.NNParameters
-    :members:
-
-
-Physical Parameters
--------------------
-
-.. autoclass:: drdmannturb.PhysicalParameters
-    :members:
-
-
-Problem/Training Parameters
----------------------------
-
-.. autoclass:: drdmannturb.ProblemParameters
-    :members:
-
 Loss Function Parameters
 ------------------------
 
@@ -57,7 +37,6 @@ The regularization term is defined as
 
 .. math::
     \operatorname{Reg}\left[\boldsymbol{\theta}_{\mathrm{NN}}\right]:=\frac{1}{N} \sum_{i=1}^N \theta_{\mathrm{NN}, i}^2.
-
 
 The LossParameters class correspondingly sets the weights of these terms.
 

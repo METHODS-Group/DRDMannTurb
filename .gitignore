@@ -62,7 +62,6 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-uv.lock
 __pypackages__/
 .ruff_cache/
 
