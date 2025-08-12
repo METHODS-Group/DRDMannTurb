@@ -63,6 +63,7 @@ class CalibrationProblem:
         max_epochs: int = 100,
         tol: float = 1e-9,
         auto_scale: bool = True,
+        plot_during_calibration: bool = False,
     ) -> None:
         r"""Train the model on the provided data."""
         print("Loading data...")
@@ -237,7 +238,8 @@ class CalibrationProblem:
         close_optims = [torch.optim.LBFGS]
 
         # Set up real-time plotting
-        self._setup_realtime_plotting(ops_data["freq"], OPS_true, curves)
+        if plot_during_calibration:
+            self._setup_realtime_plotting(ops_data["freq"], OPS_true, curves)
 
         ###########################################################################################
         # Main optimization loop
@@ -297,7 +299,7 @@ class CalibrationProblem:
                 break
 
             # Plot every N epochs (adjust as needed)
-            if epoch % 5 == 0 or epoch == 1:
+            if plot_during_calibration and (epoch % 5 == 0 or epoch == 1):
                 self._update_realtime_plot(epoch)
                 plt.pause(0.1)  # Small pause to allow plot to update
 
@@ -305,8 +307,9 @@ class CalibrationProblem:
         # Post-optimization
         ###########################################################################################
 
-        plt.ioff()  # Turn off interactive mode
-        plt.show()
+        if plot_during_calibration:
+            plt.ioff()  # Turn off interactive mode
+            plt.show()
 
         print("=" * 40)
         print(f"Spectra fitting concluded with final loss: {self.loss.item()}")

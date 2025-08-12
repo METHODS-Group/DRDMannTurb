@@ -163,6 +163,7 @@ pb.calibrate(
     lr=1.0,
     max_epochs=20,
     tol=1e-6,
+    plot_during_calibration=False,
 )
 
 ##############################################################################
@@ -180,7 +181,7 @@ original_data = pb.get_original_data()
 
 # Generate model predictions on the original frequency domain
 with torch.no_grad():
-    k1_original = torch.tensor(original_data["freq"])
+    k1_original = original_data["freq"].detach().clone()
     k1_scaled = k1_original / pb.freq_scale
     model_prediction = pb.OPS(k1_scaled)
     model_prediction_unscaled = pb.unscale_prediction(model_prediction)
