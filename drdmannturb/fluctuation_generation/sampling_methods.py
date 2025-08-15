@@ -51,7 +51,7 @@ class Sampling_method_freq(Sampling_method_base):
         L, Nd, d = self.L, self.Nd, self.ndim
         self.Frequencies = [(2 * np.pi / L[j]) * (Nd[j] * fft.fftfreq(Nd[j])) for j in range(d)]
         self.TransformNorm = np.sqrt(L.prod())
-        self.Spectrum = RandomField.Covariance.precompute_Spectrum(self.Frequencies)
+        self.Spectrum = RandomField.Covariance.precompute_spectrum(self.Frequencies)
 
 
 class Sampling_FFTW(Sampling_method_freq):

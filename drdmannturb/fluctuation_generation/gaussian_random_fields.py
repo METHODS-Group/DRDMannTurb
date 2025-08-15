@@ -63,9 +63,9 @@ class GaussianRandomField:
     def __init__(
         self,
         Covariance: covariance_metaclass,
-        grid_level: np.ndarray,
-        grid_shape: np.ndarray = None,
-        grid_dimensions: np.ndarray = [1.0, 1.0, 1.0],
+        grid_level: np.ndarray | int,
+        grid_shape: np.ndarray | None = None,
+        grid_dimensions: np.ndarray = np.array([1.0, 1.0, 1.0]),
         ndim: int = 3,
         sampling_method: str = "fft",
     ):

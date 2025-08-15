@@ -10,33 +10,17 @@ in several contexts as well as utilities for saving to VTK for downstream analys
 ParaView.
 """  # noqa
 
-#######################################################################################
-#   .. centered::
-#       This example may take a few seconds to load. Please be patient if using
-#       Plotly, as it requires some time to render 3D graphics.
-#
-
-#######################################################################################
-# Import packages
-# ---------------
-#
-# First, we import the packages we need for this example.
 from pathlib import Path
 
 import numpy as np
-import torch
 
+import drdmannturb as drdmt
 from drdmannturb.fluctuation_generation import (
     FluctuationFieldGenerator,
     plot_velocity_magnitude,
 )
 
 path = Path().resolve()
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
-
-if torch.cuda.is_available():
-    torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
 #######################################################################################
 # Setting Physical Parameters
@@ -48,6 +32,7 @@ if torch.cuda.is_available():
 z0 = 0.02
 zref = 90
 uref = 11.4
+
 ustar = uref * 0.41 / np.log(zref / z0)
 plexp = 0.2  # power law exponent
 windprofiletype = "PL"  # choosing power law, use log with "LOG" here instead
@@ -73,7 +58,11 @@ seed = None
 # Fluctuation fields are generated block-by-block, rather than over the domain entirely.
 # Please see section V, B of the original DRD paper for further discussion. Here, we will use 4 blocks.
 
-Type_Model = "Mann"  ### 'Mann', 'VK', 'DRD'
+E0 = sigma * ustar**2 * zref ** (-2 / 3)
+L = 0.593 * zref
+Gamma = 3.89
+
+cov = drdmt.MannCovariance(L=L, Gamma=Gamma, E0=E0)
 
 #######################################################################################
 # Physical Parameters
@@ -82,14 +71,9 @@ Type_Model = "Mann"  ### 'Mann', 'VK', 'DRD'
 # which are defined above
 #
 gen_mann = FluctuationFieldGenerator(
-    ustar,
-    zref,
     grid_dimensions,
     grid_levels,
-    length_scale=L,
-    time_scale=Gamma,
-    energy_spectrum_scale=sigma,
-    model=Type_Model,
+    cov,
     seed=seed,
 )
 
@@ -113,7 +97,7 @@ fig_magnitude_mann = plot_velocity_magnitude(spacing, fluctuation_field_mann, tr
 # utilities may be useful for quick visualization, we recommend using Paraview to visualize higher resolution output.
 # We will cover saving to a portable VTK format further in this example.
 
-fig_magnitude_mann  # .show("browser"), or for specific browser, use .show("firefox")
+fig_magnitude_mann.show()  # .show("browser"), or for specific browser, use .show("firefox")
 
 
 #######################################################################################

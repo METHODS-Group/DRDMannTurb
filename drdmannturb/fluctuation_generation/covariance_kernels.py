@@ -63,6 +63,10 @@ class Covariance(ABC):
         """
         raise NotImplementedError("Subclasses must implement this method.")
 
+    def get_parameters(self) -> dict[str, float | None]:
+        """Get common parameters used by the field generator."""
+        return {"L": getattr(self, "L", None), "Gamma": getattr(self, "Gamma", 1.0), "E0": getattr(self, "E0", 1.0)}
+
 
 class VonKarmanCovariance(Covariance):
     r"""

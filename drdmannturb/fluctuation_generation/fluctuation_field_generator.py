@@ -59,7 +59,7 @@ class FluctuationFieldGenerator:
 
         # Calculate buffer and margin sizes based on covariance parameters
         # NOTE: buffer scale 3 * Gamma * L is arbitrary. Could/should be tunable.
-        L = covariance.L if hasattr(covariance, "L") else self.grid_dimensions[0] / 10
+        L = getattr(covariance, "L", self.grid_dimensions[0] / 10)
         Gamma = getattr(covariance, "Gamma", 1.0)
 
         self.n_buffer = ceil((3 * Gamma * L) / dx)
@@ -69,13 +69,15 @@ class FluctuationFieldGenerator:
         buffer_extension = 2 * self.n_buffer + (self.blend_num - 1 if self.blend_num > 0 else 0)
         margin_extension = [2 * self.n_margin_y, 2 * self.n_margin_z]
 
-        self.noise_shape = [
-            Nx + buffer_extension,
-            Ny + margin_extension[0],
-            Nz + margin_extension[1],
-            3,
-        ]
-        self.new_part_shape = [Nx, Ny + margin_extension[0], Nz + margin_extension[1], 3]
+        self.noise_shape = np.array(
+            [
+                Nx + buffer_extension,
+                Ny + margin_extension[0],
+                Nz + margin_extension[1],
+                3,
+            ]
+        )
+        self.new_part_shape = np.array([Nx, Ny + margin_extension[0], Nz + margin_extension[1], 3])
         self.central_part = [
             slice(self.n_buffer, -self.n_buffer),
             slice(self.n_margin_y, -self.n_margin_y),
