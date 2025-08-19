@@ -1,85 +1,26 @@
 """Wind generation functionality forward facing API."""
 
-import pickle
-from collections.abc import Callable
 from math import ceil
-from os import PathLike
 from pathlib import Path
-from typing import Union
 
 import numpy as np
-import torch
 
-from ..common import CPU_Unpickler
-from ..parameters import IntegrationParameters
-from ..spectra_fitting import CalibrationProblem
-from .covariance_kernels import MannCovariance, VonKarmanCovariance
+from .covariance_kernels import Covariance
 from .gaussian_random_fields import VectorGaussianRandomField
 from .low_frequency.fluctuation_field_generator import LowFreqGenerator
-from .nn_covariance import NNCovariance
 
 
 class FluctuationFieldGenerator:
     r"""Class for generating a fluctuation field.
 
     .. _generate-fluctuation-field-reference:
-
-    Turbulent fluctuations can be formally written as a convolution of a covariance kernel with Gaussian noise
-    :math:`\boldsymbol{\xi}` in the physical domain::
-
-    .. math::
-        \mathbf{u}=\mathcal{F}^{-1} \mathcal{G} \widehat{\boldsymbol{\xi}}=\mathcal{F}^{-1} \mathcal{G}
-        \mathcal{F} \boldsymbol{\xi},
-
-    where :math:`\mathcal{F}` is the Fourier transform and the operator :math:`\mathcal{G}` is the point-wise
-    multiplication by :math:`G(\boldsymbol{k})`, which is any positive-definite "square-root" of the spectral
-    tensor and satisfies :math:`G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k})`.
-
-    This is determined by which :math:`\Phi(\boldsymbol{k}, \tau(\boldsymbol{k}))` is used.
-    The following are provided:
-
-    #. Mann, which utilizes the Mann eddy lifetime function
-
-        .. math::
-            \tau^{\mathrm{IEC}}(k)=\frac{T B^{-1}(k L)^{-\frac{2}{3}}}
-            {\sqrt{{ }_2 F_1\left(1 / 3,17 / 6 ; 4 / 3 ;-(k L)^{-2}\right)}}
-
-    and the full spectral tensor can be found in the following reference:
-        J. Mann, "The spatial structure of neutral atmospheric surfacelayer turbulence,"
-        Journal of Fluid Mechanics 273, 141-168 (1994)
-
-    #. DRD model, which utilizes a learned eddy lifetime function and requires a pre-trained DRD model.
-       The eddy lifetime function is given by
-
-        .. math::
-            \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}
-            {\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k})
-
-    #. Von Karman model,
-
-        .. math::
-            \Phi_{i j}^{\mathrm{VK}}(\boldsymbol{k})=\frac{E(k)}{4 \pi k^2}\left(\delta_{i j}-\frac{k_i k_j}{k^2}\right)
-
-        which utilizes the energy spectrum function
-
-        .. math::
-            E(k)=c_0^2 \varepsilon^{2 / 3} k^{-5 / 3}\left(\frac{k L}{\left(1+(k L)^2\right)^{1 / 2}}\right)^{17 / 3},
-
-        where :math:`\varepsilon` is the viscous dissipation of the turbulent kinetic energy, :math:`L` is the length
-        scale parameter and :math:`c_0^2 \approx 1.7` is an empirical constant.
     """
 
     def __init__(
         self,
-        friction_velocity: float,
-        reference_height: float,
         grid_dimensions: np.ndarray,
         grid_levels: np.ndarray,
-        model: str,
-        length_scale: float | None = None,
-        time_scale: float | None = None,
-        energy_spectrum_scale: float | None = None,
-        path_to_parameters: str | PathLike | None = None,
+        covariance: Covariance,
         seed: int | None = None,
         blend_num: int = 10,
         config_2d_model: dict | None = None,
@@ -88,26 +29,13 @@ class FluctuationFieldGenerator:
 
         Parameters
         ----------
-        friction_velocity : float
-            The reference wind friction velocity :math:`u_*`
-        reference_height : float
-            Reference height :math:`z_{\text{ref}}`
         grid_dimensions : np.ndarray
             Numpy array denoting the grid size; the real dimensions of the domain of interest.
         grid_levels : np.ndarray
             Numpy array denoting the grid levels; number of discretization points used in each dimension, which
             evaluates as 2^k for each dimension for FFT-based sampling methods.
-        model : str
-            One of ``"DRD"``, ``"VK"``, or ``"Mann"`` denoting
-            "Neural Network," "Von Karman," and "Mann model".
-        length_scale : Optional[float]
-            The length scale :math:`L:`, used only if non-DRD model is used. By default, None.
-        time_scale : Optional[float]
-            The time scale :math:`T`, used only if non-DRD model is used. By default, None.
-        energy_spectrum_scale : Optional[float]
-            Scaling of energy spectrum, used only if non-DRD model is used. By default, None.
-        path_to_parameters : Union[str, PathLike]
-            File path (string or ``Pathlib.Path()``)
+        covariance : Covariance
+            Covariance kernel to use for the fluctuation field generation.
         seed : int, optional
             Pseudo-random number generator seed, by default None. See ``np.random.RandomState``.
         blend_num : int, optional
@@ -115,57 +43,11 @@ class FluctuationFieldGenerator:
            see figures 7 and 8 of the original DRD paper, by default 10. Note that at the boundary of each block,
            points are often correlated, so if the resulting field has undesirably high correlation, increasing this
            number may mitigate some of these effects.
-
-        Raises
-        ------
-        ValueError
-            If ``model`` doesn't match one of the 3 available models: DRD, VK and Mann.
         """
-        # Validate model type and required parameters
-        if model not in ["DRD", "VK", "Mann"]:
-            raise ValueError("Model must be one of: DRD, VK, Mann")
-
-        if model == "DRD":
-            if path_to_parameters is None:
-                raise ValueError("DRD model requires path to pre-trained parameters")
-
-            # Load DRD model parameters
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            with open(path_to_parameters, "rb") as file:
-                params = pickle.load(file) if device == "cpu" else CPU_Unpickler(file).load()
-            nn_params, prob_params, loss_params, phys_params, model_params = params
-
-            # Initialize calibration problem and get scales
-            pb = CalibrationProblem(
-                nn_params=nn_params,
-                prob_params=prob_params,
-                integration_params=IntegrationParameters(),
-                loss_params=loss_params,
-                phys_params=phys_params,
-                device=device,
-            )
-            pb.parameters = model_params
-            L, T, M = pb.OPS.exp_scales()
-
-            # Calculate final parameters
-            M = (4 * np.pi) * L ** (-5 / 3) * M
-            print("Scales: ", [L, T, M])
-            E0 = M * friction_velocity**2 * reference_height ** (-2 / 3)
-            L *= reference_height
-            Gamma = T
-
-        else:  # VK or Mann model case
-            assert length_scale is not None, "VK/Mann models require length scale"  # for type checker
-            assert time_scale is not None, "VK/Mann models require time scale"
-            assert energy_spectrum_scale is not None, "VK/Mann models require energy spectrum scale"
-
-            E0 = energy_spectrum_scale * friction_velocity**2 * reference_height ** (-2 / 3)
-            L = length_scale
-            Gamma = time_scale
-
         self.grid_dimensions = grid_dimensions
         self.grid_levels = grid_levels
         self.blend_num = blend_num
+        self.covariance = covariance
 
         # Expand on grid_levels parameter to get grid node counts in each direction
         grid_node_counts = 2**grid_levels + 1
@@ -174,30 +56,28 @@ class FluctuationFieldGenerator:
         dx, dy, dz = (L_i / N_i for L_i, N_i in zip(self.grid_dimensions, grid_node_counts))
         Nx, Ny, Nz = grid_node_counts
         self.Nx, self.Ny, self.Nz = Nx, Ny, Nz
-        del grid_node_counts
 
-        # Calculate buffer and margin sizes
-        # NOTE: buffer scale 3 * Gamma * L is arbitrary. Could/should be tunable param?
+        # Calculate buffer and margin sizes based on covariance parameters
+        # NOTE: buffer scale 3 * Gamma * L is arbitrary. Could/should be tunable.
+        L = getattr(covariance, "L", self.grid_dimensions[0] / 10)
+        Gamma = getattr(covariance, "Gamma", 1.0)
+
         self.n_buffer = ceil((3 * Gamma * L) / dx)
-
         self.n_margin_y, self.n_margin_z = ceil(L / dy), ceil(L / dz)
-
-        ## Spatial margin is just the length scale L
 
         # Calculate shapes
         buffer_extension = 2 * self.n_buffer + (self.blend_num - 1 if self.blend_num > 0 else 0)
-        margin_extension = [
-            2 * self.n_margin_y,
-            2 * self.n_margin_z,
-        ]
+        margin_extension = [2 * self.n_margin_y, 2 * self.n_margin_z]
 
-        self.noise_shape = [
-            Nx + buffer_extension,
-            Ny + margin_extension[0],
-            Nz + margin_extension[1],
-            3,
-        ]
-        self.new_part_shape = [Nx, Ny + margin_extension[0], Nz + margin_extension[1], 3]
+        self.noise_shape = np.array(
+            [
+                Nx + buffer_extension,
+                Ny + margin_extension[0],
+                Nz + margin_extension[1],
+                3,
+            ]
+        )
+        self.new_part_shape = np.array([Nx, Ny + margin_extension[0], Nz + margin_extension[1], 3])
         self.central_part = [
             slice(self.n_buffer, -self.n_buffer),
             slice(self.n_margin_y, -self.n_margin_y),
@@ -218,26 +98,6 @@ class FluctuationFieldGenerator:
         self.noise = None
         self.total_fluctuation = np.zeros([0, Ny, Nz, 3])
 
-        CovarianceType = Union[
-            type[VonKarmanCovariance],
-            type[MannCovariance],
-            Callable[..., NNCovariance],
-        ]
-
-        ### Random field object
-        covariance_map: dict[str, CovarianceType] = {  # type: ignore
-            "VK": VonKarmanCovariance,
-            "Mann": MannCovariance,
-            "DRD": lambda **kwargs: NNCovariance(**kwargs, ops=pb.OPS, h_ref=reference_height),
-        }
-
-        # Initialize covariance based on model type
-        covariance_params = {"ndim": 3, "length_scale": L, "E0": E0}
-        if model in ["Mann", "DRD"]:
-            covariance_params["Gamma"] = Gamma
-
-        self.Covariance = covariance_map[model](**covariance_params)
-
         # Initialize random field generator
         self.RF = VectorGaussianRandomField(
             ndim=3,
@@ -245,7 +105,7 @@ class FluctuationFieldGenerator:
             grid_dimensions=grid_dimensions,
             sampling_method="vf_fftw",
             grid_shape=self.noise_shape[:-1],
-            Covariance=self.Covariance,
+            Covariance=self.covariance,
         )
 
         self.RF.reseed(self.seed)
@@ -420,6 +280,8 @@ class FluctuationFieldGenerator:
         np.ndarray
             The full fluctuation field, which is also stored as the ``total_fluctuation`` field.
         """
+        # TODO: Get rid of the string windprofiletype. Take in a mean profile function instead.
+
         if np.any(self.total_fluctuation):
             import warnings
 
@@ -477,7 +339,7 @@ class FluctuationFieldGenerator:
                 y_coords_centered_target = np.linspace(y_start_target, y_end_target, self.Ny, endpoint=False)
 
                 # Interpolate the 2D field (u1, u2) onto this block's centered XY coordinates
-                print(f"Interpolating 2D field onto centered 3D block {i+1}/{num_blocks}...")
+                print(f"Interpolating 2D field onto centered 3D block {i + 1}/{num_blocks}...")
                 u1_interp, u2_interp = self.low_freq_gen.interp_slice(
                     x_coords_block_target,  # Target X coords for this sequential block
                     y_coords_centered_target,  # Target Y coords centered in 2D domain

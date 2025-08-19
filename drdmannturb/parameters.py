@@ -1,129 +1,11 @@
 """Several dataclasses that make it easy to pass around parameters."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Union
 
 import numpy as np
-import torch
-import torch.nn as nn
 
-from .enums import EddyLifetimeType
-
-__all__ = ["IntegrationParameters", "ProblemParameters", "PhysicalParameters", "NNParameters", "LossParameters"]
-
-
-@dataclass
-class ProblemParameters:
-    r"""Define generic numerical parameters for the problem.
-
-    This class provides a convenient method of storing and passing around
-    generic numerical parameters; this also offers default values
-
-    Args
-    ----
-    num_components : int
-        Number of components to fit, either 3, 4, or 6. By default, 4.
-        - If 3, assumes that 11, 22, and 33 are provided in that order.
-        - If 4, assumes that 11, 22, 33, and 13 are provided in that order.
-        - If 6, assumes that 11, 22, 33, 13, 12, and 23 are provided in that order.
-    learning_rate : float
-        Initial earning rate for optimizer.
-    tol : float
-        Tolerance for solution error (training terminates if this is reached before the maximum number of
-        epochs allowed)
-    nepochs : int
-        Number of epochs to train for
-    init_with_noise : bool
-        Whether or not to initialize learnable parameters with random noise; by default, neural network
-        parameters are initialized with the Kaiming initialization while physical parameters are initialized
-        with 0.
-    noise_magnitude : float
-        Magnitude of aforementioned noise contribution
-    data_type : DataType
-        Type of spectra data used. These can be generated from the Kaimal spectra, provided raw as CUSTOM data,
-        interpolated, filtered with AUTO, or use the Von Karman model.
-    eddy_lifetime : EddyLifetimeType
-        Type of model to use for eddy lifetime function. This determines whether a neural network is to be used
-        to learn to approximate the function, or if a known model, such as the Mann eddy lifetime is to be used.
-    wolfe_iter_count : int
-        Sets the number of Wolfe iterations that each step of LBFGS uses
-    learn_nu : bool
-        If true, learns also the exponent :math:`\nu`, by default True
-    """
-
-    num_components: int = 4
-
-    learning_rate: float = 1e-1
-    tol: float = 1e-3
-    nepochs: int = 10
-
-    init_with_noise: bool = False
-    noise_magnitude: float = 1e-3
-
-    eddy_lifetime: EddyLifetimeType = EddyLifetimeType.TAUNET
-
-    wolfe_iter_count: int = 20
-
-    learn_nu: bool = False
-
-    use_learnable_spectrum: bool = False
-    p_exponent: float = 4.0  # Defaults to Von Karman values
-    q_exponent: float = 17.0 / 6.0  # Defaults to Von Karman values
-
-
-@dataclass
-class PhysicalParameters:
-    r"""Define physical parameters for the learning problem.
-
-    This class provides a convenient method of storing and passing around
-    the physical parameters required to define a problem; this also offers
-    generic default values.
-
-    Args
-    ----
-    L : float
-        Characteristic length scale of the problem; 0.59 for Kaimal
-    Gamma : float
-        Characteristic time scale of the problem; 3.9 for Kaimal
-    sigma : float
-        Spectrum amplitude; 3.2 for Kaimal
-    Uref : float, optional
-        Reference velocity value at hub height (m/s)
-    zref : float, optional
-        Reference height value; should be measured at hub height (meters)
-    domain : torch.Tensor
-        :math:`k_1` domain over which spectra data are defined.
-    alpha_low : float, optional
-        Low wavenumber asymptotic slope for energy spectrum, by default 4.0 (von Karman)
-    alpha_high : float, optional
-        High wavenumber asymptotic slope for energy spectrum, by default -5.0/3.0 (von Karman)
-    transition_slope : float, optional
-        Transition slope parameter for energy spectrum, by default 17.0/3.0 (von Karman)
-    use_parametrizable_spectrum : bool, optional
-        Whether to use the parametrizable energy spectrum, by default False
-    wavenumber_conversion_factor : float
-        Factor for k1 = factor * f / U (default radians)
-    """
-
-    L: float
-    Gamma: float
-    sigma: float
-
-    Uref: float = 10.0
-    zref: float = 1.0
-
-    ustar: float = 1.0
-
-    k_inf_asymptote: float = -2.0 / 3.0
-
-    # Energy spectrum asymptotic slope parameters
-    alpha_low: float = 4.0  # Low k asymptote (von Karman default)
-    alpha_high: float = -5.0 / 3.0  # High k asymptote (von Karman default)
-    transition_slope: float = 17.0 / 3.0  # Transition parameter (von Karman default)
-    wavenumber_conversion_factor: float = 1 / (2 * torch.pi)  # Factor for k1 = factor * f / U (default radians)
-    wavenumber_scale_factor: float = 1.0  # Scale factor for k = scale * f / U in coherence (e.g., 2π or 1)
-
-    domain: torch.Tensor = torch.logspace(-1, 2, 20)
+__all__ = ["IntegrationParameters", "LossParameters"]
 
 
 @dataclass
@@ -133,10 +15,6 @@ class LossParameters:
     This class provides a convenient method of storing and passing around
     the loss function term coefficients; this also offers default values, which result in the loss function
     consisting purely of an MSE loss.
-
-    .. note::
-        Using the regularization term :math:`\beta` requires a neural network-based approximation to the eddy
-        lifetime function.
 
     Args
     ----
@@ -155,43 +33,30 @@ class LossParameters:
 
     gamma_coherence: float = 0.0
 
-    auto_balance_losses: bool = False
-    balance_freq: int = 10
-
 
 @dataclass
-class NNParameters:
-    r"""Define neural network architecture.
+class IntegrationParameters:
+    """Parameters for integration grids in spectra calculations.
 
-    This class provides a generic and convenient method of storing and passing
-    around values required for the definition of the different neural networks
-    that are implemented in this package; this also offers default values.
+    This dataclass defines the parameters for creating log-spaced grids
+    used in one-point spectra and coherence integrations.
 
-    Args
-    ----
-    nlayers : int
-        Number of layers to be used in neural network model
-    input_size : int
-        Size of input spectra vector (typically just 3).
-    hidden_layer_size : int
-        Determines widths of network layers if they are constant.
-    hidden_layer_sizes : List[int]
-        Determines widths of network layers (input-output pairs must match); used for CustomNet
-    activations : List[torch.Module]
-        List of activation functions. The list should have the same length as the number of layers, otherwise
-        the activation functions begin to repeat from the beginning of the list.
-    output_size: int
-        Dimensionality of the output vector (typically 3 for spectra-fitting tasks).
+    Attributes
+    ----------
+        ops_log_min: Minimum exponent for OPS grid (default -3).
+        ops_log_max: Maximum exponent for OPS grid (default 3).
+        ops_num_points: Number of points per side for OPS grid (default 100).
+        coh_log_min: Minimum exponent for coherence grid (default -3).
+        coh_log_max: Maximum exponent for coherence grid (default 3).
+        coh_num_points: Number of points per side for coherence grid (default 100).
     """
 
-    nlayers: int = 2
-    input_size: int = 3
-
-    hidden_layer_size: int = 10
-    hidden_layer_sizes: list[int] = field(default_factory=list)
-    activations: list[nn.Module] = field(default_factory=list)
-
-    output_size: int = 3
+    ops_log_min: float = -3.0
+    ops_log_max: float = 3.0
+    ops_num_points: int = 100
+    coh_log_min: float = -3.0
+    coh_log_max: float = 3.0
+    coh_num_points: int = 100
 
 
 #######################################################################################################
@@ -267,28 +132,3 @@ class LowFreqParameters:
     psi_degs: float = 43.0
 
     c: float | None = None
-
-
-@dataclass
-class IntegrationParameters:
-    """Parameters for integration grids in spectra calculations.
-
-    This dataclass defines the parameters for creating log-spaced grids
-    used in one-point spectra and coherence integrations.
-
-    Attributes
-    ----------
-        ops_log_min: Minimum exponent for OPS grid (default -3).
-        ops_log_max: Maximum exponent for OPS grid (default 3).
-        ops_num_points: Number of points per side for OPS grid (default 100).
-        coh_log_min: Minimum exponent for coherence grid (default -3).
-        coh_log_max: Maximum exponent for coherence grid (default 3).
-        coh_num_points: Number of points per side for coherence grid (default 100).
-    """
-
-    ops_log_min: float = -3.0
-    ops_log_max: float = 3.0
-    ops_num_points: int = 100
-    coh_log_min: float = -3.0
-    coh_log_max: float = 3.0
-    coh_num_points: int = 100

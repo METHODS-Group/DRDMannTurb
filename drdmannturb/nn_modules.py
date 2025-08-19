@@ -25,7 +25,10 @@ class Rational(nn.Module):
             \mathrm{NN}(\operatorname{abs}(\boldsymbol{k})).
     """
 
-    def __init__(self, learn_nu: bool = True, nu_init: float = -1.0 / 3.0) -> None:
+    fg_learn_nu: bool
+    nu: torch.Tensor | nn.Parameter
+
+    def __init__(self, learn_nu: bool = False, nu_init: float = -1.0 / 3.0) -> None:
         """
         Initialize the rational kernel.
 
@@ -40,9 +43,9 @@ class Rational(nn.Module):
         super().__init__()
         self.fg_learn_nu = learn_nu
 
-        self.nu = nu_init
+        self.nu = torch.tensor(nu_init)
         if self.fg_learn_nu:
-            self.nu = nn.Parameter(torch.tensor(float(nu_init)))
+            self.nu = nn.Parameter(self.nu)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -61,8 +64,29 @@ class Rational(nn.Module):
         a = self.nu - (2.0 / 3.0)
         b = self.nu / 2.0
         out = torch.abs(x)
-        out = (out**a) / ((1 + out**2) ** b)
-        return out
+
+        # Handle numerical instability for very large or very small values
+        # For very large out, use asymptotic behavior
+        large_mask = out > 1e6
+        small_mask = out < 1e-6
+
+        result = torch.zeros_like(out)
+
+        # For normal range
+        normal_mask = ~(large_mask | small_mask)
+        if normal_mask.any():
+            out_normal = out[normal_mask]
+            result[normal_mask] = (out_normal**a) / ((1 + out_normal**2) ** b)
+
+        # For very large values, use asymptotic behavior: out^(a-2b)
+        if large_mask.any():
+            result[large_mask] = out[large_mask] ** (a - 2 * b)
+
+        # For very small values, use Taylor expansion around 0
+        if small_mask.any():
+            result[small_mask] = out[small_mask] ** a
+
+        return result
 
 
 class TauNet(nn.Module):
@@ -84,6 +108,13 @@ class TauNet(nn.Module):
         \boldsymbol{a}(\boldsymbol{k}) = \operatorname{abs}(\boldsymbol{k}) +
         \mathrm{NN}(\operatorname{abs}(\boldsymbol{k})).
     """
+
+    n_layers: int
+    hidden_layer_sizes: list[int]
+    activations: list[nn.Module]
+    linears: nn.ModuleList
+    Ra: Rational
+    sign: torch.Tensor
 
     def __init__(
         self,
@@ -142,8 +173,6 @@ class TauNet(nn.Module):
                 if not isinstance(act, nn.Module):
                     raise ValueError("activations must be a list of nn.Module's")
             self.activations = activations
-        else:
-            raise ValueError("activations must be None, nn.Module, or list of nn.Module's")
 
         # Build MLP layers - includes input, hidden, and output layers
         layers = [nn.Linear(3, hidden_layer_sizes[0], bias=False)]  # Input layer
@@ -161,7 +190,7 @@ class TauNet(nn.Module):
         self.Ra = Rational(learn_nu=learn_nu, nu_init=nu_init)
 
         # Initialize with small noise to prevent zero initialization
-        noise_magnitude = 1.0e-9
+        noise_magnitude = 1.0e-8
         with torch.no_grad():
             for param in self.parameters():
                 param.add_(torch.randn(param.size()) * noise_magnitude)
@@ -197,6 +226,22 @@ class TauNet(nn.Module):
         torch.Tensor
             Output of forward pass of neural network.
         """
+        # Debug: Check input (just summary stats)
+        if torch.isnan(k).any():
+            print(f"NaN in TauNet input k: min={k.min().item()}, max={k.max().item()}, mean={k.mean().item()}")
+
         k_mod = self._mlp_forward(k.abs()).norm(dim=-1)
+
+        # Debug: Check k_mod (just summary stats)
+        if torch.isnan(k_mod).any():
+            print(f"NaN in k_mod: min={k_mod.min().item()}, max={k_mod.max().item()}, mean={k_mod.mean().item()}")
+            mlp_out = self._mlp_forward(k.abs())
+            print(f"MLP output: min={mlp_out.min().item()}, max={mlp_out.max().item()}, mean={mlp_out.mean().item()}")
+
         tau = self.Ra(k_mod)
+
+        # Debug: Check tau (just summary stats)
+        if torch.isnan(tau).any():
+            print(f"NaN in TauNet tau: min={tau.min().item()}, max={tau.max().item()}, mean={tau.mean().item()}")
+
         return tau

@@ -2,87 +2,45 @@
 
 from pathlib import Path
 
-import numpy as np
 import torch
 import torch.nn as nn
 
 import drdmannturb as drdmt
-
-# Build dataset
-domain = torch.logspace(-1, 3, 40)
+import drdmannturb.spectra_fitting.spectral_tensor_models as stm
 
 # NOTE: Below is obtained from the LES data... we used the 31st of 60
 #       heights that we were given, so this is height[30]
 zref = 148.56202535609793
 
-L = 70
-Gamma = 3.7
-sigma = 0.04
-Uref = 21
+spectra_file = Path("data_cleaned/STORM_downsampled_one_point_spectra.csv")
+coherence_file = Path("data_cleaned/STORM_FULL_FIDELITY_coherence_data.csv")
 
-spectra_file = Path("data_cleaned/log_downsampled_6component_spectra.dat")
-coherence_file = Path("data_cleaned/coherence_data.dat")
-CustomData = torch.tensor(np.genfromtxt(spectra_file, skip_header=1, delimiter=","), dtype=torch.get_default_dtype())
+data_loader = drdmt.CustomDataLoader(ops_data_file=spectra_file, coherence_data_file=coherence_file)
 
-# Form the one point spectra data.
-#
-# Note that the file was written out in a CSV with the following format:
-#   f, F11(f), F22(f), F33(f), F12(f), F13(f)
-
-# TODO: Double check that the order is correct here.
-k1_domain = CustomData[:, 0]
-ops_data = torch.zeros([len(k1_domain), 3, 3])
-ops_data[:, 0, 0] = CustomData[:, 1]
-ops_data[:, 1, 1] = CustomData[:, 2]
-ops_data[:, 2, 2] = CustomData[:, 3]
-ops_data[:, 0, 2] = -1 * CustomData[:, 4]
-ops_data[:, 1, 2] = CustomData[:, 5]
-ops_data[:, 0, 1] = CustomData[:, 5]
-
-data_dict = {
-    "k1": k1_domain,
-    "ops": ops_data,
-    "coherence": None,
-}
-
-CustomDataFormatter = drdmt.CustomDataLoader(
-    ops_data_file = spectra_file,
-    coherence_data_file = coherence_file,
-    skip_header = 1,
-    delimiter = ","
-)
-
-# Define Calibration Problem
 pb = drdmt.CalibrationProblem(
-    nn_params=drdmt.NNParameters(
-        nlayers=5,
-        hidden_layer_sizes=[15, 20, 20, 20, 15],
-        activations=[nn.ReLU(), nn.ReLU(), nn.ReLU(), nn.ReLU(), nn.ReLU()],
-    ),
-    prob_params=drdmt.ProblemParameters(
-        tol=1e-9,
-        nepochs=5,
-        learn_nu=True,
-        learning_rate=0.3,
-        num_components=6,
-        use_learnable_spectrum=True,
-        p_exponent=5.0,
-        q_exponent=3.0,
+    data_loader=data_loader,
+    model=stm.RDT_SpectralTensor(
+        eddy_lifetime_model=stm.TauNet_ELT(
+            taunet=stm.TauNet(
+                n_layers=3,
+                hidden_layer_sizes=[10, 10, 10],
+                activations=[nn.ReLU(), nn.ReLU(), nn.ReLU()],
+                learn_nu=False,
+            )
+        ),
+        energy_spectrum_model=stm.Learnable_ESM(
+            p_init=5.0,
+            q_init=3.0,
+        ),
+        L_init=100.0,  # Should be 70?
+        gamma_init=5.0,  # Should be 3.7?
+        sigma_init=1.0,  # Should be 0.04?????
     ),
     loss_params=drdmt.LossParameters(
-        alpha_pen1=1.0,
-        alpha_pen2=1.0,
-        beta_reg=1e-2,
-        gamma_coherence=1.25,
-    ),
-    phys_params=drdmt.PhysicalParameters(
-        L=6.0,
-        Gamma=3.0,
-        sigma=0.25,
-        domain=domain,
-        Uref=21.0,
-        zref=zref,
-        wavenumber_conversion_factor=1 / (torch.pi),
+        alpha_pen1=0.0,
+        alpha_pen2=0.0,
+        beta_reg=1e-4,
+        gamma_coherence=1.0,
     ),
     integration_params=drdmt.IntegrationParameters(
         ops_log_min=-3.0,
@@ -90,15 +48,31 @@ pb = drdmt.CalibrationProblem(
         ops_num_points=100,
         coh_log_min=-3.0,
         coh_log_max=3.0,
-        coh_num_points=300,
+        coh_num_points=100,
     ),
+    fit_coherence=True,
     logging_directory="runs/custom_data",
     device="cpu",
 )
 
-optimal_params = pb.calibrate(
-    data=data_dict,
+print("Data ranges:")
+print(f"uu: {data_loader.format_data()['ops']['uu'].min():.3e} to {data_loader.format_data()['ops']['uu'].max():.3e}")
+print(f"vv: {data_loader.format_data()['ops']['vv'].min():.3e} to {data_loader.format_data()['ops']['vv'].max():.3e}")
+print(f"ww: {data_loader.format_data()['ops']['ww'].min():.3e} to {data_loader.format_data()['ops']['ww'].max():.3e}")
+print(f"uw: {data_loader.format_data()['ops']['uw'].min():.3e} to {data_loader.format_data()['ops']['uw'].max():.3e}")
+print(f"vw: {data_loader.format_data()['ops']['vw'].min():.3e} to {data_loader.format_data()['ops']['vw'].max():.3e}")
+print(f"uv: {data_loader.format_data()['ops']['uv'].min():.3e} to {data_loader.format_data()['ops']['uv'].max():.3e}")
+
+pb.calibrate(
     optimizer_class=torch.optim.Adam,
+    lr=0.05,
+    optimizer_kwargs={
+        "betas": (0.9, 0.999),
+        "eps": 1e-8,
+        "weight_decay": 1e-5,
+    },
+    max_epochs=20,
+    tol=1e-6,
 )
 
 pb.plot()

@@ -92,12 +92,12 @@ class NNCovariance(Covariance):
         ### NOTE: However, here we scale L with the reference_height - the latter has to be taken into account from
         ###       the physical setting
 
-    def precompute_Spectrum(self, Frequencies: np.ndarray) -> np.ndarray:
+    def precompute_spectrum(self, frequencies: np.ndarray) -> np.ndarray:
         """Pre-compute the square-root of the associated spectrum tensor in the complex domain.
 
         Parameters
         ----------
-        Frequencies : np.ndarray
+        frequencies : np.ndarray
             Frequency domain in 3D over which to compute the square-root of the spectral tensor.
 
         Returns
@@ -105,15 +105,17 @@ class NNCovariance(Covariance):
         np.ndarray
             Square-root of the spectral tensor evaluated in the frequency domain; note that these are complex values.
         """
-        Nd = [Frequencies[j].size for j in range(self.ndim)]
+        Nd = [frequencies[j].size for j in range(self.ndim)]
         SqrtSpectralTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
         tmpTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
 
-        k = np.array(list(np.meshgrid(*Frequencies, indexing="ij")))
+        k = np.array(list(np.meshgrid(*frequencies, indexing="ij")))
         kk = np.sum(k**2, axis=0)
 
+        # TODO: Remove this context manager probably.
         with np.errstate(divide="ignore", invalid="ignore"):
             k_torch = torch.tensor(np.moveaxis(k, 0, -1)) * self.h_ref
+            # TODO: Here
             beta_torch = self.Gamma * self.OPS.tauNet(k_torch)
             beta = beta_torch.detach().cpu().numpy() if beta_torch.is_cuda else beta_torch.detach().numpy()
             beta[np.where(kk == 0)] = 0
