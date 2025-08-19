@@ -36,7 +36,9 @@ from drdmannturb.spectra_fitting import spectral_tensor_models as stm
 # Once again, this first block is just setting up several physical parameters we'll need.
 
 path = Path().resolve()
-spectra_file = path / "./inputs/Spectra.dat" if path.name == "examples" else path / "../data/Spectra.dat"
+# spectra_file = path / "./inputs/Spectra.dat" if path.name == "examples" else path / "../data/Spectra.dat"
+
+spectra_file = path / "inputs" / "ex03_ops.csv"
 
 domain = torch.logspace(-1, 3, 40)
 

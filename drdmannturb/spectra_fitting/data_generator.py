@@ -53,10 +53,7 @@ def generate_von_karman_spectra(k1: torch.Tensor, L: float = 0.59, C: float = 3.
     df = pl.DataFrame(ops_data)
     # TODO: Implement spectral coherence generation
 
-    return {
-        "ops": df,
-        "coherence": None
-    }
+    return {"ops": df, "coherence": None}
 
 
 def generate_kaimal_spectra(
@@ -256,8 +253,9 @@ class CustomDataLoader:
     def format_data(self) -> dict[str, pl.DataFrame | None]:
         """Format the data into a dictionary of tensors."""
         # Check that the data is loaded
-        assert self.ops_data_df is not None, "Ops data not loaded"
-        assert self.coh_data_df is not None, "Coherence data not loaded"
+        assert self.ops_data_df is not None, "OPS data not loaded??"
+        if self.coh_data_df is None:
+            print("No coherence data loaded.")
 
         return {
             "ops": self.ops_data_df,

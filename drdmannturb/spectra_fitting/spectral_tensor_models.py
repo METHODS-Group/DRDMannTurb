@@ -58,6 +58,7 @@ class Mann_ELT(EddyLifetimeModel):
         """Evaluate the Mann eddy lifetime model."""
         kL = L * k.norm(dim=-1).cpu().detach().numpy()
         y = kL ** (-2.0 / 3.0) / np.sqrt(hyp2f1(1 / 3, 17 / 6, 4 / 3, -(kL ** (-2))))
+        assert not isinstance(y, torch.Tensor)
         tau = torch.tensor(y, dtype=torch.get_default_dtype(), device=k.device)
 
         return gamma * tau

@@ -2,8 +2,9 @@ DRDMannTurb
 =============
 
 ``DRDMannTurb`` (Deep Rapid Distortion Mann Turbulence) is a data-driven Python framework for
-(1) the calibration of spectral tensor models of wind turbulence to field data and (2) the generation of synthetic turbulent wind fields
-based on these calibrated models. This package is intended for use by wind engineers in applications requiring rapid
+(1) the calibration of "Mann-like" spectral tensor models of wind turbulence to field data and (2) the generation of
+synthetic turbulent wind fields based on these calibrated models using the "Mann method." This package is intended for
+use by wind engineers in applications requiring rapid
 simulation of realistic wind turbulence. It is based off of the Deep Rapid Distortion models
 presented in `Keith, Khristenko, Wohlmuth (2021) <https://arxiv.org/pdf/2107.11046.pdf>`_.
 
