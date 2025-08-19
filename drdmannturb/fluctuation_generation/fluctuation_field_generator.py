@@ -280,6 +280,8 @@ class FluctuationFieldGenerator:
         np.ndarray
             The full fluctuation field, which is also stored as the ``total_fluctuation`` field.
         """
+        # TODO: Get rid of the string windprofiletype. Take in a mean profile function instead.
+
         if np.any(self.total_fluctuation):
             import warnings
 
