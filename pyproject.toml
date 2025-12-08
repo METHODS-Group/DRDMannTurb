@@ -54,7 +54,7 @@ docs = [
     "sphinxcontrib-mermaid",
     "sphinxcontrib-jsmath",
     "nbsphinx",
-    "sphinx-gallery==0.19.0",
+    "sphinx-gallery==0.20.0",
     "myst_parser",
     "enum_tools",
     "sphinx_toolbox",
