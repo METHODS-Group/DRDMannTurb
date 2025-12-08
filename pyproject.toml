@@ -61,7 +61,7 @@ docs = [
     # NOTE: tensorboard, plotly are already core dependencies
 ]
 dev = [
-    "pytest==8.3.5",
+    "pytest==9.0.2",
     "pytest-cov",
     "ruff>=0.4.8",
     "scalene",
