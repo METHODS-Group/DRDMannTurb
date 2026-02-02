@@ -32,7 +32,7 @@ dependencies = [
     "scipy>=1.13.1",
     "tensorboard>=2.19.0",
     "torch==2.7.1", # TODO: check CUDA
-    "tqdm==4.67.1",
+    "tqdm==4.67.2",
     "xarray>=2024.7.0",
     "netcdf4",
     "jax>=0.4.30",
