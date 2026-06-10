@@ -7,7 +7,7 @@ name = "drdmannturb"
 version = "1.1-beta.0"
 description = "Synthetic turbulence generation software, focused on a data-driven extension of the Mann turbulence model"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.13"
 license = "BSD-2-Clause"
 authors = [
   {name = "Alexey Izmailov", email = "alizma@brown.edu"},
@@ -60,26 +60,15 @@ docs = [
     "sphinx_toolbox",
     # NOTE: tensorboard, plotly are already core dependencies
 ]
-dev = [
-    "pytest==8.3.5",
-    "pytest-cov",
-    "ruff>=0.4.8",
-    "scalene",
-    "ipykernel",
-]
-
 [tool.setuptools]
 packages = ["drdmannturb"]
 
 # Ruff configuration below
 [tool.ruff]
-# Enable pydocstyle (`D`), pycodestyle (`E`), Pyflakes (`F`), and import sorting (`I`)
-lint.select = ["D", "E", "F", "I"]
+# Enable pydocstyle (`D`), pycodestyle (`E`), Pyflakes (`F`), import sorting (`I`),
+# and pyupgrade (`UP`, replaces the former standalone pyupgrade pre-commit hook)
+lint.select = ["D", "E", "F", "I", "UP"]
 lint.ignore = []
-
-# Allow autofix for all enabled rules (when `--fix`) is provided.
-lint.fixable = ["A", "B", "C", "D", "E", "F", "I"]
-lint.unfixable = []
 
 # Configure docstring style
 lint.pydocstyle.convention = "numpy"
@@ -120,6 +109,22 @@ line-length = 120
 # Assume Python >=3.10
 target-version = "py310"
 
+# ty (type checker) configuration
+# NOTE: The rules below are temporarily downgraded to "warn" to cover ~30
+# pre-existing diagnostics in code slated for rewrite during the JAX migration
+# (mostly calibration.py plotting and fluctuation_generation). Revert these to
+# error-level as each module is migrated.
+[tool.ty.rules]
+no-matching-overload = "warn"
+invalid-argument-type = "warn"
+unresolved-attribute = "warn"
+not-subscriptable = "warn"
+not-iterable = "warn"
+invalid-return-type = "warn"
+unsupported-operator = "warn"
+unknown-argument = "warn"
+call-non-callable = "warn"
+
 [tool.pytest.ini_options]
 minversion = "7.0"
 pythonpath = ["."]
@@ -130,4 +135,7 @@ dev = [
     "pytest>=8.3.5",
     "pytest-cov>=6.1.1",
     "pytest-xdist>=3.8.0",
+    "ruff>=0.4.8",
+    "ty",
+    "ipykernel",
 ]

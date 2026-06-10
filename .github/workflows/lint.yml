@@ -24,12 +24,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
-      - uses: astral-sh/ruff-action@v3
-        with:
-          src: "./drdmannturb"
-          args: "check --fix --exclude=drdmannturb/examples-unrendered"
+      - name: Ruff lint
+        run: uv run ruff check drdmannturb test
 
-      - uses: astral-sh/ruff-action@v3
-        with:
-          src: "./drdmannturb"
-          args: "format"
+      - name: Ruff format check
+        run: uv run ruff format --check drdmannturb test
+
+      - name: Type check (ty)
+        run: uv run ty check drdmannturb

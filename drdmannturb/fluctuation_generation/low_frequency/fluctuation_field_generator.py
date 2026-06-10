@@ -191,7 +191,7 @@ class LowFreqGenerator:
 
             warnings.warn(
                 f"User requested domain ({self.user_L1:.1f}x{self.user_L2:.1f}) is smaller than the "
-                f"recommended minimum size ({5*self.L_2d:.1f}x{5*self.L_2d}). "
+                f"recommended minimum size ({5 * self.L_2d:.1f}x{5 * self.L_2d}). "
                 f"Computational domain will be enlarged to ensure minimum size.",
                 UserWarning,
             )
@@ -276,8 +276,7 @@ class LowFreqGenerator:
 
         if integral_val < 1e-16:
             raise ValueError(
-                f"Integral of spectrum shape is near zero ({integral_val:.2e}). "
-                "Check physical parameters L_2d and z_i."
+                f"Integral of spectrum shape is near zero ({integral_val:.2e}). Check physical parameters L_2d and z_i."
             )
 
         return self.sigma2 / (2 * integral_val)

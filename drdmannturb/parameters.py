@@ -85,7 +85,7 @@ class DomainParameters:
 
     def __post_init__(self):
         # Check grid dimensions
-        if isinstance(self.d_dimensions, (list, np.ndarray)) and len(self.d_dimensions) != 3:
+        if isinstance(self.d_dimensions, list | np.ndarray) and len(self.d_dimensions) != 3:
             raise ValueError("Grid dimensions must be length 3.")
 
         if isinstance(self.d_dimensions, np.ndarray):
@@ -94,7 +94,7 @@ class DomainParameters:
             self._grid_dimensions = np.array(self.d_dimensions)
 
         # Check grid levels
-        if isinstance(self.grid_levels, (list, np.ndarray)) and len(self.grid_levels) != 3:
+        if isinstance(self.grid_levels, list | np.ndarray) and len(self.grid_levels) != 3:
             raise ValueError("Grid levels must be a tuple of length 3.")
 
         if isinstance(self.d_levels, np.ndarray):

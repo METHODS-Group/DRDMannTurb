@@ -60,21 +60,13 @@ To set up a development environment, we recommend using [`uv`](https://github.co
 
 1.  **Install `uv`**: Follow the official [`uv` installation instructions](https://github.com/astral-sh/uv#installation).
 2.  **Install System Dependencies**: Ensure the `FFTW` library is installed (see [Installation](#installation) section above).
-3.  **Install Python**: Make sure you have Python >= 3.9.16 installed and available. We recommend using a Python version manager like [`pyenv`](https://github.com/pyenv/pyenv).
+3.  **Install Python**: Make sure you have Python >= 3.10 installed and available (`uv python install 3.10` works as well).
 4.  **Clone the Repository**: `git clone https://github.com/METHODS-Group/DRDMannTurb.git && cd DRDMannTurb`
-5.  **Create and Activate Virtual Environment**:
+5.  **Sync the Environment**: `uv sync` creates the virtual environment, installs the package in editable mode, and installs the dev dependency group (pytest, ruff, ty).
     ```bash
-    # Create a virtual environment using your installed Python
-    uv venv
-    # Alternatively, you can explicitly set the Python version with the following
-    uv venv --python 3.9.16
-    # Activate the environment (syntax may vary slightly for different shells)
-    source .venv/bin/activate
-    ```
-6.  **Install in Editable Mode with Dependencies**: Install the package in editable mode along with development and documentation dependencies. *Make sure to quote the argument containing brackets.*
-    ```bash
-    # Install core, docs, and dev dependencies
-    uv pip install -e '.[docs,dev]'
+    uv sync
+    # To also build documentation locally, include the docs extra:
+    uv sync --extra docs
     ```
 
 We also ask that you install our
@@ -84,8 +76,8 @@ the documentation can be found [here](https://pre-commit.com/).
 
 ### Running Tests Locally
 
-DRDMannTurb's test suite is built with [Pytest](https://docs.pytest.org/en/stable/). Running the tests locally can be done by running `pytest`
-from the project root.
+DRDMannTurb's test suite is built with [Pytest](https://docs.pytest.org/en/stable/). Running the tests locally can be done by running `uv run pytest`
+from the project root (or `make test`; see `make help` for the available targets, including `make lint` and `make typecheck`).
 
 Tests decorated with `slow` can be run with the `--runslow` flag; they are otherwise skipped. Note that several of these tests require (at least
 ``partially'') training a DRD model, and so the suite may take several minutes to complete.

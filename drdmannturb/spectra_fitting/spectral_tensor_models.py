@@ -120,16 +120,14 @@ class VonKarman_ESM(EnergySpectrumModel):
         k_norm = k.norm(dim=-1)
         kL = k_norm * L
 
+        # Guarded evaluation: E(0) = 0, with k_norm replaced by 1 under the mask
+        # so the k^{-5/3} factor never produces inf/nan to propagate.
         mask = k_norm > 0.0
-        E = torch.zeros_like(k_norm)
-        if mask.any():
-            kn = k_norm[mask]
-            kL_m = kL[mask]
-            parenthetical = kL_m / torch.sqrt(1.0 + kL_m**2)
-            E_part = (kn ** (-5.0 / 3.0)) * (parenthetical ** (17.0 / 3.0))
-            E = E.scatter(0, mask.nonzero(as_tuple=False).squeeze(-1), E_part)
+        kn_safe = torch.where(mask, k_norm, torch.ones_like(k_norm))
+        parenthetical = kL / torch.sqrt(1.0 + kL**2)
+        E = (kn_safe ** (-5.0 / 3.0)) * (parenthetical ** (17.0 / 3.0))
 
-        return E
+        return torch.where(mask, E, torch.zeros_like(E))
 
 
 class Learnable_ESM(EnergySpectrumModel):
@@ -273,31 +271,6 @@ class RDT_SpectralTensor(SpectralTensorModel):
             -k1 * k2 - k1 * k30 * zeta2 - k2 * k30 * zeta1 + (k1**2 + k2**2) * zeta1 * zeta2
         )
         Phi23 = self._safe_div(E0, kk * kk0) * (-k2 * k30 + (k1**2 + k2**2) * zeta2)
-
-        # Make uw (Phi13) strictly negative where it lands exactly on zero (for forward test)
-        tiny = torch.finfo(k.dtype).tiny
-        Phi13 = torch.where(Phi13 == 0, -torch.full_like(Phi13, tiny), Phi13)
-
-        # Second attempt at above block
-        eps = torch.finfo(k.dtype).eps
-        Phi13 = torch.where(torch.abs(Phi13) <= eps, -torch.full_like(Phi13, eps), Phi13)
-
-        # Enforce exact oddness of Phi23 via anti-symmetrization: Phi23(k) <- (Phi23(k) - Phi23(-k)) / 2
-        km1, km2, km3 = -k1, -k2, -k3
-        k30_ref = km3 + beta * km1
-        kk0_ref = km1**2 + km2**2 + k30_ref**2
-        kk_ref = kk  # unchanged by k -> -k
-        s_ref = km1**2 + km2**2
-
-        C1_ref = self._safe_div(beta * km1**2 * (kk0_ref - 2 * k30_ref**2 + beta * km1 * k30_ref), kk_ref * s_ref)
-        C2_ref = self._safe_div(km2 * kk0_ref, torch.sqrt(s_ref**3)) * torch.atan2(
-            beta * km1 * torch.sqrt(s_ref), kk0_ref - k30_ref * km1 * beta
-        )
-        inv_k1_ref = self._safe_div(torch.ones_like(km1), km1)
-        zeta2_ref = C1_ref * km2 * inv_k1_ref + C2_ref
-
-        Phi23_ref = self._safe_div(E0, kk_ref * kk0_ref) * (-km2 * k30_ref + (km1**2 + km2**2) * zeta2_ref)
-        Phi23 = 0.5 * (Phi23 - Phi23_ref)
 
         # In order, uu, vv, ww, uw, vw, uv
         return Phi11, Phi22, Phi33, Phi13, Phi23, Phi12

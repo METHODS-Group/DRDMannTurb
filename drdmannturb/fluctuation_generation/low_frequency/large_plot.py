@@ -128,7 +128,7 @@ def _run_single_domain_size(domain_factor, config, num_realizations=5):
     u1_var = np.var(u1)
     u2_var = np.var(u2)
 
-    print(f"Completed domain size {domain_size/1000:.1f} km (factor {domain_factor})")
+    print(f"Completed domain size {domain_size / 1000:.1f} km (factor {domain_factor})")
     print(f"\tu1_var: {u1_var}, u2_var: {u2_var}")
     print(f"\tu1 mean: {np.mean(u1)}, u2 mean: {np.mean(u2)}")
     return domain_factor, u1_norm, u2_norm, u1_var, u2_var, domain_size
@@ -280,7 +280,7 @@ def recreate_fig2(gen_a, gen_b, num_realizations=10, do_plot=True):
 
     print(f"Running {num_realizations} realizations for numerical spectrum...")
     for i in range(num_realizations):
-        print(f"  Realization {i+1}/{num_realizations}")
+        print(f"  Realization {i + 1}/{num_realizations}")
         # Generate new random fields for this realization
         gen_a.generate()
         gen_b.generate()
@@ -515,7 +515,7 @@ def length_AND_grid_size_study(base_config, do_plot=False, num_realizations=10):
             current_combo += 1
             grid_size = 2**exp
 
-            print(f"\n{'-'*60}")
+            print(f"\n{'-' * 60}")
             print(
                 f"Combination {current_combo}/{total_combinations}: "
                 + f"Grid={grid_size}x{grid_size}, Domain factor={factor}"
@@ -540,9 +540,9 @@ def length_AND_grid_size_study(base_config, do_plot=False, num_realizations=10):
             u1_vars_avg[i, j] = np.mean(realization_u1_vars)
             u2_vars_avg[i, j] = np.mean(realization_u2_vars)
 
-            print(f"\t Avg u1 variance: {u1_vars_avg[i,j]:.6f}")
-            print(f"\t Avg u2 variance: {u2_vars_avg[i,j]:.6f}")
-            print(f"\t Avg Total variance: {u1_vars_avg[i,j] + u2_vars_avg[i,j]:.6f}")
+            print(f"\t Avg u1 variance: {u1_vars_avg[i, j]:.6f}")
+            print(f"\t Avg u2 variance: {u2_vars_avg[i, j]:.6f}")
+            print(f"\t Avg Total variance: {u1_vars_avg[i, j] + u2_vars_avg[i, j]:.6f}")
 
     figs = []
 
@@ -671,7 +671,7 @@ def rectangular_domain_study(base_config, num_realizations=30, do_plot=True):
     assert len(L1_L2_factor_pairs) == len(N1_N2_pairs)
 
     for L1_L2_factor, N1_N2_pair in zip(L1_L2_factor_pairs, N1_N2_pairs):
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         print(f"L1_L2_factor: {L1_L2_factor}")
         print(f"N1_N2_pair: {N1_N2_pair}")
 
@@ -708,7 +708,7 @@ def rectangular_domain_study(base_config, num_realizations=30, do_plot=True):
         print(f"\tAvg Full u2 var: {np.mean(avg_full_u2_var)}")
         print(f"\tAvg Full Total var: {np.mean(avg_full_total_var)}")
         print(f"\tTarget sigma2: {gen.sigma2}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
     return
 

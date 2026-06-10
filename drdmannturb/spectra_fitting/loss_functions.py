@@ -317,7 +317,18 @@ class LossAggregator:
         # Compute individual loss components
         mse_loss = self.MSE_term(y, y_data, epoch)
 
-        # TODO: Add coherence loss back in...
+        coh_loss = torch.tensor(0.0, device=y.device)
+        if self.params.gamma_coherence > 0 and "coherence_data" in kwargs:
+            coh_data = kwargs["coherence_data"]
+            coh_loss = self.CoherenceLoss(
+                coh_data["model_u"],
+                coh_data["model_v"],
+                coh_data["model_w"],
+                coh_data["data_u"],
+                coh_data["data_v"],
+                coh_data["data_w"],
+                epoch,
+            )
 
         # Penalty terms
         pen1_loss = torch.tensor(0.0, device=y.device)
@@ -334,6 +345,6 @@ class LossAggregator:
             reg_loss = self.Regularization(theta_NN, epoch)
 
         # Compute total loss
-        total_loss = mse_loss + pen1_loss + pen2_loss + reg_loss
+        total_loss = mse_loss + coh_loss + pen1_loss + pen2_loss + reg_loss
 
         return total_loss

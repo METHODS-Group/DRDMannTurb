@@ -38,6 +38,7 @@ class CalibrationProblem:
     ):
         r"""Initialize a ``CalibrationProblem`` instance, defining the model calibration and physical setting."""
         self.loss_params = loss_params
+        self.fit_coherence = fit_coherence
 
         if data is None and data_loader is not None:
             self.data = data_loader.format_data()
@@ -158,11 +159,53 @@ class CalibrationProblem:
         else:
             print("No uv data provided, skipping.")
 
-        # TODO: Handle the coherence data...
-        # coh_data = data["coherence"]
+        # Coherence data preparation (optional)
+        coherence_inputs: dict[str, torch.Tensor] | None = None
+        if self.fit_coherence:
+            coh_df = self.data.get("coherence")
+            if coh_df is None:
+                print("Coherence fitting requested but no coherence data provided; skipping coherence term.")
+            else:
+                required_cols = {"r", "freq", "coh_u", "coh_v", "coh_w"}
+                missing_cols = required_cols.difference(set(coh_df.columns))
+                if missing_cols:
+                    raise ValueError(f"Missing required coherence columns: {missing_cols}")
 
-        ## TODO: Review the coherence data... something is weird with the meshgrid flattening idea
-        #        but that SHOULD work...
+                device = ops_k_domain_tensor.device
+                dtype = ops_k_domain_tensor.dtype
+
+                freq_unique = sorted(coh_df.get_column("freq").to_list())
+                sep_unique = sorted(coh_df.get_column("r").to_list())
+
+                unscaled_coh_freqs = torch.tensor(freq_unique, device=device, dtype=dtype)
+                coherence_freqs = unscaled_coh_freqs / self.freq_scale
+                spatial_seps = torch.tensor(sep_unique, device=device, dtype=dtype)
+
+                def _build_coh_matrix(col: str) -> torch.Tensor:
+                    mat = torch.empty((len(sep_unique), len(freq_unique)), device=device, dtype=dtype)
+                    for i, sep in enumerate(sep_unique):
+                        rows = coh_df.filter(pl.col("r") == sep).sort("freq")
+                        freq_for_sep = torch.tensor(rows.get_column("freq").to_list(), device=device, dtype=dtype)
+                        if freq_for_sep.numel() != unscaled_coh_freqs.numel() or not torch.allclose(
+                            freq_for_sep, unscaled_coh_freqs
+                        ):
+                            raise ValueError("Coherence frequency grid is inconsistent across separations.")
+
+                        data_vals = torch.tensor(rows.get_column(col).to_list(), device=device, dtype=dtype)
+                        mat[i] = data_vals
+                    return mat
+
+                data_coh_u = _build_coh_matrix("coh_u")
+                data_coh_v = _build_coh_matrix("coh_v")
+                data_coh_w = _build_coh_matrix("coh_w")
+
+                coherence_inputs = {
+                    "freqs": coherence_freqs,
+                    "separations": spatial_seps,
+                    "data_u": data_coh_u,
+                    "data_v": data_coh_v,
+                    "data_w": data_coh_w,
+                }
 
         # Initialize the LossAggregator
         # TODO: Can't this just go into the constructor?
@@ -224,11 +267,29 @@ class CalibrationProblem:
                     print(f"NaN in OPS_model in closure: {OPS_model}")
                     raise ValueError("NaN is OPS_model in closure")
 
+                coherence_kwargs: dict = {}
+                if coherence_inputs is not None and self.loss_params.gamma_coherence > 0:
+                    coh_model = self.OPS.spectral_coherence(
+                        coherence_inputs["freqs"],
+                        coherence_inputs["separations"],
+                    )
+                    coherence_kwargs = {
+                        "coherence_data": {
+                            "model_u": coh_model[..., 0],
+                            "model_v": coh_model[..., 1],
+                            "model_w": coh_model[..., 2],
+                            "data_u": coherence_inputs["data_u"],
+                            "data_v": coherence_inputs["data_v"],
+                            "data_w": coherence_inputs["data_w"],
+                        }
+                    }
+
                 self.loss = self.LossAggregator.eval(
                     OPS_model[curves],
                     OPS_true,
                     gen_theta_NN(),
                     self.e_count,
+                    **coherence_kwargs,
                 )
 
                 self.loss.backward()
@@ -257,11 +318,29 @@ class CalibrationProblem:
                 with torch.autograd.set_detect_anomaly(True):
                     optimizer.zero_grad()
                     OPS_model = self.OPS(ops_k_domain_tensor)
+                    coherence_kwargs: dict = {}
+                    if coherence_inputs is not None and self.loss_params.gamma_coherence > 0:
+                        coh_model = self.OPS.spectral_coherence(
+                            coherence_inputs["freqs"],
+                            coherence_inputs["separations"],
+                        )
+                        coherence_kwargs = {
+                            "coherence_data": {
+                                "model_u": coh_model[..., 0],
+                                "model_v": coh_model[..., 1],
+                                "model_w": coh_model[..., 2],
+                                "data_u": coherence_inputs["data_u"],
+                                "data_v": coherence_inputs["data_v"],
+                                "data_w": coherence_inputs["data_w"],
+                            }
+                        }
+
                     self.loss = self.LossAggregator.eval(
                         OPS_model[curves],
                         OPS_true,
                         gen_theta_NN(),
                         self.e_count,
+                        **coherence_kwargs,
                     )
                     self.loss.backward()
 

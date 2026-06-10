@@ -1,7 +1,5 @@
 """Helper functions for testing."""
 
-from typing import Dict, Tuple
-
 import torch
 
 
@@ -17,7 +15,7 @@ def create_test_wavevectors(n_points: int = 100, dtype: torch.dtype = torch.floa
     return k
 
 
-def create_test_parameters(dtype: torch.dtype = torch.float32) -> Dict[str, torch.Tensor]:
+def create_test_parameters(dtype: torch.dtype = torch.float32) -> dict[str, torch.Tensor]:
     """Create test parameters for spectral tensor models."""
     return {
         "L": torch.tensor(10.0, dtype=dtype),
@@ -28,7 +26,7 @@ def create_test_parameters(dtype: torch.dtype = torch.float32) -> Dict[str, torc
 
 def assert_tensor_properties(
     tensor: torch.Tensor,
-    expected_shape: Tuple[int, ...] | None = None,
+    expected_shape: tuple[int, ...] | None = None,
     expected_dtype: torch.dtype | None = None,
     check_finite: bool = True,
 ) -> None:
@@ -43,7 +41,7 @@ def assert_tensor_properties(
         assert torch.isfinite(tensor).all(), f"Tensor contains non-finite values: {tensor}"
 
 
-def benchmark_function(func, *args, **kwargs) -> Dict[str, float]:
+def benchmark_function(func, *args, **kwargs) -> dict[str, float]:
     """Benchmark a function execution."""
     import time
 

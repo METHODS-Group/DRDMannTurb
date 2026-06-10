@@ -20,13 +20,16 @@ which can be done in several contexts as well as utilities for saving to VTK for
 # ---------------
 #
 # First, we import the packages we need for this example.
+import pickle
 from pathlib import Path
 
 import numpy as np
 import torch
 
+import drdmannturb as drdmt
 from drdmannturb.fluctuation_generation import (
     FluctuationFieldGenerator,
+    NNCovariance,
     plot_velocity_magnitude,
 )
 
@@ -94,16 +97,38 @@ path_to_parameters = (
 Type_Model = "DRD"  ### 'Mann', 'VK', 'DRD'
 nBlocks = 2
 
+# The current FluctuationFieldGenerator requires a covariance kernel object
+# We need to load the pre-trained DRD model and create the appropriate covariance kernel
+
+# Load the pre-trained model
+with open(path_to_parameters, "rb") as file:
+    config, parameters, Data, _, loss_history = pickle.load(file)
+
+# Create the CalibrationProblem with the loaded config
+pb = drdmt.CalibrationProblem(**config)
+pb.parameters = parameters
+
+# Get the learned scales from the model
+L, T, M = pb.OPS.update_scales()
+M = L ** (-5 / 3) * M
+print("Learned scales: ", [L, T, M])
+
+# Create the appropriate covariance kernel for DRD models
+
+# Create NNCovariance with the loaded model
+cov_drd = NNCovariance(
+    ndim=3,
+    length_scale=L * zref,  # Scale by reference height
+    E0=M * ustar**2 * zref ** (-2 / 3),  # Scale energy spectrum
+    Gamma=T,  # Use learned time scale
+    ops=pb.OPS,  # The trained OnePointSpectra model
+    h_ref=zref,  # Reference height
+)
+
 gen_drd = FluctuationFieldGenerator(
-    ustar,
-    zref,
     grid_dimensions,
     grid_levels,
-    length_scale=L,
-    time_scale=Gamma,
-    energy_spectrum_scale=sigma,
-    model=Type_Model,
-    path_to_parameters=path_to_parameters,
+    cov_drd,
     seed=seed,
 )
 

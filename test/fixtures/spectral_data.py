@@ -1,11 +1,9 @@
 """Fixture data for spectral testing."""
 
-from typing import Dict
-
 import torch
 
 
-def create_kaimal_spectra_data(n_points: int = 100) -> Dict[str, torch.Tensor]:
+def create_kaimal_spectra_data(n_points: int = 100) -> dict[str, torch.Tensor]:
     """Create synthetic Kaimal spectra data for testing."""
     freq = torch.logspace(-2, 2, n_points)
 
@@ -34,7 +32,7 @@ def create_test_wavevector_grid(n_points: int = 50, dtype: torch.dtype = torch.f
     return k
 
 
-def create_test_parameters(dtype: torch.dtype = torch.float32) -> Dict[str, torch.Tensor]:
+def create_test_parameters(dtype: torch.dtype = torch.float32) -> dict[str, torch.Tensor]:
     """Create test parameters for spectral tensor models."""
     return {
         "L": torch.tensor(10.0, dtype=dtype),

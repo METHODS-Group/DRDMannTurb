@@ -18,7 +18,7 @@ field, we can simply add the 2d field to each vertical slice of the 3d field to 
 
 import numpy as np
 
-from drdmannturb.fluctuation_generation.fluctuation_field_generator import FluctuationFieldGenerator
+from drdmannturb.fluctuation_generation import FluctuationFieldGenerator, MannCovariance
 
 #######################################################################################
 # 2d parameters
@@ -60,7 +60,6 @@ nBlocks = 2
 grid_dimensions = np.array([Lx / 4, Ly, Lz])
 
 grid_levels = np.array([6, 4, 4])
-Type_Model = "Mann"
 
 #######################################################################################
 # Construct the generators
@@ -70,28 +69,26 @@ Type_Model = "Mann"
 # comparison. These will be identical besides the provision of the ``config_2d_model``
 # parameter to the 2d+3d generator.
 
-generator_3d = FluctuationFieldGenerator(
-    ustar,
-    zref,
-    grid_dimensions,
-    grid_levels,
-    model=Type_Model,
+# Create the Mann covariance kernel
+covariance_3d = MannCovariance(
+    ndim=3,
     length_scale=L,
-    time_scale=Gamma,
-    energy_spectrum_scale=sigma,
+    E0=sigma,
+    Gamma=Gamma,
+)
+
+generator_3d = FluctuationFieldGenerator(
+    grid_dimensions=grid_dimensions,
+    grid_levels=grid_levels,
+    covariance=covariance_3d,
     seed=1,
     config_2d_model=None,
 )
 
 generator_2d3d = FluctuationFieldGenerator(
-    ustar,
-    zref,
-    grid_dimensions,
-    grid_levels,
-    model=Type_Model,
-    length_scale=L,
-    time_scale=Gamma,
-    energy_spectrum_scale=sigma,
+    grid_dimensions=grid_dimensions,
+    grid_levels=grid_levels,
+    covariance=covariance_3d,
     seed=1,
     config_2d_model=config_2d,
 )

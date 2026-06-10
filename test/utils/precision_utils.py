@@ -1,12 +1,12 @@
 """Utilities for precision testing."""
 
 import contextlib
-from typing import Any, Dict, Tuple
+from typing import Any
 
 import torch
 
 
-def compare_precisions(func, *args, **kwargs) -> Dict[torch.dtype, Any]:
+def compare_precisions(func, *args, **kwargs) -> dict[torch.dtype, Any]:
     """Run a function with different precisions and return results."""
     results = {}
 
@@ -20,7 +20,7 @@ def compare_precisions(func, *args, **kwargs) -> Dict[torch.dtype, Any]:
     return results
 
 
-def convert_args_to_dtype(args: Tuple, dtype: torch.dtype) -> Tuple:
+def convert_args_to_dtype(args: tuple, dtype: torch.dtype) -> tuple:
     """Convert tensor arguments to specified dtype."""
     converted = []
     for arg in args:
@@ -31,7 +31,7 @@ def convert_args_to_dtype(args: Tuple, dtype: torch.dtype) -> Tuple:
     return tuple(converted)
 
 
-def convert_kwargs_to_dtype(kwargs: Dict, dtype: torch.dtype) -> Dict:
+def convert_kwargs_to_dtype(kwargs: dict, dtype: torch.dtype) -> dict:
     """Convert tensor keyword arguments to specified dtype."""
     converted = {}
     for key, value in kwargs.items():
@@ -42,7 +42,7 @@ def convert_kwargs_to_dtype(kwargs: Dict, dtype: torch.dtype) -> Dict:
     return converted
 
 
-def check_precision_consistency(results: Dict[torch.dtype, Any], tolerance: float = 1e-5) -> bool:
+def check_precision_consistency(results: dict[torch.dtype, Any], tolerance: float = 1e-5) -> bool:
     """Check that results are consistent across precisions."""
     if torch.float32 not in results or torch.float64 not in results:
         return True
