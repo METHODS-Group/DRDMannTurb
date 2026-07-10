@@ -11,11 +11,19 @@ Version 1.1
     * Removed all non-/re-dimensionalizing constants from the ``spectra_fitting`` backend --
       now, users are expected to handle the non-dimensionalization of the inputs and the re-dimensionalization
       at inference time.
+* Restored the fit-then-generate workflow
+    * ``NNCovariance`` now consumes a trained ``SpectralTensorModel`` directly and works with any
+      eddy lifetime / energy spectrum combination
+    * Model persistence via ``SpectralTensorModel.save_model``/``load_model`` and
+      ``CalibrationProblem.save_model`` (checkpoints record the calibration scaling factors)
 * Updated tooling for development and documentation
     * Primarily, we now rely on ``uv`` and ``ruff``
     * Massively improved testing suite
     * Creation of a ``Makefile`` for common development tasks
     * Substantial reworking of the documentation
+    * Slimmed runtime dependencies (removed unused ``jax``, ``xarray``, ``netcdf4``,
+      ``scikit-learn``, ``tqdm``) and relaxed exact version pins
+* Added a runtime ``drdmannturb.__version__`` attribute
 
 Version 1.1-beta.0
 ------------------

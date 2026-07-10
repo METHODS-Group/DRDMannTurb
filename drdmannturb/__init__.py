@@ -7,6 +7,13 @@ of Jacob Mann in 1994 and 1998 as well as in the deep-learning enhancement devel
 et al. in 2021.
 """
 
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("drdmannturb")
+except PackageNotFoundError:  # package not installed (e.g. running from a source checkout)
+    __version__ = "0.0.0.dev0"
+
 from .fluctuation_generation import (
     Covariance,
     FluctuationFieldGenerator,
@@ -42,6 +49,7 @@ from .spectra_fitting import (
 )
 
 __all__ = [
+    "__version__",
     # Fluctuation Generation
     "Covariance",
     "FluctuationFieldGenerator",

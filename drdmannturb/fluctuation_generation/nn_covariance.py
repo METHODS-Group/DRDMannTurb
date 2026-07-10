@@ -1,172 +1,140 @@
-"""Covariance kernel implementation for neural network models."""
+"""Covariance kernel implementation for trained DRD spectral tensor models."""
 
 import numpy as np
 import torch
 
-from ..spectra_fitting import OnePointSpectra
-from .covariance_kernels import Covariance
+from ..spectra_fitting.spectral_tensor_models import SpectralTensorModel
+from .covariance_kernels import Covariance, _assemble_rdt_sqrt_tensor
 
 
 class NNCovariance(Covariance):
     r"""
-    Neural Network covariance kernel.
+    Covariance kernel built from a trained (DRD) spectral tensor model.
 
     Like other covariance kernel implementations, this evaluates the
     :math:`G(\boldsymbol{k})` which satisfies :math:`G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k},
-    \tau(\boldsymbol{k}))` where the spectral tensor is defined through the eddy lifetime function learned by the neural
-    network as well as the fitted spectra. Here,
+    \tau(\boldsymbol{k}))`, where the spectral tensor is defined through the eddy lifetime and energy spectrum
+    models of a trained :py:class:`SpectralTensorModel`. In particular, the eddy lifetime function may be the
+    neural network (``TauNet_ELT``) learned during spectra fitting.
+
+    Since spectra fitting operates on a non-dimensional frequency domain while field generation operates on a
+    physical (dimensional) domain, this kernel requires the affine map between the two:
 
     .. math::
-            \tau(\boldsymbol{k})=\frac{T|\boldsymbol{a}|^{\nu-\frac{2}{3}}}
-            {\left(1+|\boldsymbol{a}|^2\right)^{\nu / 2}}, \quad \boldsymbol{a}=\boldsymbol{a}(\boldsymbol{k})
+        \boldsymbol{k}_{\mathrm{model}} = \ell \, \boldsymbol{k}_{\mathrm{phys}}, \qquad
+        (k_1 F_{ij})_{\mathrm{phys}}(k_{\mathrm{phys}}) = A \, (k_1 F_{ij})_{\mathrm{model}}(\ell k_{\mathrm{phys}}),
 
-    satisfies
+    where :math:`\ell` (``length_scale``, units of length) maps physical wavevectors onto the domain the model
+    was trained on and :math:`A` (``amplitude``, units of velocity squared) maps the model's non-dimensional
+    frequency-weighted spectra back to physical units. The full spectral tensor then satisfies
+    :math:`\Phi_{\mathrm{phys}}(\boldsymbol{k}) = A \ell^3 \, \Phi_{\mathrm{model}}(\ell \boldsymbol{k})`.
 
-    .. math::
-        :nowrap:
+    For example, for data non-dimensionalized as :math:`n = k_1 z_{\mathrm{ref}} / 2\pi` and
+    :math:`k_1 F_{ij} / u_*^2` (the convention of ``generate_kaimal_spectra``), and calibrated with
+    ``auto_scale=True``,
 
-        \begin{align}
-            \Phi(\boldsymbol{k}, \tau) & =\left\langle\widehat{\mathbf{u}}(\boldsymbol{k})
-                \widehat{\mathbf{u}}^*(\boldsymbol{k})\right\rangle \\
-            & =\mathbf{D}_\tau(\boldsymbol{k}) \boldsymbol{G}_0\left(\boldsymbol{k}_0\right)\left\langle
-                \widehat{\boldsymbol{\xi}}\left(\boldsymbol{k}_0\right) \widehat{\boldsymbol{\xi}}^*
-                \left(\boldsymbol{k}_0\right)\right\rangle \boldsymbol{G}_0^*\left(\boldsymbol{k}_0\right)
-                \mathbf{D}_\tau^*(\boldsymbol{k}) \\
-            & =\mathbf{D}_\tau(\boldsymbol{k}) \boldsymbol{G}_0\left(\boldsymbol{k}_0\right) \boldsymbol{G}_0^*
-                \left(\boldsymbol{k}_0\right) \mathbf{D}_\tau^*(\boldsymbol{k}) \\
-            & =\mathbf{D}_\tau(\boldsymbol{k}) \Phi^{\mathrm{VK}}\left(\boldsymbol{k}_0\right)
-                \mathbf{D}_\tau^*(\boldsymbol{k}) .
-        \end{align}
+    .. code-block:: python
 
-    For more detailed definitions of individual terms, refer to section III B (specifically pages 4 and 5) of
-    the original DRD paper.
+        length_scale = zref / (2 * np.pi * pb.freq_scale)
+        amplitude = ustar**2 * pb.spectral_scale
+
+    .. note::
+        ``FluctuationFieldGenerator`` currently normalizes each generated block to unit RMS before applying the
+        mean profile, so ``amplitude`` does not affect the final field there; it is applied for correctness of
+        the returned spectral tensor itself.
     """
 
     def __init__(
         self,
-        ndim: int,
+        spectral_tensor_model: SpectralTensorModel,
         length_scale: float,
-        E0: float,
-        Gamma: float,
-        ops: OnePointSpectra,
-        h_ref: float,
+        amplitude: float = 1.0,
+        ndim: int = 3,
     ):
-        """Initialize the neural network covariance kernel.
+        r"""Initialize the covariance kernel from a trained spectral tensor model.
 
         Parameters
         ----------
+        spectral_tensor_model : SpectralTensorModel
+            Trained spectral tensor model (e.g. from ``CalibrationProblem`` or ``load_model``). Its eddy
+            lifetime model, energy spectrum model, and learned scales ``L``, ``gamma``, ``sigma`` fully
+            determine the non-dimensional spectral tensor.
+        length_scale : float
+            Length :math:`\ell` mapping physical wavevectors to the model's non-dimensional frequency
+            domain, ``k_model = length_scale * k_phys``. See the class docstring for how to compute this
+            from the data non-dimensionalization and calibration scaling.
+        amplitude : float, optional
+            Velocity-squared scale :math:`A` mapping the model's frequency-weighted spectra to physical
+            units, by default 1.0.
         ndim : int, optional
-            Number of dimensions for kernel to operate over.
-        length_scale : float, optional
-            Length scale non-dimensionalizing constant.
-        E0 : float, optional
-            Energy spectrum.
-        Gamma : float, optional
-            Time scale.
-        ops : OnePointSpectra
-            Pre-trained OnePointSpectra object with a neural network representing the eddy lifetime function and
-            containing the non-dimensionalizing scales, which are also learned by the DRD model.
-        h_ref : float
-            Reference height (this is not a parameter learned by the DRD model).
+            Number of dimensions for the kernel to operate over, by default 3.
 
         Raises
         ------
         ValueError
-            ndim must be 3 for NN covariance.
+            ndim must be 3 for NN covariance; length_scale and amplitude must be positive.
         """
-        super().__init__()
+        super().__init__(ndim=ndim)
 
-        ### Spatial dimensions
-        if ndim != 3:
-            raise ValueError("ndim must be 3 for NN covariance.")
+        if length_scale <= 0.0:
+            raise ValueError("length_scale must be positive.")
+        if amplitude <= 0.0:
+            raise ValueError("amplitude must be positive.")
 
-        self.ndim = 3
+        self.spectral_tensor_model = spectral_tensor_model
+        self.length_scale = length_scale
+        self.amplitude = amplitude
 
-        self.L = length_scale
-        self.E0 = E0
-        self.Gamma = Gamma
-
-        self.OPS = ops
-        self.h_ref = h_ref
-        ### NOTE: NN implicitly involves the length scales (it is associated with non-dimensional internal L)
-        ### NOTE: However, here we scale L with the reference_height - the latter has to be taken into account from
-        ###       the physical setting
+        # Dimensional parameters read by FluctuationFieldGenerator for buffer/margin sizing.
+        with torch.no_grad():
+            self.L = float(torch.exp(spectral_tensor_model.log_L)) * length_scale
+            self.Gamma = float(torch.exp(spectral_tensor_model.log_gamma))
+        self.E0 = amplitude
 
     def precompute_spectrum(self, frequencies: np.ndarray) -> np.ndarray:
-        """Pre-compute the square-root of the associated spectrum tensor in the complex domain.
+        """Pre-compute the square-root of the associated spectral tensor in the complex domain.
 
         Parameters
         ----------
         frequencies : np.ndarray
-            Frequency domain in 3D over which to compute the square-root of the spectral tensor.
+            Physical frequency domain in 3D over which to compute the square-root of the spectral tensor.
 
         Returns
         -------
         np.ndarray
-            Square-root of the spectral tensor evaluated in the frequency domain; note that these are complex values.
+            Square-root of the spectral tensor evaluated in the frequency domain; note that these are
+            complex values.
         """
-        Nd = [frequencies[j].size for j in range(self.ndim)]
-        SqrtSpectralTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
-        tmpTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
+        model = self.spectral_tensor_model
+        param = next(model.parameters())
+        dtype, device = param.dtype, param.device
 
-        k = np.array(list(np.meshgrid(*frequencies, indexing="ij")))
+        # Map the physical wavevector grid onto the model's non-dimensional domain.
+        k = np.array(list(np.meshgrid(*frequencies, indexing="ij"))) * self.length_scale
         kk = np.sum(k**2, axis=0)
 
-        # TODO: Remove this context manager probably.
-        with np.errstate(divide="ignore", invalid="ignore"):
-            k_torch = torch.tensor(np.moveaxis(k, 0, -1)) * self.h_ref
-            # TODO: Here
-            beta_torch = self.Gamma * self.OPS.tauNet(k_torch)
-            beta = beta_torch.detach().cpu().numpy() if beta_torch.is_cuda else beta_torch.detach().numpy()
-            beta[np.where(kk == 0)] = 0
+        with torch.no_grad():
+            L = torch.exp(model.log_L)
+            gamma = torch.exp(model.log_gamma)
+            sigma = torch.exp(model.log_sigma)
 
-            k1 = k[0, ...]
-            k2 = k[1, ...]
-            k3 = k[2, ...]
-            k30 = k3 + beta * k1
+            k_torch = torch.as_tensor(np.moveaxis(k, 0, -1), dtype=dtype, device=device)
+            beta = model.eddy_lifetime_model(k_torch, L, gamma).cpu().numpy().astype(np.float64)
 
-            kk0 = k1**2 + k2**2 + k30**2
+        # The eddy lifetime diverges as k -> 0; the amplitude there is zero anyway.
+        beta[np.where(kk == 0)] = 0.0
 
-            #### Isotropic with k0
+        def const_fn(k30: np.ndarray, kk0: np.ndarray) -> np.ndarray:
+            with torch.no_grad():
+                k0_torch = torch.as_tensor(np.stack([k[0, ...], k[1, ...], k30], axis=-1), dtype=dtype, device=device)
+                energy = sigma * L ** (5.0 / 3.0) * model.energy_spectrum_model(k0_torch, L)
+            energy_np = energy.cpu().numpy().astype(np.float64)
 
-            const = self.E0 * (self.L ** (17 / 3)) / (4 * np.pi)
-            const = np.sqrt(const / (1 + (self.L**2) * kk0) ** (17 / 6))
+            with np.errstate(divide="ignore", invalid="ignore"):
+                const = np.sqrt(energy_np / (4 * np.pi * kk0**2))
+            return np.nan_to_num(const, nan=0.0, posinf=0.0)
 
-            # to enforce zero mean in the x-direction:
-            # const[k1 == 0] = 0.0
+        sqrt_spectral_tensor = _assemble_rdt_sqrt_tensor(k[0, ...], k[1, ...], k[2, ...], beta, const_fn)
 
-            tmpTens[0, 1, ...] = -const * k30
-            tmpTens[0, 2, ...] = const * k2
-            tmpTens[1, 0, ...] = const * k30
-            tmpTens[1, 2, ...] = -const * k1
-            tmpTens[2, 0, ...] = -const * k2
-            tmpTens[2, 1, ...] = const * k1
-
-            #### RDT
-
-            s = k1**2 + k2**2
-            C1 = beta * k1**2 * (kk0 - 2 * k30**2 + beta * k1 * k30) / (kk * s)
-            numerator = beta * k1 * np.sqrt(s)
-            denominator = kk0 - k30 * k1 * beta
-            C2 = k2 * kk0 / s ** (3 / 2) * np.arctan2(numerator, denominator)
-
-            zeta1 = C1 - k2 / k1 * C2
-            zeta2 = k2 / k1 * C1 + C2
-            zeta3 = kk0 / kk
-
-            # deal with divisions by zero
-            zeta1 = np.nan_to_num(zeta1)
-            zeta2 = np.nan_to_num(zeta2)
-            zeta3 = np.nan_to_num(zeta3)
-
-            SqrtSpectralTens[0, 0, ...] = tmpTens[0, 0, ...] + zeta1 * tmpTens[2, 0, ...]
-            SqrtSpectralTens[0, 1, ...] = tmpTens[0, 1, ...] + zeta1 * tmpTens[2, 1, ...]
-            SqrtSpectralTens[0, 2, ...] = tmpTens[0, 2, ...] + zeta1 * tmpTens[2, 2, ...]
-            SqrtSpectralTens[1, 0, ...] = tmpTens[1, 0, ...] + zeta2 * tmpTens[2, 0, ...]
-            SqrtSpectralTens[1, 1, ...] = tmpTens[1, 1, ...] + zeta2 * tmpTens[2, 1, ...]
-            SqrtSpectralTens[1, 2, ...] = tmpTens[1, 2, ...] + zeta2 * tmpTens[2, 2, ...]
-            SqrtSpectralTens[2, 0, ...] = zeta3 * tmpTens[2, 0, ...]
-            SqrtSpectralTens[2, 1, ...] = zeta3 * tmpTens[2, 1, ...]
-            SqrtSpectralTens[2, 2, ...] = zeta3 * tmpTens[2, 2, ...]
-
-            return SqrtSpectralTens * 1j
+        # Physical rescaling: Phi_phys(k) = amplitude * length_scale^3 * Phi_model(length_scale * k).
+        return sqrt_spectral_tensor * np.sqrt(self.amplitude * self.length_scale**3)

@@ -1,5 +1,5 @@
 Examples and Tutorials
-=====================
+======================
 
 This section contains working examples and tutorials for DRDMannTurb. All examples are automatically generated from the source code and can be run interactively.
 
@@ -73,38 +73,6 @@ To run these examples locally:
    .. code-block:: python
 
       %run examples/01_mann_elt_fit.py
-
-Tips for Running Examples
-------------------------
-
-**Environment Setup**
-   Make sure you have all dependencies installed:
-   .. code-block:: bash
-
-      pip install torch numpy scipy matplotlib
-
-**GPU Acceleration**
-   For faster execution, use GPU if available:
-   .. code-block:: python
-
-      import torch
-      if torch.cuda.is_available():
-          device = "cuda"
-      else:
-          device = "cpu"
-
-**Memory Management**
-   For large examples, monitor memory usage:
-   .. code-block:: python
-
-      import psutil
-      print(f"Memory usage: {psutil.virtual_memory().percent}%")
-
-**Debugging**
-   Enable verbose output for debugging:
-   .. code-block:: python
-
-      results = problem.calibrate(verbose=True)
 
 Next Steps
 ----------

@@ -50,6 +50,5 @@ Quick Reference
 
 **Parameter Classes:**
 
-- ``PhysicalParameters``: Physical model parameters
 - ``LossParameters``: Loss function configuration
 - ``IntegrationParameters``: Numerical integration settings

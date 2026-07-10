@@ -24,6 +24,15 @@ class EddyLifetimeModel(nn.Module):
         """Compute eddy lifetime tau(k)."""
         raise NotImplementedError("Subclasses must implement the forward pass.")
 
+    def _config(self) -> dict:
+        """Return constructor arguments needed to rebuild this instance (learned values live in state_dict)."""
+        return {}
+
+    @classmethod
+    def _from_config(cls, config: dict) -> "EddyLifetimeModel":
+        """Reconstruct an instance from a ``_config()`` dictionary."""
+        return cls(**config)
+
 
 class TauNet_ELT(EddyLifetimeModel):
     """The DRD eddy lifetime model."""
@@ -34,35 +43,56 @@ class TauNet_ELT(EddyLifetimeModel):
         super().__init__()
         self.tauNet = taunet
 
+    def _config(self) -> dict:
+        """Return the TauNet architecture needed to rebuild this instance."""
+        return {
+            "n_layers": self.tauNet.n_layers,
+            "hidden_layer_sizes": list(self.tauNet.hidden_layer_sizes),
+            "activations": [type(act).__name__ for act in self.tauNet.activations],
+            "learn_nu": self.tauNet.Ra.fg_learn_nu,
+            "nu_init": float(self.tauNet.Ra.nu),
+        }
+
+    @classmethod
+    def _from_config(cls, config: dict) -> "TauNet_ELT":
+        """Reconstruct a TauNet_ELT from a ``_config()`` dictionary."""
+        config = dict(config)
+        activation_names = config.pop("activations")
+        try:
+            activations = [getattr(nn, name)() for name in activation_names]
+        except (AttributeError, TypeError) as e:
+            raise ValueError(
+                f"Cannot reconstruct activations {activation_names}; only argument-free torch.nn activations "
+                "are supported by save_model/load_model."
+            ) from e
+        return cls(taunet=TauNet(activations=activations, **config))
+
     def forward(self, k: torch.Tensor, L: torch.Tensor, gamma: torch.Tensor) -> torch.Tensor:
         """Evaluate the DRD eddy lifetime model."""
         # NOTE: TauNet takes in the entire k grid, unlike the other models.
         kL = L * k
-        # TODO: Sophisticate this? This was formerly the output of the
-        #       initial guess, which was set to constant 0.0
-        #       Otherwise, what's the point of having this at all?
-        tau0 = 0.0
 
-        tau = tau0 + self.tauNet(kL)
-
-        return gamma * tau
+        return gamma * self.tauNet(kL)
 
 
 class Mann_ELT(EddyLifetimeModel):
     """The Mann eddy lifetime model.
 
-    TODO: Warning that this is not differentiable and is CPU only.
+    .. warning::
+        This model is evaluated through SciPy's ``hyp2f1`` (there is no torch implementation
+        of the Gauss hypergeometric function), so it is **not differentiable** with respect to
+        ``L`` and is evaluated on the CPU: gradients do not flow through the eddy lifetime
+        here. Use ``TauNet_ELT`` or ``TwoThirds_ELT`` when a differentiable lifetime is needed.
     """
 
     def forward(self, k: torch.Tensor, L: torch.Tensor, gamma: torch.Tensor) -> torch.Tensor:
         """Evaluate the Mann eddy lifetime model."""
         # Move inputs to CPU and then to numpy for SciPy compatibility
-        # TODO: Replace this with JAX
         k_norm_np = k.norm(dim=-1).detach().cpu().numpy()
         L_val = float(L.detach().cpu())
         kL = L_val * k_norm_np
 
-        y = np.zeros_like(kL, dtype=k_norm_np.dtype)  # TODO: This is just float64, no?
+        y = np.zeros_like(kL)
         mask = kL > 0.0
         if np.any(mask):
             t = kL[mask]
@@ -107,6 +137,15 @@ class EnergySpectrumModel(nn.Module):
         """Evaluate the energy spectrum model."""
         raise NotImplementedError("Subclasses must implement the forward pass.")
 
+    def _config(self) -> dict:
+        """Return constructor arguments needed to rebuild this instance (learned values live in state_dict)."""
+        return {}
+
+    @classmethod
+    def _from_config(cls, config: dict) -> "EnergySpectrumModel":
+        """Reconstruct an instance from a ``_config()`` dictionary."""
+        return cls(**config)
+
 
 class VonKarman_ESM(EnergySpectrumModel):
     """The standard Von Karman energy spectrum model.
@@ -131,10 +170,21 @@ class VonKarman_ESM(EnergySpectrumModel):
 
 
 class Learnable_ESM(EnergySpectrumModel):
-    """Learnable energy spectrum model.
+    r"""Learnable energy spectrum model.
 
-    This model is based on the Von Karman energy spectrum, but introduces several
-    learnable parameters which greatly increase the expressivity of the model.
+    A generalization of the Von Karman energy spectrum with learnable shape exponents,
+
+    .. math::
+        E(k) \propto \frac{(kL)^p}{\left(1 + (kL)^2\right)^q},
+
+    so that :math:`E(k) \sim k^p` in the energy-containing range :math:`kL \ll 1` and
+    :math:`E(k) \sim k^{p - 2q}` in the inertial range :math:`kL \gg 1`. Positivity of
+    :math:`p` and :math:`q` is enforced through a softplus reparametrization.
+
+    With the default initial values :math:`p = 4` and :math:`q = 17/6`, this reproduces
+    the Von Karman spectrum shape exactly (including the :math:`k^{-5/3}` inertial-range
+    decay); the constant factor :math:`L^{5/3}` separating it from ``VonKarman_ESM`` is
+    absorbed by the spectral tensor model's learnable amplitude ``sigma``.
     """
 
     def __init__(
@@ -157,10 +207,7 @@ class Learnable_ESM(EnergySpectrumModel):
         p = self._positive(self._raw_p)
         q = self._positive(self._raw_q)
 
-        # TODO: Add some replacement for -5/3 here
-        # E = (k_norm ** (-5.0/3.0)) *(kL**p) / ((1.0 + kL**2) ** (q))
-        E = (kL**p) / ((1.0 + kL**2) ** (q))
-        return E
+        return (kL**p) / ((1.0 + kL**2) ** q)
 
 
 ###############################################################################
@@ -208,14 +255,86 @@ class SpectralTensorModel(nn.Module):
         """Evaluate the spectral tensor model."""
         raise NotImplementedError("Subclasses must implement the forward pass.")
 
-    def save_model(self, save_dir: str | Path):
-        """Save the model to a directory."""
-        raise NotImplementedError("Not yet implemented.")
+    def _to_checkpoint(self) -> dict:
+        """Build a serializable checkpoint dictionary for this model."""
+        return {
+            "format_version": 1,
+            "model_class": type(self).__name__,
+            "eddy_lifetime_class": type(self.eddy_lifetime_model).__name__,
+            "eddy_lifetime_config": self.eddy_lifetime_model._config(),
+            "energy_spectrum_class": type(self.energy_spectrum_model).__name__,
+            "energy_spectrum_config": self.energy_spectrum_model._config(),
+            "state_dict": self.state_dict(),
+        }
+
+    def save_model(self, save_path: str | Path) -> Path:
+        """Save the model to a ``.pt`` checkpoint file.
+
+        The checkpoint stores the model's ``state_dict`` along with the class names and
+        constructor configuration of its eddy lifetime and energy spectrum models, so
+        that :py:meth:`load_model` can rebuild it without access to the original code
+        that constructed it.
+
+        Parameters
+        ----------
+        save_path : str | Path
+            File to write; a ``.pt`` suffix is appended if no suffix is given. Parent
+            directories are created as needed.
+
+        Returns
+        -------
+        Path
+            The path the checkpoint was written to.
+        """
+        save_path = Path(save_path)
+        if save_path.suffix == "":
+            save_path = save_path.with_suffix(".pt")
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(self._to_checkpoint(), save_path)
+        return save_path
 
     @classmethod
-    def load_model(cls, load_file: str | Path):
-        """Load the model from a file."""
-        raise NotImplementedError("Not yet implemented.")
+    def _from_checkpoint(cls, checkpoint: dict) -> "SpectralTensorModel":
+        """Reconstruct a model from a checkpoint dictionary."""
+        try:
+            model_cls = _SPECTRAL_TENSOR_MODELS[checkpoint["model_class"]]
+            elt_cls = _EDDY_LIFETIME_MODELS[checkpoint["eddy_lifetime_class"]]
+            esm_cls = _ENERGY_SPECTRUM_MODELS[checkpoint["energy_spectrum_class"]]
+        except KeyError as e:
+            raise ValueError(f"Checkpoint references an unknown model class: {e}") from e
+
+        model = model_cls(
+            eddy_lifetime_model=elt_cls._from_config(checkpoint["eddy_lifetime_config"]),
+            energy_spectrum_model=esm_cls._from_config(checkpoint["energy_spectrum_config"]),
+            L_init=1.0,  # Placeholder; overwritten by the state_dict below.
+            gamma_init=1.0,
+            sigma_init=1.0,
+        )
+        model.load_state_dict(checkpoint["state_dict"])
+        return model
+
+    @classmethod
+    def load_model(cls, load_file: str | Path) -> "SpectralTensorModel":
+        """Load a model from a checkpoint file written by :py:meth:`save_model`.
+
+        Parameters
+        ----------
+        load_file : str | Path
+            Path to the checkpoint file.
+
+        Returns
+        -------
+        SpectralTensorModel
+            The reconstructed model, with all learned parameters restored. If the
+            checkpoint was written by ``CalibrationProblem.save_model``, the calibration
+            scaling factors are attached as a ``calibration_scales`` attribute
+            (a dict with keys ``freq_scale`` and ``spectral_scale``).
+        """
+        checkpoint = torch.load(load_file, map_location="cpu", weights_only=True)
+        model = cls._from_checkpoint(checkpoint)
+        if "calibration" in checkpoint:
+            model.calibration_scales = checkpoint["calibration"]
+        return model
 
 
 class RDT_SpectralTensor(SpectralTensorModel):
@@ -274,3 +393,17 @@ class RDT_SpectralTensor(SpectralTensorModel):
 
         # In order, uu, vv, ww, uw, vw, uv
         return Phi11, Phi22, Phi33, Phi13, Phi23, Phi12
+
+
+###############################################################################
+# Checkpoint registries
+###############################################################################
+
+# Maps class names stored in checkpoints back to classes, for save_model/load_model.
+_EDDY_LIFETIME_MODELS: dict[str, type[EddyLifetimeModel]] = {
+    cls.__name__: cls for cls in (TauNet_ELT, Mann_ELT, TwoThirds_ELT, Constant_ELT)
+}
+_ENERGY_SPECTRUM_MODELS: dict[str, type[EnergySpectrumModel]] = {
+    cls.__name__: cls for cls in (VonKarman_ESM, Learnable_ESM)
+}
+_SPECTRAL_TENSOR_MODELS: dict[str, type[SpectralTensorModel]] = {cls.__name__: cls for cls in (RDT_SpectralTensor,)}

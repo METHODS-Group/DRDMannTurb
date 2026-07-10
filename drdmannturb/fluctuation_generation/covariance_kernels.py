@@ -4,9 +4,91 @@ Specifically, in evaluating the square roots of spectral tensors used in various
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 
 import numpy as np
 from scipy.special import hyp2f1
+
+
+def _assemble_rdt_sqrt_tensor(
+    k1: np.ndarray,
+    k2: np.ndarray,
+    k3: np.ndarray,
+    beta: np.ndarray,
+    const_fn: Callable[[np.ndarray, np.ndarray], np.ndarray],
+) -> np.ndarray:
+    r"""Assemble the square-root of an RDT-distorted spectral tensor.
+
+    Shared by the Mann and neural-network covariance kernels. The isotropic part is
+    represented by its curl-form square root with pointwise amplitude ``const``, and the
+    rapid-distortion transformation is applied via the :math:`\zeta_i` factors.
+
+    Parameters
+    ----------
+    k1, k2, k3 : np.ndarray
+        Wavevector components on the evaluation grid.
+    beta : np.ndarray
+        Dimensionless distortion time :math:`\beta = \gamma \tau(\boldsymbol{k})` on the grid.
+    const_fn : Callable
+        Callback ``const_fn(k30, kk0)`` returning the isotropic square-root amplitude
+        :math:`\sqrt{E(k_0) / (4 \pi k_0^4)}` evaluated at the distorted wavevector, where
+        ``k30`` is the distorted third component and ``kk0`` is :math:`|\boldsymbol{k}_0|^2`.
+
+    Returns
+    -------
+    np.ndarray
+        Complex square-root of the spectral tensor, of shape ``(3, 3, *k1.shape)``.
+    """
+    sqrt_spectral_tensor = np.tile(np.zeros(k1.shape), (3, 3, 1, 1, 1))
+    tmp_tensor = np.tile(np.zeros(k1.shape), (3, 3, 1, 1, 1))
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        k30 = k3 + beta * k1
+        kk0 = k1**2 + k2**2 + k30**2
+        kk = k1**2 + k2**2 + k3**2
+
+        #### Isotropic with k0
+
+        const = const_fn(k30, kk0)
+
+        # to enforce zero mean in the x-direction:
+        # const[k1 == 0] = 0.0
+
+        tmp_tensor[0, 1, ...] = -const * k30
+        tmp_tensor[0, 2, ...] = const * k2
+        tmp_tensor[1, 0, ...] = const * k30
+        tmp_tensor[1, 2, ...] = -const * k1
+        tmp_tensor[2, 0, ...] = -const * k2
+        tmp_tensor[2, 1, ...] = const * k1
+
+        #### RDT
+
+        s = k1**2 + k2**2
+        C1 = beta * k1**2 * (kk0 - 2 * k30**2 + beta * k1 * k30) / (kk * s)
+        numerator = beta * k1 * np.sqrt(s)
+        denominator = kk0 - k30 * k1 * beta
+        C2 = k2 * kk0 / s ** (3 / 2) * np.arctan2(numerator, denominator)
+
+        zeta1 = C1 - k2 / k1 * C2
+        zeta2 = k2 / k1 * C1 + C2
+        zeta3 = kk0 / kk
+
+        # deal with divisions by zero
+        zeta1 = np.nan_to_num(zeta1)
+        zeta2 = np.nan_to_num(zeta2)
+        zeta3 = np.nan_to_num(zeta3)
+
+        sqrt_spectral_tensor[0, 0, ...] = tmp_tensor[0, 0, ...] + zeta1 * tmp_tensor[2, 0, ...]
+        sqrt_spectral_tensor[0, 1, ...] = tmp_tensor[0, 1, ...] + zeta1 * tmp_tensor[2, 1, ...]
+        sqrt_spectral_tensor[0, 2, ...] = tmp_tensor[0, 2, ...] + zeta1 * tmp_tensor[2, 2, ...]
+        sqrt_spectral_tensor[1, 0, ...] = tmp_tensor[1, 0, ...] + zeta2 * tmp_tensor[2, 0, ...]
+        sqrt_spectral_tensor[1, 1, ...] = tmp_tensor[1, 1, ...] + zeta2 * tmp_tensor[2, 1, ...]
+        sqrt_spectral_tensor[1, 2, ...] = tmp_tensor[1, 2, ...] + zeta2 * tmp_tensor[2, 2, ...]
+        sqrt_spectral_tensor[2, 0, ...] = zeta3 * tmp_tensor[2, 0, ...]
+        sqrt_spectral_tensor[2, 1, ...] = zeta3 * tmp_tensor[2, 1, ...]
+        sqrt_spectral_tensor[2, 2, ...] = zeta3 * tmp_tensor[2, 2, ...]
+
+    return sqrt_spectral_tensor * 1j
 
 
 class Covariance(ABC):
@@ -206,11 +288,6 @@ class MannCovariance(Covariance):
             Square-root of the spectral tensor evaluated in the frequency domain;
             note that these are complex values.
         """
-        ndim = self.ndim
-        Nd = [frequencies[j].size for j in range(ndim)]
-        sqrt_spectral_tensor = np.tile(np.zeros(Nd), (ndim, ndim, 1, 1, 1))
-        tmp_tensor = np.tile(np.zeros(Nd), (ndim, ndim, 1, 1, 1))
-
         k = np.array(list(np.meshgrid(*frequencies, indexing="ij")))
         kk = np.sum(k**2, axis=0)
 
@@ -220,53 +297,8 @@ class MannCovariance(Covariance):
             )
             beta[np.where(kk == 0)] = 0
 
-            k1 = k[0, ...]
-            k2 = k[1, ...]
-            k3 = k[2, ...]
-            k30 = k3 + beta * k1
-
-            kk0 = k1**2 + k2**2 + k30**2
-
-            #### Isotropic with k0
-
+        def const_fn(k30: np.ndarray, kk0: np.ndarray) -> np.ndarray:
             const = self.E0 * (self.L ** (17 / 3)) / (4 * np.pi)
-            const = np.sqrt(const / (1 + (self.L**2) * kk0) ** (17 / 6))
+            return np.sqrt(const / (1 + (self.L**2) * kk0) ** (17 / 6))
 
-            # to enforce zero mean in the x-direction:
-            # const[k1 == 0] = 0.0
-
-            tmp_tensor[0, 1, ...] = -const * k30
-            tmp_tensor[0, 2, ...] = const * k2
-            tmp_tensor[1, 0, ...] = const * k30
-            tmp_tensor[1, 2, ...] = -const * k1
-            tmp_tensor[2, 0, ...] = -const * k2
-            tmp_tensor[2, 1, ...] = const * k1
-
-            #### RDT
-
-            s = k1**2 + k2**2
-            C1 = beta * k1**2 * (kk0 - 2 * k30**2 + beta * k1 * k30) / (kk * s)
-            numerator = beta * k1 * np.sqrt(s)
-            denominator = kk0 - k30 * k1 * beta
-            C2 = k2 * kk0 / s ** (3 / 2) * np.arctan2(numerator, denominator)
-
-            zeta1 = C1 - k2 / k1 * C2
-            zeta2 = k2 / k1 * C1 + C2
-            zeta3 = kk0 / kk
-
-            # deal with divisions by zero
-            zeta1 = np.nan_to_num(zeta1)
-            zeta2 = np.nan_to_num(zeta2)
-            zeta3 = np.nan_to_num(zeta3)
-
-            sqrt_spectral_tensor[0, 0, ...] = tmp_tensor[0, 0, ...] + zeta1 * tmp_tensor[2, 0, ...]
-            sqrt_spectral_tensor[0, 1, ...] = tmp_tensor[0, 1, ...] + zeta1 * tmp_tensor[2, 1, ...]
-            sqrt_spectral_tensor[0, 2, ...] = tmp_tensor[0, 2, ...] + zeta1 * tmp_tensor[2, 2, ...]
-            sqrt_spectral_tensor[1, 0, ...] = tmp_tensor[1, 0, ...] + zeta2 * tmp_tensor[2, 0, ...]
-            sqrt_spectral_tensor[1, 1, ...] = tmp_tensor[1, 1, ...] + zeta2 * tmp_tensor[2, 1, ...]
-            sqrt_spectral_tensor[1, 2, ...] = tmp_tensor[1, 2, ...] + zeta2 * tmp_tensor[2, 2, ...]
-            sqrt_spectral_tensor[2, 0, ...] = zeta3 * tmp_tensor[2, 0, ...]
-            sqrt_spectral_tensor[2, 1, ...] = zeta3 * tmp_tensor[2, 1, ...]
-            sqrt_spectral_tensor[2, 2, ...] = zeta3 * tmp_tensor[2, 2, ...]
-
-            return sqrt_spectral_tensor * 1j
+        return _assemble_rdt_sqrt_tensor(k[0, ...], k[1, ...], k[2, ...], beta, const_fn)

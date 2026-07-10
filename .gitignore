@@ -97,6 +97,7 @@ coverage.xml
 .pytest_cache/
 .ruff_cache/ # Ruff linter cache
 target/ # PyBuilder
+.claude/
 
 
 # Type Checkers #
@@ -176,6 +177,8 @@ venv.bak/
 **.DS_Store
 
 ## Data/ Paraview Files
+outputs/
+examples/outputs/
 
 # *.png
 *.vti

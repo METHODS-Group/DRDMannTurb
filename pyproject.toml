@@ -7,7 +7,7 @@ name = "drdmannturb"
 version = "1.1-beta.0"
 description = "Synthetic turbulence generation software, focused on a data-driven extension of the Mann turbulence model"
 readme = "README.md"
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.10,<3.14"
 license = "BSD-2-Clause"
 authors = [
   {name = "Alexey Izmailov", email = "alizma@brown.edu"},
@@ -16,52 +16,44 @@ authors = [
   {name = "Brendan Keith"},
 ]
 classifiers = [
-    "Development Status :: 1 - Planning",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
-    "Operating System :: POSIX :: Linux",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "jax>=0.4.30",
-    "matplotlib==3.10.3",
-    "netcdf4",
+    "matplotlib>=3.10",
     "numba>=0.60.0",
     "numpy>=2.0",
-    "plotly==5.17.0",
+    "plotly>=5.17",
     "polars>=1.29.0",
-    "pyevtk==1.6.0",
-    "pyFFTW==0.15.0",
-    "scikit_learn>=1.4.0",
+    "pyevtk>=1.6.0",
+    "pyFFTW>=0.15.0",
     "scipy>=1.13.1",
     "tensorboard>=2.19.0",
-    "torch==2.7.1", # TODO: check CUDA
-    "tqdm==4.67.1",
-    "xarray>=2024.7.0",
+    "torch>=2.7",
 ]
 
 [project.urls]
 Homepage = "https://github.com/METHODS-Group/DRDMannTurb"
 
 [project.optional-dependencies]
+# Only what docs/source/conf.py actually loads.
 docs = [
     "ipython",
-    "numpydoc",
-    "Sphinx>=1.8.3",
+    "Sphinx>=7",
     "pydata-sphinx-theme>=0.14.2",
-    "sphinx-panels",
-    "sphinx-notfound-page",
-    "sphinx-copybutton",
     "sphinxcontrib-mermaid",
-    "sphinxcontrib-jsmath",
-    "nbsphinx",
-    "sphinx-gallery==0.19.0",
+    "sphinx-gallery>=0.19.0",
     "myst_parser",
-    "enum_tools",
-    "sphinx_toolbox",
     # NOTE: tensorboard, plotly are already core dependencies
 ]
-[tool.setuptools]
-packages = ["drdmannturb"]
+
+[tool.setuptools.packages.find]
+include = ["drdmannturb*"]
 
 # Ruff configuration below
 [tool.ruff]
@@ -125,6 +117,10 @@ unsupported-operator = "warn"
 unknown-argument = "warn"
 call-non-callable = "warn"
 
+[tool.ty.terminal]
+# The rules above are tracked tech debt; report them without failing the check.
+error-on-warning = false
+
 [tool.pytest.ini_options]
 minversion = "7.0"
 pythonpath = ["."]
@@ -135,7 +131,14 @@ dev = [
     "pytest>=8.3.5",
     "pytest-cov>=6.1.1",
     "pytest-xdist>=3.8.0",
-    "ruff>=0.4.8",
+    "ruff>=0.12",
     "ty",
     "ipykernel",
+]
+# Used only by the STORM_fitting research scripts/notebooks, not by the package.
+storm = [
+    "netcdf4",
+    "scikit-learn>=1.4.0",
+    "tqdm>=4.67",
+    "xarray>=2024.7.0",
 ]

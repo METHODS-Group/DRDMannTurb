@@ -10,16 +10,22 @@ repos:
     -   id: check-json
     -   id: check-merge-conflict
     -   id: debug-statements
-  # Ruff linting
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.7
-    hooks:
-      - id: ruff
-        args: [--fix]
-      - id: ruff-format
-  # ty
+  # Ruff and ty run through uv so pre-commit, the Makefile, and CI all use the
+  # exact versions pinned in uv.lock (no drift between hook revs and the lock).
   - repo: local
     hooks:
+      - id: ruff
+        name: ruff check
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+        require_serial: true
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        types: [python]
+        require_serial: true
       - id: ty
         name: ty check
         entry: uv run ty check drdmannturb

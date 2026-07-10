@@ -3,13 +3,15 @@ Contributing to DRDMannTurb
 ===========================
 
 Development Setup
-----------------
+-----------------
 
 1. Clone the repository
-2. Install with uv: ``uv pip install -e ".[dev]"``
+2. Install the environment with uv: ``uv sync``
 3. Install ``pre-commit`` and hooks: ``uv run pre-commit install``
-3. Run tests: ``uv run pytest test/``
-4. Run linting: ``uv run ruff check drdmannturb/``
+4. Run tests: ``uv run pytest test/``
+5. Run linting: ``uv run ruff check drdmannturb/``
+
+The ``Makefile`` bundles the common tasks: ``make check`` runs lint, typecheck, and unit tests.
 
 Code Style
 ----------
@@ -22,7 +24,7 @@ We use ruff for linting and formatting:
    uv run ruff format drdmannturb/
 
 Testing
---------
+-------
 
 .. code-block:: bash
 
@@ -32,6 +34,9 @@ Testing
    # Run specific test groups
    uv run pytest test/unit_tests/
    uv run pytest test/integration_tests/
+
+   # Include slow integration tests
+   uv run pytest test/ --runslow
 
    # Run with coverage
    uv run pytest test/ --cov=drdmannturb

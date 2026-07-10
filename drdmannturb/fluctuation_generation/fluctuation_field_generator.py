@@ -375,7 +375,10 @@ class FluctuationFieldGenerator:
         """
         from pyevtk.hl import imageToVTK
 
-        spacing = tuple(self.grid_dimensions / (2.0**self.grid_levels + 1))
+        # pyevtk serializes values with ``str``.  NumPy 2.x scalar strings use
+        # ``np.float64(...)``, which produces invalid VTK XML metadata.  Convert
+        # explicitly to built-in floats before handing spacing to pyevtk.
+        spacing = tuple(float(value) for value in self.grid_dimensions / (2.0**self.grid_levels + 1))
 
         wind_field_vtk = tuple([np.copy(self.total_fluctuation[..., i], order="C") for i in range(3)])
 
@@ -384,7 +387,7 @@ class FluctuationFieldGenerator:
             "wind": wind_field_vtk,
         }
 
-        imageToVTK(filepath, cellData=cellData, spacing=spacing)
+        imageToVTK(str(filepath), cellData=cellData, spacing=spacing)
 
     def evaluate_divergence(self, spacing: tuple | np.ndarray, field: np.ndarray | None = None) -> np.ndarray:
         r"""Evaluate the point-wise divergence of a generated fluctuation vector field.

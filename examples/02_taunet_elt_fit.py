@@ -1,7 +1,7 @@
 r"""
-=============================
+==============================
 Example 2: DRD Kaimal Data Fit
-=============================
+==============================
 
 In this example, we fit a neural network-based DRD model. We'll first use the Kaimal spectra to
 generate synthetic data, construct the model we intend to fit to this data, and then fit the model.

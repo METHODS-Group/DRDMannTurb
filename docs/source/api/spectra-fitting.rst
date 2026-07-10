@@ -16,32 +16,42 @@ The main interface for calibrating spectral tensor models to spectral data.
    **Key Methods:**
 
    - ``calibrate()``: Run the calibration process
-   - ``plot()``: Generate calibration plots
-   - ``save_model()``: Save the calibrated model
-   - ``load_model()``: Load a saved model
+   - ``plot()``: Plot the calibrated model against the data
+   - ``save_model()``: Save the calibrated model (reload with ``SpectralTensorModel.load_model``)
 
    **Example Usage:**
 
    .. code-block:: python
 
-      from drdmannturb.spectra_fitting import CalibrationProblem
+      import torch
+
       from drdmannturb.nn_modules import TauNet
-      from drdmannturb.spectra_fitting.spectral_tensor_models import TauNet_ELT, VonKarman_ESM
-
-      # Create model
-      taunet = TauNet(n_layers=2, hidden_layer_sizes=[10, 10])
-      elt_model = TauNet_ELT(taunet)
-      esm_model = VonKarman_ESM()
-
-      # Set up calibration problem
-      problem = CalibrationProblem(
-          data=your_spectral_data,
-          eddy_lifetime_model=elt_model,
-          energy_spectrum_model=esm_model
+      from drdmannturb.spectra_fitting import CalibrationProblem
+      from drdmannturb.spectra_fitting.spectral_tensor_models import (
+          RDT_SpectralTensor,
+          TauNet_ELT,
+          VonKarman_ESM,
       )
 
-      # Run calibration
-      results = problem.calibrate(n_epochs=1000, learning_rate=1e-3)
+      # Compose the spectral tensor model
+      model = RDT_SpectralTensor(
+          eddy_lifetime_model=TauNet_ELT(taunet=TauNet(n_layers=2, hidden_layer_sizes=[10, 10])),
+          energy_spectrum_model=VonKarman_ESM(),
+          L_init=50.0,
+          gamma_init=3.9,
+          sigma_init=0.05,
+      )
+
+      # Set up and run the calibration
+      problem = CalibrationProblem(model=model, data=your_spectral_data)
+      problem.calibrate(
+          optimizer_class=torch.optim.LBFGS,
+          lr=1.0,
+          max_epochs=100,
+      )
+
+      # Persist the trained model
+      checkpoint_path = problem.save_model()
 
 CustomDataLoader
 ----------------
@@ -109,9 +119,8 @@ Loss functions and aggregators for model calibration.
 
    **Key Components:**
 
-   - ``LossAggregator``: Combines multiple loss components
-   - ``MSELoss``: Mean squared error loss for spectra fitting
-   - ``CoherenceLoss``: Loss for spectral coherence fitting
+   - ``LossAggregator``: Combines the loss terms (log-space MSE, first/second-order penalties,
+     network regularization, and optionally a spectral coherence MSE), weighted by ``LossParameters``.
 
 Data Generation
 ---------------

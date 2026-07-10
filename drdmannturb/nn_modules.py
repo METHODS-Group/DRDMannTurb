@@ -226,22 +226,6 @@ class TauNet(nn.Module):
         torch.Tensor
             Output of forward pass of neural network.
         """
-        # Debug: Check input (just summary stats)
-        if torch.isnan(k).any():
-            print(f"NaN in TauNet input k: min={k.min().item()}, max={k.max().item()}, mean={k.mean().item()}")
-
         k_mod = self._mlp_forward(k.abs()).norm(dim=-1)
 
-        # Debug: Check k_mod (just summary stats)
-        if torch.isnan(k_mod).any():
-            print(f"NaN in k_mod: min={k_mod.min().item()}, max={k_mod.max().item()}, mean={k_mod.mean().item()}")
-            mlp_out = self._mlp_forward(k.abs())
-            print(f"MLP output: min={mlp_out.min().item()}, max={mlp_out.max().item()}, mean={mlp_out.mean().item()}")
-
-        tau = self.Ra(k_mod)
-
-        # Debug: Check tau (just summary stats)
-        if torch.isnan(tau).any():
-            print(f"NaN in TauNet tau: min={tau.min().item()}, max={tau.max().item()}, mean={tau.mean().item()}")
-
-        return tau
+        return self.Ra(k_mod)

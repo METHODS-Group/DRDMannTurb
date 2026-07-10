@@ -22,11 +22,11 @@ for instructions on installing development versions.
 
 ## Basic Usage
 
-See the ``/examples/`` folder for baselines from the paper and for examples of the many functionalities of the package. These examples are rendered in a more readable
-format on our documentation [here](https://methods-group.github.io/DRDMannTurb/examples.html) also.
+The ``/examples/`` folder contains baselines from the paper and examples of the package's functionalities.
+We render these in the docs [here](https://methods-group.github.io/DRDMannTurb/examples.html) also.
 
-DRDMannTurb consists of two primary submodules ``spectra_fitting`` and ``fluctuation_generation``
-which are respectively focused on fitting a Deep Rapid Distortion (DRD) model and
+DRDMannTurb has two primary components ``spectra_fitting`` and ``fluctuation_generation``
+which are respectively focused on fitting a Deep Rapid Distortion (DRD) spectral tensor model and
 on generating synthetic turbulence "boxes" with a fit DRD model.
 
 ## Questions?
@@ -35,16 +35,21 @@ If you have any questions, the best way to receive help is by creating a thread 
 
 ## Citation
 
-If you use this software, please cite it as below.
+If you use this software in your work, we ask that you cite the [JOSS paper](https://doi.org/10.21105/joss.06838) as below.
 
 ```
-@software{Izmailov_DRDMannTurb_2023,
-author = {Izmailov, Alexey and Meeker, Matthew and Deskos, Georgios and Keith, Brendan},
-month = mar,
-title = {{DRDMannTurb}},
-url= {https://github.com/METHODS-Group/DRDMannTurb},
-version = {1.0.2},
-year = {2024}
+@article{Izmailov_DRDMannTurb_2024,
+  title     = {{DRDMannTurb: A Python package for scalable, data-driven synthetic turbulence}},
+  author    = {Izmailov, Alexey and Meeker, Matthew and Deskos, Georgios and Keith, Brendan},
+  journal   = {Journal of Open Source Software},
+  volume    = {9},
+  number    = {102},
+  pages     = {6838},
+  year      = {2024},
+  month     = oct,
+  doi       = {10.21105/joss.06838},
+  url       = {https://doi.org/10.21105/joss.06838},
+  publisher = {The Open Journal}
 }
 ```
 

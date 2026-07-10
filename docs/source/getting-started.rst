@@ -43,7 +43,7 @@ For users, pre-compiled wheels for the package are available via
 
 Alternatively, the rest of this section will guide you through installing
 ``DRDMannTurb`` and its dependencies from source. We suggest using
-`uv<https://docs.astral.sh/uv/>`_ to install the package.
+`uv <https://docs.astral.sh/uv/>`_ to install the package.
 
 #.  Clone ``DRDMannTurb`` from its `GitHub repository
     <https://github.com/METHODS-Group/DRDMannTurb>`_. Enter the directory and check out

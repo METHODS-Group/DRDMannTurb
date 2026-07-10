@@ -21,7 +21,7 @@ Functions for generating synthetic data for testing and validation.
 Plotting Utilities
 ------------------
 
-Visualization tools for spectra and fields.
+Visualization tools for generated wind fields, built on Plotly.
 
 .. automodule:: drdmannturb.fluctuation_generation.wind_plot
    :members:
@@ -30,23 +30,10 @@ Visualization tools for spectra and fields.
 
    **Functions:**
 
-   - ``plot_spectra()``: Plot spectral components
-   - ``plot_field()``: Plot generated fields
-   - ``plot_coherence()``: Plot coherence functions
-
-Covariance Utilities
---------------------
-
-Tools for working with covariance kernels.
-
-.. automodule:: drdmannturb.fluctuation_generation.cmap_util
-   :members:
-   :undoc-members:
-
-   **Functions:**
-
-   - ``compute_covariance()``: Compute covariance matrices
-   - ``plot_covariance()``: Visualize covariance structure
+   - ``create_grid()``: Build the evaluation grid for a field
+   - ``format_wind_field()``: Format a raw field for plotting
+   - ``plot_velocity_components()``: Plot each velocity component separately
+   - ``plot_velocity_magnitude()``: Plot the velocity magnitude
 
 Configuration
 -------------
@@ -62,4 +49,3 @@ Configuration and setup utilities.
 
    - ``IntegrationParameters``: Numerical integration settings
    - ``LossParameters``: Loss function configuration
-   - ``ProblemParameters``: Problem-specific settings

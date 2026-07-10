@@ -48,7 +48,10 @@ Neural network architectures for learning eddy lifetime functions.
 Parameters
 ----------
 
-Parameter classes for configuring models and calibration.
+Parameter classes for configuring the loss function and numerical integration. The physical
+scales ``L``, ``Gamma``, and ``sigma`` are not separate parameter objects: they are learnable
+parameters of the ``SpectralTensorModel`` itself, provided as ``L_init``/``gamma_init``/``sigma_init``
+at model construction.
 
 .. automodule:: drdmannturb.parameters
    :members:
@@ -57,21 +60,17 @@ Parameter classes for configuring models and calibration.
 
    **Key Classes:**
 
-   - ``PhysicalParameters``: Physical parameters (L, Gamma, sigma)
-   - ``ProblemParameters``: Problem-specific parameters
-   - ``LossParameters``: Loss function parameters
-   - ``IntegrationParameters``: Numerical integration parameters
-   - ``NNParameters``: Neural network parameters
+   - ``LossParameters``: Loss function term coefficients
+   - ``IntegrationParameters``: Quadrature grids for spectra and coherence integration
 
    **Example Usage:**
 
    .. code-block:: python
 
-      from drdmannturb.parameters import PhysicalParameters
+      from drdmannturb import IntegrationParameters, LossParameters
 
-      # Create physical parameters
-      phys_params = PhysicalParameters(
-          L=100.0,      # Length scale
-          Gamma=4.0,    # Gamma parameter
-          sigma=3.0     # Sigma parameter
+      loss_params = LossParameters(
+          alpha_pen2=1.0,  # second-order penalty coefficient
+          beta_reg=1e-5,   # network regularization coefficient
       )
+      integration_params = IntegrationParameters()  # sensible defaults

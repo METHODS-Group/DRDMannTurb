@@ -40,36 +40,6 @@ class LossAggregator:
         self.h1 = torch.diff(log_ops_k1)
         self.h2 = torch.diff(0.5 * (log_ops_k1[:-1] + log_ops_k1[1:]))
 
-        def t_alphapen1(y, theta_NN, epoch, **kwargs):
-            return self.Pen1stOrder(y, epoch) if self.params.alpha_pen1 else 0.0
-
-        def t_alphapen2(y, theta_NN, epoch, **kwargs):
-            return self.Pen2ndOrder(y, epoch) if self.params.alpha_pen2 else 0.0
-
-        def t_beta_reg(y, theta_NN, epoch, **kwargs):
-            return self.Regularization(theta_NN, epoch) if self.params.beta_reg else 0.0
-
-        def t_gamma_coherence(y, theta_NN, epoch, **kwargs):
-            if self.params.gamma_coherence and "coherence_data" in kwargs:
-                coh_data = kwargs["coherence_data"]
-                return self.CoherenceLoss(
-                    coh_data["model_u"],
-                    coh_data["model_v"],
-                    coh_data["model_w"],
-                    coh_data["data_u"],
-                    coh_data["data_v"],
-                    coh_data["data_w"],
-                    epoch,
-                )
-            return 0.0
-
-        self.loss_func = (
-            lambda y, theta_NN, epoch, **kwargs: t_alphapen1(y, theta_NN, epoch, **kwargs)
-            + t_alphapen2(y, theta_NN, epoch, **kwargs)
-            + t_beta_reg(y, theta_NN, epoch, **kwargs)
-            + t_gamma_coherence(y, theta_NN, epoch, **kwargs)
-        )
-
     def MSE_term(self, model: torch.Tensor, target: torch.Tensor, epoch: int) -> torch.Tensor:
         r"""Evaluate the MSE loss term.
 
@@ -99,11 +69,7 @@ class LossAggregator:
         self.writer.add_scalar("MSE Loss", mse_loss, epoch)
 
         if mse_loss.isnan():
-            print("MSE loss is NaN")
-            print(f"model: {model}")
-            print(f"target: {target}")
-            print(f"mse_loss: {mse_loss}")
-            raise ValueError("MSE loss is NaN")
+            raise ValueError("MSE loss is NaN; check the data for zeros/negatives and the model initialization.")
 
         return mse_loss
 
@@ -138,12 +104,7 @@ class LossAggregator:
         self.writer.add_scalar("2nd Order Penalty", pen2ndorder_loss, epoch)
 
         if pen2ndorder_loss.isnan():
-            print("2nd order penalty loss is NaN")
-            print(f"y: {y}")
-            print(f"logy: {logy}")
-            print(f"d2logy: {d2logy}")
-            print(f"pen2ndorder_loss: {pen2ndorder_loss}")
-            raise ValueError("2nd order penalty loss is NaN")
+            raise ValueError("2nd order penalty loss is NaN; check the model output for zeros.")
 
         return pen2ndorder_loss
 
@@ -179,12 +140,7 @@ class LossAggregator:
         self.writer.add_scalar("1st Order Penalty", pen1storder_loss, epoch)
 
         if pen1storder_loss.isnan():
-            print("1st order penalty loss is NaN")
-            print(f"y: {y}")
-            print(f"logy: {logy}")
-            print(f"d1logy: {d1logy}")
-            print(f"pen1storder_loss: {pen1storder_loss}")
-            raise ValueError("1st order penalty loss is NaN")
+            raise ValueError("1st order penalty loss is NaN; check the model output for zeros.")
 
         return pen1storder_loss
 
@@ -212,10 +168,7 @@ class LossAggregator:
         self.writer.add_scalar("Regularization", reg_loss, epoch)
 
         if reg_loss.isnan():
-            print("Regularization loss is NaN")
-            print(f"theta_NN: {theta_NN}")
-            print(f"reg_loss: {reg_loss}")
-            raise ValueError("Regularization loss is NaN")
+            raise ValueError("Regularization loss is NaN; check the neural network parameters.")
 
         return reg_loss
 
@@ -295,13 +248,7 @@ class LossAggregator:
         self.writer.add_scalar("Coherence Loss/W-component", mse_w, epoch)
 
         if coherence_loss.isnan():
-            print("Coherence loss is NaN")
-            print(f"model_coherence_u: {model_coherence_u}")
-            print(f"model_coherence_v: {model_coherence_v}")
-            print(f"model_coherence_w: {model_coherence_w}")
-            print(f"data_coherence_u: {data_coherence_u}")
-            print(f"data_coherence_v: {data_coherence_v}")
-            raise ValueError("Coherence loss is NaN")
+            raise ValueError("Coherence loss is NaN; check the coherence data and model output.")
 
         return coherence_loss
 

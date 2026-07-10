@@ -1,6 +1,6 @@
 r"""
 ==========================
-Example 5: Custom Data Fit
+Example 3: Custom Data Fit
 ==========================
 
 In this example, we use ``drdmannturb`` to fit a simple neural network model to real-world
@@ -51,7 +51,7 @@ zref = 1  # reference height
 
 #######################################################################################
 # Construct the ``CustomDataLoader``
-# ------------------------------
+# ----------------------------------
 
 data_loader = drdmt.spectra_fitting.data_generator.CustomDataLoader(
     ops_data_file=spectra_file,

@@ -1,7 +1,7 @@
 """
-======================================
-Example 8: Fluctuation Field Generation
-======================================
+=======================================
+Example 4: Fluctuation Field Generation
+=======================================
 
 This example demonstrates the utilities for generating synthetic turbulence, which can be either
 from a pre-trained DRD model, or based on some well-known spectra models. ``DRDMannTurb``
@@ -97,7 +97,7 @@ fig_magnitude_mann = plot_velocity_magnitude(spacing, fluctuation_field_mann, tr
 # utilities may be useful for quick visualization, we recommend using Paraview to visualize higher resolution output.
 # We will cover saving to a portable VTK format further in this example.
 
-fig_magnitude_mann.show()  # .show("browser"), or for specific browser, use .show("firefox")
+fig_magnitude_mann  # .show("browser"), or for specific browser, use .show("firefox")
 
 
 #######################################################################################
@@ -106,7 +106,7 @@ fig_magnitude_mann.show()  # .show("browser"), or for specific browser, use .sho
 # ``DRDMannTurb`` provides utilities for computing the divergence of the resulting fluctuation field as well as
 # visualizing results. At the continuum level, the DRD model should yield an approximately divergence-free fluctuation
 # field, which we observe to within a reasonable tolerance. Also, the divergence is expected to decrease as the
-#  resolution of the fluctuation field is improved.
+# resolution of the fluctuation field is improved.
 spacing = tuple(grid_dimensions / (2.0**grid_levels + 1))
 
 gen_mann.evaluate_divergence(spacing, fluctuation_field_mann).max()

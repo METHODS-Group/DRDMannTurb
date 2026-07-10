@@ -66,29 +66,7 @@ class OnePointSpectra(nn.Module):
 
     def forward(self, k1_input: torch.Tensor) -> torch.Tensor:
         """Evaluate the frequency-weighted one-point spectra."""
-        # Debug: Check k1_input
-        if torch.isnan(k1_input).any():
-            print(f"NaN in k1_input: min={k1_input.min():.2g}, max={k1_input.max():.2g}, mean={k1_input.mean():.2g}")
-            print(f"k1_input shape: {tuple(k1_input.shape)}")
-
-        # Debug: Check grid components
-        if torch.isnan(self.ops_grid_k2).any():
-            print(f"NaN in ops_grid_k2: min={self.ops_grid_k2.min():.2g}, max={self.ops_grid_k2.max():.2g}")
-        if torch.isnan(self.ops_grid_k3).any():
-            print(f"NaN in ops_grid_k3: min={self.ops_grid_k3.min():.2g}, max={self.ops_grid_k3.max():.2g}")
         k = torch.stack(torch.meshgrid(k1_input, self.ops_grid_k2, self.ops_grid_k3, indexing="ij"), dim=-1)
-
-        # Debug: Check k after construction
-        if torch.isnan(k).any():
-            print(f"NaN in k after meshgrid: min={k.min().item()}, max={k.max().item()}, mean={k.mean().item()}")
-            print(f"k shape: {k.shape}")
-
-        # Debug: Check if k is all zero
-        if (k == 0).all():
-            print("k is all zero!")
-            print(f"k1_input: {k1_input}")
-            print(f"ops_grid_k2: {self.ops_grid_k2}")
-            print(f"ops_grid_k3: {self.ops_grid_k3}")
 
         # Evaluate the spectral tensor model
         phi_arr = self.spectral_tensor_model(k)

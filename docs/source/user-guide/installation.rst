@@ -9,7 +9,7 @@ Quick Install
    pip install drdmannturb
 
 Development Install
-------------------
+-------------------
 
 Using uv (recommended):
 
@@ -28,7 +28,7 @@ Using pip:
    pip install -e .[docs,dev]
 
 Verification
------------
+------------
 
 .. code-block:: bash
 

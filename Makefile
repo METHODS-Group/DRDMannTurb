@@ -1,7 +1,7 @@
 PYTEST = uv run pytest
 PYTEST_OPTS = -v --tb=short
 
-.PHONY: test test-unit test-integration test-slow test-cov lint format typecheck check clean help
+.PHONY: test test-unit test-integration test-slow test-cov lint format typecheck check mfem clean help
 
 # Default: fast unit tests
 test: test-unit
@@ -32,6 +32,11 @@ typecheck:
 # Everything CI runs, locally
 check: lint typecheck test-unit
 
+# Build the out-of-tree MFEM wind-tunnel consumer. Set MFEM_DIR in the
+# environment or on the make command line.
+mfem:
+	$(MAKE) -C mfem
+
 clean:
 	rm -rf .pytest_cache/ htmlcov/ .coverage dist/ build/ *.egg-info/ .ruff_cache/
 	find . -type d -name __pycache__ -exec rm -rf {} +
@@ -48,4 +53,5 @@ help:
 	@echo "  format           - ruff autofix + format"
 	@echo "  typecheck        - ty check"
 	@echo "  check            - lint + typecheck + unit tests"
+	@echo "  mfem             - Build the out-of-tree MFEM wind-tunnel app"
 	@echo "  clean            - Remove build/test artifacts"

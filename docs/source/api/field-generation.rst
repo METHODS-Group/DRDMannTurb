@@ -13,30 +13,43 @@ Main interface for generating synthetic turbulent fields.
    :undoc-members:
    :show-inheritance:
 
-   **Supported Models:**
-
-   - ``"DRD"``: Deep Rapid Distortion model (requires pre-trained model)
-   - ``"Mann"``: Classical Mann model
-   - ``"VK"``: Von Karman model
+   The generator is driven by a :ref:`covariance kernel <api-covariance-kernels>`, which determines
+   the turbulence model: ``VonKarmanCovariance``, ``MannCovariance``, or ``NNCovariance`` (built
+   from a trained DRD model).
 
    **Example Usage:**
 
    .. code-block:: python
 
-      from drdmannturb.fluctuation_generation import FluctuationFieldGenerator
+      import numpy as np
 
-      # Create generator
+      from drdmannturb.fluctuation_generation import FluctuationFieldGenerator, MannCovariance
+
+      covariance = MannCovariance(length_scale=50.0, E0=1.0, Gamma=3.9)
+
       generator = FluctuationFieldGenerator(
-          friction_velocity=0.5,
-          reference_height=100.0,
-          grid_dimensions=[1000.0, 500.0, 300.0],
-          grid_levels=[6, 6, 5],
-          model="DRD",
-          path_to_parameters="calibrated_model.pkl"
+          grid_dimensions=np.array([1000.0, 500.0, 300.0]),
+          grid_levels=np.array([6, 6, 5]),
+          covariance=covariance,
       )
 
-      # Generate field
-      field = generator.generate()
+      field = generator.generate(num_blocks=2, zref=100.0, uref=10.0, z0=0.1, windprofiletype="LOG")
+
+.. _api-covariance-kernels:
+
+Covariance Kernels
+------------------
+
+Covariance kernels evaluate the square-root of the spectral tensor used to correlate Gaussian noise.
+
+.. automodule:: drdmannturb.fluctuation_generation.covariance_kernels
+   :members:
+   :undoc-members:
+
+.. autoclass:: drdmannturb.fluctuation_generation.NNCovariance
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Gaussian Random Fields
 ----------------------
@@ -47,42 +60,25 @@ Core algorithms for generating Gaussian random fields.
    :members:
    :undoc-members:
 
-   **Key Classes:**
-
-   - ``VectorGaussianRandomField``: Main field generator
-   - ``CovarianceKernel``: Base class for covariance kernels
-   - ``VonKarmanCovariance``: Von Karman covariance kernel
-   - ``MannCovariance``: Mann covariance kernel
-   - ``NNCovariance``: Neural network covariance kernel
-
 Sampling Methods
 ----------------
 
-Different sampling strategies for field generation.
+Different sampling strategies for correlating the noise with the covariance kernel, selected by
+name: ``"fft"``, ``"fftw"``, ``"vf_fftw"`` (vector field FFTW; used by ``FluctuationFieldGenerator``),
+``"dst"``, and ``"dct"``.
 
 .. automodule:: drdmannturb.fluctuation_generation.sampling_methods
    :members:
    :undoc-members:
 
-   **Available Methods:**
-
-   - ``vf_fftw``: Vector FFT-based sampling (recommended)
-   - ``vf_fft``: Vector FFT sampling
-   - ``vf_fft_parallel``: Parallel vector FFT sampling
-
 Low Frequency Generation
 ------------------------
 
-Tools for generating low-frequency components.
+The 2D low-frequency model of Syed & Mann (2024), used for the 2D+3D model.
 
-.. automodule:: drdmannturb.fluctuation_generation.low_frequency
+.. automodule:: drdmannturb.fluctuation_generation.low_frequency.fluctuation_field_generator
    :members:
    :undoc-members:
-
-   **Key Classes:**
-
-   - ``LowFreqGenerator``: Low-frequency field generator
-   - ``FluctuationFieldGenerator``: Low-frequency field generator
 
 Plotting Utilities
 ------------------

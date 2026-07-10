@@ -22,7 +22,10 @@ from .one_point_spectra import OnePointSpectra
 class CalibrationProblem:
     r"""Defines the model calibration problem and manages the spectra curve fits."""
 
+    _OPS_COMPONENTS = ("uu", "vv", "ww", "uw", "vw", "uv")
+
     data: dict[str, pl.DataFrame | None]
+    loss: torch.Tensor
 
     def __init__(
         self,
@@ -32,6 +35,7 @@ class CalibrationProblem:
         data: dict[str, pl.DataFrame | None] | None = None,
         data_loader: CustomDataLoader | None = None,
         fit_coherence: bool = False,
+        fit_components: tuple[str, ...] | None = None,
         logging_directory: str | None = None,
         output_directory: Path | str = Path().resolve() / "results",
         device: str = "cpu",
@@ -39,6 +43,19 @@ class CalibrationProblem:
         r"""Initialize a ``CalibrationProblem`` instance, defining the model calibration and physical setting."""
         self.loss_params = loss_params
         self.fit_coherence = fit_coherence
+
+        if fit_components is not None:
+            if not fit_components:
+                raise ValueError("fit_components must contain at least one spectral component")
+            if len(set(fit_components)) != len(fit_components):
+                raise ValueError("fit_components must not contain duplicates")
+            invalid_components = set(fit_components).difference(self._OPS_COMPONENTS)
+            if invalid_components:
+                raise ValueError(
+                    f"Unknown spectral components {sorted(invalid_components)}; "
+                    f"expected a subset of {self._OPS_COMPONENTS}"
+                )
+        self.fit_components = fit_components
 
         if data is None and data_loader is not None:
             self.data = data_loader.format_data()
@@ -60,7 +77,7 @@ class CalibrationProblem:
         self,
         optimizer_class: type[torch.optim.Optimizer] = torch.optim.LBFGS,
         lr: float = 1.0,
-        optimizer_kwargs: dict = {},
+        optimizer_kwargs: dict | None = None,
         max_epochs: int = 100,
         tol: float = 1e-9,
         auto_scale: bool = True,
@@ -92,17 +109,36 @@ class CalibrationProblem:
             if freq_scale == 0:
                 freq_scale = 1.0
 
-            # Compute spectral scaling using ALL components
-            all_spectral_values = torch.cat(
-                [
-                    self.ops_uu_original,
-                    self.ops_vv_original,
-                    self.ops_ww_original,
-                    self.ops_uw_original,
-                    self.ops_vw_original,
-                    self.ops_uv_original,
-                ]
-            )
+        component_data = {
+            "uu": self.ops_uu_original,
+            "vv": self.ops_vv_original,
+            "ww": self.ops_ww_original,
+            "uw": self.ops_uw_original,
+            "vw": self.ops_vw_original,
+            "uv": self.ops_uv_original,
+        }
+
+        if self.fit_components is None:
+            selected_components = ["uu", "vv", "ww"]
+            for component in self._OPS_COMPONENTS[3:]:
+                if torch.isfinite(component_data[component]).all():
+                    selected_components.append(component)
+                    print(f"Adding {component} data to the fit.")
+                else:
+                    print(f"No complete {component} data provided; skipping.")
+        else:
+            selected_components = list(self.fit_components)
+
+        for component in selected_components:
+            if not torch.isfinite(component_data[component]).all():
+                raise ValueError(f"Selected component {component!r} contains NaN or infinite values")
+
+        self.fitted_components = tuple(selected_components)
+        print(f"Fitting spectral components: {', '.join(self.fitted_components)}")
+
+        if auto_scale:
+            # Scale against only the quantities participating in the objective.
+            all_spectral_values = torch.cat([component_data[name] for name in selected_components])
 
             # Filter out NaN values before computing median
             finite_mask = torch.isfinite(all_spectral_values)
@@ -121,43 +157,8 @@ class CalibrationProblem:
 
         # Use scaled data for training
         ops_k_domain_tensor = self.ops_k_domain_original / self.freq_scale
-        ops_uu_true_tensor = self.ops_uu_original / self.spectral_scale
-        ops_vv_true_tensor = self.ops_vv_original / self.spectral_scale
-        ops_ww_true_tensor = self.ops_ww_original / self.spectral_scale
-
-        # Build the OPS_true tensor
-        OPS_true = torch.stack(
-            [
-                ops_uu_true_tensor,
-                ops_vv_true_tensor,
-                ops_ww_true_tensor,
-            ]
-        )
-
-        curves = [0, 1, 2]
-
-        # Handle cross-spectra components with scaling
-        ops_uw_true_tensor = self.ops_uw_original / self.spectral_scale
-        if not ops_uw_true_tensor.isnan().any():
-            print("Adding uw data to OPS_true")
-            OPS_true = torch.cat([OPS_true, ops_uw_true_tensor.unsqueeze(0)], dim=0)
-            curves.append(3)
-        else:
-            print("No uw data provided, skipping.")
-
-        ops_vw_true_tensor = self.ops_vw_original / self.spectral_scale
-        if not ops_vw_true_tensor.isnan().any():
-            OPS_true = torch.cat([OPS_true, ops_vw_true_tensor.unsqueeze(0)], dim=0)
-            curves.append(4)
-        else:
-            print("No vw data provided, skipping.")
-
-        ops_uv_true_tensor = self.ops_uv_original / self.spectral_scale
-        if not ops_uv_true_tensor.isnan().any():
-            OPS_true = torch.cat([OPS_true, ops_uv_true_tensor.unsqueeze(0)], dim=0)
-            curves.append(5)
-        else:
-            print("No uv data provided, skipping.")
+        OPS_true = torch.stack([component_data[name] / self.spectral_scale for name in selected_components])
+        curves = [self._OPS_COMPONENTS.index(name) for name in selected_components]
 
         # Coherence data preparation (optional)
         coherence_inputs: dict[str, torch.Tensor] | None = None
@@ -174,8 +175,12 @@ class CalibrationProblem:
                 device = ops_k_domain_tensor.device
                 dtype = ops_k_domain_tensor.dtype
 
-                freq_unique = sorted(coh_df.get_column("freq").to_list())
-                sep_unique = sorted(coh_df.get_column("r").to_list())
+                # Coherence data is stored in long form: each frequency appears once
+                # per separation and each separation once per frequency.  Building
+                # the axes from the full columns duplicates both dimensions and makes
+                # every per-separation row look inconsistent with the supposed grid.
+                freq_unique = coh_df.get_column("freq").unique().sort().to_list()
+                sep_unique = coh_df.get_column("r").unique().sort().to_list()
 
                 unscaled_coh_freqs = torch.tensor(freq_unique, device=device, dtype=dtype)
                 coherence_freqs = unscaled_coh_freqs / self.freq_scale
@@ -208,14 +213,12 @@ class CalibrationProblem:
                 }
 
         # Initialize the LossAggregator
-        # TODO: Can't this just go into the constructor?
+        # NOTE: This cannot move to the constructor since it depends on the (scaled) frequency domain.
         self.LossAggregator = LossAggregator(
             params=self.loss_params,
             ops_k_domain=ops_k_domain_tensor,
             tb_log_dir=self.logging_directory,
         )
-
-        OPS_model = self.OPS(ops_k_domain_tensor)
 
         ########################################
         # Optimizer and Scheduler Initialization
@@ -223,7 +226,7 @@ class CalibrationProblem:
         optimizer = optimizer_class(
             self.OPS.parameters(),
             lr=lr,
-            **optimizer_kwargs,
+            **(optimizer_kwargs or {}),
         )
 
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max_epochs)
@@ -239,60 +242,47 @@ class CalibrationProblem:
                 return parameters_to_vector(self.OPS.spectral_tensor_model.eddy_lifetime_model.tauNet.parameters())
             return torch.tensor(0.0)
 
+        def gen_coherence_kwargs() -> dict:
+            """Assemble the coherence loss inputs from the current model state, if coherence fitting is enabled."""
+            if coherence_inputs is None or self.loss_params.gamma_coherence <= 0:
+                return {}
+
+            coh_model = self.OPS.spectral_coherence(
+                coherence_inputs["freqs"],
+                coherence_inputs["separations"],
+            )
+            return {
+                "coherence_data": {
+                    "model_u": coh_model[..., 0],
+                    "model_v": coh_model[..., 1],
+                    "model_w": coh_model[..., 2],
+                    "data_u": coherence_inputs["data_u"],
+                    "data_v": coherence_inputs["data_v"],
+                    "data_w": coherence_inputs["data_w"],
+                }
+            }
+
         def closure() -> torch.Tensor:
             """Closure function for the optimizer.
 
             This function is called by the optimizer to compute the loss and perform a step.
             It is not exposed and should not be otherwise called by the user.
             """
-            with torch.autograd.set_detect_anomaly(True):
-                optimizer.zero_grad()
+            optimizer.zero_grad()
 
-                # Debug: Check model parameters
-                for name, param in self.OPS.named_parameters():
-                    if torch.isnan(param).any():
-                        print(f"NaN in parameter {name}: {param}")
+            OPS_model = self.OPS(ops_k_domain_tensor)
+            if torch.isnan(OPS_model).any():
+                raise ValueError("NaN in model output; check initialization and learning hyperparameters.")
 
-                # Debug: Check input tensor
-                if torch.isnan(ops_k_domain_tensor).any():
-                    print(f"NaN in ops_k_domain_tensor in closure: {ops_k_domain_tensor}")
+            self.loss = self.LossAggregator.eval(
+                OPS_model[curves],
+                OPS_true,
+                gen_theta_NN(),
+                self.e_count,
+                **gen_coherence_kwargs(),
+            )
 
-                OPS_model = self.OPS(ops_k_domain_tensor)
-
-                print("Model output ranges:")
-                for i, name in enumerate(["uu", "vv", "ww", "uw", "vw", "uv"]):
-                    print(f"{name}: {OPS_model[i].min():.3e} to {OPS_model[i].max():.3e}")
-
-                if torch.isnan(OPS_model).any():
-                    print(f"NaN in OPS_model in closure: {OPS_model}")
-                    raise ValueError("NaN is OPS_model in closure")
-
-                coherence_kwargs: dict = {}
-                if coherence_inputs is not None and self.loss_params.gamma_coherence > 0:
-                    coh_model = self.OPS.spectral_coherence(
-                        coherence_inputs["freqs"],
-                        coherence_inputs["separations"],
-                    )
-                    coherence_kwargs = {
-                        "coherence_data": {
-                            "model_u": coh_model[..., 0],
-                            "model_v": coh_model[..., 1],
-                            "model_w": coh_model[..., 2],
-                            "data_u": coherence_inputs["data_u"],
-                            "data_v": coherence_inputs["data_v"],
-                            "data_w": coherence_inputs["data_w"],
-                        }
-                    }
-
-                self.loss = self.LossAggregator.eval(
-                    OPS_model[curves],
-                    OPS_true,
-                    gen_theta_NN(),
-                    self.e_count,
-                    **coherence_kwargs,
-                )
-
-                self.loss.backward()
+            self.loss.backward()
 
             return self.loss
 
@@ -306,69 +296,33 @@ class CalibrationProblem:
         # Main optimization loop
         ###########################################################################################
         for epoch in range(1, max_epochs + 1):
-            # Print the current parameters
             epoch_start_time = time.time()
-            print(f"Epoch {epoch} of {max_epochs}")
 
             if any(isinstance(optimizer, oc) for oc in close_optims):
                 optimizer.step(closure)
                 self.e_count += 1
 
             else:
-                with torch.autograd.set_detect_anomaly(True):
-                    optimizer.zero_grad()
-                    OPS_model = self.OPS(ops_k_domain_tensor)
-                    coherence_kwargs: dict = {}
-                    if coherence_inputs is not None and self.loss_params.gamma_coherence > 0:
-                        coh_model = self.OPS.spectral_coherence(
-                            coherence_inputs["freqs"],
-                            coherence_inputs["separations"],
-                        )
-                        coherence_kwargs = {
-                            "coherence_data": {
-                                "model_u": coh_model[..., 0],
-                                "model_v": coh_model[..., 1],
-                                "model_w": coh_model[..., 2],
-                                "data_u": coherence_inputs["data_u"],
-                                "data_v": coherence_inputs["data_v"],
-                                "data_w": coherence_inputs["data_w"],
-                            }
-                        }
-
-                    self.loss = self.LossAggregator.eval(
-                        OPS_model[curves],
-                        OPS_true,
-                        gen_theta_NN(),
-                        self.e_count,
-                        **coherence_kwargs,
-                    )
-                    self.loss.backward()
-
-                    optimizer.step()
-
-                    self.e_count += 1
-
-            print("PAST CLOSURE/OPTIMIZER STEP")
+                closure()
+                optimizer.step()
+                self.e_count += 1
 
             scheduler.step()
 
-            epoch_end_time = time.time()
-            print(f"Epoch {epoch} took {epoch_end_time - epoch_start_time} seconds")
-            print(f"\tCurrent loss: {self.loss.item():.3f}")
-
-            print(f"\tCurrent L: {torch.exp(self.OPS.spectral_tensor_model.log_L).item():.3f}")
-            print(f"\tCurrent Gamma: {torch.exp(self.OPS.spectral_tensor_model.log_gamma).item():.3f}")
-            print(f"\tCurrent sigma: {torch.exp(self.OPS.spectral_tensor_model.log_sigma).item():.3f}\n")
-
-            if isinstance(self.OPS.spectral_tensor_model.energy_spectrum_model, stm.Learnable_ESM):
-                p = self.OPS.spectral_tensor_model.energy_spectrum_model._positive(
-                    self.OPS.spectral_tensor_model.energy_spectrum_model._raw_p
-                )
-                q = self.OPS.spectral_tensor_model.energy_spectrum_model._positive(
-                    self.OPS.spectral_tensor_model.energy_spectrum_model._raw_q
-                )
-                print(f"\tCurrent p: {p.item():.3f}")
-                print(f"\tCurrent q: {q.item():.3f}")
+            model = self.OPS.spectral_tensor_model
+            status = (
+                f"Epoch {epoch}/{max_epochs} ({time.time() - epoch_start_time:.2f}s): "
+                f"loss = {self.loss.item():.4e}, "
+                f"L = {torch.exp(model.log_L).item():.3f}, "
+                f"Gamma = {torch.exp(model.log_gamma).item():.3f}, "
+                f"sigma = {torch.exp(model.log_sigma).item():.3f}"
+            )
+            if isinstance(model.energy_spectrum_model, stm.Learnable_ESM):
+                esm = model.energy_spectrum_model
+                p = esm._positive(esm._raw_p)
+                q = esm._positive(esm._raw_q)
+                status += f", p = {p.item():.3f}, q = {q.item():.3f}"
+            print(status)
 
             if not (torch.isfinite(self.loss)):
                 raise RuntimeError("Loss is not a finite value, check initialization and learning hyperparameters.")
@@ -500,8 +454,9 @@ class CalibrationProblem:
                 if i >= len(curves):
                     ax.set_visible(False)
                 else:
-                    prefix = "auto-" if i < 3 else "cross-"
-                    ax.set_title(f"{prefix}spectra {self._spectra_names[i]}")
+                    curve_idx = curves[i]
+                    prefix = "auto-" if curve_idx < 3 else "cross-"
+                    ax.set_title(f"{prefix}spectra {self._spectra_names[curve_idx]}")
 
             self._fig.suptitle("Real-time Spectra Calibration")
             self._fig.tight_layout(rect=(0.0, 0.03, 1.0, 0.95))
@@ -573,15 +528,43 @@ class CalibrationProblem:
     ### Post-treatment and Export
     # ------------------------------------------------
 
-    def save_model(self, save_dir: str | Path | None = None):
-        """Pickle and write the trained model to a file.
+    def save_model(self, save_path: str | Path | None = None) -> Path:
+        """Write the trained spectral tensor model to a checkpoint file.
+
+        In addition to the model itself (see ``SpectralTensorModel.save_model``), the
+        checkpoint records the ``freq_scale`` and ``spectral_scale`` factors applied
+        during calibration when ``auto_scale=True``, which are needed to map the model
+        back to the units of the training data (e.g. when constructing an
+        ``NNCovariance`` for fluctuation field generation). These are restored by
+        ``SpectralTensorModel.load_model`` as the ``calibration_scales`` attribute.
 
         Parameters
         ----------
-        save_dir : Optional[Union[str, Path]], optional
-            Directory to save to, by default None; defaults to provided output_dir field for object.
+        save_path : Optional[Union[str, Path]], optional
+            File to save to, by default None, which writes to ``drd_model.pt`` in this
+            object's ``output_directory``. A ``.pt`` suffix is appended if no suffix is
+            given.
+
+        Returns
+        -------
+        Path
+            The path the checkpoint was written to.
         """
-        raise NotImplementedError("Not implemented")
+        if save_path is None:
+            save_path = Path(self.output_directory) / "drd_model.pt"
+        save_path = Path(save_path)
+        if save_path.suffix == "":
+            save_path = save_path.with_suffix(".pt")
+
+        checkpoint = self.OPS.spectral_tensor_model._to_checkpoint()
+        checkpoint["calibration"] = {
+            "freq_scale": float(getattr(self, "freq_scale", 1.0)),
+            "spectral_scale": float(getattr(self, "spectral_scale", 1.0)),
+        }
+
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(checkpoint, save_path)
+        return save_path
 
     def plot(
         self,
