@@ -1,9 +1,6 @@
-"""Generate one-point spectra data.
+"""Data generation and formatting for the model calibration module.
 
-This module contains the ``OnePointSpectraDataGenerator`` class, which generates one-point spectra data for a given
-set of parameters.
-
-.. note:: This module does NOT contain any examples which provide generated spectral coherence data.
+.. note:: This does NOT contain any examples which provide generated spectral coherence data.
 """
 
 from pathlib import Path
@@ -13,7 +10,7 @@ import polars as pl
 import torch
 
 
-def generate_von_karman_spectra(k1: torch.Tensor, L: float = 0.59, C: float = 3.2) -> torch.Tensor:
+def generate_von_karman_spectra(k1: torch.Tensor, L: float = 0.59, C: float = 3.2) -> dict[str, pl.DataFrame | None]:
     """Generate von Karman spectra data.
 
     .. note:: This is already frequency-weighted. DRD models assume that the provided data
@@ -43,13 +40,31 @@ def generate_von_karman_spectra(k1: torch.Tensor, L: float = 0.59, C: float = 3.
 
     ops_values = ops_values * k1.unsqueeze(-1).unsqueeze(-1)
 
+    freq = k1.tolist()
+    ops_data = {
+        "freq": freq,
+        "uu": ops_values[:, 0, 0].tolist(),
+        "vv": ops_values[:, 1, 1].tolist(),
+        "ww": ops_values[:, 2, 2].tolist(),
+        "uw": [float("nan")] * len(freq),
+        "vw": [float("nan")] * len(freq),
+        "uv": [float("nan")] * len(freq),
+    }
+    df = pl.DataFrame(ops_data)
     # TODO: Implement spectral coherence generation
 
-    return {"k1": k1, "ops": ops_values, "coherence": None}
+    return {"ops": df, "coherence": None}
 
 
-def generate_kaimal_spectra(k1: torch.Tensor, zref: float, ustar: float) -> torch.Tensor:
+def generate_kaimal_spectra(
+    k1: torch.Tensor,
+    zref: float,
+    ustar: float,
+    dtype: type[pl.DataType] = pl.Float64,
+) -> dict[str, pl.DataFrame | None]:
     """Generate Kaimal spectra data.
+
+    TODO: Write about the data.
 
     .. note:: This is already frequency-weighted. DRD models assume that the provided data
         is frequency-weighted.
@@ -68,20 +83,32 @@ def generate_kaimal_spectra(k1: torch.Tensor, zref: float, ustar: float) -> torc
     torch.Tensor
         Spectral tensor data
     """
-    n = 1 / (2 * np.pi) * k1 * zref
+    freq = (k1 * zref) / (2 * np.pi)
 
+    # TODO: No reason to use the tensor here at all
     ops_values = torch.zeros([len(k1), 3, 3], dtype=k1.dtype)
 
-    ops_values[:, 0, 0] = 52.5 * n / (1 + 33 * n) ** (5 / 3)
-    ops_values[:, 1, 1] = 8.5 * n / (1 + 9.5 * n) ** (5 / 3)
-    ops_values[:, 2, 2] = 1.05 * n / (1 + 5.3 * n ** (5 / 3))
-    ops_values[:, 0, 2] = -7 * n / (1 + 9.6 * n) ** (12.0 / 5.0)
+    ops_values[:, 0, 0] = 52.5 * freq / (1 + 33 * freq) ** (5 / 3)
+    ops_values[:, 1, 1] = 8.5 * freq / (1 + 9.5 * freq) ** (5 / 3)
+    ops_values[:, 2, 2] = 1.05 * freq / (1 + 5.3 * freq ** (5 / 3))
+    ops_values[:, 0, 2] = -7 * freq / (1 + 9.6 * freq) ** (12.0 / 5.0)
+
+    freq = freq.tolist()
+    ops_data = {
+        "freq": freq,
+        "uu": ops_values[:, 0, 0].tolist(),
+        "vv": ops_values[:, 1, 1].tolist(),
+        "ww": ops_values[:, 2, 2].tolist(),
+        "uw": ops_values[:, 0, 2].tolist(),
+        "vw": [float("nan")] * len(freq),
+        "uv": [float("nan")] * len(freq),
+    }
+    df = pl.DataFrame(ops_data)
 
     # TODO: Implement spectral coherence generation
 
     return {
-        "k1": k1,
-        "ops": ops_values * torch.tensor(ustar**2, dtype=k1.dtype),
+        "ops": df,
         "coherence": None,
     }
 
@@ -89,104 +116,148 @@ def generate_kaimal_spectra(k1: torch.Tensor, zref: float, ustar: float) -> torc
 class CustomDataLoader:
     """Custom data loader.
 
-    Given a one point spectra data file (CSV) formatted as:
+    This class is used to load one-point spectra and coherence data from a CSV file.
+
+    The CSV file should be formatted as:
 
     .. code-block:: text
 
         f, F11(f), F22(f), F33(f), F13(f), F23(f), F12(f)
 
-    TODO: This should also accept NetCDF and other formats.
+    where 'f' is the frequency, and F_ij(f) is the *frequency-weighted* one-point spectra. This class must be
+    able to find these quantities as
 
-    TODO: Use polars to load the data.
+    .. code-block:: text
 
-    TODO: Probably some nice thing can be done with "subsetting" the data frame
-    and downsampling and all that.
+        freq, uu, vv, ww, uw, vw, uv
+
+    Here, uu, vv, ww (the auto-spectra components) are required. uw, vw, uv are optional. Any missing cross-spectra
+    components are set to NaN and ignored during training.
+
+    TODO: Write about the coherence data format.
     """
 
+    # dtype to load the data as
+    dtype: type[pl.DataType]
+
     # Data file paths
-    ops_data_file: Path | str
-    coherence_data_file: Path | str | None
+    ops_data_file: Path
+    coherence_data_file: Path | None
 
     # Data storage
     ops_data_df: pl.DataFrame
     coh_data_df: pl.DataFrame | None
 
-    ops_components_ct: int
-
     def __init__(
         self,
         ops_data_file: Path | str,
         coherence_data_file: Path | str | None = None,
-        ops_components_ct: int = 4,
+        dtype: type[pl.DataType] = pl.Float64,
     ):
+        """Construct a CustomDataLoader instance.
+
+        Primarily, this class is used to load one-point spectra data and coherence data from files
+        and put them into a format that the CalibrationProblem class expects. The data is stored
+        in a polars dataframe and then placed into a dictionary of DataFrames.
+
+        Parameters
+        ----------
+        ops_data_file : Path | str
+            Path to the one-point spectra data file.
+        coherence_data_file : Path | str | None, optional
+            Path to the coherence data file. If None, no coherence data will be loaded.
+        dtype : pl.DataType, optional
+            Data type to load the data in as.
+        """
+        # Set dtype
+        self.dtype = dtype
+
+        # Set data file paths
         self.ops_data_file = Path(ops_data_file)
         self.coherence_data_file = Path(coherence_data_file) if coherence_data_file else None
-
-        self.ops_components_ct = ops_components_ct
 
         # Load the OPS data
         self._load_ops_data()
 
-    def _load_ops_data(self) -> None:
-        """Load the OPS data.
+        # Load the coherence data if provided
+        if self.coherence_data_file:
+            self._load_coherence_data()
+        else:
+            self.coh_data_df = None
 
-        1. Check the ops data file exists, etc
-        2. Check the ops components are present
-        3. Fill the ops_data_df
+    def _load_ops_data(self) -> None:
+        """Load the OPS data into a polars dataframe.
+
+        Must be able to find the following columns:
+        - freq
+        - uu
+        - vv
+        - ww
+        - uw (optional)
+        - vw (optional)
+        - uv (optional)
+
+        If the optional columns are not provided, they are set to NaN.
         """
         # Check the provided data file exists
-        _data_file = Path(self.ops_data_file)
-        if not _data_file.exists():
-            raise FileNotFoundError(f'Provided data file path "{_data_file}" does not exist.')
+        assert self.ops_data_file is not None, "Why isn't there an ops data file?"
+
+        if not self.ops_data_file.exists():
+            raise FileNotFoundError(f'Provided data file path "{self.ops_data_file}" does not exist.')
 
         # Load the data
         self.ops_data_df = pl.read_csv(self.ops_data_file)
 
-        # Check which of uu, vv, ww, uw, vw, and uv are present
-        if "uu" not in self.ops_data_df.columns:
-            raise ValueError("uu must be present in the ops_data_df")
-        if "vv" not in self.ops_data_df.columns:
-            raise ValueError("vv must be present in the ops_data_df")
-        if "ww" not in self.ops_data_df.columns:
-            raise ValueError("ww must be present in the ops_data_df")
+        # Check that the required columns are present
+        required_cols = ["freq", "uu", "vv", "ww"]
+        for col in required_cols:
+            if col not in self.ops_data_df.columns:
+                raise ValueError(f"A(n) {col} column must be present in the ops_data_df")
 
-        if (self.ops_components_ct > 3) and ("uw" not in self.ops_data_df.columns):
-            raise ValueError("uw must be present in the ops_data_df")
-        if (self.ops_components_ct == 6) and ("vw" not in self.ops_data_df.columns):
-            raise ValueError("vw must be present in the ops_data_df")
-        if (self.ops_components_ct == 6) and ("uv" not in self.ops_data_df.columns):
-            raise ValueError("uv must be present in the ops_data_df")
+        # Sort the data by frequency
+        self.ops_data_df = self.ops_data_df.sort("freq")
 
+        # Cast the data to the correct dtype
+        self.ops_data_df = self.ops_data_df.with_columns(
+            pl.col("freq").cast(self.dtype).alias("freq"),
+            pl.col("uu").cast(self.dtype).alias("uu"),
+            pl.col("vv").cast(self.dtype).alias("vv"),
+            pl.col("ww").cast(self.dtype).alias("ww"),
+        )
 
+        # Check that the optional columns are present
+        optional_cols = ["uw", "vw", "uv"]
+        for col in optional_cols:
+            if col not in self.ops_data_df.columns:
+                self.ops_data_df = self.ops_data_df.with_columns(pl.lit(float("nan")).alias(col))
+            self.ops_data_df = self.ops_data_df.with_columns(pl.col(col).cast(self.dtype))
 
+    def _load_coherence_data(self) -> None:
+        """Load the coherence data.
 
+        Must be able to find the following columns:
+        - r
+        - freq
+        - coh_u
+        - coh_v
+        - coh_w
+        """
+        # Check the provided data file exists
+        assert self.coherence_data_file is not None, "Tried to load coherence data with no file?"
 
-        ops_data = torch.zeros([len(self.ops_k1_domain), 3, 3])
+        if not self.coherence_data_file.exists():
+            raise FileNotFoundError(f'Provided data file path "{self.coherence_data_file}" does not exist.')
 
-        ops_data[:, 0, 0] = data_df["uu"].to_numpy()
-        ops_data[:, 1, 1] = data_df["vv"].to_numpy()
-        ops_data[:, 2, 2] = data_df["ww"].to_numpy()
-        ops_data[:, 0, 2] = -1 * data_df["uw"].to_numpy()
-        ops_data[:, 1, 2] = data_df["vw"].to_numpy()
-        ops_data[:, 0, 1] = data_df["uv"].to_numpy()
+        self.coh_data_df = pl.read_csv(self.coherence_data_file).sort("freq")
 
-
-    def format_data(self) -> dict[str, torch.Tensor]:
-        r"""Provide a correctly formatted data dictionary based on provided data file."""
-        DataValues = torch.zeros([len(self.k1_domain), 3, 3])
-
-        DataValues[:, 0, 0] = self.CustomData[:, 1]  # uu
-        DataValues[:, 1, 1] = self.CustomData[:, 2]  # vv
-        DataValues[:, 2, 2] = self.CustomData[:, 3]  # ww
-        # NOTE: is always negative
-        DataValues[:, 0, 2] = -1 * self.CustomData[:, 4]  # uw
-        # TODO: Can be negative, skipping for now
-        DataValues[:, 1, 2] = self.CustomData[:, 5]  # vw
-        # TODO: Can be negative, skipping for now
-        DataValues[:, 0, 1] = self.CustomData[:, 6]  # uv
+    def format_data(self) -> dict[str, pl.DataFrame | None]:
+        """Format the data into a dictionary of tensors."""
+        # Check that the data is loaded
+        assert self.ops_data_df is not None, "OPS data not loaded??"
+        if self.coh_data_df is None:
+            print("No coherence data loaded.")
 
         return {
-            "k1": self.k1_domain,
-            "ops": DataValues,
-            "coherence": None,
+            "ops": self.ops_data_df,
+            "coherence": self.coh_data_df,
         }

@@ -5,6 +5,7 @@
 *.pkl
 !/docs/source/data/*.csv
 !/docs/source/results/*.pkl
+!/examples/inputs/*.csv
 
 # Generated Examples/Docs
 docs/source/auto_examples/
@@ -62,7 +63,6 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-uv.lock
 __pypackages__/
 .ruff_cache/
 
@@ -97,6 +97,7 @@ coverage.xml
 .pytest_cache/
 .ruff_cache/ # Ruff linter cache
 target/ # PyBuilder
+.claude/
 
 
 # Type Checkers #
@@ -174,9 +175,10 @@ venv.bak/
 # Others
 **.vscode
 **.DS_Store
-examples-unrendered/2d_plus_3d.ipynb
 
 ## Data/ Paraview Files
+outputs/
+examples/outputs/
 
 # *.png
 *.vti

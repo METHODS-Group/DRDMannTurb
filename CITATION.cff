@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
+message: "If you use this software, please cite the JOSS paper below."
 authors:
   - family-names: Izmailov
     given-names: Alexey
@@ -10,8 +10,27 @@ authors:
   - family-names: Keith
     given-names: Brendan
 title: "DRDMannTurb"
-version: 1.0.2
+version: 1.1-beta.0
 identifiers:
   - type: doi
-    value: 10.5281/zenodo.1234
-date-released: 2024-07-12
+    value: 10.5281/zenodo.13922330
+date-released: 2025-06-09
+preferred-citation:
+  type: article
+  title: "DRDMannTurb: A Python package for scalable, data-driven synthetic turbulence"
+  authors:
+    - family-names: Izmailov
+      given-names: Alexey
+    - family-names: Meeker
+      given-names: Matthew
+    - family-names: Deskos
+      given-names: Georgios
+    - family-names: Keith
+      given-names: Brendan
+  journal: "Journal of Open Source Software"
+  volume: 9
+  issue: 102
+  start: 6838
+  year: 2024
+  month: 10
+  doi: 10.21105/joss.06838

@@ -8,7 +8,7 @@ The `VectorGaussianRandomField` class generates a vector of
 Gaussian random fields in a specified number of dimensions.
 """
 
-from typing import Optional, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 import numpy as np
 
@@ -64,8 +64,8 @@ class GaussianRandomField:
         self,
         Covariance: covariance_metaclass,
         grid_level: np.ndarray,
-        grid_shape: np.ndarray = None,
-        grid_dimensions: np.ndarray = [1.0, 1.0, 1.0],
+        grid_shape: np.ndarray | None = None,
+        grid_dimensions: np.ndarray = np.array([1.0, 1.0, 1.0]),
         ndim: int = 3,
         sampling_method: str = "fft",
     ):
@@ -81,7 +81,7 @@ class GaussianRandomField:
             Numpy array denoting the grid levels; number of discretization points used in each dimension, which
             evaluates as 2^k for each dimension for FFT-based sampling methods.
         grid_shape : np.ndarray, optional
-            _description_, by default None
+            TODO: What is this?, by default None
         grid_dimensions : np.ndarray, optional
             Numpy array denoting the grid size; the real dimensions of the domain of interest,
             by default [1.0, 1.0, 1.0]
@@ -97,6 +97,8 @@ class GaussianRandomField:
         ValueError
             ``grid_level`` and ``grid_shape`` must have the same dimensions.
         """
+        if ndim != 3:
+            raise NotImplementedError("Only ndim=3 is supported")
         self.ndim = ndim  # dimension 2D or 3D
         self.all_axes = np.arange(self.ndim)
 
@@ -108,11 +110,11 @@ class GaussianRandomField:
             h = 1 / 2**grid_level
             self.grid_shape = np.array([grid_shape] * ndim)
         else:
-            assert len(grid_dimensions) == 3
-            assert len(grid_level) == 3
+            assert len(grid_dimensions) == ndim
+            assert len(grid_level) == ndim
 
             h = grid_dimensions / (2**grid_level + 1)
-            self.grid_shape = np.array(grid_shape[:ndim])
+            self.grid_shape = np.array(grid_shape)
 
         self.L = h * self.grid_shape
 
@@ -132,9 +134,9 @@ class GaussianRandomField:
 
         # Annotate self.Correlate with the protocol
         self.Correlate: SamplingMethod
-        self.setSamplingMethod(sampling_method)
+        self.set_sampling_method(sampling_method)
 
-    def setSamplingMethod(self, method: str):
+    def set_sampling_method(self, method: str):
         """
         Initialize the sampling method.
 
@@ -183,7 +185,7 @@ class GaussianRandomField:
             self.prng.seed()
 
     ### Sample noise
-    def sample_noise(self, grid_shape: Optional[np.ndarray] = None) -> np.ndarray:
+    def sample_noise(self, grid_shape: np.ndarray | None = None) -> np.ndarray:
         """
         Sample random grid from specified distribution.
 
@@ -207,7 +209,7 @@ class GaussianRandomField:
         return noise
 
     ### Sample GRF
-    def sample(self, noise: Optional[np.ndarray] = None) -> np.ndarray:
+    def sample(self, noise: np.ndarray | None = None) -> np.ndarray:
         """
         Sample the Gaussian random field with specified sampling method.
 

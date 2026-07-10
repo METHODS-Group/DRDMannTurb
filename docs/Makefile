@@ -18,3 +18,15 @@ help:
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+# Custom clean target for DRDMannTurb docs
+clean:
+	rm -rf $(BUILDDIR)/*
+	rm -rf source/auto_examples/
+	rm -rf source/_autosummary/
+	rm -rf source/api/_autosummary/
+	rm -f source/api/*.rst~
+	rm -f source/user-guide/*.rst~
+	rm -f source/*.rst~
+	rm -f source/development/*.rst~
+	@echo "Documentation build artifacts cleaned!"

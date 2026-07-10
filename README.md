@@ -22,11 +22,11 @@ for instructions on installing development versions.
 
 ## Basic Usage
 
-See the ``/examples/`` folder for baselines from the paper and for examples of the many functionalities of the package. These examples are rendered in a more readable
-format on our documentation [here](https://methods-group.github.io/DRDMannTurb/examples.html) also.
+The ``/examples/`` folder contains baselines from the paper and examples of the package's functionalities.
+We render these in the docs [here](https://methods-group.github.io/DRDMannTurb/examples.html) also.
 
-DRDMannTurb consists of two primary submodules ``spectra_fitting`` and ``fluctuation_generation``
-which are respectively focused on fitting a Deep Rapid Distortion (DRD) model and
+DRDMannTurb has two primary components ``spectra_fitting`` and ``fluctuation_generation``
+which are respectively focused on fitting a Deep Rapid Distortion (DRD) spectral tensor model and
 on generating synthetic turbulence "boxes" with a fit DRD model.
 
 ## Questions?
@@ -35,16 +35,21 @@ If you have any questions, the best way to receive help is by creating a thread 
 
 ## Citation
 
-If you use this software, please cite it as below.
+If you use this software in your work, we ask that you cite the [JOSS paper](https://doi.org/10.21105/joss.06838) as below.
 
 ```
-@software{Izmailov_DRDMannTurb_2023,
-author = {Izmailov, Alexey and Meeker, Matthew and Deskos, Georgios and Keith, Brendan},
-month = mar,
-title = {{DRDMannTurb}},
-url= {https://github.com/METHODS-Group/DRDMannTurb},
-version = {1.0.2},
-year = {2024}
+@article{Izmailov_DRDMannTurb_2024,
+  title     = {{DRDMannTurb: A Python package for scalable, data-driven synthetic turbulence}},
+  author    = {Izmailov, Alexey and Meeker, Matthew and Deskos, Georgios and Keith, Brendan},
+  journal   = {Journal of Open Source Software},
+  volume    = {9},
+  number    = {102},
+  pages     = {6838},
+  year      = {2024},
+  month     = oct,
+  doi       = {10.21105/joss.06838},
+  url       = {https://doi.org/10.21105/joss.06838},
+  publisher = {The Open Journal}
 }
 ```
 
@@ -60,21 +65,13 @@ To set up a development environment, we recommend using [`uv`](https://github.co
 
 1.  **Install `uv`**: Follow the official [`uv` installation instructions](https://github.com/astral-sh/uv#installation).
 2.  **Install System Dependencies**: Ensure the `FFTW` library is installed (see [Installation](#installation) section above).
-3.  **Install Python**: Make sure you have Python >= 3.9.16 installed and available. We recommend using a Python version manager like [`pyenv`](https://github.com/pyenv/pyenv).
+3.  **Install Python**: Make sure you have Python >= 3.10 installed and available (`uv python install 3.10` works as well).
 4.  **Clone the Repository**: `git clone https://github.com/METHODS-Group/DRDMannTurb.git && cd DRDMannTurb`
-5.  **Create and Activate Virtual Environment**:
+5.  **Sync the Environment**: `uv sync` creates the virtual environment, installs the package in editable mode, and installs the dev dependency group (pytest, ruff, ty).
     ```bash
-    # Create a virtual environment using your installed Python
-    uv venv
-    # Alternatively, you can explicitly set the Python version with the following
-    uv venv --python 3.9.16
-    # Activate the environment (syntax may vary slightly for different shells)
-    source .venv/bin/activate
-    ```
-6.  **Install in Editable Mode with Dependencies**: Install the package in editable mode along with development and documentation dependencies. *Make sure to quote the argument containing brackets.*
-    ```bash
-    # Install core, docs, and dev dependencies
-    uv pip install -e '.[docs,dev]'
+    uv sync
+    # To also build documentation locally, include the docs extra:
+    uv sync --extra docs
     ```
 
 We also ask that you install our
@@ -84,8 +81,8 @@ the documentation can be found [here](https://pre-commit.com/).
 
 ### Running Tests Locally
 
-DRDMannTurb's test suite is built with [Pytest](https://docs.pytest.org/en/stable/). Running the tests locally can be done by running `pytest`
-from the project root.
+DRDMannTurb's test suite is built with [Pytest](https://docs.pytest.org/en/stable/). Running the tests locally can be done by running `uv run pytest`
+from the project root (or `make test`; see `make help` for the available targets, including `make lint` and `make typecheck`).
 
 Tests decorated with `slow` can be run with the `--runslow` flag; they are otherwise skipped. Note that several of these tests require (at least
 ``partially'') training a DRD model, and so the suite may take several minutes to complete.

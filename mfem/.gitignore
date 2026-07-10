@@ -1,0 +1,7 @@
+navier_windtunnel
+*.o
+*.dSYM/
+output/
+meshes/*.mesh
+meshes/*.msh
+meshes/*.vtu

@@ -7,14 +7,13 @@ of Jacob Mann in 1994 and 1998 as well as in the deep-learning enhancement devel
 et al. in 2021.
 """
 
-from .common import (
-    CPU_Unpickler,
-    Mann_linear_exponential_approx,
-    MannEddyLifetime,
-    VKEnergySpectrum,
-    plot_loss_logs,
-)
-from .enums import EddyLifetimeType
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("drdmannturb")
+except PackageNotFoundError:  # package not installed (e.g. running from a source checkout)
+    __version__ = "0.0.0.dev0"
+
 from .fluctuation_generation import (
     Covariance,
     FluctuationFieldGenerator,
@@ -39,9 +38,6 @@ from .nn_modules import Rational, TauNet
 from .parameters import (
     IntegrationParameters,
     LossParameters,
-    NNParameters,
-    PhysicalParameters,
-    ProblemParameters,
 )
 from .spectra_fitting import (
     CalibrationProblem,
@@ -53,14 +49,7 @@ from .spectra_fitting import (
 )
 
 __all__ = [
-    # Common
-    "CPU_Unpickler",
-    "Mann_linear_exponential_approx",
-    "MannEddyLifetime",
-    "VKEnergySpectrum",
-    "plot_loss_logs",
-    # Enums
-    "EddyLifetimeType",
+    "__version__",
     # Fluctuation Generation
     "Covariance",
     "FluctuationFieldGenerator",
@@ -80,22 +69,12 @@ __all__ = [
     "format_wind_field",
     "plot_velocity_components",
     "plot_velocity_magnitude",
-    # Interpolation
-    "extract_x_spectra",
-    "interp_spectra",
-    "interpolate",
     # NN Modules
-    "CustomMLP",
-    "CustomNet",
     "Rational",
-    "SimpleNN",
     "TauNet",
     # Parameters
     "IntegrationParameters",
     "LossParameters",
-    "NNParameters",
-    "PhysicalParameters",
-    "ProblemParameters",
     # Spectra Fitting
     "CalibrationProblem",
     "CustomDataLoader",

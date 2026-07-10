@@ -3,37 +3,151 @@
 Specifically, in evaluating the square roots of spectral tensors used in various models.
 """
 
+from abc import ABC, abstractmethod
+from collections.abc import Callable
+
 import numpy as np
 from scipy.special import hyp2f1
 
 
-class Covariance:
+def _assemble_rdt_sqrt_tensor(
+    k1: np.ndarray,
+    k2: np.ndarray,
+    k3: np.ndarray,
+    beta: np.ndarray,
+    const_fn: Callable[[np.ndarray, np.ndarray], np.ndarray],
+) -> np.ndarray:
+    r"""Assemble the square-root of an RDT-distorted spectral tensor.
+
+    Shared by the Mann and neural-network covariance kernels. The isotropic part is
+    represented by its curl-form square root with pointwise amplitude ``const``, and the
+    rapid-distortion transformation is applied via the :math:`\zeta_i` factors.
+
+    Parameters
+    ----------
+    k1, k2, k3 : np.ndarray
+        Wavevector components on the evaluation grid.
+    beta : np.ndarray
+        Dimensionless distortion time :math:`\beta = \gamma \tau(\boldsymbol{k})` on the grid.
+    const_fn : Callable
+        Callback ``const_fn(k30, kk0)`` returning the isotropic square-root amplitude
+        :math:`\sqrt{E(k_0) / (4 \pi k_0^4)}` evaluated at the distorted wavevector, where
+        ``k30`` is the distorted third component and ``kk0`` is :math:`|\boldsymbol{k}_0|^2`.
+
+    Returns
+    -------
+    np.ndarray
+        Complex square-root of the spectral tensor, of shape ``(3, 3, *k1.shape)``.
+    """
+    sqrt_spectral_tensor = np.tile(np.zeros(k1.shape), (3, 3, 1, 1, 1))
+    tmp_tensor = np.tile(np.zeros(k1.shape), (3, 3, 1, 1, 1))
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        k30 = k3 + beta * k1
+        kk0 = k1**2 + k2**2 + k30**2
+        kk = k1**2 + k2**2 + k3**2
+
+        #### Isotropic with k0
+
+        const = const_fn(k30, kk0)
+
+        # to enforce zero mean in the x-direction:
+        # const[k1 == 0] = 0.0
+
+        tmp_tensor[0, 1, ...] = -const * k30
+        tmp_tensor[0, 2, ...] = const * k2
+        tmp_tensor[1, 0, ...] = const * k30
+        tmp_tensor[1, 2, ...] = -const * k1
+        tmp_tensor[2, 0, ...] = -const * k2
+        tmp_tensor[2, 1, ...] = const * k1
+
+        #### RDT
+
+        s = k1**2 + k2**2
+        C1 = beta * k1**2 * (kk0 - 2 * k30**2 + beta * k1 * k30) / (kk * s)
+        numerator = beta * k1 * np.sqrt(s)
+        denominator = kk0 - k30 * k1 * beta
+        C2 = k2 * kk0 / s ** (3 / 2) * np.arctan2(numerator, denominator)
+
+        zeta1 = C1 - k2 / k1 * C2
+        zeta2 = k2 / k1 * C1 + C2
+        zeta3 = kk0 / kk
+
+        # deal with divisions by zero
+        zeta1 = np.nan_to_num(zeta1)
+        zeta2 = np.nan_to_num(zeta2)
+        zeta3 = np.nan_to_num(zeta3)
+
+        sqrt_spectral_tensor[0, 0, ...] = tmp_tensor[0, 0, ...] + zeta1 * tmp_tensor[2, 0, ...]
+        sqrt_spectral_tensor[0, 1, ...] = tmp_tensor[0, 1, ...] + zeta1 * tmp_tensor[2, 1, ...]
+        sqrt_spectral_tensor[0, 2, ...] = tmp_tensor[0, 2, ...] + zeta1 * tmp_tensor[2, 2, ...]
+        sqrt_spectral_tensor[1, 0, ...] = tmp_tensor[1, 0, ...] + zeta2 * tmp_tensor[2, 0, ...]
+        sqrt_spectral_tensor[1, 1, ...] = tmp_tensor[1, 1, ...] + zeta2 * tmp_tensor[2, 1, ...]
+        sqrt_spectral_tensor[1, 2, ...] = tmp_tensor[1, 2, ...] + zeta2 * tmp_tensor[2, 2, ...]
+        sqrt_spectral_tensor[2, 0, ...] = zeta3 * tmp_tensor[2, 0, ...]
+        sqrt_spectral_tensor[2, 1, ...] = zeta3 * tmp_tensor[2, 1, ...]
+        sqrt_spectral_tensor[2, 2, ...] = zeta3 * tmp_tensor[2, 2, ...]
+
+    return sqrt_spectral_tensor * 1j
+
+
+class Covariance(ABC):
     r"""
     Generic covariance kernel metaclass.
 
-    In particular, every subclass involves the computation of
-    :math:`G(\boldsymbol{k})` where
+    Every subclass implements the computation of a matrix :math:`G(\boldsymbol{k})` such that
 
      .. math::
          G(\boldsymbol{k}) G^*(\boldsymbol{k})=\Phi(\boldsymbol{k}, \tau(\boldsymbol{k}))
 
-     for different choices of the spectral tensor :math:`\Phi(\boldsymbol{k})`.
+    for different choices of the spectral tensor :math:`\Phi(\boldsymbol{k})`
 
-     Subclasses only require one field ``ndim``, which specifies the number of dimensions in which
-     the generated kernels operate, respectively. For now, all fields and kernels operate in 3D,
-     though functionality for 2D may be added readily. Finally, if a generic evaluation function is
-     desired for a subclass, it may be set with ``eval_func`` in the constructor, as well as any
-     associated arguments.
-
+    Subclasses must implement:
+    - `precompute_spectrum()`: Compute the square-root of the spectral tensor.
+    - `__init__()`: Initialize with required parameters.
     """
 
-    def __init__(self, ndim=2, **kwargs):
-        self.ndim = ndim  # dimension 2D or 3D
-        self.eval_func = kwargs.get("func")
+    ndim: int
 
-    def eval(self, *argv, **kwargs):
-        """Evaluate the covariance kernel."""
-        self.eval_func(*argv, **kwargs)
+    def __init__(self, ndim: int = 3, **kwargs):
+        """Initialize the covariance kernel.
+
+        Parameters
+        ----------
+        ndim : int
+            Number of dimensions for the kernel to operate over.
+        **kwargs
+            Additional parameters specific to each covariance type.
+        """
+        self.ndim = ndim
+        self._validate_ndim()
+
+    def _validate_ndim(self):
+        """Validate that ndim is appropriate for this covariance type."""
+        if self.ndim != 3:
+            raise ValueError(f"ndim must be 3 for {self.__class__.__name__}.")
+
+    @abstractmethod
+    def precompute_spectrum(self, frequencies: np.ndarray) -> np.ndarray:
+        """
+        Pre-compute the square-root of the associated spectral tensor in the frequency domain.
+
+        Parameters
+        ----------
+        frequencies : np.ndarray
+            Frequency domain in 3D over which to compute the square-root of the spectral tensor.
+
+        Returns
+        -------
+        np.ndarray
+            Square-root of the spectral tensor evaluated in the frequency domain;
+            note that these are complex values.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    def get_parameters(self) -> dict[str, float | None]:
+        """Get common parameters used by the field generator."""
+        return {"L": getattr(self, "L", None), "Gamma": getattr(self, "Gamma", 1.0), "E0": getattr(self, "E0", 1.0)}
 
 
 class VonKarmanCovariance(Covariance):
@@ -57,7 +171,7 @@ class VonKarmanCovariance(Covariance):
     :math:`L` is the length scale parameter and :math:`c_0^2 \approx 1.7` is an empirical constant.
     """
 
-    def __init__(self, ndim: int, length_scale: float, E0: float, **kwargs):
+    def __init__(self, ndim: int = 3, length_scale: float = 1.0, E0: float = 1.0, **kwargs):
         """
         Initialize the Von Karman covariance kernel.
 
@@ -75,23 +189,20 @@ class VonKarmanCovariance(Covariance):
         ValueError
             ndim must be 3 for Von Karman covariance.
         """
-        super().__init__(**kwargs)
-
-        if ndim != 3:
-            raise ValueError("ndim must be 3 for Von Karman covariance.")
-
-        self.ndim = 3
+        super().__init__(ndim=ndim, **kwargs)
 
         self.L = length_scale
         self.E0 = E0
+        # NOTE: VK does not use Gamma, but this is set for compatibility.
+        self.Gamma = 1.0
 
-    def precompute_Spectrum(self, Frequencies: np.ndarray) -> np.ndarray:
+    def precompute_spectrum(self, frequencies: np.ndarray) -> np.ndarray:
         """
         Pre-compute the square-root of the associated spectral tensor in the frequency domain.
 
         Parameters
         ----------
-        Frequencies : np.ndarray
+        frequencies : np.ndarray
             Frequency domain in 3D over which to compute the square-root of the spectral tensor.
 
         Returns
@@ -100,23 +211,24 @@ class VonKarmanCovariance(Covariance):
             Square-root of the spectral tensor evaluated in the frequency domain; note
             that these are complex values.
         """
-        Nd = [Frequencies[j].size for j in range(self.ndim)]
-        SqrtSpectralTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
+        ndim = self.ndim
+        Nd = [frequencies[j].size for j in range(ndim)]
+        sqrt_spectral_tensor = np.tile(np.zeros(Nd), (ndim, ndim, 1, 1, 1))
 
-        k = np.array(list(np.meshgrid(*Frequencies, indexing="ij")))
+        k = np.array(list(np.meshgrid(*frequencies, indexing="ij")))
         kk = np.sum(k**2, axis=0)
 
         const = self.E0 * (self.L ** (17 / 3)) / (4 * np.pi)
         const = np.sqrt(const / (1 + (self.L**2) * kk) ** (17 / 6))
 
-        SqrtSpectralTens[0, 1, ...] = -const * k[2, ...]
-        SqrtSpectralTens[0, 2, ...] = const * k[1, ...]
-        SqrtSpectralTens[1, 0, ...] = const * k[2, ...]
-        SqrtSpectralTens[1, 2, ...] = -const * k[0, ...]
-        SqrtSpectralTens[2, 0, ...] = -const * k[1, ...]
-        SqrtSpectralTens[2, 1, ...] = const * k[0, ...]
+        sqrt_spectral_tensor[0, 1, ...] = -const * k[2, ...]
+        sqrt_spectral_tensor[0, 2, ...] = const * k[1, ...]
+        sqrt_spectral_tensor[1, 0, ...] = const * k[2, ...]
+        sqrt_spectral_tensor[1, 2, ...] = -const * k[0, ...]
+        sqrt_spectral_tensor[2, 0, ...] = -const * k[1, ...]
+        sqrt_spectral_tensor[2, 1, ...] = const * k[0, ...]
 
-        return SqrtSpectralTens * 1j
+        return sqrt_spectral_tensor * 1j
 
 
 class MannCovariance(Covariance):
@@ -155,24 +267,19 @@ class MannCovariance(Covariance):
         ValueError
             ndim must be 3 for Mann covariance.
         """
-        super().__init__(**kwargs)
-
-        ### Spatial dimensions
-        if ndim != 3:
-            raise ValueError("ndim must be 3 for Mann covariance.")
-        self.ndim = 3
+        super().__init__(ndim=ndim, **kwargs)
 
         self.L = length_scale
         self.E0 = E0
         self.Gamma = Gamma
 
-    def precompute_Spectrum(self, Frequencies: np.ndarray) -> np.ndarray:
+    def precompute_spectrum(self, frequencies: np.ndarray) -> np.ndarray:
         """
         Pre-compute the square-root of the associated spectral tensor in the frequency domain.
 
         Parameters
         ----------
-        Frequencies : np.ndarray
+        frequencies : np.ndarray
             Frequency domain in 3D over which to compute the square-root of the spectral tensor.
 
         Returns
@@ -181,11 +288,7 @@ class MannCovariance(Covariance):
             Square-root of the spectral tensor evaluated in the frequency domain;
             note that these are complex values.
         """
-        Nd = [Frequencies[j].size for j in range(self.ndim)]
-        SqrtSpectralTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
-        tmpTens = np.tile(np.zeros(Nd), (3, 3, 1, 1, 1))
-
-        k = np.array(list(np.meshgrid(*Frequencies, indexing="ij")))
+        k = np.array(list(np.meshgrid(*frequencies, indexing="ij")))
         kk = np.sum(k**2, axis=0)
 
         with np.errstate(divide="ignore", invalid="ignore"):
@@ -194,53 +297,8 @@ class MannCovariance(Covariance):
             )
             beta[np.where(kk == 0)] = 0
 
-            k1 = k[0, ...]
-            k2 = k[1, ...]
-            k3 = k[2, ...]
-            k30 = k3 + beta * k1
-
-            kk0 = k1**2 + k2**2 + k30**2
-
-            #### Isotropic with k0
-
+        def const_fn(k30: np.ndarray, kk0: np.ndarray) -> np.ndarray:
             const = self.E0 * (self.L ** (17 / 3)) / (4 * np.pi)
-            const = np.sqrt(const / (1 + (self.L**2) * kk0) ** (17 / 6))
+            return np.sqrt(const / (1 + (self.L**2) * kk0) ** (17 / 6))
 
-            # to enforce zero mean in the x-direction:
-            # const[k1 == 0] = 0.0
-
-            tmpTens[0, 1, ...] = -const * k30
-            tmpTens[0, 2, ...] = const * k2
-            tmpTens[1, 0, ...] = const * k30
-            tmpTens[1, 2, ...] = -const * k1
-            tmpTens[2, 0, ...] = -const * k2
-            tmpTens[2, 1, ...] = const * k1
-
-            #### RDT
-
-            s = k1**2 + k2**2
-            C1 = beta * k1**2 * (kk0 - 2 * k30**2 + beta * k1 * k30) / (kk * s)
-            numerator = beta * k1 * np.sqrt(s)
-            denominator = kk0 - k30 * k1 * beta
-            C2 = k2 * kk0 / s ** (3 / 2) * np.arctan2(numerator, denominator)
-
-            zeta1 = C1 - k2 / k1 * C2
-            zeta2 = k2 / k1 * C1 + C2
-            zeta3 = kk0 / kk
-
-            # deal with divisions by zero
-            zeta1 = np.nan_to_num(zeta1)
-            zeta2 = np.nan_to_num(zeta2)
-            zeta3 = np.nan_to_num(zeta3)
-
-            SqrtSpectralTens[0, 0, ...] = tmpTens[0, 0, ...] + zeta1 * tmpTens[2, 0, ...]
-            SqrtSpectralTens[0, 1, ...] = tmpTens[0, 1, ...] + zeta1 * tmpTens[2, 1, ...]
-            SqrtSpectralTens[0, 2, ...] = tmpTens[0, 2, ...] + zeta1 * tmpTens[2, 2, ...]
-            SqrtSpectralTens[1, 0, ...] = tmpTens[1, 0, ...] + zeta2 * tmpTens[2, 0, ...]
-            SqrtSpectralTens[1, 1, ...] = tmpTens[1, 1, ...] + zeta2 * tmpTens[2, 1, ...]
-            SqrtSpectralTens[1, 2, ...] = tmpTens[1, 2, ...] + zeta2 * tmpTens[2, 2, ...]
-            SqrtSpectralTens[2, 0, ...] = zeta3 * tmpTens[2, 0, ...]
-            SqrtSpectralTens[2, 1, ...] = zeta3 * tmpTens[2, 1, ...]
-            SqrtSpectralTens[2, 2, ...] = zeta3 * tmpTens[2, 2, ...]
-
-            return SqrtSpectralTens * 1j
+        return _assemble_rdt_sqrt_tensor(k[0, ...], k[1, ...], k[2, ...], beta, const_fn)

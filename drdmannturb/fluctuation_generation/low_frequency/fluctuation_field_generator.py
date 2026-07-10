@@ -18,15 +18,17 @@ class LowFreqGenerator:
     r"""Generator class for a 2d low-frequency fluctuational field model.
 
     This class implements a 2d low-frequency fluctuational field model based on the following references:
-    #. [1] `A.H. Syed, J. Mann "A Model for Low-Frequency, Anisotropic Wind Fluctuations and Coherences
-        in the Marine Atmosphere", Boundary-Layer Meteorology 190:1, 2024 <https://doi.org/10.1007/s10546-023-00850-w>`_.
-    #. [2] `A.H. Syed, J. Mann "Simulating low-frequency wind fluctuations", Wind Energy Science, 9, 1381-1391, 2024
-        <https://doi.org/10.5194/wes-9-1381-2024>`_.
+
+    #. `A.H. Syed, J. Mann "A Model for Low-Frequency, Anisotropic Wind Fluctuations and Coherences in the
+       Marine Atmosphere", Boundary-Layer Meteorology 190:1, 2024 <https://doi.org/10.1007/s10546-023-00850-w>`_.
+    #. `A.H. Syed, J. Mann "Simulating low-frequency wind fluctuations", Wind Energy Science, 9, 1381-1391,
+       2024 <https://doi.org/10.5194/wes-9-1381-2024>`_.
 
     In summary, the model has 4 parameters:
+
     - :math:`\sigma^2` - variance exhibited by the low-frequency fluctuation field (:math:`m^2/s^2`),
     - :math:`L_{2d}` - length scale corresponding to the peak of mesoscale turbulence (:math:`m`,
-        typically several kilometers),
+      typically several kilometers),
     - :math:`\psi` - anisotropy parameter (:math:`rad`), :math:`0 < \psi < \pi/2`,
     - and :math:`z_i` - height of the inertial sublayer (:math:`m`, assume to be the boundary layer height).
 
@@ -54,26 +56,18 @@ class LowFreqGenerator:
     Parameters
     ----------
     config : dict
-        Configuration dictionary for the low-frequency generator.
-        Requires the following keys:
-        - ``"sigma2"`` : float
-            Variance of the low-frequency fluctuation field (:math:`m^2/s^2`).
-        - ``"L_2d"`` : float
-            Length scale corresponding to the peak of mesoscale turbulence (:math:`m`).
-        - ``"psi"`` : float
-            Anisotropy parameter (:math:`rad`), :math:`0 < \psi < \pi/2`.
-        - ``"z_i"`` : float
-            Height of the inertial sublayer (:math:`m`).
-        - ``"L1_factor"`` : float
-            Factor determining user-specified domain length in x-direction relative to ``L_2d``.
-        - ``"L2_factor"`` : float
-            Factor determining user-specified domain length in y-direction relative to ``L_2d``.
-        - ``"exp1"`` : int
-            Exponent for the number of points in the x-direction (``user_N1 = 2**exp1``).
-        - ``"exp2"`` : int
-            Exponent for the number of points in the y-direction (``user_N2 = 2**exp2``).
+        Configuration dictionary for the low-frequency generator. Requires the following keys:
 
-
+        - ``"sigma2"`` (float): Variance of the low-frequency fluctuation field (:math:`m^2/s^2`).
+        - ``"L_2d"`` (float): Length scale corresponding to the peak of mesoscale turbulence (:math:`m`).
+        - ``"psi"`` (float): Anisotropy parameter (:math:`rad`), :math:`0 < \psi < \pi/2`.
+        - ``"z_i"`` (float): Height of the inertial sublayer (:math:`m`).
+        - ``"L1_factor"`` (float): Factor determining user-specified domain length in x-direction
+          relative to ``L_2d``.
+        - ``"L2_factor"`` (float): Factor determining user-specified domain length in y-direction
+          relative to ``L_2d``.
+        - ``"exp1"`` (int): Exponent for the number of points in the x-direction (``user_N1 = 2**exp1``).
+        - ``"exp2"`` (int): Exponent for the number of points in the y-direction (``user_N2 = 2**exp2``).
 
     Notes
     -----
@@ -191,7 +185,7 @@ class LowFreqGenerator:
 
             warnings.warn(
                 f"User requested domain ({self.user_L1:.1f}x{self.user_L2:.1f}) is smaller than the "
-                f"recommended minimum size ({5*self.L_2d:.1f}x{5*self.L_2d}). "
+                f"recommended minimum size ({5 * self.L_2d:.1f}x{5 * self.L_2d}). "
                 f"Computational domain will be enlarged to ensure minimum size.",
                 UserWarning,
             )
@@ -276,8 +270,7 @@ class LowFreqGenerator:
 
         if integral_val < 1e-16:
             raise ValueError(
-                f"Integral of spectrum shape is near zero ({integral_val:.2e}). "
-                "Check physical parameters L_2d and z_i."
+                f"Integral of spectrum shape is near zero ({integral_val:.2e}). Check physical parameters L_2d and z_i."
             )
 
         return self.sigma2 / (2 * integral_val)
@@ -456,6 +449,7 @@ class LowFreqGenerator:
         """Generate the 2D low-frequency velocity fluctuation fields.
 
         This method performs the core generation process:
+
         1. Generates a Gaussian white noise field on the computational grid.
         2. Computes its Fourier transform.
         3. Calculates the Fourier components of the velocity fields (u1, u2)
